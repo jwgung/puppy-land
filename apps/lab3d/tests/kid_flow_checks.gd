@@ -184,12 +184,20 @@ func check_map_riddle_tap() -> void:
 	Story.enabled = was
 
 
-## Every lab has Dugi's introduction (what the lab is, the force it shows); with the story on, a
-## second visit (no clue) still opens on it before the question.
+## The name each lab's introduction teaches ("이 힘을 마찰력이라고 해요", 2026-10-31 user: "용어를
+## 알려는 줘야지").
+const INTRO_TERMS := {"buoyancy": "부력", "collision": "작용 반작용", "constraints": "진자",
+	"free-fall": "중력", "friction": "마찰력", "incline-friction": "마찰력", "orbit": "중력",
+	"projectile": "중력", "pulley": "도르래", "rotation": "받침점", "spring": "탄성력"}
+
+
+## Every lab has Dugi's introduction (what the lab is, the force it shows, by its name); with the
+## story on, a second visit (no clue) still opens on it before the question.
 func check_intro() -> void:
 	var missing := []
 	for definition in ExperimentRegistry.load_all():
-		if definition.has("missions") and MissionRound.intro(definition)[0].length() < 40:
+		var text: String = MissionRound.intro(definition)[0]
+		if definition.has("missions") and (text.length() < 40 or not INTRO_TERMS.get(definition.id, "\n") in text):
 			missing.append(definition.id)
 	var was := Story.enabled
 	Story.enabled = true
