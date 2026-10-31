@@ -155,6 +155,9 @@ var _slam: StampSlam = null
 var _stamps_landed := 0
 var _confetti: Confetti = null
 var _done_card: RoundDoneCard = null
+var _next_due := false                # a stage was won and nothing was done since (its stamp may still fly)
+var _next_wait := -1.0                # >= 0: a stage was won, the lab is set up again for the next (_run_next_wait)
+var next_resets := 0                   # times the lab was set up again after a stage (tests)
 var _round_wait := -1.0               # >= 0: the round is done, the cheer waits for Dugi (_run_round_wait)
 var _piece_wait := -1.0                # s left waiting for the piece game's last step (< 0: not waiting)
 var _card_left := -1.0                 # s until the round-done card shows (after the confetti starts)
@@ -163,6 +166,7 @@ var _demo_left := -1.0                 # --demo-celebrate: s until the next demo
 var _demo_stamps := 0
 const CARD_DELAY_S := 0.8
 const ROUND_WAIT_MIN_S := 0.4          # after the last stamp, before the cheer (Dugi starts explaining)
+const NEXT_WAIT_MIN_S := 1.2           # after a stage's stamp, before the lab is set up again (Dugi starts first)
 ## The story (2026-10-28 "별 조각 찾기"): when the round is completed, the star piece the bread cat
 ## lifts before the card comes (Puppy's clue on the first visit is the round's).
 var _piece: Node3D = null              # the found piece over the bread cat
@@ -351,6 +355,7 @@ func _process(delta: float) -> void:
 	_watch_touch()
 	_run_dialogue()
 	_run_round_wait(delta)
+	_run_next_wait(delta)
 	_run_celebration(delta)
 	_run_result_bubble(delta)
 	_run_strip_pulse(delta)
@@ -367,7 +372,8 @@ func _sync_clue_glow() -> void:
 
 ## Puppy's clue is in the box now (not yet read).
 func clue_telling() -> bool:
-	return mission_round != null and mission_round.clue_open() and dialogue != null and dialogue.active
+	return mission_round != null and mission_round.clue_open() and dialogue != null and dialogue.active \
+		and dialogue.speaker == "puppy"   # (Dugi's introduction after it is not the clue)
 
 
 ## Dugi's dialogue opens when he starts explaining and keeps him pointing until it closes (a tap
@@ -410,23 +416,24 @@ func _run_dialogue() -> void:
 		_dialogue_started = false
 
 
-## Dugi's question (Plan G4), after Puppy's clue on the spot's first visit (MissionRound): his box holds
+## Dugi's question (Plan G4), after Puppy's clue on the spot's first visit and Dugi's introduction of the
+## lab (2026-10-31, every visit with the story; MissionRound): his box holds
 ## the question with the picture buttons over it. It yields to the sidebar (hidden while it is open)
 ## and comes back when it closes.
 func _run_question() -> void:
 	var r := mission_round
-	if r.clue_open() and not dialogue.active:   # the clue was read: Dugi asks
+	if r.clue_open() and not dialogue.active:   # the clue (or Dugi's introduction) was read: the next line, or Dugi asks
 		dialogue.set_speaker("dugi")
-		dialogue.hold = true
 		r.clue_read()
+		dialogue.hold = r.clue_to_open().is_empty()   # the question holds; another line before it turns on a tap
 		if not r.asking():
 			return
 	elif not r.clue_to_open().is_empty() and not dialogue.active and not is_sidebar_open() and _layout_dialogue():
-		var clue := r.clue_to_open()
-		dialogue.set_speaker("puppy", clue[1])
-		dialogue.hold = false   # a tap or the read timer closes it
+		var clue := r.clue_to_open()   # [text, face, speaker]: Puppy's clue, then Dugi's introduction
+		dialogue.set_speaker(str(clue[2]), clue[1])
+		dialogue.hold = false   # a tap closes it
 		dialogue.open(clue[0])
-		r.clue_opened()   # told once
+		r.clue_opened()   # the clue is told once
 	var asking_now := r.phase() == MissionRound.Phase.ASKING
 	if asking_now and not dialogue.active and not is_sidebar_open() and _layout_dialogue():
 		dialogue.set_speaker("dugi")
@@ -539,8 +546,8 @@ func handle_back() -> bool:
 		_done_card.close()   # back closes the round-done card first (the lab stays, like 더 해 보기)
 		_done_card = null
 		return true
-	if clue_telling():
-		dialogue.close(true)   # _run_question sees the clue read and lets Dugi ask
+	if mission_round != null and mission_round.clue_open() and dialogue != null and dialogue.active:
+		dialogue.close(true)   # _run_question sees the clue (or Dugi's introduction) read: the next line, or Dugi asks
 		_sync_clue_glow()
 		return true
 	if dialogue != null and dialogue.active and not _asking():
@@ -981,6 +988,7 @@ func _watch_touch() -> void:
 	var touching := manipulator != null and manipulator.mode != ""
 	if touching and not _was_touching and mission_round != null:
 		mission_round.touched()
+		_cancel_next()   # a new try after a stage's stamp: the lab is not set up again under it
 	_was_touching = touching
 
 
@@ -1120,6 +1128,7 @@ func _on_question_ended() -> void:
 ## then fills; the bread cat hops. On the last one the whole round celebrates when it lands. A stamp
 ## still flying when the next one comes lands at once first.
 func _on_stamp_earned(stamps: int) -> void:
+	_next_due = stamps < mission_round.stage_count()
 	if _slam != null:
 		_slam.finish()
 	_show_stamps(stamps)
@@ -1159,6 +1168,34 @@ func _on_stamp_landed(stamps: int) -> void:
 	_show_stamps(mission_round.stamps)
 	if stamps >= mission_round.stage_count():
 		_round_wait = ROUND_WAIT_MIN_S   # Dugi's last explanation first (2026-10-30 user), then the cheer
+	elif _next_due:
+		_next_wait = NEXT_WAIT_MIN_S   # then the lab is set up again for the next stage (2026-10-31 user)
+
+
+## A stage was won and its stamp is in: once Dugi's explanation is read (his box closed, his arm down)
+## and no finger holds the lab, the lab goes back to its start for the next stage, as 다시 does
+## (2026-10-31 user: "실험 하나 성공하면, 다음 실험할 수 있는 상태로 되돌려 놓아야"). A child who already
+## started the next try (a finger on the lab, the slingshot's next shot) keeps it: nothing is reset.
+func _run_next_wait(delta: float) -> void:
+	if _next_wait < 0.0 or (manipulator != null and manipulator.mode != ""):
+		return   # (a finger still on the lab, e.g. the push that won: wait until it lets go)
+	_next_wait = maxf(0.0, _next_wait - delta)
+	if _next_wait > 0.0:
+		return
+	var talking := cast != null and cast.dugi != null and (cast.dugi.speaking() or (dialogue != null and dialogue.active))
+	if talking or _slam != null or not experiment.settled():
+		return   # Dugi first; a run still moving is let finish
+	_next_wait = -1.0
+	_next_due = false
+	if experiment.status() != "ready":
+		experiment_action("reset")
+		next_resets += 1
+
+
+## The child acted after a stage's stamp: the lab is not set up again by itself.
+func _cancel_next() -> void:
+	_next_due = false
+	_next_wait = -1.0
 
 
 ## The last stamp is in: the celebration waits until Dugi's explanation of that stage is read (his
@@ -1293,7 +1330,10 @@ func _show_done_card() -> void:
 	_done_card.to_map.connect(func() -> void:
 		_done_card = null
 		back_requested.emit())
-	_done_card.stay.connect(func() -> void: _done_card = null)
+	_done_card.stay.connect(func() -> void:
+		_done_card = null
+		if experiment.status() != "ready":
+			experiment_action("reset"))   # 더 해 보기: the lab ready for another go
 	view.add_child(_done_card)
 
 
@@ -2052,6 +2092,7 @@ func _run_measured_action(id: String) -> void:
 
 
 func experiment_action(id: String) -> void:
+	_cancel_next()   # the child (or 다시) goes on: no setting up again after the stage
 	_poke_guide()
 	_drop_held_object()
 	if mission_round != null:
@@ -2077,6 +2118,7 @@ func _snap_camera_home() -> void:
 
 
 func _set_control(id: String, value: Variant) -> void:
+	_cancel_next()
 	_poke_guide()
 	_drop_held_object()
 	if mission_round != null:

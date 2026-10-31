@@ -104,6 +104,8 @@
   },
   "story": { "clue": "거북이 시계 속에 조각이 있어! 공을 시계 추랑 똑같이 흔들어 보자!", "clue_face": "explain", "map_clue": "기둥에 큰 노란 공이 매달린 곳이야!", "map_clue_face": "explain" },
   "kid": {
+    "intro": "여기는 흔들 추 실험실이에요. 줄에 매단 공은 중력 때문에 아래로 내려왔다가 반대쪽으로 올라가요. 그래서 왔다 갔다 흔들려요. 줄 길이에 따라 얼마나 천천히 흔들리는지 살펴봐요!",
+    "intro_face": "explain",
     "card": "rope_half_swing",
     "title": "줄에 매단 공을 흔들어 보자!",
     "place": "흔들 추",

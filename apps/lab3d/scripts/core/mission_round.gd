@@ -122,6 +122,9 @@ var predict_ended := false
 
 var _asking := false
 var _clue := ""
+## Dugi's introduction of the lab (kid.intro, 2026-10-31 user: "처음에 이 실험이 무슨 실험인지, 어떤 힘을
+##보고 싶은 건지"): after Puppy's clue, before the question, every visit while stages are left (Story).
+var _intro := ""
 var _clue_open := false
 var _question := ""
 var _question_face := Story.DEFAULT_FACE
@@ -625,10 +628,12 @@ func open(dugi: bool) -> void:
 	var id := str(definition.get("id", ""))
 	if Story.enabled and not store.clue_seen(id):
 		_clue = Story.clue(definition)
+	if Story.enabled:
+		_intro = intro(definition)[0]
 	var question := predict(definition)
 	if question.is_empty():
-		predict_ended = true   # no question: the clue alone, if any
-		_asking = _clue != ""
+		predict_ended = true   # no question: the clue and the introduction alone, if any
+		_asking = _clue != "" or _intro != ""
 		return
 	reason = str(question.get("reason", ""))
 	_question = str(question.get("question", ""))
@@ -639,7 +644,7 @@ func open(dugi: bool) -> void:
 ## Where the round is now.
 func phase() -> Phase:
 	if _asking:
-		return Phase.CLUE if _clue != "" else Phase.ASKING
+		return Phase.CLUE if _clue != "" or _intro != "" else Phase.ASKING
 	return Phase.DONE if stage() < 0 else Phase.PLAYING
 
 
@@ -648,30 +653,49 @@ func asking() -> bool:
 	return _asking
 
 
-## Puppy's clue waits for its box [text, face] ([] when there is none to open).
+## The next line before the question waits for its box [text, face, speaker]: Puppy's clue, then
+## Dugi's introduction ([] when there is none to open, or one is open).
 func clue_to_open() -> Array:
-	if not _asking or _clue == "" or _clue_open:
+	if not _asking or _clue_open:
 		return []
-	return [_clue, Story.clue_face(definition)]
+	if _clue != "":
+		return [_clue, Story.clue_face(definition), "puppy"]
+	if _intro != "":
+		var line := intro(definition)
+		return [_intro, line[1], "dugi"]
+	return []
 
 
-## The clue is in the box now (not yet read).
+## A line before the question (the clue or the introduction) is in the box now (not yet read).
 func clue_open() -> bool:
-	return _asking and _clue != "" and _clue_open
+	return _asking and (_clue != "" or _intro != "") and _clue_open
 
 
-## The screen opened the clue in Puppy's box: it is told once (kept in the store).
+## The screen opened the line in its box; Puppy's clue is told once (kept in the store).
 func clue_opened() -> void:
 	_clue_open = true
-	store.mark_clue(str(definition.get("id", "")))
+	if _clue != "":
+		store.mark_clue(str(definition.get("id", "")))
 
 
-## The clue was read (its box closed): Dugi asks next, or the round plays when there is no question.
+## The open line was read (its box closed): the next one (Dugi's introduction), then Dugi asks, or
+## the round plays when there is no question.
 func clue_read() -> void:
-	_clue = ""
+	if _clue != "":
+		_clue = ""
+	else:
+		_intro = ""
 	_clue_open = false
-	if _question == "":
+	if _clue == "" and _intro == "" and _question == "":
 		end_question()
+
+
+## Dugi's introduction of the lab [text, face] (kid.intro and kid.intro_face; text "" when it has none).
+static func intro(definition: Dictionary) -> Array:
+	var kid: Variant = definition.get("kid")
+	if not kid is Dictionary:
+		return ["", Story.DEFAULT_FACE]
+	return [str(kid.get("intro", "")), Story.face_or_default(kid.get("intro_face"))]
 
 
 ## Dugi's question [text, face] (the text "" when the clue came alone).
@@ -710,6 +734,7 @@ func end_question() -> void:
 		return
 	_asking = false
 	_clue = ""
+	_intro = ""
 	_clue_open = false
 	question_ended.emit()
 

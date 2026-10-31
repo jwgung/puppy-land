@@ -236,13 +236,19 @@ func check_clue() -> void:
 	_tap_through(box)
 	await tree.process_frame
 	await tree.process_frame
-	var asked: bool = box.active and box.speaker == "dugi" and box.name_label.text == "두기두기" and box.hold \
+	# Dugi tells what the lab is and which force it shows (kid.intro, 2026-10-31), then asks.
+	var intro: String = MissionRound.intro(screen.definition.raw)[0]
+	var introduced: bool = box.active and box.speaker == "dugi" and not box.hold and box.text == intro and not screen._choices.visible
+	_tap_through(box)
+	await tree.process_frame
+	await tree.process_frame
+	var asked: bool = introduced and box.active and box.speaker == "dugi" and box.name_label.text == "두기두기" and box.hold \
 		and box.text == str(MissionRound.predict(screen.definition.raw).question) and screen._choices.visible
-	expect.call(asked, "clue: then Dugi asks his question with the picture buttons", box.text)
+	expect.call(asked, "clue: then Dugi introduces the lab, then asks his question with the picture buttons", box.text)
 	await _free(screen)
 	screen = await _lab("projectile")
-	expect.call(screen.dialogue.speaker == "dugi" and screen.dialogue.text == str(MissionRound.predict(screen.definition.raw).question),
-		"clue: never again in the same lab (Dugi's question at once)", screen.dialogue.text)
+	expect.call(screen.dialogue.speaker == "dugi" and screen.dialogue.text == intro,
+		"clue: never again in the same lab (Dugi's introduction at once, then his question)", screen.dialogue.text)
 	await _free(screen)
 	Story.enabled = false
 	screen = await _lab("spring")

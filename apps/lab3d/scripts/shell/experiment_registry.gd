@@ -138,6 +138,7 @@ static func validate(definition: Dictionary) -> PackedStringArray:
 ## the child-facing ones go here and the screen shows them in place of those (the sidebar keeps the
 ## full texts and the formula labels):
 ##   "kid": {"title": <the title bar>, "place": <the map's spot name>, "say": <Dugi's dialogue>, "say_face": <its face>,
+##           "intro": <Dugi's introduction of the lab before his question>, "intro_face": <its face>,
 ##           "tip": <the short gesture hint>, "card": <the one key observation shown as a card>,
 ##           "cards": {<observation id>: <its key card's caption>},
 ##           "states": {<a status text of the lab>: <its key card words>},
@@ -152,7 +153,7 @@ static func validate(definition: Dictionary) -> PackedStringArray:
 ## the bar grows with the value up to its full length at the given value; the number is in "자세히".
 ## States and minus words change the card's words only: the lab's text and the value (the sidebar's,
 ## full precision) stay the formula's (ExperimentScreen.card_text).
-const KID_TEXTS := {"title": "title", "place": "title", "say": "observe", "tip": "tip_short"}
+const KID_TEXTS := {"title": "title", "place": "title", "say": "observe", "tip": "tip_short", "intro": "intro"}
 const KID_MAPS := ["cards", "states", "minus"]
 ## Observation unit -> [the words before the number, the words after it] on a key card.
 const KID_UNITS := {"": ["", ""], "m": ["", "미터"], "s": ["", "초"], "m/s": ["1초에 ", "미터"],
@@ -175,9 +176,9 @@ static func _validate_kid(kid: Variant, ids: Array) -> PackedStringArray:
 		elif key == "card":
 			if not kid.card in ids:
 				problems.append("kid.card must name an observation")
-		elif key == "say_face":
-			if not kid.say_face in Story.FACES:
-				problems.append("kid.say_face must be one of Story.FACES")
+		elif key == "say_face" or key == "intro_face":
+			if not kid[key] in Story.FACES:
+				problems.append("kid.%s must be one of Story.FACES" % key)
 		elif key == "picks":
 			pass   # ConditionPicks.validate (it needs the controls and the missions)
 		elif key == "bars":
@@ -186,7 +187,7 @@ static func _validate_kid(kid: Variant, ids: Array) -> PackedStringArray:
 					and bars.values().all(func(v: Variant) -> bool: return (v is float or v is int) and v > 0.0)):
 				problems.append("kid.bars must name observations with a full-bar value > 0 each")
 		elif not KID_TEXTS.has(key):
-			problems.append("kid.%s unknown (title, place, say, tip, card, cards, states, minus, bars, picks)" % key)
+			problems.append("kid.%s unknown (title, place, say, intro, tip, card, cards, states, minus, bars, picks)" % key)
 		elif not (kid[key] is String and kid[key] != ""):
 			problems.append("kid.%s must be a text" % key)
 	return problems

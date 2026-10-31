@@ -222,6 +222,16 @@ func check_lab_faces() -> void:
 			box.advance()
 		await tree.process_frame
 		await tree.process_frame
+		# Dugi's introduction (its own face, kid.intro_face), then the question.
+		var intro_ok: bool = box.speaker == "dugi" and box.text == MissionRound.intro(screen.definition.raw)[0] \
+			and box.face == MissionRound.intro(screen.definition.raw)[1]
+		for k in 8:
+			if not box.active or box.hold:
+				break
+			box.advance()
+		await tree.process_frame
+		await tree.process_frame
+		clue_ok = clue_ok and intro_ok
 		var predict := MissionRound.predict(screen.definition.raw)
 		var question_ok: bool = box.speaker == "dugi" and box.text == str(predict.question) and box.face == "thinking"
 		var answer := str(predict.answer)

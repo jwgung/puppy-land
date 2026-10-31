@@ -6,7 +6,9 @@
 ## - a tap on the 3D view while Dugi's box waits turns its page and takes nothing of the lab; a press
 ##   on the lab's object still takes it,
 ## - on the map, a tap beside Puppy's riddle (not on a spot) turns its page,
-## - the words type slower and Puppy's result line stays longer than before.
+## - the words type slower and Puppy's result line stays longer than before,
+## - Dugi tells what the lab is and which force it shows (kid.intro) before his question,
+## - a won stage sets the lab up again for the next one (as 다시 does) once Dugi has explained.
 extends RefCounted
 
 var tree: SceneTree
@@ -29,13 +31,16 @@ func run() -> void:
 	await check_question_nudge()
 	await check_box_tap_on_view()
 	await check_map_riddle_tap()
+	await check_intro()
+	await check_next_stage_reset()
 	check_pace()
 	tree.root.size = root_size
 	DirAccess.remove_absolute(ProgressStore.path)
 
 
-func _open(id: String) -> Control:
-	DirAccess.remove_absolute(ProgressStore.path)
+func _open(id: String, keep_store := false) -> Control:
+	if not keep_store:
+		DirAccess.remove_absolute(ProgressStore.path)
 	var host := Control.new()
 	host.theme = load(UI_THEME).build()
 	host.size = TABLET
@@ -86,9 +91,15 @@ func check_clue_tap_anywhere() -> void:
 			break
 		await _tap(_empty(screen))
 	await _frames(3)
+	var intro_up: bool = box.active and box.speaker == "dugi" and box.text == MissionRound.intro(screen.definition.raw)[0]
+	for i in 6:
+		if r.phase() == MissionRound.Phase.ASKING:
+			break
+		await _tap(_empty(screen))
+	await _frames(3)
 	var asked: bool = box.active and box.speaker == "dugi" and r.phase() == MissionRound.Phase.ASKING
-	expect.call(clue_up and asked, "kid flow: a tap anywhere behind Puppy's clue turns it, and Dugi's question follows",
-		"clue %s, then asking %s (%s)" % [clue_up, asked, box.speaker])
+	expect.call(clue_up and intro_up and asked, "kid flow: a tap anywhere behind Puppy's clue turns it, Dugi's introduction follows (turned the same way), then his question",
+		"clue %s, intro %s, then asking %s (%s)" % [clue_up, intro_up, asked, box.speaker])
 	await _close(screen)
 	Story.enabled = was
 
@@ -171,6 +182,59 @@ func check_map_riddle_tap() -> void:
 	host.queue_free()
 	await tree.process_frame
 	Story.enabled = was
+
+
+## Every lab has Dugi's introduction (what the lab is, the force it shows); with the story on, a
+## second visit (no clue) still opens on it before the question.
+func check_intro() -> void:
+	var missing := []
+	for definition in ExperimentRegistry.load_all():
+		if definition.has("missions") and MissionRound.intro(definition)[0].length() < 40:
+			missing.append(definition.id)
+	var was := Story.enabled
+	Story.enabled = true
+	DirAccess.remove_absolute(ProgressStore.path)
+	ProgressStore.set_mark(ProgressStore.CLUES, "spring", true)   # the clue was told before
+	var screen := await _open("spring", true)
+	await _frames(4)
+	var box: DialogueBox = screen.dialogue
+	var first: bool = box.active and box.speaker == "dugi" and box.text == MissionRound.intro(screen.definition.raw)[0] \
+		and screen.mission_round.phase() == MissionRound.Phase.CLUE
+	var seen := "%s %s '%s' %s" % [box.active, box.speaker, box.text.left(20), screen.mission_round.phase()]
+	await _close(screen)
+	Story.enabled = was
+	expect.call(missing.is_empty() and first, "kid flow: every game lab has Dugi's introduction; a later visit opens on it before the question",
+		"missing %s, opens on it %s (%s)" % [str(missing), first, seen])
+
+
+## A won stage (its stamp in): after Dugi's explanation the lab is back at its start for the next
+## stage; a child who already took the lab again keeps the try.
+func check_next_stage_reset() -> void:
+	var screen := await _open("free-fall")
+	var r: MissionRound = screen.mission_round
+	r.end_question()
+	var lab: Experiment = screen.experiment
+	screen.experiment_action("release")
+	for i in 240:
+		await tree.process_frame
+		if lab.status() == "landed":
+			break
+	var landed: bool = lab.status() == "landed"
+	r.stamp_earned.emit(1)
+	var reset_at := -1
+	for i in 60 * 8:
+		await tree.process_frame
+		if screen.dialogue.active:
+			screen.dialogue.advance()
+			screen.dialogue.advance()
+		if lab.status() == "ready":
+			reset_at = i
+			break
+	var once: bool = screen.next_resets == 1
+	expect.call(landed and reset_at > roundi(ExperimentScreen.NEXT_WAIT_MIN_S * 60.0) - 2 and once,
+		"kid flow: a won stage sets the lab up again (ready) after Dugi has explained, by itself",
+		"landed %s, ready after %d frames, resets %d" % [landed, reset_at, screen.next_resets])
+	await _close(screen)
 
 
 func check_pace() -> void:

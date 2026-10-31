@@ -101,6 +101,8 @@
   },
   "story": { "clue": "상자를 하나씩 맞히다 보면 조각이 나올 것 같아!", "clue_face": "surprised", "map_clue": "과녁 근처 풀밭에 뭔가 떨어졌어!", "map_clue_face": "surprised" },
   "kid": {
+    "intro": "여기는 공 던지기 실험실이에요. 던진 공은 앞으로 날아가는 동안 땅이 아래로 끌어당겨요. 이 힘을 중력이라고 해요. 던지는 각도에 따라 공이 어디에 떨어지는지 살펴봐요!",
+    "intro_face": "explain",
     "card": "range",
     "title": "공을 멀리 던져 보자!",
     "place": "공 던지기",

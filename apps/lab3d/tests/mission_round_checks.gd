@@ -87,7 +87,7 @@ func check_clue_question_bridge() -> void:
 	var ended := []
 	round.question_ended.connect(func() -> void: ended.append(true))
 	var clue := round.clue_to_open()
-	expect.call(round.phase() == MissionRound.Phase.CLUE and round.asking() and clue.size() == 2
+	expect.call(round.phase() == MissionRound.Phase.CLUE and round.asking() and clue.size() == 3 and clue[2] == "puppy"
 		and clue[0] == Story.clue(round.definition) and round.choices().size() == 2,
 		"round module: a first visit opens on Puppy's clue, the question waiting behind it", str(clue))
 	round.clue_opened()
@@ -95,8 +95,14 @@ func check_clue_question_bridge() -> void:
 	expect.call(round.clue_open() and round.clue_to_open().is_empty() and store.clue_seen("projectile"),
 		"round module: the clue opened is told once (kept in the store)", str(store.clues))
 	round.clue_read()
-	expect.call(round.phase() == MissionRound.Phase.ASKING and round.question_line()[0] == predict.question
-		and ended.is_empty(), "round module: the clue read, Dugi asks", str(round.question_line()))
+	# Dugi's introduction of the lab next (2026-10-31), then his question.
+	var intro := round.clue_to_open()
+	var introduced: bool = round.phase() == MissionRound.Phase.CLUE and intro.size() == 3 and intro[2] == "dugi" \
+		and intro[0] == MissionRound.intro(round.definition)[0] and intro[0] != ""
+	round.clue_opened()
+	round.clue_read()
+	expect.call(introduced and round.phase() == MissionRound.Phase.ASKING and round.question_line()[0] == predict.question
+		and ended.is_empty(), "round module: the clue read, Dugi introduces the lab, then asks", str(round.question_line()))
 	var picked := round.answer(str(predict.answer))
 	expect.call(picked == "가까이" and round.pick == "near" and round.reason_face == Story.REASON_FACE[true]
 		and ended.size() == 1 and round.phase() == MissionRound.Phase.PLAYING,
@@ -111,8 +117,9 @@ func check_clue_question_bridge() -> void:
 	Story.enabled = true
 	reopened.open(true)
 	Story.enabled = false
-	expect.call(reopened.phase() == MissionRound.Phase.ASKING and reopened.clue_to_open().is_empty(),
-		"round module: the next visit asks without the clue", str(reopened.phase()))
+	var again := reopened.clue_to_open()
+	expect.call(reopened.phase() == MissionRound.Phase.CLUE and again.size() == 3 and again[2] == "dugi",
+		"round module: the next visit has no clue: Dugi's introduction, then the question", str(again))
 
 
 ## A landing that beats the stage: Puppy's win line, then the stamp (saved once), then the question

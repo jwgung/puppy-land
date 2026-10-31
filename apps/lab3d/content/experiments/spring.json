@@ -98,6 +98,8 @@
   },
   "story": { "clue": "종 안에 조각이 매달려 있어! 공으로 종을 땡 쳐 보자!", "clue_face": "explain", "map_clue": "울타리 안, 통통 튀는 용수철 쪽이야!", "map_clue_face": "explain" },
   "kid": {
+    "intro": "여기는 용수철 실험실이에요. 늘어난 용수철은 원래 길이로 돌아가려고 공을 다시 끌어당겨요. 그 힘으로 공이 반대쪽으로 가요. 당긴 만큼 공이 얼마나 가는지 살펴봐요!",
+    "intro_face": "explain",
     "card": "bell_reach",
     "title": "용수철을 당겼다 놓아 보자!",
     "place": "용수철",

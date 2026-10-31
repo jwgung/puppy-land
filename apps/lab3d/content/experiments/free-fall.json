@@ -104,6 +104,8 @@
   },
   "story": { "clue": "조각이 파란 집에 갇혔어! 버튼 두 개를 같이 누르면 문이 열릴 것 같아!", "clue_face": "surprised", "map_clue": "파란 탑 꼭대기에서 반짝했어!", "map_clue_face": "surprised" },
   "kid": {
+    "intro": "여기는 공 떨어뜨리기 실험실이에요. 땅은 모든 물건을 아래로 끌어당겨요. 이 힘을 중력이라고 해요. 무거운 공과 가벼운 공이 어떻게 떨어지는지 살펴봐요!",
+    "intro_face": "explain",
     "card": "red_time",
     "title": "공을 높은 곳에서 떨어뜨려 보자!",
     "place": "공 떨어뜨리기",
