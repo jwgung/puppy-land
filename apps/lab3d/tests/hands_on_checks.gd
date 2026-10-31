@@ -39,6 +39,7 @@ func run() -> void:
 	await check_demo_and_auto_release()
 	check_result_lines()
 	await check_result_bubbles()
+	await check_bubble_steady()
 	await check_bridge_and_reason()
 	check_stage1_answers()
 	await check_orbit_pace()
@@ -212,9 +213,18 @@ func check_result_bubbles() -> void:
 		problems.append("free fall: the miss line after the first drop (%s)" % (bubble.text if bubble != null else "none"))
 	else:
 		problems.append_array(_bubble_place(screen, bubble, "free fall miss"))
-	# It goes after SHOW_S; the same attempt never gets a second line.
+	# It stays put while it shows (2026-10-31 user: "퍼피 말풍선이 순간적으로 막 움직인다"): Dugi's reason box
+	# opening below, Puppy's idle motion and the camera never make it jump; it only follows Puppy gently.
+	var jump := 0.0
+	var last := bubble.position if bubble != null else Vector2.ZERO
 	for i in roundi(ResultBubble.SHOW_S * 60.0) + 10:
 		await tree.process_frame
+		var now: ResultBubble = screen.result_bubble()
+		if now != null and now == bubble:
+			jump = maxf(jump, now.position.distance_to(last))
+			last = now.position
+	if jump > ResultBubble.MAX_STEP + 0.5:
+		problems.append("free fall: the bubble jumped %.1f units in one frame (at most %.1f)" % [jump, ResultBubble.MAX_STEP])
 	if screen.result_bubble() != null or screen.result_count.miss != 1:
 		problems.append("free fall: the bubble stays or a second line came (%s)" % str(screen.result_count))
 	await _drop_drag(screen, "yellow", 6.0)
@@ -273,6 +283,41 @@ func check_result_bubbles() -> void:
 	await _free(screen)
 	DirAccess.remove_absolute(ProgressStore.path)
 	expect.call(problems.is_empty(), "result lines: Puppy's miss after a missed run (free fall, the spring after its half swing, a short push), the win with its stamp, one per attempt, gone after %.1f s, near Puppy inside the view and clear of the overlays; none after a control change" % ResultBubble.SHOW_S,
+		"; ".join(problems))
+
+
+## Puppy's bubble never jumps (2026-10-31 user: "순간적으로 막 움직인다"): in every lab, while it shows and a
+## run starts under it (the camera, Puppy, Dugi and his box move), it moves at most MAX_STEP per frame
+## and stays on the side it opened on.
+func check_bubble_steady() -> void:
+	var problems := []
+	for definition in ExperimentRegistry.load_all():
+		DirAccess.remove_absolute(ProgressStore.path)
+		var screen := await _open(definition, TABLET)
+		screen.mission_round.end_question()
+		screen.show_result(0, false)
+		var bubble: ResultBubble = screen.result_bubble()
+		if bubble == null:
+			await _free(screen)
+			continue
+		var last := bubble.position
+		var side: int = screen._bubble_side
+		var worst := 0.0
+		var flipped := false
+		for i in roundi(ResultBubble.SHOW_S * 60.0) - 2:
+			await tree.process_frame
+			if i == 10:
+				screen.experiment_action("release")
+			if screen.result_bubble() != bubble:
+				break
+			worst = maxf(worst, bubble.position.distance_to(last))
+			last = bubble.position
+			flipped = flipped or screen._bubble_side != side
+		if worst > ResultBubble.MAX_STEP + 0.01 or flipped:
+			problems.append("%s: jumped %.1f, side changed %s" % [definition.id, worst, flipped])
+		await _free(screen)
+	DirAccess.remove_absolute(ProgressStore.path)
+	expect.call(problems.is_empty(), "result bubble: in every lab it moves at most %.0f units a frame and keeps its side while a run starts under it" % ResultBubble.MAX_STEP,
 		"; ".join(problems))
 
 

@@ -171,6 +171,7 @@ const DEMO_STAMP_EVERY_S := 1.6
 ## Puppy's result line after an attempt (2026-10-29, ResultBubble, told by the round): the bubble shown
 ## now, the finger seen on an object last frame (a new press is an attempt), the lines shown (tests).
 var _result_bubble: ResultBubble = null
+var _bubble_side := -1                   # the bubble's chosen place (an index of _fit_result_bubble's tries)
 var _was_touching := false
 var result_count := {"win": 0, "miss": 0}
 ## The strip's one pulse after the answer that shows where the mission is (strip_pulses counts them, tests).
@@ -936,6 +937,7 @@ func _on_result_told(_stage: int, won: bool, text: String, face: String) -> void
 		_result_bubble.queue_free()
 	_result_bubble = ResultBubble.new(text, face, won)
 	view.add_child(_result_bubble)
+	_bubble_side = -1
 	_fit_result_bubble()
 
 
@@ -964,14 +966,16 @@ func _run_result_bubble(delta: float) -> void:
 			_result_bubble.queue_free()
 		_result_bubble = null
 		return
-	_fit_result_bubble()
+	_fit_result_bubble(false)
 
 
 ## Where Puppy's line goes: just above Puppy on the view (the cat without him, else the view's upper
 ## middle), its tail pointing at him; inside the view and clear of the other overlays (the title, the
 ## key cards, the strip, 다시, the picture buttons, the tip, Dugi's box) when it can be: above him,
-## else beside him, else below.
-func _fit_result_bubble() -> void:
+## else beside him, else below. The side is chosen when the bubble opens (`choose`, also when a stamp
+## lands where it is) and kept; every other frame it only follows Puppy, at most ResultBubble.MAX_STEP
+## a frame (2026-10-31 user: it jumped as Dugi's box opened and the camera moved).
+func _fit_result_bubble(choose := true) -> void:
 	if _result_bubble == null:
 		return
 	var bubble_size := _result_bubble.bubble_size()
@@ -1003,21 +1007,28 @@ func _fit_result_bubble() -> void:
 		Vector2(anchor.x - gap - bubble_size.x, anchor.y - bubble_size.y * 0.5),
 		Vector2(anchor.x - bubble_size.x * 0.5, anchor.y + gap * 2.0),
 	]
-	var best := Rect2()
-	var best_overlap := INF
-	for at: Vector2 in tries:
-		var rect := Rect2(Vector2(clampf(at.x, m, maxf(m, view.size.x - m - bubble_size.x)),
+	var fit := func(at: Vector2) -> Rect2:
+		return Rect2(Vector2(clampf(at.x, m, maxf(m, view.size.x - m - bubble_size.x)),
 			clampf(at.y, m, maxf(m, view.size.y - m - bubble_size.y))), bubble_size)
-		var overlap := 0.0
-		for r: Rect2 in avoid:
-			if r.intersects(rect):
-				overlap += r.intersection(rect).get_area()
-		if overlap < best_overlap:
-			best = rect
-			best_overlap = overlap
-		if overlap == 0.0:
-			break
-	_result_bubble.place(best, anchor)
+	var first := _bubble_side < 0
+	if choose or first:
+		var best_overlap := INF
+		for i in tries.size():
+			var rect: Rect2 = fit.call(tries[i])
+			var overlap := 0.0
+			for r: Rect2 in avoid:
+				if r.intersects(rect):
+					overlap += r.intersection(rect).get_area()
+			if overlap < best_overlap:
+				_bubble_side = i
+				best_overlap = overlap
+			if overlap == 0.0:
+				break
+	var goal: Rect2 = fit.call(tries[_bubble_side])
+	if not first:   # placed already: it glides there (a new side after a stamp too), never jumps
+		var from := _result_bubble.position
+		goal.position = from + (goal.position - from).limit_length(ResultBubble.MAX_STEP)
+	_result_bubble.place(goal, anchor)
 
 
 ## The round's question ended (an answer, a pull, the run's result, the demo): the box closes, the

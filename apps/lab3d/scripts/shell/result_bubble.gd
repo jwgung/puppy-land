@@ -14,6 +14,9 @@ const POP_S := 0.16
 const FADE_S := 0.3
 const MAX_TEXT_WIDTH := 330.0
 const TAIL := 18.0           # the tail's length below the bubble (UI units)
+## The most the bubble moves in one frame while it shows (UI units): it follows Puppy gently and never
+## jumps (2026-10-31 user: "순간적으로 막 움직인다").
+const MAX_STEP := 6.0
 const TAIL_HALF := 11.0      # its half width where it leaves the bubble
 ## The look (2026-10-29 user: "말풍선 좀 더 예쁘게"): warm paper tinted by the result, a soft drop
 ## shadow, a rounded tail drawn over the bubble's edge, a bouncy pop.
