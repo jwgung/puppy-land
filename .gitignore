@@ -2,3 +2,7 @@ node_modules/
 dist/
 tmp/
 .worktrees/
+
+# Signing keys: never commit (docs/release/README.md)
+*.jks
+*.keystore

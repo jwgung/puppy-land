@@ -29,6 +29,8 @@ func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:
 
 
 func run() -> void:
+	check_off_by_default()
+	ScienceNote.enabled = true   # the button is off in the app (2026-10-31); these checks test it on
 	for definition in ExperimentRegistry.load_all():
 		await check_lab(definition)
 	expect.call(_number_rows >= 20, "ask AI: the questions carry this run's numbers (%d rows over the labs at open)" % _number_rows, "")
@@ -38,6 +40,8 @@ func run() -> void:
 	await check_desktop_copy()
 	await check_web_link()
 	await check_measurement()
+	ScienceNote.enabled = false
+	await check_off_screen()
 
 
 func _open(id: String, measurement := false) -> Control:
@@ -223,6 +227,28 @@ func check_desktop_copy() -> void:
 	expect.call(calls.size() == 1 and shown and result == "clipboard" and (copied == want or not clipboard_works),
 		"ask AI: off Android the question is copied ('clipboard') and the screen shows '%s'" % Locale.t("note.copied"),
 		"calls %d, line %s, result %s, copied %s" % [calls.size(), shown, result, copied == want])
+	await _close(screen)
+
+
+## The button is off in the app (2026-10-31, Play Families policy): no switch set, nothing on.
+func check_off_by_default() -> void:
+	expect.call(not ScienceNote.enabled, "ask AI: off in the app by default (ScienceNote.enabled false: the Play Store's children audience)", "")
+
+
+## Off: a lab's note has no button and no web link, and a call hands nothing over.
+func check_off_screen() -> void:
+	var screen := await _open("free-fall")
+	var calls: Array = []
+	screen.ask_handler = func(packages: Array, text: String) -> String:
+		calls.append([packages, text])
+		return "chooser"
+	screen.web_handler = func(text: String) -> void:
+		calls.append([text])
+	screen.ask_ai()
+	screen.ask_web()
+	var none: bool = not screen._sections.has("ask") and screen._ask_button == null and screen._web_button == null \
+		and calls.is_empty() and screen.find_children("AskAi", "", true, false).is_empty()
+	expect.call(none, "ask AI: off, a lab's note has no button or web link and nothing is handed over", "calls %d" % calls.size())
 	await _close(screen)
 
 

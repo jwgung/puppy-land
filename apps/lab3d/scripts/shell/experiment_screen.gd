@@ -2069,8 +2069,9 @@ func _build_sidebar() -> void:
 		_more.add_child(graph)
 	_sections["more_explanation"] = _build_explanation()
 	_more.add_child(_sections.more_explanation)
-	# Last: the question for an AI app (or any app), never in a measurement.
-	if not measurement:
+	# Last: the question for an AI app (or any app), never in a measurement; off unless turned on
+	# (ScienceNote.enabled, or the button's own device check --ask=show).
+	if not measurement and (ScienceNote.enabled or Quality.cmdline_value("ask") == "show"):
 		_sections["ask"] = _build_ask()
 		_sections.ask.name = "Note_ask"
 		column.add_child(_sections.ask)
@@ -2102,7 +2103,7 @@ func _build_ask() -> Control:
 ## apps' packages go to ask_handler once (on Android the system chooser with those apps only); a copy
 ## shows the line.
 func ask_ai() -> void:
-	if measurement or experiment == null:
+	if measurement or experiment == null or _ask_button == null:   # no button (off, or a measurement)
 		return
 	var packages := ScienceNote.ai_apps().map(func(app: Dictionary) -> String: return app.package)
 	var text := ScienceNote.question(definition, experiment, _hidden_answers(experiment.observations()))
@@ -2112,7 +2113,7 @@ func ask_ai() -> void:
 
 ## The web link's tap: the same question, copied, and the web AI opened (a browser or its app).
 func ask_web() -> void:
-	if measurement or experiment == null:
+	if measurement or experiment == null or _ask_button == null:
 		return
 	web_handler.call(ScienceNote.question(definition, experiment, _hidden_answers(experiment.observations())))
 	_ask_status.text = Locale.t("note.copied_web")

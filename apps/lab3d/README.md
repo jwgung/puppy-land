@@ -2,7 +2,7 @@
 
 역학 3D 실험 앱이다. Godot 4.7.2 + Jolt, GDScript. Phase 1 Task 2a에서 셸 뼈대(실험 등록, 카메라·제스처, 2D 패널, 품질 설정)와 첫 실험(빗면 마찰)을 만들었고, Task 2c에서 시각 스타일(잔디 섬: 선명한 원색, 각진 로우폴리, 하늘에 뜬 잔디 섬)과 연출을 정했다. Task 2b에서 한 손가락으로 물체를 집어 정해진 면 위로 옮기는 조작(조작 평면·스냅·높이 손잡이·보조 시점)을 더했다. Task 3에서 역학 안내형 10개 실험이 쓸 공식 보정 계층(`scripts/formula/`)과 TS↔GDScript parity, CI를 만들었다([공식 보정](docs/formula-correction.md)). Task 4a에서 실험 문구를 웹 2D와 공유하는 JSON으로 뺐다가 2026-10-30 웹 2D를 지우며 실험 파일로 되돌리고(1절 "실험 문구"), 균일장 실험 두 개(자유 낙하, 던지기)를 더했다(1절 "실험 목록"). Task 4b에서 접촉 힘 실험 마찰 밀기를, Task 4c에서 충돌 실험을, Task 4d에서 공식 모델 구동 실험 셋(용수철, 부력, 궤도: `BodyModelDriver`. 힘 주입 보정기는 대표 장면·빈 실험실용)을, Task 4e에서 해석 모델 구동 실험 셋(줄·막대 진자, 지렛대, 도르래)을 더했다. Task 2d에서 앱을 가로 전용으로 바꾸고 실험 화면을 3D 전체 + 핵심 관찰값 카드 + 오른쪽 사이드바로 개편했다(1절 "레이아웃과 해상도"). 기준은 [아트 디렉션](docs/art-direction.md)이다. 계획과 진행은 [Phase 1 문서](../../docs/3d-phase1/README.md), 스택 결정은 [ADR 0001](../../docs/adr/0001-3d-app-stack.md)에 있다.
 
-- Android: arm64-v8a release APK(디버그 키스토어 서명, 배포용 아님). 렌더러는 품질 단계가 정한다(low = Compatibility, medium·high = Mobile).
+- Android: arm64-v8a release APK(디버그 키스토어 서명, 배포용 아님). Play 배포용 AAB는 `tools/build.sh play`([docs/release/README.md](../../docs/release/README.md)). 렌더러는 품질 단계가 정한다(low = Compatibility, medium·high = Mobile).
 - 모든 작업은 헤드리스 CLI(`godot --headless`)로 한다. 에디터 GUI를 쓰지 않는다.
 - `spikes/godot/`은 Phase 0·Task 1 참고용으로 그대로 둔다. 이 앱은 거기서 품질 단계·측정 로그·parity 테스트·빌드 스크립트를 옮겨 왔다.
 
@@ -737,12 +737,13 @@ Android 뒤로가기 한 번이 두 번 오는 문제(2026-10-29, SM-X115 Androi
 3. **조건 바꾸기**: 슬라이더·선택지(그림 단추보다 촘촘함) 그대로.
 4. **그래프**: 법칙을 보여 줄 때만(`note.graph`).
 5. **더 보기**(처음엔 접힘): 나머지 관찰값 전부("다른 숫자"), 접은 그래프, 단계·관찰 포인트·공유 법칙·용어·조작 방법. 빠지는 값은 없다(모든 관찰값에 라벨이 하나씩, 웹 대조 시험이 읽는 `_observation_labels`).
-6. **AI에게 더 물어보기**(2026-10-28 사용자 승인, 2026-10-29 AI 앱만 있는 시스템 공유 창): 노트 맨 끝(더 보기와 그 접힌 내용 아래) 단추 하나와 설명 한 줄. 아래 "AI에게 더 물어보기".
+6. **AI에게 더 물어보기**(2026-10-28 사용자 승인, 2026-10-29 AI 앱만 있는 시스템 공유 창): 노트 맨 끝(더 보기와 그 접힌 내용 아래) 단추 하나와 설명 한 줄. 아래 "AI에게 더 물어보기". **2026-10-31부터 앱에서 꺼져 있다**(`ScienceNote.enabled = false`, 사용자 결정): Play 스토어 대상에 어린이를 넣으므로, 아이를 바깥 AI 앱·웹으로 보내는 단추는 가족 정책상 보호자 확인 없이 둘 수 없다. 코드와 시험은 남겨 두고(시험과 `--ask=show` 기기 확인만 켬), 보호자 확인을 만들면 다시 켠다.
 
 `--scroll-to=`은 `law`·`numbers`·`conditions`·`graph`·`more`·`ask`(예전 `observations` = `numbers`, `explanation` = `more`, 더 보기를 연다).
 
 #### AI에게 더 물어보기
 
+- 2026-10-31부터 꺼져 있다(위 6번). 아래는 켰을 때의 동작이다.
 - 2026-10-28 "Gemini에게 더 물어보기"(공유 시트)로 시작했다. 2026-10-29 앱 안의 AI 앱 고르기 창(`AiPicker`)을 거쳐, 같은 날 사용자 결정으로 **Android 시스템 공유 창에 AI 앱만 보이게** 바꿨다(앱 안 창은 지웠다). 단추 글자는 그대로 "AI에게 더 물어보기", 누르면 바로 시스템 공유 창이 뜬다.
 - 앱 목록: `content/ai_apps.json`(`name`, `package` = Google Play 패키지 이름, 순서). 고치려면 이 파일만 바꾼다. 2026-10-29 확인한 목록: Gemini `com.google.android.apps.bard`, ChatGPT `com.openai.chatgpt`, Claude `com.anthropic.claude`, Grok `ai.x.grok`, Meta AI `com.facebook.stella`, Perplexity `ai.perplexity.app.android`, DeepSeek `com.deepseek.chat`, Le Chat `ai.mistral.chat`, 뤼튼 `com.wrtn.app`.
 - 누르면 그 순간의 실험으로 한국어 질문을 만들어(`ScienceNote.question(definition, experiment, hidden)`, 순수 함수) 공유 창으로 넘긴다(`ScienceNote.send_to_ai(패키지 목록, 글)`). 보낼지는 고른 앱에서 정한다. 앱 자신은 네트워크를 쓰지 않는다.
@@ -813,12 +814,12 @@ $GODOT --path apps/lab3d                                   # 데스크톱(1280×
 $GODOT --path apps/lab3d -- --experiment=incline-friction  # 실험 화면으로 바로
 ```
 
-Android (패키지 `org.puppyland.lab3d`. 2026-10-31 저장소 이름 `puppy-land`에 맞춰 `org.openphysics.lab3d`에서 바꿈: 그 전에 설치한 앱은 기기에서 다른 앱으로 남고 진행 기록은 옮겨지지 않는다. 필요 없으면 `adb uninstall org.openphysics.lab3d`):
+Android (패키지 `jwgung.puppyland`, Play Console에 등록하면 바꿀 수 없다. 2026-10-31 Play 등록 전에 문서뷰어 `jwgung.docviewer`와 같은 규칙으로 정함. 그 전 이름 `org.openphysics.lab3d`·`org.puppyland.lab3d`로 설치한 앱은 기기에서 다른 앱으로 남고 진행 기록은 옮겨지지 않는다. 필요 없으면 `adb uninstall <옛 이름>`. Play에 올리는 묶음은 `build.sh play`, [docs/release/README.md](../../docs/release/README.md)):
 
 ```bash
 apps/lab3d/tools/build.sh android
 adb install -r apps/lab3d/exports/android/puppy-land.apk
-adb shell am start -n org.puppyland.lab3d/com.godot.game.GodotAppLauncher \
+adb shell am start -n jwgung.puppyland/com.godot.game.GodotAppLauncher \
   --es opargs "--experiment=incline-friction,--quality=low"
 ```
 
@@ -849,7 +850,8 @@ adb shell am start -n org.puppyland.lab3d/com.godot.game.GodotAppLauncher \
 ```bash
 apps/lab3d/tools/build.sh          # all: import → 헤드리스 테스트 → APK
 apps/lab3d/tools/build.sh test     # 헤드리스 테스트만 (exports/test.log)
-apps/lab3d/tools/build.sh android  # exports/android/puppy-land.apk (약 27 MB)
+apps/lab3d/tools/build.sh android  # exports/android/puppy-land.apk (약 32 MB, 개발용 키 서명: 기기 확인용)
+apps/lab3d/tools/build.sh play     # exports/android/puppy-land-<versionName>-v<versionCode>.aab (Play용, 업로드 키 필요: docs/release/README.md)
 npm test                           # 루트: TS 테스트 + apps/lab3d/tools/{incline,formula}-vectors.test.ts
 ```
 
@@ -911,7 +913,7 @@ apps/lab3d/tools/build.sh test && spikes/godot/tools/build.sh test
 apps/lab3d/tools/bench_device.sh low 3 90 60        # 90초 × 3회(회차 사이 60초) + 10분 지속 → spikes/bench/results/lab3d-incline-friction-drag
 OPBENCH_RESULTS_DIR=$PWD/spikes/bench/results/phase1-task2c apps/lab3d/tools/bench_device.sh low  # 결과 폴더 지정
 node spikes/bench/summarize.mjs spikes/bench/results/phase1-task2c
-OPBENCH_PACKAGE=org.puppyland.lab3d OPBENCH_VARIANT_DIR=<dir> \
+OPBENCH_PACKAGE=jwgung.puppyland OPBENCH_VARIANT_DIR=<dir> \
   spikes/bench/godot-variant.sh <이름> 20 40 --experiment=incline-friction --quality=low --q-ui_mode=root
 python3 -I apps/lab3d/tools/device_gesture.py orbit  # orbit | pinch | pinch-fixed | pan | one-finger | drag-cancel
 ```
