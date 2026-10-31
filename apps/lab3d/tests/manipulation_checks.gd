@@ -34,6 +34,7 @@ func run(definition: Dictionary) -> void:
 	await check_incline_relanding(definition)
 	await check_incline_runs(definition)
 	await check_dev_scene()
+	await check_lab_limits()
 	await check_dev_review()
 	await check_follow_camera()
 	await check_default_view_drag()
@@ -322,21 +323,26 @@ func check_incline_drag(definition: Dictionary) -> void:
 		_swipe(screen, _at(screen, box.global_position), _run_point(screen, pair[0]), 6)
 		_touch(screen, 0, _run_point(screen, pair[0]), false)
 		expect.call(is_equal_approx(lab.run_length(), pair[1]), "start snaps to the 0.5 m ticks (%.1f -> %.1f m)" % pair, "%.3f" % lab.run_length())
-	# Below the shortest run (and past the lower end): blocked, shakes, puts the box back.
-	_swipe(screen, _at(screen, box.global_position), _run_point(screen, 0.6), 8)
-	var blocked_marker: bool = markers[1].visible and not markers[0].visible
-	var wobbling: bool = lab.props.juice.is_animating() and (absf(lab.props.juice._wobble_v) > 0.0 or absf(lab.props.juice._wobble) > 0.0)
-	var held_inside: float = lab._pivot.to_local(box.global_position).x
-	expect.call(not m.valid and blocked_marker and wobbling and held_inside >= -3.0 - m.SOFT_MARGIN - 1e-4,
-		"a place off the allowed part of the incline shows the dark footprint and wobbles; the box stays near it", "x %.2f" % held_inside)
-	_touch(screen, 0, _run_point(screen, 0.6), false)
-	expect.call(is_equal_approx(lab.run_length(), 5.5) and m.mode == "" and lab.status() == "ready", "letting go there puts the box back at its start", "run %.2f" % lab.run_length())
-	# Far past the lower end (3 m beyond the incline): the box stops at the soft margin.
-	var far := _run_point(screen, -3.0)
-	_swipe(screen, _at(screen, box.global_position), far, 4)
-	var x: float = lab._pivot.to_local(box.global_position).x
-	expect.call(absf(x - (-3.0 - m.SOFT_MARGIN)) < 1e-3 and not m.valid, "dragging far past the incline keeps the box at the soft margin", "x %.2f" % x)
-	_touch(screen, 0, far, false)
+	# Past the allowed part of the incline (2026-10-31 user: a limit is the most it goes, the drag still
+	# works): the box stops at the edge, the white footprint stays there, and letting go puts it at the
+	# shortest run (MIN_RUN 1.0 m), from where it is let go. Far past the lower end the same.
+	for past in [0.6, -3.0]:
+		_swipe(screen, _at(screen, box.global_position), _run_point(screen, past), 8)
+		var edge_marker: bool = markers[0].visible and not markers[1].visible
+		var held_at: float = lab._pivot.to_local(box.global_position).x
+		var shaking: bool = absf(lab.props.juice._wobble_v) > 0.0
+		expect.call(m.valid and edge_marker and not shaking and absf(held_at - (lab.MIN_RUN - lab.INCLINE_LENGTH * 0.5)) < 1e-3,
+			"dragging past the incline's lower part (run %.1f m) holds the box at the shortest run, white footprint, no shake" % past,
+			"x %.2f, valid %s" % [held_at, m.valid])
+		_touch(screen, 0, _run_point(screen, past), false)
+		expect.call(is_equal_approx(lab.run_length(), lab.MIN_RUN) and m.mode == "" and lab.released,
+			"letting go past the lower part places the box at the shortest run (%.1f m) and lets it go" % lab.MIN_RUN,
+			"run %.2f, %s" % [lab.run_length(), lab.status()])
+		screen.experiment_action("reset")
+	# Back where the next checks expect it (run 5.5 m).
+	_swipe(screen, _at(screen, box.global_position), _run_point(screen, 5.5), 6)
+	_touch(screen, 0, _run_point(screen, 5.5), false)
+	screen.experiment_action("reset")
 	# Second finger: cancel, box back at the start, no camera jump.
 	var start := box.global_transform
 	_swipe(screen, _at(screen, box.global_position), _run_point(screen, 2.0), 6)
@@ -503,6 +509,33 @@ func check_incline_runs(definition: Dictionary) -> void:
 
 # --- development scene: floor plane, height handle, overlap ------------------------------------
 
+## A lab's own limit is the most an object goes (2026-10-31 user): the lever's load stops LOAD_GAP left
+## of the fulcrum, the fulcrum LOAD_GAP right of the load; a free-fall ball moved onto the other stops
+## beside it. Allowed places are left as they are.
+func check_lab_limits() -> void:
+	var lever: Control = await _open(ExperimentRegistry.find("rotation"))
+	var r: Experiment = lever.experiment
+	var past := Transform3D(Basis(), Vector3(r.model.pivot_x + 1.0, 0.0, 0.0))
+	var load_at := r.nearest_placement("load", past)
+	var fulcrum_at := r.nearest_placement("fulcrum", Transform3D(Basis(), Vector3(r.model.load_x - 1.0, 0.0, 0.0)))
+	var free := Transform3D(Basis(), Vector3(r.model.pivot_x - 1.5, 0.0, 0.0))
+	expect.call(is_equal_approx(load_at.origin.x, r.model.pivot_x - r.LOAD_GAP) and r.placement_allowed("load", load_at)
+		and is_equal_approx(fulcrum_at.origin.x, r.model.load_x + r.LOAD_GAP) and r.placement_allowed("fulcrum", fulcrum_at)
+		and r.nearest_placement("load", free) == free,
+		"lever: the load past the fulcrum stops LOAD_GAP left of it, the fulcrum past the load LOAD_GAP right of it", "")
+	await _close(lever)
+	var fall: Control = await _open(ExperimentRegistry.find("free-fall"))
+	var f: Experiment = fall.experiment
+	var red_x: float = f.starts["red"].x
+	var yellow_x: float = f.starts["yellow"].x
+	var onto := Transform3D(Basis(), Vector3(red_x, 1.0, 0.0))
+	var beside := f.nearest_placement("yellow", onto)
+	expect.call(absf(absf(beside.origin.x - red_x) - f.BALL_RADIUS * 2.0) < 1e-4 and f.placement_allowed("yellow", beside)
+		and signf(beside.origin.x - red_x) == signf(yellow_x - red_x),
+		"free fall: a ball moved onto the other stops beside it, on its own side", "%.3f vs %.3f" % [beside.origin.x, red_x])
+	await _close(fall)
+
+
 func check_dev_scene() -> void:
 	var definition := ExperimentRegistry.find("manipulation-dev")
 	var screen: Control = await _open(definition)
@@ -550,12 +583,18 @@ func check_dev_scene() -> void:
 	_swipe(screen, _at(screen, red.global_position), _at(screen, Vector3(1.75, 1.25, -0.75)))
 	_touch(screen, 0, _at(screen, Vector3(1.75, 1.25, -0.75)), false)
 	expect.call(red.global_position.is_equal_approx(Vector3(1.75, 1.25, -0.75)), "a box 1 m up can be placed above the block", str(red.global_position))
-	# Outside the floor area: blocked.
+	# Past the floor area's edge: the box goes to the edge (the nearest grid point inside), not back.
 	var outside := Vector3(4.4, 1.25, 0.0)
 	_swipe(screen, _at(screen, red.global_position), _at(screen, outside))
-	var blocked_outside: bool = not m.valid
+	var edge_valid: bool = m.valid
+	var edge_target: Vector2 = m.target
 	_touch(screen, 0, _at(screen, outside), false)
-	expect.call(blocked_outside and red.global_position.is_equal_approx(Vector3(1.75, 1.25, -0.75)), "outside the floor area is blocked", str(red.global_position))
+	var surface: ManipSurface = lab.manipulation_surface("floor")
+	var on_edge: bool = absf(edge_target.x - surface.region_max.x) < 1e-3 and surface.contains(edge_target)
+	expect.call(edge_valid and on_edge and not red.global_position.is_equal_approx(Vector3(1.75, 1.25, -0.75)),
+		"past the floor area's edge the box is put at the edge", "%s target %s" % [str(red.global_position), str(edge_target)])
+	red.global_transform = Transform3D(Basis(), Vector3(1.75, 1.25, -0.75))   # back above the block for the next checks
+	await tree.physics_frame
 	# Tapping empty ground deselects (the handle goes away).
 	_touch(screen, 0, _at(screen, Vector3(-3.5, 0.0, 2.5)), true)
 	_touch(screen, 0, _at(screen, Vector3(-3.5, 0.0, 2.5)), false)
