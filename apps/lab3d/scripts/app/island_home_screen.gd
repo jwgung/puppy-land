@@ -874,10 +874,13 @@ func _on_pointer(kind: String, position: Vector2) -> void:
 			_last = position
 		"release":
 			if _down[0] != Vector2.INF and not _down[1]:
+				var spot := _spot_at(position)
 				if story != null and story.next_id != "" and _puppy_at(position):
 					story.say_riddle()   # Puppy again: the riddle
+				elif spot < 0 and story != null and story.tap_riddle():
+					pass   # a tap beside Puppy's box turns its page (2026-10-31 user: a child got stuck)
 				else:
-					_walk_to_spot(_spot_at(position))
+					_walk_to_spot(spot)
 			_down[0] = Vector2.INF
 			_down[1] = false
 			_last = Vector2.INF

@@ -9,7 +9,7 @@
 class_name ResultBubble
 extends Control
 
-const SHOW_S := 2.5
+const SHOW_S := 5.0          # 2026-10-31 user: 2.5 s went by too fast for a child
 const POP_S := 0.16
 const FADE_S := 0.3
 const MAX_TEXT_WIDTH := 330.0

@@ -239,6 +239,15 @@ func hush() -> void:
 	_step_spot_glow(0.0)
 
 
+## A tap on the map beside Puppy's open box (not on a spot): his page turns as a tap on the box does.
+## True if a box was open.
+func tap_riddle() -> bool:
+	if riddle == null or not riddle.active:
+		return false
+	riddle.advance()
+	return true
+
+
 ## Back on the map (Android back): Puppy's open box closes first. True if it did.
 func close_riddle() -> bool:
 	if riddle == null or not riddle.active:

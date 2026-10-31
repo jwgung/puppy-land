@@ -27,7 +27,7 @@ extends Control
 signal closed
 
 const LINES := 2
-const CHARS_PER_S := 28.0
+const CHARS_PER_S := 18.0     # 2026-10-31 user: slower for a child (28 before)
 const READ_S := 3.0
 const READ_PER_CHAR_S := 0.06
 ## Whether an untouched page turns after its read time (off: only a tap turns a page).
