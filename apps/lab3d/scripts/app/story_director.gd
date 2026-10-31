@@ -743,10 +743,10 @@ func tap_page() -> void:
 func _layout() -> void:
 	var view_size := home.view.size if home.view != null else home.size
 	if emblem != null:
-		# Top left (2026-10-30 user), under the top bar when it shows; the finale's 건너뛰기 is top right.
-		var bar: Control = home.find_child("TopBar", true, false)
-		var top := maxf(bar.size.y, bar.get_combined_minimum_size().y) if bar != null and bar.visible else 0.0
-		emblem.position = Vector2(DIALOGUE_MARGIN + 6.0, top + DIALOGUE_MARGIN + 6.0)
+		# Top left (2026-10-30 user), as far from the edges as the map's buttons (no top bar since
+		# 2026-10-31); the finale's 건너뛰기 is top right.
+		var inset := Ui.safe_insets(home)
+		emblem.position = Vector2(IslandHomeScreen.MAP_EDGE + inset.left, IslandHomeScreen.MAP_EDGE + inset.top)
 	if skip_button != null:
 		skip_button.size = skip_button.get_combined_minimum_size()
 		skip_button.position = Vector2(view_size.x - skip_button.size.x - DIALOGUE_MARGIN, DIALOGUE_MARGIN)

@@ -823,20 +823,34 @@ func _add_sky(b: ArtMeshBuilder) -> void:
 		b.add_triangle([q[0], q[2], q[3]], [sea, far, far])
 
 
+## A cloud's round puffs [x, y, radius] in its size units (2026-10-31 user: "구름 좀 더 둥글둥글"): four
+## overlapping balls, a big one in the middle, smaller ones beside and on top; each ball smooth enough
+## (CLOUD_RINGS x CLOUD_SIDES, was 3 x 6) that its outline reads round, within the labs' vertex budget.
+const CLOUD_PUFFS := [[0.0, 0.0, 1.0], [1.05, -0.18, 0.78], [-1.05, -0.22, 0.75], [0.35, 0.5, 0.72]]
+const CLOUD_RINGS := 5
+const CLOUD_SIDES := 12
+## The labs' clouds are coarser (their world mesh has a 30,000 vertex budget, lab_world_checks).
+const LAB_CLOUD_RINGS := 4
+const LAB_CLOUD_SIDES := 8
+
+
 ## A few clouds far around the island (the low views see them; the top view does not).
 func _add_clouds(b: ArtMeshBuilder) -> void:
 	b.ao_min = 0.85
 	b.ao_height = 0.6
+	var was_flat := b.flat
+	b.flat = false   # smooth shading: soft round puffs, not facets (2026-10-31 user)
 	for c in CLOUDS:
 		var k: float = c[3]
-		for puff in [[0.0, 0.0, 1.0], [1.1, -0.2, 0.75], [-1.1, -0.25, 0.7], [0.4, 0.5, 0.65]]:
-			b.add_sphere(_at(c[0] + puff[0] * k, c[1] + puff[1] * k, c[2]), puff[2] * k, 3, 6, ArtPalette.CLOUD)
+		for puff in CLOUD_PUFFS:
+			b.add_sphere(_at(c[0] + puff[0] * k, c[1] + puff[1] * k, c[2]), puff[2] * k, CLOUD_RINGS, CLOUD_SIDES, ArtPalette.CLOUD)
 	for c in FAR_CLOUDS:
 		var at := Vector3(cos(deg_to_rad(c[0])), 0.0, sin(deg_to_rad(c[0]))) * float(c[1]) + Vector3.UP * float(c[2])
 		var k: float = c[3]
-		for puff in [[0.0, 0.0, 1.0], [1.2, -0.25, 0.7], [-1.2, -0.3, 0.75], [0.3, 0.45, 0.6]]:
+		for puff in CLOUD_PUFFS:
 			var side := Vector3(-sin(deg_to_rad(c[0])), 0.0, cos(deg_to_rad(c[0])))   # spread across the view
-			b.add_sphere(Transform3D(Basis().scaled(Vector3(1.0, 0.6, 1.0)), at + side * puff[0] * k + Vector3.UP * puff[1] * k), puff[2] * k, 3, 6, ArtPalette.CLOUD)
+			b.add_sphere(Transform3D(Basis().scaled(Vector3(1.0, 0.8, 1.0)), at + side * puff[0] * k + Vector3.UP * puff[1] * k), puff[2] * k, CLOUD_RINGS, CLOUD_SIDES, ArtPalette.CLOUD)
+	b.flat = was_flat
 
 
 static func _at(x: float, y: float, z: float, yaw_deg := 0.0) -> Transform3D:

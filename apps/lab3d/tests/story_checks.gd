@@ -113,11 +113,11 @@ func check_prologue() -> void:
 	var home := await _home(TABLET, true)
 	var story: StoryDirector = home.story
 	var rig: CameraRig = home.view.rig
-	var bar: Control = home.find_child("TopBar", true, false)
+	var bar: Control = home.find_child("MapButtons", true, false)
 	var start_ok: bool = story != null and story.cinematic() and story.page == 0 and story.dialogue.active \
 		and story.dialogue.speaker == "dugi" and story.dialogue.text == PROLOGUE[0][1] and not rig.is_processing() \
 		and not bar.visible and story.skip_button.visible and rig.cur_distance > 100.0
-	expect.call(start_ok, "prologue: the first launch opens on the far sea (wide shot), Dugi's first page, 건너뛰기, no top bar",
+	expect.call(start_ok, "prologue: the first launch opens on the far sea (wide shot), Dugi's first page, 건너뛰기, no map buttons",
 		"distance %.0f" % rig.cur_distance)
 	var speakers := []
 	var max_pitch := -90.0
@@ -177,7 +177,7 @@ func check_prologue() -> void:
 ## Once: the next map opens without it; 이야기 다시 보기 in the settings plays it again.
 func check_prologue_once_and_replay() -> void:
 	var home := await _home(TABLET, Story.should_play_prologue())
-	expect.call(not home.story.busy() and home.find_child("TopBar", true, false).visible, "prologue: plays once (the next map opens without it)", "")
+	expect.call(not home.story.busy() and home.find_child("MapButtons", true, false).visible, "prologue: plays once (the next map opens without it)", "")
 	await _free(home)
 	var settings: Control = load(SETTINGS_SCREEN).new()
 	settings.set_tier = func(_t: String) -> bool: return false
@@ -381,7 +381,7 @@ func check_finale() -> void:
 	await tree.process_frame
 	var sky: Node3D = story.sky_star
 	var on_view: Vector2 = home.view.rig.unproject_position(sky.global_position) / (Vector2(home.view.viewport.size) / home.view.size) if sky != null else Vector2.INF
-	var bar: Control = home.find_child("TopBar", true, false)
+	var bar: Control = home.find_child("MapButtons", true, false)
 	expect.call(not story.busy() and sky != null and Rect2(Vector2(0.0, bar.size.y), home.view.size - Vector2(0.0, bar.size.y)).has_point(on_view)
 		and story.sea.lanterns.all(func(l: Node3D) -> bool: return l.visible) and story.night == 0.0
 		and str(rig.get_state()) == str(_default_state(rig)) and rig.is_processing(),
@@ -403,7 +403,7 @@ func check_measurements() -> void:
 		"story: every measurement flag turns it off; a plain launch does not", "")
 	DirAccess.remove_absolute(ProgressStore.path)
 	var home := await _home(TABLET, Story.should_play_prologue())
-	expect.call(home.story == null and home.find_children("*", "StarEmblem", true, false).is_empty() and home.find_child("TopBar", true, false).visible,
+	expect.call(home.story == null and home.find_children("*", "StarEmblem", true, false).is_empty() and home.find_child("MapButtons", true, false).visible,
 		"story: off (a measurement) the map plays nothing and shows no emblem", "")
 	await _free(home)
 	var screen := await _lab("buoyancy")
