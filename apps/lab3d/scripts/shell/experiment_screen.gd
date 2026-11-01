@@ -162,6 +162,7 @@ var _next_wait := -1.0                # >= 0: a stage was won, 다음 미션 sho
 var next_presses := 0                  # times 다음 미션 was pressed (tests)
 var _next_button: Button = null        # 다음 미션 (2026-11-01: the child goes on when ready)
 var _mission_text_held := false        # the stage's text is off the strip until Dugi has told it
+var _retells := 0                     # times he started the missed mission line again (_retell_mission)
 var _mission_announced := false        # his telling of it is on its way (the bridge, 다음 미션): the text shows once his box closes
 var _round_wait := -1.0               # >= 0: the round is done, the cheer waits for Dugi (_run_round_wait)
 var _piece_wait := -1.0                # s left waiting for the piece game's last step (< 0: not waiting)
@@ -173,6 +174,7 @@ const CARD_DELAY_S := 0.8
 const ROUND_WAIT_MIN_S := 0.4          # after the last stamp, before the cheer (Dugi starts explaining)
 const NEXT_WAIT_MIN_S := 1.2           # after a stage's stamp, before 다음 미션 shows (Dugi starts first)
 const NEXT_TEXT := "다음 미션"
+const RETELLS_MAX := 3     # times Dugi starts a mission line again before the strip shows it without him
 const NEXT_PAD_X := 48.0   # the 다음 미션 button's extra width (a big target for small hands)
 ## The story (2026-10-28 "별 조각 찾기"): when the round is completed, the star piece the bread cat
 ## lifts before the card comes (Puppy's clue on the first visit is the round's).
@@ -812,6 +814,7 @@ func _hold_mission_text() -> void:
 func _release_mission_text(pulse: bool) -> void:
 	_mission_text_held = false
 	_mission_announced = false
+	_retells = 0
 	if _mission_text == null:
 		return
 	var stage := mission_round.stage()
@@ -970,7 +973,7 @@ func _fit_choices() -> void:
 		create_tween().tween_property(_choices, "scale", Vector2.ONE, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
-## A picture is tapped: the round keeps the pick (the strip shows it until the run ends) and the
+## A picture is tapped: the round keeps the pick (the strip shows it until the first mission text replaces it) and the
 ## question goes at once (nothing of it stays to catch the next touch).
 func _predict_pick_choice(choice_id: String) -> void:
 	if not _asking():
@@ -1281,8 +1284,10 @@ func _run_next_wait(delta: float) -> void:
 		return
 	var talking := cast != null and cast.dugi != null and (cast.dugi.speaking() or (dialogue != null and dialogue.active)
 		or cast.explanation_pending() or _reason_waits)
+	# Dugi first (also one still to come: the cast's delay_s); the sidebar closed (he tells the next
+	# mission in his box); a lab that settles is let settle.
 	if talking or _slam != null or not experiment.settled() or is_sidebar_open():
-		return   # Dugi first (and the sidebar closed: he tells the next mission in his box) (also one still to come: the cast's delay_s); a lab that settles is let settle
+		return
 	# (a run that keeps going, an orbit or a swing: 다음 미션 shows once Dugi is done)
 	_next_wait = -1.0
 	_next_due = false
@@ -1374,6 +1379,11 @@ func _retell_mission() -> void:
 		return
 	if (dialogue != null and dialogue.active) or is_sidebar_open() or (manipulator != null and manipulator.mode != ""):
 		return
+	if _retells >= RETELLS_MAX:   # (his box finds no room: the strip shows it without him)
+		mission_round.take_line()
+		_release_mission_text(true)
+		return
+	_retells += 1
 	_dugi_tells_again()
 
 
@@ -1789,7 +1799,7 @@ func open_sidebar(animated := true) -> void:
 	if next_shown():   # 다음 미션 waits for the sidebar to close (he tells the mission in his box)
 		_hide_next_button()
 		_next_due = true
-		_next_wait = 0.0
+		_next_wait = 0.0   # (no minimum wait left: _run_next_wait shows it once the sidebar is closed)
 	_sidebar_state = "opening"
 	_sidebar.visible = true
 	_sidebar_button.visible = false

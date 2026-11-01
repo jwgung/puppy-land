@@ -330,7 +330,6 @@ func check_next_stage_reset() -> void:
 	await _close(screen)
 
 
-
 ## Before 다음 미션 the next stage is not judged (2026-11-01 review: the spring's stages 1 and 2 share
 ## their conditions, so a second pull won stage 2 before its mission was told): no stamp, no line.
 ## The button hides while the sidebar is open (he tells the mission in his box) and comes back when it

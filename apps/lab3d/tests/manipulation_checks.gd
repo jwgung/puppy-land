@@ -387,7 +387,7 @@ func check_incline_drag(definition: Dictionary) -> void:
 	# A view looking nearly along the incline's line is the one a line drag has to turn;
 	# the flat front view is fine for a line (check_default_view_drag).
 	rig.set_mode("front", true)
-	rig.goal_yaw = deg_to_rad(-80.0)   # nearly along the incline (its line within 35 deg of the view)
+	rig.goal_yaw = deg_to_rad(-80.0)   # nearly along the incline (its line within 35 deg of the view; -80 since the 25 deg default)
 	rig.snap()
 	await tree.process_frame
 	var flat_pitch := rig.goal_pitch

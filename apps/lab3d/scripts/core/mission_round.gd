@@ -55,7 +55,7 @@
 ## screen judges every poll while the status is a judge_on one and keeps judging until the attempt
 ## earns its stamp (a growing value — orbit laps, a measured period — is judged when it gets there);
 ## then the attempt is done. A run that falls short changes nothing, and the next attempt is judged
-## against the same stage. One attempt clears at most the current stage. The stamps are the child's
+## against the same stage. After a stamp nothing is judged until the screen's 다음 미션 (wait_next, go_on). One attempt clears at most the current stage. The stamps are the child's
 ## collection — 3 m past, then 5 m past, then 7 m past (stamps: 0..MAX_STAMPS, one per stage).
 ##
 ## Stamps live in the progress store (`store`: FileProgress = ProgressStore, user://progress.cfg;
@@ -115,7 +115,8 @@ var store: Object
 var lab: Experiment = null
 ## The picked choice id ("" before an answer).
 var pick := ""
-var waiting_next := false   # a stage was won, the next one waits for 다음 미션 (wait_next)
+## A stage was won and the next one waits for 다음 미션 (wait_next, go_on).
+var waiting_next := false
 ## The reason's face: happy after a right guess, thinking after a wrong one (Story.REASON_FACE).
 var reason_face := Story.DEFAULT_FACE
 ## This attempt earned its stamp (cleared by the next attempt or the lab back at "ready").
