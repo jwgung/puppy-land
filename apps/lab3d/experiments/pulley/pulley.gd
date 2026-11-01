@@ -27,7 +27,8 @@ const GUIDE := Vector3(1.2, 4.6, 0.0)   # the guide wheel over the pull side
 const END_SIZE := Vector3(0.5, 0.5, 0.4)   # the rope end's pick box (the knot and around it)
 const END_TOP := 3.4               # the rope end's centre at the start of a stroke
 const STROKE := 2.6                # m: the longest stroke (down to 0.8 m)
-## The held pull (2026-10-28): 65 N/s, at most 250 N; the rope then comes down 1 m/s. One strand
+## The held pull (2026-10-28): 65 N/s, at most 250 N; the rope then comes down 1 m/s and the pull
+## stops growing (2026-11-01). One strand
 ## with 20 kg (F = 196.2 N) moves after 3.02 s, two strands (98.1 N) after 1.51 s, four (49.05 N)
 ## after 0.75 s; 1 kg on four strands (2.45 N) after 0.04 s.
 const PULL_RATE := 65.0            # N per second of holding
@@ -177,6 +178,7 @@ func _physics_process(_delta: float) -> void:
 		model.hand = hand.force()
 		if model.hand >= model.required():
 			_moving_steps += 1
+			hand.hold_there()   # (2026-11-01) the pull stays at the force that moved the rope, the gauge too
 		model.stroke_cells = stroke_cells_now()
 		_place_end()
 	driver.step(1.0 / float(Engine.physics_ticks_per_second))

@@ -360,10 +360,12 @@ func check_input_path() -> void:
 	var series: Dictionary = lab.graph_series()
 	var slid: bool = series.applied.size() >= 95 and series.applied[0].x >= -1e-6 and absf(series.applied[-1].x - 10.0) < 0.2 and lab.clock_time() > 13.0
 	var clock_runs: bool = lab.clock_steps == clock + 13 * STEP_HZ and slid and worst_hold <= 1e-6 and absf(series.applied[-1].y - float(shown.required)) < 1e-3
-	var capped: bool = lab.model.hand == lab.PRESS_MAX
+	# The press stopped growing where it lifted the beam (2026-11-01), and the gauge with it.
+	var lift_force: float = lab.PRESS_RATE * want_step / float(STEP_HZ)
+	var capped: bool = absf(lab.model.hand - lift_force) < 1e-9 and lab.hand.stopped()
 	await tree.process_frame
 	var gauge: ForceGauge = lab.gauge
-	var gauge_ok: bool = gauge != null and gauge.visible and gauge.fraction == 1.0   # full at the cap
+	var gauge_ok: bool = gauge != null and gauge.visible and absf(gauge.fraction - lift_force / lab.PRESS_MAX) < 1e-9
 	_touch(screen, press, false)
 	await tree.physics_frame
 	await tree.physics_frame
@@ -373,7 +375,7 @@ func check_input_path() -> void:
 	await tree.physics_frame
 	expect.call(waiting.state == "힘점을 골라 막대의 빨간 힘점을 꾹 눌러 보세요" and held and ramp_ok and gauge_ok and lifted_at == want_step and lifted
 		and absf(float(shown.applied) - float(shown.required)) < 1e-12 and absf(float(shown.net_torque)) < 1e-9 and clock_runs and capped and level and lab.clock_steps == still,
-		"rotation (fresh screen): holding the effort end ramps the hand's force 110 N/s (gauge = force / 400 N); the beam lifts on step %d (%.2f s) at F = %.2f N and stays lifted 13 s (graph window slides, force capped at 400 N); the graph clock runs only while held; letting go puts it back level" % [want_step, want_step / float(STEP_HZ), required],
+		"rotation (fresh screen): holding the effort end ramps the hand's force 110 N/s (gauge = force / 400 N); the beam lifts on step %d (%.2f s) at F = %.2f N and stays lifted 13 s (graph window slides, the press and its gauge stay at the lifting step's force); the graph clock runs only while held; letting go puts it back level" % [want_step, want_step / float(STEP_HZ), required],
 		"held %s, ramp %s, gauge %s, lifted at %d, F %.2f N, clock %s, capped %s, level %s (%s, %s), still %s, waiting %s" % [held, ramp_ok, gauge_ok, lifted_at, shown.applied, clock_runs, capped, level, lab.status(), lab.driver.engine_angle(), lab.clock_steps == still, waiting.state])
 	# Since 2026-10-27 the handle is the lab's one drag: the load and the fulcrum are not picked up
 	# (the grip point is the picture buttons' condition). Their places stay the lab's (a restored

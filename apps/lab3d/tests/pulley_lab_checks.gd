@@ -323,6 +323,9 @@ func _stroke(screen: Control, lab: Experiment, cells: int, check: Dictionary) ->
 		elif check.moved_at < 0:
 			check.before = float(lab.observations().applied)
 			check.gauge = lab.gauge != null and absf(lab.gauge.fraction - lab.model.hand / lab.PULL_MAX) < 1e-6
+		elif lab.gauge != null:   # moving: the pull and its gauge stay at the force that moved it (2026-11-01)
+			var at: float = lab.PULL_RATE * check.moved_at / float(STEP_HZ)
+			check.stays = check.get("stays", true) and absf(lab.model.hand - at) < 1e-9 and absf(lab.gauge.fraction - at / lab.PULL_MAX) < 1e-6
 		if lab.model.stroke_cells >= cells:
 			break
 	_touch(screen, press, false)
@@ -342,7 +345,7 @@ func check_input_path() -> void:
 	# Stroke 1: hold until 1.0 m of rope (20 cells) came down: the engine load rises 0.5 m.
 	await _stroke(screen, lab, 20, check)
 	var want_step := ceili(required / lab.PULL_RATE * STEP_HZ - 1e-9)
-	var ramp: bool = check.held and check.moved_at == want_step and check.before < required and check.before > 0.0 and absf(check.shown - required) < 1e-9 and check.gauge
+	var ramp: bool = check.held and check.moved_at == want_step and check.before < required and check.before > 0.0 and absf(check.shown - required) < 1e-9 and check.gauge and check.get("stays", false)
 	var ratchet: bool = lab.status() == "held" and absf(lab.driver.engine_lift() - 0.5) < 1e-5 and lab.rope_end.global_position.distance_to(top) < 1e-5 \
 		and float(lab.observations().applied) == 0.0 and not lab.gauge.visible and m.mode == ""
 	var series: Dictionary = lab.graph_series()
@@ -356,8 +359,8 @@ func check_input_path() -> void:
 	var shown: Dictionary = lab.observations()
 	expect.call(waiting.state == "줄 끝을 꾹 눌러 짐을 올려요" and ramp and ratchet and graph_ok
 		and absf(lift - 0.8) < 1e-5 and absf(float(shown.pulled) - 1.6) < 1e-12,
-		"pulley (fresh screen, 2 strands): holding the rope end ramps the hand's force 65 N/s (gauge = force / 250 N, the load stays down below F); the rope moves on step %d (%.2f s) at F = %.1f N and two strokes (1.0 m + 0.6 m) lift the engine load 0.8 m = 1/2 of the rope; the ratchet holds it between strokes and the rope end goes back up" % [want_step, want_step / float(STEP_HZ), required],
-		"held %s, moved at %d (want %d), before %.2f N, shown %.2f N, gauge %s, ratchet %s, graph %s, lift %.4f m" % [check.held, check.moved_at, want_step, check.before, check.get("shown", -1.0), check.get("gauge", false), ratchet, graph_ok, lift])
+		"pulley (fresh screen, 2 strands): holding the rope end ramps the hand's force 65 N/s (gauge = force / 250 N, the load stays down below F); the rope moves on step %d (%.2f s) at F = %.1f N, the pull and its gauge then stay at that step's force, and two strokes (1.0 m + 0.6 m) lift the engine load 0.8 m = 1/2 of the rope; the ratchet holds it between strokes and the rope end goes back up" % [want_step, want_step / float(STEP_HZ), required],
+		"held %s, moved at %d (want %d), before %.2f N, shown %.2f N, gauge %s, stays %s, ratchet %s, graph %s, lift %.4f m" % [check.held, check.moved_at, want_step, check.before, check.get("shown", -1.0), check.get("gauge", false), check.get("stays", false), ratchet, graph_ok, lift])
 	var energy_ok: bool = absf(float(shown.work_in) - 20.0 * 9.81 * lift) < 1e-3 and absf(float(shown.work_in) - float(shown.work_out)) < 1e-9
 	expect.call(check.worst_rope <= 1e-4 and energy_ok,
 		"pulley: the rope length (2 strands + pull strand + coiled rope) stays the same through the strokes; the hand's work F d = m g h of the engine load",

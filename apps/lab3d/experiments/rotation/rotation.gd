@@ -28,7 +28,7 @@ const LOAD_GAP := 0.5              # the load stays this far left of the fulcrum
 const DEFAULT_PIVOT := -0.5
 const DEFAULT_LOAD := -2.5
 const REST_X := -2.75              # the rest block under the beam's left end
-## The held press (2026-10-28): 110 N/s, at most 400 N. The heaviest stage (20 kg, the near point:
+## The held press (2026-10-28): 110 N/s, at most 400 N; it stops growing once the beam lifts (2026-11-01). The heaviest stage (20 kg, the near point:
 ## F = 320.3 N) lifts after 2.91 s, the middle point (186.9 N) after 1.70 s, the far one (124.6 N)
 ## after 1.13 s; a 1 kg load at the far point (6.2 N) after 0.06 s.
 const PRESS_RATE := 110.0          # N per second of holding
@@ -154,6 +154,8 @@ func _physics_process(_delta: float) -> void:
 	if holding == "effort":
 		_tick_clock()
 		model.hand = hand.force()
+		if model.lifting():
+			hand.hold_there()   # (2026-11-01) the press stays at the force that lifted it, the gauge too
 	driver.hand_holds = holding == "load"
 	driver.step(1.0 / float(Engine.physics_ticks_per_second))
 	_track_lift()

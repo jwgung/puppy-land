@@ -409,8 +409,11 @@ func check_first_pull_input() -> void:
 	await _until(lab, lab.frames + 20)
 	var shown: Dictionary = lab.observations()
 	var engine_ok: bool = absf(lab.engine_displacement() - lab.model.displacement) <= 1e-4
-	expect.call(shown.state == "움직여요 · 주는 힘이 마찰을 이겼어요" and engine_ok and lab.model.velocity > 0.0 and lab.box.global_position.x > lab.START_X,
-		"friction: while held the push keeps growing, the box slides towards +x and the engine follows the formula", "x %.3f m" % lab.box.global_position.x)
+	await tree.process_frame
+	var stays: bool = lab.applied_force() == at_start and lab.push.stopped() and absf(lab.props.gauge.fraction * lab.PUSH_MAX - at_start) < 1e-9
+	expect.call(shown.state == "움직여요 · 주는 힘이 마찰을 이겼어요" and engine_ok and lab.model.velocity > 0.0 and lab.box.global_position.x > lab.START_X and stays,
+		"friction: while held the push (and its gauge) stays at the force that started the box (2026-11-01), the box slides towards +x and the engine follows the formula",
+		"x %.3f m, push %.3f N (start %.3f N), gauge %.3f" % [lab.box.global_position.x, lab.applied_force(), at_start, lab.props.gauge.fraction])
 	var peak_now: float = lab.applied_force()
 	_touch(screen, press, false)
 	await tree.process_frame
@@ -433,7 +436,7 @@ func check_first_pull_input() -> void:
 	for p in series.applied:
 		peak = maxf(peak, p.y)
 	expect.call(series.applied.size() > 10 and peak <= peak_now + 1e-9 and peak > limit and absf(series.max_static[0].y - lab.model.max_static()) <= 1e-4 and series.applied[-1].x <= lab.graph_x_max() + 1e-6,
-		"friction: the graph shows the growing push, the maximum static friction and friction over time", "%d points, peak %.2f N" % [series.applied.size(), peak])
+		"friction: the graph shows the push (growing, then staying where the box started), the maximum static friction and friction over time", "%d points, peak %.2f N" % [series.applied.size(), peak])
 	# A short press (0.5 s: 12.5 N, below the limit) holds the box; friction matches the push.
 	var x_before: float = lab.box.global_position.x
 	press = _at(screen, lab.box.global_position)
@@ -463,6 +466,7 @@ func check_demo() -> void:
 		moved = maxf(moved, lab.box.global_position.x - lab.START_X)
 		reset_seen = reset_seen or (moved > 0.5 and lab.box.global_position.x == lab.START_X)
 	screen.manipulator.start_demo(0.0)
-	expect.call(peak >= lab.PUSH_RATE * 1.4 and moved > 0.5 and reset_seen,
-		"friction: the measurement demo (--auto-drag) holds the box (the push grows past mu_s m g) and resets it after letting go", "peak %.1f N, moved %.2f m" % [peak, moved])
+	var limit: float = lab.model.max_static()
+	expect.call(peak > limit and peak <= limit + lab.PUSH_RATE / STEP_HZ + 1e-9 and moved > 0.5 and reset_seen,
+		"friction: the measurement demo (--auto-drag) holds the box (the push grows just past mu_s m g and stays there) and resets it after letting go", "peak %.2f N (limit %.2f N), moved %.2f m" % [peak, limit, moved])
 	await _close(screen)

@@ -22,8 +22,10 @@ const START_X := -3.0
 const LOOK_MASS := 8.0        # kg: the box that looks BOX big (the web's start box)
 ## Box centres beyond these x stop the box (the yellow track ends at +-TRACK_HALF, bumpers outside).
 const TRACK_HALF := 6.0
-## The held push (2026-10-28): 25 N/s, at most 80 N. The heaviest box the child can pick (10 kg on
-## clay: mu_s m g = 74.6 N) starts after 2.98 s; the 2 kg box on wood (7.85 N) after 0.31 s.
+## The held push (2026-10-28): 25 N/s, at most 80 N; it stops growing once the box starts (2026-11-01,
+## HoldRamp.hold_there: the push that broke it loose, then the box slides on with it). The heaviest
+## box the child can pick (10 kg on clay: mu_s m g = 74.6 N) starts after 2.98 s; the 2 kg box on
+## wood (7.85 N) after 0.31 s.
 const PUSH_RATE := 25.0       # N per second of holding
 const PUSH_MAX := 80.0        # N
 const GRAPH_EVERY_STEPS := 6  # 10 Hz graph samples
@@ -214,6 +216,7 @@ func _physics_process(_delta: float) -> void:
 	model.step(force, dt)
 	if start_force < 0.0 and not model.holding:
 		start_force = model.max_static()   # the box broke loose: the push it took (mu_s m g)
+		push.hold_there()   # the push (and its gauge) stays at the force that started it
 	_clock_steps += 1
 	var x := formula_x()
 	var low := -TRACK_HALF + BOX * 0.5 + END_PADDING
