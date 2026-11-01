@@ -173,6 +173,7 @@ const CARD_DELAY_S := 0.8
 const ROUND_WAIT_MIN_S := 0.4          # after the last stamp, before the cheer (Dugi starts explaining)
 const NEXT_WAIT_MIN_S := 1.2           # after a stage's stamp, before 다음 미션 shows (Dugi starts first)
 const NEXT_TEXT := "다음 미션"
+const NEXT_PAD_X := 48.0   # the 다음 미션 button's extra width (a big target for small hands)
 ## The story (2026-10-28 "별 조각 찾기"): when the round is completed, the star piece the bread cat
 ## lifts before the card comes (Puppy's clue on the first visit is the round's).
 var _piece: Node3D = null              # the found piece over the bread cat
@@ -411,7 +412,8 @@ func _run_dialogue() -> void:
 	if dugi.speaking() and dugi.state == "raise" and not _dialogue_started and not is_sidebar_open() and _layout_dialogue():
 		_dialogue_started = true
 		# The round's line comes first (MissionRound.take_line: the bridge from the answer to the mission,
-		# then the prediction's reason after the first attempt's result line, each told once). Dugi
+		# 다음 미션's mission, then the prediction's reason after the first result line of predict.stage's
+		# stage, each told once). Dugi
 		# explains only after a throw has ended (cast explain_on).
 		var line: Array = mission_round.take_line() if mission_round != null else []
 		if not line.is_empty():
@@ -981,8 +983,9 @@ func _predict_pick_choice(choice_id: String) -> void:
 
 
 ## After the answer (2026-10-29 user: "예측 → 첫 미션 연결"): Dugi says the round's bridge line in his box
-## ("직접 던져 보면 알 수 있어요! 첫 번째 미션이에요.", pointing at the lab) and the mission strip pulses
-## once. A tap or the read timer closes the box; nothing waits for it.
+## (predict.bridge + "첫 번째 미션: <stage text>", pointing at the lab). A tap or the read timer closes the
+## box; the strip shows the stage's text then and pulses once (_run_mission_reveal). Without Dugi to
+## tell it the text is already there and the strip pulses now.
 func _start_bridge() -> void:
 	if mission_round.bridge_line() != "" and cast != null and cast.dugi != null:
 		_dialogue_started = false
@@ -1062,7 +1065,7 @@ func result_bubble() -> ResultBubble:
 	return _result_bubble if _result_bubble != null and is_instance_valid(_result_bubble) else null
 
 
-## The prediction's reason, after the first result line (MissionRound.reason_due): Dugi explains it,
+## The prediction's reason, after the first result line of predict.stage's stage (MissionRound.reason_due): Dugi explains it,
 ## with the reason in his box. A box he is in the middle of (the run's explanation, the bridge) is read
 ## to its end first (2026-11-01 user: "설명 읽는데 넘어가는 장면"): the reason waits for it to close (and for an
 ## open sidebar to close: he tells it in his box).
@@ -1209,7 +1212,8 @@ func _on_question_ended() -> void:
 		_release_mission_text(false)   # unanswered (a pull on the ball): no bridge to tell it, the strip at once
 
 
-## A stamp was saved (MissionRound.stamp_earned, after Puppy's win line): the next stage's text appears at once;
+## A stamp was saved (MissionRound.stamp_earned, after Puppy's win line): the next stage's text waits for
+## 다음 미션 and Dugi's telling of it (at once without Dugi);
 ## the stamp drops in the middle of the view, lands with a thump and flies into its slot (StampSlam), which
 ## then fills; the bread cat hops. On the last one the whole round celebrates when it lands. A stamp
 ## still flying when the next one comes lands at once first.
@@ -1303,7 +1307,6 @@ func _show_next_button() -> void:
 	view.move_child(_next_button, -1)
 	_next_button.visible = true
 	_fit_next_button()
-	_pulse_strip()
 
 
 func _hide_next_button() -> void:
@@ -1320,7 +1323,7 @@ func _fit_next_button() -> void:
 	if not next_shown():
 		return
 	var m := OVERLAY_MARGIN
-	_next_button.size = _next_button.get_combined_minimum_size() + Vector2(48.0, 0.0)
+	_next_button.size = _next_button.get_combined_minimum_size() + Vector2(NEXT_PAD_X, 0.0)
 	var bottom := (_picks_row.position.y if picks_shown() else view.size.y - m) - 8.0
 	_next_button.position = Vector2(roundf((view.size.x - _next_button.size.x) * 0.5), bottom - _next_button.size.y)
 

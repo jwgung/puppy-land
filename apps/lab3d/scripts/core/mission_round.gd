@@ -98,7 +98,7 @@ signal stamp_earned(stamps: int)
 ## Puppy's result line of `stage` after an attempt (`won`: its stamp came; else a miss). `text` ""
 ## when the stage has none (nothing to show).
 signal result_told(stage: int, won: bool, text: String, face: String)
-## Dugi tells the prediction's reason now: the first result line of the visit came (take_line()).
+## Dugi tells the prediction's reason now: the first result line of predict.stage's stage came (take_line()).
 signal reason_due
 ## The first run has its result (reveal_on): the question is over and the strip shows the stage again.
 signal revealed
@@ -347,7 +347,8 @@ static func validate(definition: Dictionary) -> PackedStringArray:
 	var problems := PackedStringArray()
 	problems.append_array(_validate_missions(definition.get("missions"), definition.get("observations", []), definition.get("controls", [])))
 	problems.append_array(_validate_series(definition.get("missions"), definition.get("graph", {}).get("series", [])))
-	var stage_count: int = (missions(definition).get("stages", []) as Array).size() if missions(definition).get("stages") is Array else 0
+	var stages: Variant = missions(definition).get("stages")
+	var stage_count: int = (stages as Array).size() if stages is Array else 0
 	problems.append_array(_validate_predict(definition.get("predict"), stage_count if stage_count > 0 else ProgressStore.MAX_STAMPS))
 	return problems
 
@@ -763,7 +764,7 @@ func bridge_line() -> String:
 ## "<n번째> 미션: <stage `index`'s text>" ("" past the stages): what Dugi tells before a mission shows.
 static func mission_line(definition: Dictionary, index: int) -> String:
 	var stages: Array = missions(definition).get("stages", [])
-	if index < 0 or index >= stages.size():
+	if index < 0 or index >= stages.size() or not (stages[index] is Dictionary):
 		return ""
 	var ordinal: String = ORDINALS[index] if index < ORDINALS.size() else "%d번째" % (index + 1)
 	return "%s 미션: %s" % [ordinal, str(stages[index].get("text", ""))]
