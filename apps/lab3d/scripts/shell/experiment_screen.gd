@@ -1227,6 +1227,7 @@ func _on_stamp_earned(stamps: int) -> void:
 		mission_round.wait_next()   # the next stage is not judged before 다음 미션 (its mission untold)
 	_mission_text_held = _next_due and cast != null and cast.dugi != null   # Dugi tells it first (다음 미션)
 	_mission_announced = false
+	_retells = 0
 	if _slam != null:
 		_slam.finish()
 	_show_stamps(stamps)
