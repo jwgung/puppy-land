@@ -65,7 +65,8 @@ const ROUNDS := {
 	],
 	"friction": [
 		# (2026-11-01: the push stays at the force that started the box, so it slides at about
-		# (mu_s - mu_k) g while held: about 1 s more after the start to get off the path on wood.)
+		# (mu_s - mu_k) g while held: about 1 s more after the start to get off the path on wood.
+		# The times follow PUSH_RATE 25 N/s and the materials table: re-derive them if those change.)
 		["the 8 kg start box held 2.6 s (it moves far): not the light box", [["hold", 2.6]], 150, 0],
 		["the light box held 2.8 s: pushed to the track's end, off the path", [["ctl", "mass", "light"], ["hold", 2.8]], 150, 1],
 		["the light box again: nothing", [["ctl", "mass", "light"], ["hold", 1.0]], 150, 1],

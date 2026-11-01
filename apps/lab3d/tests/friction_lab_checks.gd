@@ -49,6 +49,7 @@ func run() -> void:
 	await check_track_end()
 	await check_art()
 	await check_first_pull_input()
+	await check_press_again()
 	await check_demo()
 
 
@@ -449,6 +450,53 @@ func check_first_pull_input() -> void:
 		and absf(lab.box.global_position.x - x_before) <= 0.001,
 		"friction: a short press (12.5 N, below the limit) is held by static friction", str(pushed.applied))
 	await _close(screen)
+
+
+## Every press stops at the push that breaks the box loose (2026-11-01), not only the first of a run:
+## a second press on the resting box, and a press on the box waiting at the track's end.
+func check_press_again() -> void:
+	var screen: Control = await _open()
+	var lab: Experiment = screen.experiment
+	var limit: float = lab.model.max_static()
+	var step_n: float = lab.PUSH_RATE / STEP_HZ
+	var problems := []
+	var press_until_slide := func() -> float:
+		lab.hold_started("box")
+		var k := 0
+		while lab.status() != "sliding" and k < 4 * STEP_HZ:
+			await tree.physics_frame
+			k += 1
+		for i in 20:
+			await tree.physics_frame
+		return lab.applied_force()
+	var rest := func() -> void:
+		var k := 0
+		while lab.status() == "sliding" and k < 8 * STEP_HZ:
+			await tree.physics_frame
+			k += 1
+	var first: float = await press_until_slide.call()
+	lab.hold_ended("box")
+	await rest.call()
+	var second: float = await press_until_slide.call()
+	if not (lab.push.stopped() and first > limit and first <= limit + step_n + 1e-9 and second > limit and second <= limit + step_n + 1e-9):
+		problems.append("press again: first %.3f N, second %.3f N (limit %.3f N), stopped %s" % [first, second, limit, lab.push.stopped()])
+	# Held on to the track's end, then pressed again there: the push stops where the box moved.
+	var k := 0
+	while lab.status() != "end" and k < 20 * STEP_HZ:
+		await tree.physics_frame
+		k += 1
+	lab.hold_ended("box")
+	await tree.physics_frame
+	lab.hold_started("box")
+	for i in 4 * STEP_HZ:
+		await tree.physics_frame
+	await tree.process_frame
+	var at_end: float = lab.applied_force()
+	if not (lab.status() == "end" and lab.push.stopped() and at_end <= limit + step_n + 1e-9 and absf(lab.props.gauge.fraction * lab.PUSH_MAX - at_end) < 1e-9):
+		problems.append("at the end: %s, push %.3f N, stopped %s, gauge %.3f" % [lab.status(), at_end, lab.push.stopped(), lab.props.gauge.fraction])
+	lab.hold_ended("box")
+	await _close(screen)
+	expect.call(problems.is_empty(), "friction: every press stops at the push that breaks the box loose (a second press on the resting box, a press at the track's end), the gauge with it", "; ".join(problems))
 
 
 # --- 8. measurement demo ----------------------------------------------------------------------

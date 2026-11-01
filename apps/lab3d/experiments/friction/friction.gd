@@ -58,6 +58,9 @@ var _graph_revision := 0
 ## The push that started the box this run (N, the formula's mu_s m g at the moment it broke loose;
 ## -1 until it did): the mission's key card (2026-10-28). Read only: nothing reads it back.
 var start_force := -1.0
+## The law held the box after the last step (a press that breaks it loose stops growing there; a
+## press on a box still sliding waits until it rests and breaks loose again).
+var _was_holding := true
 
 
 func _ready() -> void:
@@ -149,6 +152,7 @@ func reset_box() -> void:
 	run_start_x = START_X
 	corrector.reset(box.global_position)
 	model.reset()
+	_was_holding = true
 	start_force = -1.0
 	frames = 0
 	_clock_steps = 0
@@ -216,7 +220,9 @@ func _physics_process(_delta: float) -> void:
 	model.step(force, dt)
 	if start_force < 0.0 and not model.holding:
 		start_force = model.max_static()   # the box broke loose: the push it took (mu_s m g)
-		push.hold_there()   # the push (and its gauge) stays at the force that started it
+	if push.held and _was_holding and not model.holding:
+		push.hold_there()   # the press broke the box loose: it (and its gauge) stays at that force
+	_was_holding = model.holding
 	_clock_steps += 1
 	var x := formula_x()
 	var low := -TRACK_HALF + BOX * 0.5 + END_PADDING

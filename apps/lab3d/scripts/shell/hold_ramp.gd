@@ -41,7 +41,7 @@ func hold_there() -> void:
 		_held_at = force()
 
 
-## The force has stopped growing (hold_there).
+## The force has stopped growing (hold_there; tests read it).
 func stopped() -> bool:
 	return _held_at >= 0.0
 
@@ -64,10 +64,3 @@ func force() -> float:
 ## The gauge's fill (0..1 of cap).
 func fraction() -> float:
 	return force() / cap if cap > 0.0 else 0.0
-
-
-## Seconds of holding until the force reaches `force_n` (INF beyond the cap).
-func seconds_to(force_n: float) -> float:
-	if force_n > cap or rate <= 0.0:
-		return INF
-	return force_n / rate

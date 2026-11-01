@@ -531,8 +531,8 @@ func check_incline() -> void:
 ## a stage is the box pushed off the path, the formula distance from the start past 1.5 m (shown).
 ## With the hold (25 N/s up to 80 N, staying at the push that started the box: 2026-11-01) every
 ## stage's box gets there within 3 s on wood (and every material's within 4.5 s: the heavy box on
-## clay starts after 2.98 s and then slides at (mu_s - mu_k) g), a tap (0.2 s) never moves it, and the shortest hold that passes is well
-## over a tap. Returns the shortest holds (s) per stage box on wood.
+## clay starts after 2.98 s and then slides at (mu_s - mu_k) g), a tap (0.2 s) never moves it, and
+## the shortest hold that passes is well over a tap. Returns the shortest holds (s) per stage box on wood.
 func push_hold_distance(lab: Experiment, seconds: float) -> float:
 	lab.reset_box()
 	lab.hold_started("box")

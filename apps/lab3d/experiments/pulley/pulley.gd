@@ -28,9 +28,8 @@ const END_SIZE := Vector3(0.5, 0.5, 0.4)   # the rope end's pick box (the knot a
 const END_TOP := 3.4               # the rope end's centre at the start of a stroke
 const STROKE := 2.6                # m: the longest stroke (down to 0.8 m)
 ## The held pull (2026-10-28): 65 N/s, at most 250 N; the rope then comes down 1 m/s and the pull
-## stops growing (2026-11-01). One strand
-## with 20 kg (F = 196.2 N) moves after 3.02 s, two strands (98.1 N) after 1.51 s, four (49.05 N)
-## after 0.75 s; 1 kg on four strands (2.45 N) after 0.04 s.
+## stops growing (2026-11-01). One strand with 20 kg (F = 196.2 N) moves after 3.02 s, two strands
+## (98.1 N) after 1.51 s, four (49.05 N) after 0.75 s; 1 kg on four strands (2.45 N) after 0.04 s.
 const PULL_RATE := 65.0            # N per second of holding
 const PULL_MAX := 250.0            # N
 const ROPE_SPEED := 1.0            # m of rope per second once the hand's force reaches F
