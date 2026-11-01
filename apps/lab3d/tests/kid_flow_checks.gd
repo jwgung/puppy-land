@@ -35,6 +35,8 @@ func run() -> void:
 	await check_map_riddle_tap()
 	await check_intro()
 	await check_next_stage_reset()
+	await check_reason_waits()
+	await check_bubble_tail()
 	check_pace()
 	tree.root.size = root_size
 	DirAccess.remove_absolute(ProgressStore.path)
@@ -319,3 +321,69 @@ func check_pace() -> void:
 	expect.call(DialogueBox.CHARS_PER_S <= 18.0 and ResultBubble.SHOW_S >= 5.0,
 		"kid flow: the words type at most 18 a second and Puppy's result line shows at least 5 s",
 		"%.0f/s, %.1f s" % [DialogueBox.CHARS_PER_S, ResultBubble.SHOW_S])
+
+
+## The prediction's reason after the first result line never cuts the box the child is reading
+## (2026-11-01 user: "설명 읽는데 넘어가는 장면"): the open box keeps its words until it is closed, then
+## Dugi tells the reason.
+func check_reason_waits() -> void:
+	var screen := await _open("free-fall")
+	screen.mission_round.end_question()
+	var box: DialogueBox = screen.dialogue
+	var cast: IslandCast = screen.cast
+	for i in 60 * 3:
+		await tree.process_frame
+		if box.active:
+			break
+		if i == 2:
+			cast.dugi.explain(screen.experiment.explain_point)
+	var reading := box.text
+	var opened := box.active
+	screen.show_result(0, false)   # the first result line: the reason is due
+	for i in 60:
+		await tree.process_frame
+	var kept: bool = box.active and box.text == reading and screen.reason_waits()
+	for i in 6:
+		box.advance()
+	for i in 60 * 3:
+		await tree.process_frame
+		if box.active and box.text != reading:
+			break
+	var reason: String = MissionRound.predict(screen.definition.raw).get("reason", "")
+	var told: bool = box.active and box.joined() == reason and not screen.reason_waits()
+	var seen := "opened %s, kept 1 s %s, reason after %s ('%s')" % [opened, kept, told, box.text.left(16)]
+	await _close(screen)
+	expect.call(opened and kept and told,
+		"kid flow: the prediction's reason waits for the box the child is reading, then Dugi tells it", seen)
+
+
+## Puppy's result bubble beside him points at him from its side, above him from its bottom, below him
+## from its top (2026-11-01 user: the tail went the wrong way), and never covers him: in every game lab,
+## a win and a miss, on the tablet and with the sidebar open (another view width).
+func check_bubble_tail() -> void:
+	var problems := []
+	var want := ["bottom", "left", "right", "top"]
+	var sides := {}
+	for definition in ExperimentRegistry.load_all():
+		if MissionRound.missions(definition).is_empty():
+			continue
+		var screen := await _open(definition.id)
+		screen.mission_round.end_question()
+		for won in [true, false]:
+			screen.show_result(0, won)
+			for i in 3:
+				await tree.process_frame
+			var bubble: ResultBubble = screen.result_bubble()
+			if bubble == null:
+				problems.append("%s: no bubble" % definition.id)
+				continue
+			var side: int = screen._bubble_side
+			sides[side] = true
+			if bubble.tail_side() != want[side]:
+				problems.append("%s %s: side %d, tail %s" % [definition.id, won, side, bubble.tail_side()])
+			var puppy: Rect2 = screen.view_rect_of(screen.cast.puppy.bounds())
+			if puppy.grow(-2.0).intersects(bubble.bubble_rect()):
+				problems.append("%s %s: the bubble over Puppy (side %d)" % [definition.id, won, side])
+		await _close(screen)
+	expect.call(problems.is_empty(), "kid flow: Puppy's bubble tail leaves the edge facing him (above, beside, below) and the bubble stays off him, every game lab",
+		"; ".join(problems) + " sides used %s" % str(sides.keys()))
