@@ -382,9 +382,13 @@ func check_finale() -> void:
 	# Waits for the pull: nothing flies by itself, the paw shows the pull on the star.
 	var waits: bool = story.launch_waits and story._launch.is_empty() and story.launch_guide != null and story.launch_guide.kind == "pull"
 	var at: Vector2 = home._world_to_screen(story._star.global_position)
+	# A tap (inside the dead zone) and an upward pull throw nothing; the paw shows the pull again.
+	_pull(story, at, 10.0)
+	_pull(story, at, -80.0)
+	var no_throw: bool = story.launches == 0 and story.launch_waits and story.launch_guide.kind == "pull"
 	# A weak pull (60 units down: 8.8 m/s, its top y0 + v^2 / 2g far under the sky): up and back down.
+	var from_y: float = story._paws_top().y   # it leaves from the paws
 	_pull(story, at, 60.0)
-	var from_y: float = story._star.position.y
 	var weak_top := 0.0
 	for i in 80:
 		story.advance(0.05)
@@ -393,7 +397,7 @@ func check_finale() -> void:
 			break
 	var want_top: float = StoryDirector.launch_top(from_y, StoryDirector.launch_speed(60.0))
 	var came_back: bool = story._retry_open and story.dialogue.text == Story.finale_retry_line() and story.dialogue.speaker == "dugi" \
-		and absf(weak_top - want_top) < 0.35 and weak_top < StoryDirector.SKY_HIGH.y and story.night > 0.0
+		and absf(weak_top - want_top) < 0.15 and weak_top < StoryDirector.SKY_HIGH.y and story.night > 0.0
 	_tap_through(story.dialogue)
 	story.advance(0.05)
 	# A strong pull (the whole way): it reaches the sky.
@@ -407,9 +411,9 @@ func check_finale() -> void:
 			rose = maxf(rose, story._star.position.y)
 		sparkled = sparkled or story._sparkles.size() > 10
 	expect.call(gathered and str(words) == str(FINALE), "finale: the pieces gather into the star, then Puppy and Dugi speak", str(words))
-	expect.call(lifted and waits and came_back and story.launches == 2,
-		"finale: the cat lifts the star and it waits for the child's pull (the paw shows it); a weak pull rises to y0 + v^2 / 2g and comes back down, Dugi says pull harder",
-		"lifted %s, waits %s, back %s (top %.2f, want %.2f), launches %d" % [lifted, waits, came_back, weak_top, want_top, story.launches])
+	expect.call(lifted and waits and no_throw and came_back and story.launches == 2,
+		"finale: the cat lifts the star and it waits for the child's pull (the paw shows it; a tap or an upward pull throws nothing); a weak pull rises to y0 + v^2 / 2g and comes back down, Dugi says pull harder",
+		"lifted %s, waits %s, no throw %s, back %s (top %.2f, want %.2f), launches %d" % [lifted, waits, no_throw, came_back, weak_top, want_top, story.launches])
 	expect.call(rose >= StoryDirector.SKY_HIGH.y - 1e-3 and sparkled, "finale: a strong pull sends the star up to the sky, the sea sparkles", "rose %.1f" % rose)
 	for i in 40:
 		story.advance(0.05)

@@ -12,7 +12,7 @@
 ##   (2026-11-01 user: "여기서 배운 물리 실험을 이용해서 올려보내면 좋겟다"): pull the star down and let
 ##   go; it flies straight up at the pull's speed under gravity (y = y0 + v t - g t^2 / 2). A weak pull
 ##   rises and comes back down (Dugi: gravity pulled it back, pull harder); one that reaches the sky
-##   (v^2 / 2g past SKY_HIGH) stays there: the sea sparkles, the boats light their lanterns and sail.
+##   (its top y0 + v^2 / 2g reaches SKY_HIGH.y) stays there: the sea sparkles, the boats light their lanterns and sail.
 ##   The star then stays in the map's sky.
 ##
 ## The camera: while a prologue or the finale plays the director draws the rig itself (the rig's own
@@ -31,9 +31,8 @@
 ## HINT_DELAY_S without finding it the next spot glints (a small star twinkling, again and again).
 ##
 ## Pictures and words only: the director never opens a lab, sets a control or reads a body (the
-## finale's launch is its own formula, no physics body). Its 3D
-## nodes are outside the map's default view or gone after the story (the map stays clean), apart from
-## the sky star after the finale.
+## finale's launch is its own formula, no physics body). Its 3D nodes are outside the map's default
+## view or gone after the story (the map stays clean), apart from the sky star after the finale.
 class_name StoryDirector
 extends Node
 
@@ -61,8 +60,10 @@ const SKY_HIGH := Vector3(3.0, 21.0, -6.0)
 const LAUNCH_G := 9.8
 const LAUNCH_V_MAX := 25.0
 const LAUNCH_PULL_FULL := 170.0
-const LAUNCH_DEAD_ZONE := 16.0     # UI units a press may move and still be a tap (the manipulator's)
+const LAUNCH_DEAD_ZONE := Manipulator.PULL_DEAD_ZONE   # UI units a press may move and still be a tap
 const LAUNCH_DIP_M := 1.2          # m the star comes down under the paws at a full pull
+const LAUNCH_GUIDE_SHARE := 0.8    # of a full pull the paw shows
+const AIM_DOT_SCALE := 3.0         # the aim dots: three times the pull dots' size and spacing
 const PIECE_SIZE := 0.42
 const FLIGHT_IN_S := 0.6
 const FLIGHT_S := 1.3
@@ -512,7 +513,6 @@ func _finale_page(i: int) -> void:
 				home.cat.cheer(true, 3)
 				_lift = true)
 		3:   # no words: the child pulls the star down and lets go
-			_lift = true
 			_wait_launch()
 
 
@@ -522,19 +522,32 @@ func _launch_shot() -> Dictionary:
 	return {"yaw": -25.0, "pitch": -6.0, "dist": 13.0, "target": paws + Vector3.UP * 1.6}
 
 
-## Waits for the pull (the paw shows it: press the star, pull down, let go).
+## Waits for the pull (the paw shows it: press anywhere, pull down, let go), once the cat stands at
+## the lookout with the star over its paws.
 func _wait_launch() -> void:
+	if not _cat_hop.is_empty():
+		_beat(0.1, _wait_launch)   # (the page was tapped through while the cat still hopped over)
+		return
+	if not launch_waits and launches == 0:
+		home.cat.cheer(true, 3)
+	_lift = true
 	launch_waits = true
+	if Quality.cmdline_value("demo-story") == "finale":
+		_beat(2.0, func() -> void: launch_star(LAUNCH_V_MAX))   # the screenshot run: a full pull by itself
 	_pull = {}
 	_move(_launch_shot(), 1.0)
 	if launch_guide == null:
 		launch_guide = HandGuide.new()
 		home.add_child(launch_guide)
 	home.move_child(launch_guide, shield.get_index() + 1)   # over the shield (the paw takes no touch)
+	_show_guide()
+
+
+func _show_guide() -> void:
 	var star_at := func() -> Vector2:
 		var at := home._world_to_screen(_star.global_position) if _star != null else Vector2.INF
 		return at if at != Vector2.INF else HandGuide.OFF_VIEW
-	launch_guide.play("pull", star_at, func() -> Vector2: return star_at.call() + Vector2(0.0, LAUNCH_PULL_FULL * 0.8), 3)
+	launch_guide.play("pull", star_at, func() -> Vector2: return star_at.call() + Vector2(0.0, LAUNCH_PULL_FULL * LAUNCH_GUIDE_SHARE), 3)
 
 
 ## The speed (m/s) a pull of `pixels` straight down gives (0 inside the dead zone).
@@ -549,8 +562,9 @@ static func launch_top(from_y: float, speed: float) -> float:
 	return from_y + speed * speed / (2.0 * LAUNCH_G)
 
 
-## The finger on the star while the finale waits: press, pull (the star comes down under the paws,
-## dots show how high it will go), let go (it flies).
+## The finger on the screen (anywhere) while the finale waits: press, pull down (the star comes down
+## under the paws, dots show how high it will go), let go (it flies; a tap or an upward pull does
+## not, and the paw shows the pull again).
 func _launch_input(kind: String, position: Vector2) -> void:
 	match kind:
 		"press":
@@ -569,6 +583,8 @@ func _launch_input(kind: String, position: Vector2) -> void:
 			var speed := launch_speed(pixels)
 			if speed > 0.0:
 				launch_star(speed)
+			elif launch_guide != null:
+				_show_guide()
 		"cancel":
 			_pull = {}
 			_hide_pull()
@@ -595,7 +611,7 @@ func _step_launch(delta: float) -> void:
 		var pixels: float = maxf(0.0, (_pull.now as Vector2).y - (_pull.press as Vector2).y)
 		var share := clampf(pixels / LAUNCH_PULL_FULL, 0.0, 1.0)
 		var cradle := _paws_top()
-		_star.position = cradle + Vector3.DOWN * LAUNCH_DIP_M * share
+		_star.position = cradle + Vector3.DOWN * LAUNCH_DIP_M * share   # (after _step_star: no lift lerp while pulling)
 		_show_pull(cradle, _star.position, launch_speed(pixels))
 	if _launch.is_empty() or _star == null:
 		return
@@ -649,14 +665,12 @@ func _show_pull(cradle: Vector3, star_at: Vector3, speed: float) -> void:
 		_aim_dots.scale = Vector3.ONE * AIM_DOT_SCALE
 		home.world.add_child(_aim_dots)
 	_pull_dots.show_line(star_at, cradle)
-	var top := minf(launch_top(star_at.y, speed), SKY_HIGH.y)
+	var top := minf(launch_top(cradle.y, speed), SKY_HIGH.y)   # it leaves from the paws (launch_star)
 	if speed > 0.0:
 		_aim_dots.show_line(star_at / AIM_DOT_SCALE, Vector3(star_at.x, top, star_at.z) / AIM_DOT_SCALE)
 	else:
 		_aim_dots.hide_line()
 
-
-const AIM_DOT_SCALE := 3.0         # the aim dots: three times the pull dots' size and spacing
 
 
 func _hide_pull() -> void:
@@ -864,9 +878,12 @@ func _finish() -> void:
 	_launch = {}
 	_pull = {}
 	_retry_open = false
-	_hide_pull()
-	if launch_guide != null:
-		launch_guide.stop()
+	for node: Node in [_pull_dots, _aim_dots, launch_guide]:
+		if node != null:
+			node.queue_free()   # (the map stays clean: only the sky star is left)
+	_pull_dots = null
+	_aim_dots = null
+	launch_guide = null
 	for s in _sparkles:
 		(s[0] as Node3D).queue_free()
 	_sparkles.clear()
@@ -1146,9 +1163,8 @@ func _step_star(delta: float) -> void:
 		return
 	_star_t += delta
 	StarArt.face_camera(_star, home.view.rig, _star_t)
-	if _lift and home.cat != null:
-		var top := home.cat.position + Vector3.UP * (2.0 * IslandHomeScreen.ACTOR_SCALE + 0.3)   # over the map-size cat's paws
-		_star.position = _star.position.lerp(top, 1.0 - exp(-8.0 * delta))
+	if _lift and _pull.is_empty() and home.cat != null:
+		_star.position = _star.position.lerp(_paws_top(), 1.0 - exp(-8.0 * delta))
 	if _star_motion.has("pop"):
 		_star_motion.pop += delta
 		var k := clampf(float(_star_motion.pop) / 0.5, 0.0, 1.0)
