@@ -86,9 +86,10 @@
       { "id": "same", "label": "똑같이", "picture": "swing_same" }
     ],
     "answer": "slower",
-    "reason": "줄이 길면 공이 더 먼 길을 돌아요. 그래서 한 번 왔다 갔다 하는 데 오래 걸려요.",
-    "bridge": "직접 흔들어 보면 알 수 있어요!",
-    "bridge_face": "happy"
+    "reason": "줄이 길면 진자가 더 먼 길을 돌아요. 그래서 한 번 왔다 갔다 하는 데 오래 걸려요.",
+    "bridge": "먼저 보통 줄로 흔들어서 박자를 봐요!",
+    "bridge_face": "happy",
+    "stage": 1
   },
   "missions": {
     "observe": "rope_half_swing",
@@ -97,9 +98,9 @@
     "miss_needs": "rope_half_swing",
     "hidden_until_end": ["small_period"],
     "stages": [
-      { "compare": "near", "threshold": 3.2, "tolerance": 0.2, "conditions": {"gravity": "earth", "length": {"min": 2.25, "max": 2.75}}, "text": "지구에서 긴 줄로 거북이 박자 맞추기!", "say": "줄이 길면 공이 더 먼 길을 돌아요. 그래서 천천히 흔들려서 거북이 박자에 맞아요.", "say_face": "explain", "win": "똑딱! 거북이랑 박자가 맞았어!", "win_face": "happy", "miss": "박자가 안 맞아. 긴 줄로 바꿔 봐!", "miss_face": "thinking" },
-      { "compare": "near", "threshold": 6.3, "tolerance": 0.3, "conditions": {"gravity": "moon", "length": {"min": 1.25, "max": 1.75}}, "text": "달에서 짧은 줄로 느린 거북이 박자 맞추기!", "say": "달은 살살 끌어당겨서 공이 천천히 내려와요. 그래서 짧은 줄도 지구의 긴 줄보다 천천히 흔들려요.", "say_face": "explain", "win": "달에서도 박자가 맞았어!", "win_face": "happy", "miss": "달에서 짧은 줄로 해 봐!", "miss_face": "thinking" },
-      { "compare": "near", "threshold": 8.8, "tolerance": 0.3, "conditions": {"gravity": "moon", "length": {"min": 2.75}}, "text": "달에서 아주 긴 줄로 아주 느린 박자 맞추기!", "say": "달에서 아주 긴 줄을 쓰면 둘이 합쳐져서 아주아주 천천히 흔들려요.", "say_face": "surprised", "win": "현관이 열렸어! 조각이 나와!", "win_face": "surprised", "miss": "달에서 아주 긴 줄로 해 봐!", "miss_face": "thinking" }
+      { "compare": "near", "threshold": 2.9, "tolerance": 0.2, "conditions": {"gravity": "earth", "length": {"min": 1.75, "max": 2.25}}, "text": "지구에서 보통 줄로 거북이 박자 맞추기!", "say": "줄에 매달려 왔다 갔다 하는 공을 진자라고 해요. 중력이 공을 아래로 끌어당겨서 진자가 흔들려요. 이 박자를 기억해요!", "say_face": "explain", "win": "똑딱! 거북이랑 박자가 맞았어!", "win_face": "happy", "miss": "박자가 안 맞아. 보통 줄로 해 봐!", "miss_face": "thinking" },
+      { "compare": "near", "threshold": 3.6, "tolerance": 0.2, "conditions": {"gravity": "earth", "length": {"min": 2.75, "max": 3.25}}, "text": "지구에서 줄만 길게 해서 느린 박자 맞추기!", "say": "줄이 길면 진자가 더 먼 길을 돌아요. 그래서 한 번 왔다 갔다 하는 데 더 오래 걸려요.", "say_face": "explain", "win": "똑딱! 긴 줄도 박자가 맞았어!", "win_face": "happy", "miss": "줄을 길게 바꿔 봐!", "miss_face": "thinking" },
+      { "compare": "near", "threshold": 8.8, "tolerance": 0.4, "conditions": {"gravity": "moon", "length": {"min": 2.75, "max": 3.25}}, "text": "같은 긴 줄로 달에서 아주 느린 박자 맞추기!", "say": "달은 중력이 약해서 공을 살살 끌어당겨요. 그래서 같은 줄이라도 달에서는 진자가 아주 천천히 흔들려요.", "say_face": "surprised", "win": "현관이 열렸어! 조각이 나와!", "win_face": "surprised", "miss": "같은 긴 줄로 달에 가 봐!", "miss_face": "thinking" }
     ]
   },
   "story": { "clue": "거북이 시계 속에 조각이 있어! 공을 시계 추랑 똑같이 흔들어 보자!", "clue_face": "explain", "map_clue": "기둥에 큰 노란 공이 매달린 곳이야!", "map_clue_face": "explain" },
@@ -118,9 +119,8 @@
         {"value": "moon", "label": "달", "picture": "moon"}
       ],
       "length": [
-        {"value": 1.5, "label": "짧은 줄", "picture": "rope", "size": 0.2},
-        {"value": 2.5, "label": "긴 줄", "picture": "rope", "size": 0.65},
-        {"value": 3.0, "label": "아주 긴 줄", "picture": "rope", "size": 0.9}
+        {"value": 2.0, "label": "보통 줄", "picture": "rope", "size": 0.43},
+        {"value": 3.0, "label": "긴 줄", "picture": "rope", "size": 0.9}
       ]
     },
     "cards": {"rope_distance": "줄 길이", "rope_half_swing": "한 번 왔다 갔다", "small_period": "조금 흔들 때 왔다 갔다"},

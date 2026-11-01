@@ -34,6 +34,7 @@ func run() -> void:
 	await check_box_tap_on_view()
 	await check_map_riddle_tap()
 	await check_intro()
+	check_stage_terms()
 	await check_next_stage_reset()
 	await check_reason_waits()
 	await check_bubble_tail()
@@ -218,6 +219,21 @@ func check_intro() -> void:
 	Story.enabled = was
 	expect.call(missing.is_empty() and first, "kid flow: every game lab has Dugi's introduction; a later visit opens on it before the question",
 		"missing %s, opens on it %s (%s)" % [str(missing), first, seen])
+
+
+## Dugi names the force at work while he explains the stages too, not only in his introduction
+## (2026-11-01 user: "진자운동이라거나 탄성력이라거나 이런 말을 전혀 안해"): every game lab's stage says
+## name its INTRO_TERMS term at least once.
+func check_stage_terms() -> void:
+	var missing := []
+	for definition in ExperimentRegistry.load_all():
+		var stages: Array = MissionRound.missions(definition).get("stages", [])
+		if stages.is_empty() or not INTRO_TERMS.has(definition.id):
+			continue
+		var term: String = INTRO_TERMS[definition.id]
+		if not stages.any(func(stage: Dictionary) -> bool: return term in str(stage.get("say", ""))):
+			missing.append("%s (%s)" % [definition.id, term])
+	expect.call(missing.is_empty(), "kid flow: every game lab's stage explanations name its force or tool (INTRO_TERMS)", ", ".join(missing))
 
 
 ## A won stage (its stamp in): after Dugi's explanation the lab is back at its start for the next

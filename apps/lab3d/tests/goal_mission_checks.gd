@@ -190,9 +190,10 @@ func check_spring() -> void:
 	var spring_script: GDScript = load("res://experiments/spring/spring.gd")
 	var constants := spring_script.get_script_constant_map()
 	# The bell game (2026-10-29 user "종 치기"): every stage judges how far the first swing goes past the
-	# rest (bell_reach, as shown) beyond the bell's spot − 0.05 m: 0.5, 1, 1.5 m, all within the rod's
-	# squeezed side (EXT_MIN) and reached from pulls on the rod (up to EXT_MAX); the card is that reach.
-	var bells := [0.5, 1.0, 1.5]
+	# rest (bell_reach, as shown) beyond the bell's spot − 0.05 m: 0.5, 1, then the same 1 m with the
+	# heavy ball (one change a stage, 2026-11-01), all within the rod's squeezed side (EXT_MIN) and
+	# reached from pulls on the rod (up to EXT_MAX); the card is that reach.
+	var bells := [0.5, 1.0, 1.0]
 	for i in stages.size():
 		var how := MissionRound.rule(definition, i)
 		var d: float = bells[i]
@@ -220,7 +221,7 @@ func check_spring() -> void:
 		problems.append("the swing reads %s after 4 s, %s after 5.2 s (want text, then 2π√(3/5))" % [str(early), str(late)])
 	lab.queue_free()
 	expect.call(problems.is_empty(),
-		"goal (spring): the bells at 0.5, 1, 1.5 m on the squeezed side (within EXT_MIN), each reached by the first swing as shown and not 0.1 m short, the last with the heavy ball, the card is that reach; the period law T = 2π√(m/k) stays in 자세히 and the swing reads it after one return",
+		"goal (spring): the bells at 0.5, 1 and again 1 m on the squeezed side (within EXT_MIN), each reached by the first swing as shown and not 0.1 m short, the last with the heavy ball (one change a stage), the card is that reach; the period law T = 2π√(m/k) stays in 자세히 and the swing reads it after one return",
 		"; ".join(problems))
 
 
@@ -256,8 +257,9 @@ static func measured_period(length: float, g: float, b: float) -> float:
 func check_pendulum() -> void:
 	# Since 2026-10-29 the stages are the turtle clock's beats (MissionRound "near", the piece game:
 	# tests/game_piece_checks.gd check_pendulum_beat sweeps the release angles). Here: from the lab's
-	# start angle, each stage's fitting rope is on the beat with either damping, the default 2 m rope
-	# on the earth clears nothing, and the stages ask for different ropes and worlds.
+	# start angle, each stage's fitting rope is on the beat with either damping and the other rope is
+	# off it, the default 2 m rope on the earth is stage 1's beat (the baseline the next stages change
+	# one thing from, 2026-11-01), and the stages ask for different ropes and worlds.
 	var definition := ExperimentRegistry.find("constraints")
 	var stages: Array = MissionRound.missions(definition).stages
 	var problems := []
@@ -273,13 +275,16 @@ func check_pendulum() -> void:
 					seen.append("%s %s m %.2f s" % [want.gravity, length, t])
 				if not _near(definition, stage, t):
 					problems.append("stage %d (%s): %s m off the beat at %.2f s" % [stage + 1, damping, length, t])
-	if _near(definition, 0, measured_period(2.0, 9.81, float(option(definition, "damping", "web").rope_b))) and MissionRound.condition_holds(stages[0].conditions.get("length", {}), 2.0):
-		problems.append("the default 2 m rope clears stage 1")
+			for length in picked(definition, stage, "length", false):
+				if _near(definition, stage, measured_period(length, g, b)):
+					problems.append("stage %d (%s): the other rope %s m is on the beat too" % [stage + 1, damping, length])
+	if not _near(definition, 0, measured_period(2.0, 9.81, float(option(definition, "damping", "web").rope_b))) or not MissionRound.condition_holds(stages[0].conditions.get("length", {}), 2.0):
+		problems.append("the default 2 m rope on the earth is not stage 1's beat")
 	for stage in range(1, stages.size()):
 		if stages[stage].conditions == stages[stage - 1].conditions:
 			problems.append("stages %d and %d ask the same" % [stage, stage + 1])
 	expect.call(problems.is_empty() and stages.all(func(s: Dictionary) -> bool: return s.get("compare") == "near"),
-		"goal (pendulum): the turtle clock's beats (half swing x 2 as shown, near): from the lab's start angle the earth's long rope on 3.2 s, the Moon's short rope on 6.3 s, the Moon's very long rope on 8.8 s; the default 2 m rope clears nothing",
+		"goal (pendulum): the turtle clock's beats (half swing x 2 as shown, near): from the lab's start angle the earth's 2 m rope on 2.9 s, the earth's 3 m rope on 3.6 s, the same rope on the Moon on 8.8 s (one change a stage); the other rope is off each beat; the default rope is stage 1's",
 		"%s; %s" % [", ".join(seen), "; ".join(problems)])
 
 

@@ -1,10 +1,11 @@
 ## The buoyancy's piece game (2026-10-29 "조각 꺼내기", batch B): a small treasure chest is tied by a
 ## short rope to the drum's side and hangs under the water beside it; the star piece peeks out under
 ## its lid. The drum moves as BuoyancyModel says and the chest only follows it (it hangs ROPE below
-## the drum's bottom, and lies on the tank floor when the drum is that low). A stage asks for the
-## drum with the chest to float (MissionRound: "floating", the stage's mass and volume: the mass
-## is the drum's and the chest's together, the stage's words). A stamp opens the lid a notch; the
-## last one throws it open and the piece jumps out of the water onto the grass on uniform gravity
+## the drum's bottom, and lies on the tank floor when the drum is that low). The stages (2026-11-01,
+## one change a stage): the small drum with the empty chest floats, the same drum with the heavy
+## treasure chest sinks (its goal: "sunk"), the big drum lifts the treasure chest (the stage's mass and
+## volume: the mass is the drum's and the chest's together). The lid stays shut until the last
+## stamp throws it open and the piece jumps out of the water onto the grass on uniform gravity
 ## (LabGame.launch_piece).
 ## Visual only: the chest has no body, no mass and no volume in the model (the drum's mass slider is
 ## the whole load; the chest's own water is not counted, the user's design: "the chest is a visual
@@ -15,8 +16,10 @@ extends LabGame
 const CHEST := Vector3(0.4, 0.3, 0.3)
 const ROPE := 0.5                        # m from the drum's bottom down to the chest's lid
 const GAP := 0.06                        # m between the drum's side and the chest
-## The lid's angle (deg) after 0, 1, 2 stamps; the last stamp throws it open.
-const LID_DEG := [22.0, 42.0, 62.0]
+## The lid's angle (deg) after 0, 1, 2 stamps: shut (the piece glints through the crack) until the
+## last stamp throws it open as the big drum lifts the chest (2026-11-01: the chest's story is one goal,
+## lifting it out; floating a drum does not open a lid).
+const LID_DEG := [8.0, 8.0, 8.0]
 const LID_OPEN := 115.0
 const LID_S := 0.45
 const FLOOR_Y := 0.2                     # the tank floor (BuoyancyLab FLOOR_Y)

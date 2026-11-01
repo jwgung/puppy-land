@@ -3,10 +3,10 @@
 ## in front of the coil at the rod's height. Let go from a pull x₀ the ball swings to −x₀ (the formula
 ## SpringModel: no damping by default, the first turn at −x₀ e^(−γT/2) with damping) and pushes the
 ## knob when it gets past the bell's spot: the bell rings at the formula moment the ball's extension
-## reaches −d. A stage asks for the bell at d = 0.5, 1 and 1.5 m (MissionRound: the lab's
-## `bell_reach` = how far the first swing goes past the rest, as shown, beyond the stage's threshold
-## d − 0.05), the last with the heavy ball ("무거운 공도 같은 길이만큼 당기면 종에 닿아요": the swing's
-## size does not depend on the mass). The piece hangs in the bell as its clapper; each stamp lights a
+## reaches −d. A stage asks for the bell at d = 0.5, then 1 m, then the same 1 m with the heavy ball
+## (MissionRound: the lab's `bell_reach` = how far the first swing goes past the rest, as shown,
+## beyond the stage's threshold d − 0.05; one change a stage, 2026-11-01: the swing's size does not
+## depend on the mass, the heavy ball only swings slower). The piece hangs in the bell as its clapper; each stamp lights a
 ## lamp on the bell's post, the last shakes the piece out (LabGame.launch_piece). Visual only: no body;
 ## the ball and the numbers are SpringModel's as before.
 class_name SpringGame

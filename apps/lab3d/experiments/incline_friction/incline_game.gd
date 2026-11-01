@@ -36,12 +36,14 @@ const ROWS := [
 ]
 const GAP := 0.3                         # m from the slide's lower end (x) to a waiting row's start
 const ROW_Z := -1.15                     # the waiting rows' middle (z): beside the box's lane, behind it
-## Per stage: the world x of its row's first domino's near (+x) face in the lane, fixed (m), 3.8,
-## 3.45 and 2.8 m past the slide's lower end (x −2.6, the same at every slope). From the top steeper
-## goes farther: steel at 20°/30°/40° gets to −6.4 (20°: 0.14 m past its face; wood 30° stops 0.13 m
-## short); wood at 30°/40° to −6.05 (30°: 0.22 m past; rubber 45° 0.24 m short); rubber at 40°/45°
-## to −5.4 (40°: 0.26 m past; clay 45° 0.28 m short). README "고정 도미노 줄".
-const LANE_FACE := [-6.4, -6.05, -5.4]
+## Per stage: the world x of its row's first domino's near (+x) face in the lane, fixed (m), 2.9,
+## 3.3 and 4.4 m past the slide's lower end (x −2.6, the same at every slope), nearer first: one change
+## a stage takes the box farther (2026-11-01 user: 한 번에 하나씩). From the top: wood at 24.5–25.5°
+## stops at −5.64…−5.77 (the yellow row's face −5.5; 22.5° stops 0.14 m short); wood at 30–45° at
+## −6.27…−6.77 (the blue row −5.9; 25.5° 0.13 m short); steel at 30–45° at −7.36…−7.65 (the red pillar
+## −7.0; wood never gets there, 40°: 0.23 m short). The blue row stays clear of Dugi's portrait while it
+## falls. README "고정 도미노 줄".
+const LANE_FACE := [-5.5, -5.9, -7.0]
 const NEAR_MISS := 0.5                   # m: a box stopping this close short of the row makes it wobble
 const FALL_S := 0.35
 const NEXT_S := 0.12                     # the next domino starts falling this long after the one before

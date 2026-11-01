@@ -170,6 +170,13 @@ static func predict(definition: Dictionary) -> Dictionary:
 	return predict if predict is Dictionary else {}
 
 
+## The stage whose result answers the question (predict.stage, 0 by default; 2026-11-01: one change a
+## stage, so the pendulum's long rope and the drum's heavy chest come in stage 2): the reason is told
+## after that stage's first result line.
+static func reason_stage(definition: Dictionary) -> int:
+	return int(predict(definition).get("stage", 0))
+
+
 ## The statuses a stage is judged on (the run's result states): stage `stage`'s own judge_on, else
 ## the block's (stage -1 or past the last: the block's).
 static func judge_on(definition: Dictionary, stage := -1) -> Array:
@@ -505,6 +512,7 @@ static func _validate_conditions(conditions: Variant, controls: Array, i: int) -
 ## `predict` (Plan G4, optional): Dugi's question before the run —
 ## {"question": <text>, "choices": [{"id", "label", "picture": <PredictPictures kind>} x 2],
 ##  "answer": <a choice id>, "reason": <text>, "bridge"?: <Dugi's line from the answer to the mission>,
+##  "stage"?: <the stage index whose result answers it, 0 by default: the reason comes after it>,
 ##  "bridge_face"?: <Story.FACES>}.
 static func _validate_predict(predict: Variant) -> PackedStringArray:
 	var problems := PackedStringArray()
@@ -539,6 +547,9 @@ static func _validate_predict(predict: Variant) -> PackedStringArray:
 		problems.append("predict choices need distinct ids")
 	if predict.get("answer") not in ids:
 		problems.append("predict.answer must be one of the choice ids")
+	if predict.has("stage") and not (predict.stage is int or (predict.stage is float and predict.stage == floorf(predict.stage))) \
+			or predict.has("stage") and int(predict.stage) < 0:
+		problems.append("predict.stage must be a stage index (0, 1, ...)")
 	return problems
 
 
@@ -872,8 +883,8 @@ func tell(stage_index: int, won: bool) -> void:
 	_resolved = true
 	_miss_polls = 0
 	var line := result_line(definition, stage_index, won)
-	if not _first_result:
-		_first_result = true
+	if not _first_result and stage_index >= reason_stage(definition):
+		_first_result = true   # (the first result of the stage the question is about)
 		if reason != "":   # (never without Dugi: open() asks nothing then)
 			reason_due.emit()
 	result_told.emit(stage_index, won, str(line[0]), str(line[1]))
