@@ -225,11 +225,33 @@ func _ensure_renderer() -> bool:
 	var marker := FileAccess.open(RESTART_MARKER_PATH, FileAccess.WRITE)
 	if marker:
 		marker.store_string(wanted)
+		marker.close()   # on disk before this process ends
 	var restart_args := OS.get_cmdline_args()
 	var user_args := OS.get_cmdline_user_args()
 	if not user_args.is_empty():
 		restart_args.append("--")
 		restart_args.append_array(user_args)
-	OS.set_restart_on_exit(true, restart_args)
+	if android_restart():
+		# The new process ends this one; if nothing does within a while, quit (the next launch uses
+		# the renderer), never stay on the old one saying it restarts.
+		get_tree().create_timer(3.0, true, false, true).timeout.connect(get_tree().quit)
+		return true
+	OS.set_restart_on_exit(true, restart_args)   # desktop (Godot restarts only there)
 	get_tree().quit()
 	return true
+
+
+## Android: Godot's own restart (its library's ProcessPhoenix, declared in every export's manifest)
+## starts the app again in a new process and ends this one, so the new renderer is used (2026-11-01
+## user: on the phone the app only closed; OS.set_restart_on_exit works on desktop only). False when
+## it is not there (then the app quits as before and the next launch uses the renderer).
+static func android_restart() -> bool:
+	if not Engine.has_singleton("AndroidRuntime"):
+		return false
+	var runtime: Object = Engine.get_singleton("AndroidRuntime")
+	var activity: Object = runtime.call("getActivity")
+	var phoenix: Object = JavaClassWrapper.wrap("org.godotengine.godot.utils.ProcessPhoenix")
+	if activity == null or phoenix == null or JavaClassWrapper.get_exception() != null:
+		return false
+	phoenix.call("triggerRebirth", activity)
+	return JavaClassWrapper.get_exception() == null

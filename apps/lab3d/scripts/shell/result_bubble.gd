@@ -13,7 +13,7 @@ const SHOW_S := 5.0          # 2026-10-31 user: 2.5 s went by too fast for a chi
 const POP_S := 0.16
 const FADE_S := 0.3
 const MAX_TEXT_WIDTH := 330.0
-const TAIL := 18.0           # the tail's length below the bubble (UI units)
+const TAIL := 18.0           # the tail's length (UI units), from the edge facing Puppy
 ## The most the bubble moves in one frame while it shows (UI units): it follows Puppy gently and never
 ## jumps (2026-10-31 user: "순간적으로 막 움직인다").
 const MAX_STEP := 6.0
@@ -130,34 +130,70 @@ func tick(delta: float) -> bool:
 	return age >= SHOW_S
 
 
-## The tail: a rounded wedge from the bubble's edge nearest the anchor towards it (at most TAIL long),
-## filled with the paper over the border and outlined on its two sides only, so it joins seamlessly.
+## The edge the tail leaves from: the one facing the anchor ("bottom", "top", "right", "left"; "" when
+## the anchor is inside the bubble). Above or below wins over beside.
+func tail_side() -> String:
+	var r := Rect2(Vector2.ZERO, size)
+	var to := anchor - position
+	if to.y > r.end.y:
+		return "bottom"
+	if to.y < r.position.y:
+		return "top"
+	if to.x > r.end.x:
+		return "right"
+	if to.x < r.position.x:
+		return "left"
+	return ""
+
+
+## The tail: a rounded wedge from the bubble's edge facing the anchor towards it (at most TAIL long;
+## 2026-11-01 user: beside Puppy it left the bottom edge crooked), filled with the paper over the border
+## and outlined on its two sides only, so it joins seamlessly.
 func _draw_tail() -> void:
 	var r := Rect2(Vector2.ZERO, size)
 	var to := anchor - position
-	var below := to.y > r.end.y
-	var above := to.y < r.position.y
-	var base_y := r.end.y - 1.5 if below or not above else r.position.y + 1.5
-	var inward := -1.0 if below or not above else 1.0
-	var base_x := clampf(to.x, r.position.x + 30.0, r.end.x - 30.0)
-	var dir := (to - Vector2(base_x, base_y))
+	var side := tail_side()
+	if side == "":
+		return
+	var along: Vector2   # along the edge
+	var inward: Vector2  # into the bubble
+	var base: Vector2
+	match side:
+		"bottom":
+			along = Vector2.RIGHT
+			inward = Vector2.UP
+			base = Vector2(clampf(to.x, r.position.x + 30.0, r.end.x - 30.0), r.end.y - 1.5)
+		"top":
+			along = Vector2.RIGHT
+			inward = Vector2.DOWN
+			base = Vector2(clampf(to.x, r.position.x + 30.0, r.end.x - 30.0), r.position.y + 1.5)
+		"right":
+			along = Vector2.DOWN
+			inward = Vector2.LEFT
+			base = Vector2(r.end.x - 1.5, clampf(to.y, r.position.y + 14.0, r.end.y - 14.0))
+		"left":
+			along = Vector2.DOWN
+			inward = Vector2.RIGHT
+			base = Vector2(r.position.x + 1.5, clampf(to.y, r.position.y + 14.0, r.end.y - 14.0))
+	var half := TAIL_HALF if side in ["top", "bottom"] else minf(TAIL_HALF, r.size.y * 0.5 - 4.0)
+	var dir := to - base
 	if dir.length() < 1.0:
 		return
-	var tip := Vector2(base_x, base_y) + dir.normalized() * minf(TAIL, dir.length())
-	var l := Vector2(base_x - TAIL_HALF, base_y)
-	var rr := Vector2(base_x + TAIL_HALF, base_y)
+	var tip := base + dir.normalized() * minf(TAIL, dir.length())
+	var l := base - along * half
+	var rr := base + along * half
 	# Slightly curved sides (a quadratic bend toward the tail's middle).
 	var side_l := PackedVector2Array()
 	var side_r := PackedVector2Array()
 	for i in 7:
 		var t := i / 6.0
-		var mid_l := l.lerp(tip, 0.5) + Vector2(TAIL_HALF * 0.25, 0.0)
-		var mid_r := rr.lerp(tip, 0.5) - Vector2(TAIL_HALF * 0.25, 0.0)
+		var mid_l := l.lerp(tip, 0.5) + along * half * 0.25
+		var mid_r := rr.lerp(tip, 0.5) - along * half * 0.25
 		side_l.append(l.lerp(mid_l, t).lerp(mid_l.lerp(tip, t), t))
 		side_r.append(rr.lerp(mid_r, t).lerp(mid_r.lerp(tip, t), t))
 	# The fill: the curves bend inward, so the wedge under them covers them (a simple triangle never
 	# fails to triangulate, unlike the curved outline as a polygon).
-	var fill := PackedVector2Array([l + Vector2(0, 3.0 * inward), tip, rr + Vector2(0, 3.0 * inward)])
+	var fill := PackedVector2Array([l + inward * 3.0, tip, rr + inward * 3.0])
 	_tail.draw_colored_polygon(fill, paper())
 	_tail.draw_polyline(side_l, edge(), 3.0, true)
 	_tail.draw_polyline(side_r, edge(), 3.0, true)

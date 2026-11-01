@@ -64,6 +64,7 @@ var show_cast := true
 ## The lab's sounds (SoundBoard): reads its status and impacts only, beside the lab like the cast.
 var sounds: LabSounds
 var _dialogue_started := false          # the dialogue of the current explanation was opened
+var _reason_waits := false               # the prediction's reason waits for Dugi's open box or the sidebar (_tell_reason)
 
 # 3D overlays (children of the view, placed by _fit_overlays).
 var _title_bar: PanelContainer
@@ -385,6 +386,7 @@ func clue_telling() -> bool:
 ## that starts then is pointing only. Dugi stopping (a user change, 처음으로) closes it at once.
 func _run_dialogue() -> void:
 	_fit_picks()   # follows the dialogue (opened, closed) and the question
+	_run_reason_wait()
 	if dialogue == null or cast.dugi == null:
 		return
 	if _done_card != null:
@@ -1029,16 +1031,33 @@ func result_bubble() -> ResultBubble:
 	return _result_bubble if _result_bubble != null and is_instance_valid(_result_bubble) else null
 
 
-## The prediction's reason, after the first result line (MissionRound.reason_due): Dugi explains now
-## (an explanation of the run that already started gives way), with the reason in his box.
+## The prediction's reason, after the first result line (MissionRound.reason_due): Dugi explains it,
+## with the reason in his box. A box he is in the middle of (the run's explanation, the bridge) is read
+## to its end first (2026-11-01 user: "설명 읽는데 넘어가는 장면"): the reason waits for it to close (and for an
+## open sidebar to close: he tells it in his box).
 func _tell_reason() -> void:
 	if cast == null or cast.dugi == null:
 		return   # (never today: the round asks nothing without Dugi, MissionRound.open)
-	_close_dialogue()
-	cast.dugi.stop(true)
 	cast.hold_explanation()   # the cast's own explanation of this run would only repeat him
+	_reason_waits = true
+	_run_reason_wait()
+
+
+## The reason told once Dugi's box and the sidebar are closed (at once when neither is open).
+func _run_reason_wait() -> void:
+	if not _reason_waits or cast == null or cast.dugi == null:
+		return
+	if (dialogue != null and dialogue.active) or is_sidebar_open():
+		return   # the child is still reading him (or reading the sidebar: the reason waits for his box)
+	_reason_waits = false
+	cast.dugi.stop(true)
 	_dialogue_started = false
 	cast.dugi.explain(experiment.explain_point)
+
+
+## The reason is waiting for Dugi's open box (tests).
+func reason_waits() -> bool:
+	return _reason_waits
 
 
 func _run_result_bubble(delta: float) -> void:
@@ -1066,6 +1085,7 @@ func _fit_result_bubble(choose := true) -> void:
 		return
 	var bubble_size := _result_bubble.bubble_size()
 	var anchor := Vector2(view.size.x * 0.5, view.size.y * 0.35)
+	var body := Rect2(anchor, Vector2.ZERO)   # Puppy on the view (a point without him)
 	var who: Node3D = null
 	if cast != null and cast.puppy != null:
 		who = cast.puppy
@@ -1074,9 +1094,12 @@ func _fit_result_bubble(choose := true) -> void:
 	if who != null:
 		var r := view_rect_of(who.call("bounds"))
 		if r.size.x > 0.0:
+			body = r
 			anchor = Vector2(r.get_center().x, r.position.y)
 	var m := OVERLAY_MARGIN
 	var avoid := overlay_rects()
+	if body.size.x > 0.0:
+		avoid.append(body)   # the bubble never covers Puppy himself
 	if _mission_pill != null and _mission_pill.visible:
 		avoid.append(_mission_pill.get_rect().grow(4.0))
 	if dialogue != null and dialogue.active and dialogue.visible:
@@ -1087,11 +1110,20 @@ func _fit_result_bubble(choose := true) -> void:
 		var reach := Vector2.ONE * StampSlam.RADIUS * 1.3
 		avoid.append(Rect2(_slam.start - reach, reach * 2.0))
 	var gap := ResultBubble.TAIL + 6.0
+	# Above his head, beside it (right, left: at his head's height, the tail at his side), below his feet;
+	# the tail points at the part of him it faces (2026-11-01 user: "말풍선 방향이 이상한 곳").
+	var head_y := body.position.y + minf(body.size.y * 0.3, 40.0)
+	var points := [
+		anchor,
+		Vector2(body.end.x, head_y),
+		Vector2(body.position.x, head_y),
+		Vector2(body.get_center().x, body.end.y),
+	]
 	var tries := [
 		Vector2(anchor.x - bubble_size.x * 0.5, anchor.y - gap - bubble_size.y),
-		Vector2(anchor.x + gap, anchor.y - bubble_size.y * 0.5),
-		Vector2(anchor.x - gap - bubble_size.x, anchor.y - bubble_size.y * 0.5),
-		Vector2(anchor.x - bubble_size.x * 0.5, anchor.y + gap * 2.0),
+		Vector2(body.end.x + gap, head_y - bubble_size.y * 0.5),
+		Vector2(body.position.x - gap - bubble_size.x, head_y - bubble_size.y * 0.5),
+		Vector2(body.get_center().x - bubble_size.x * 0.5, body.end.y + gap),
 	]
 	var fit := func(at: Vector2) -> Rect2:
 		return Rect2(Vector2(clampf(at.x, m, maxf(m, view.size.x - m - bubble_size.x)),
@@ -1114,7 +1146,7 @@ func _fit_result_bubble(choose := true) -> void:
 	if not first:   # placed already: it glides there (a new side after a stamp too), never jumps
 		var from := _result_bubble.position
 		goal.position = from + (goal.position - from).limit_length(ResultBubble.MAX_STEP)
-	_result_bubble.place(goal, anchor)
+	_result_bubble.place(goal, points[_bubble_side])
 
 
 ## The round's question ended (an answer, a pull, the run's result, the demo): the box closes, the
@@ -1199,7 +1231,7 @@ func _run_next_wait(delta: float) -> void:
 	if _next_wait > 0.0:
 		return
 	var talking := cast != null and cast.dugi != null and (cast.dugi.speaking() or (dialogue != null and dialogue.active)
-		or cast.explanation_pending())
+		or cast.explanation_pending() or _reason_waits)
 	if talking or _slam != null or not experiment.settled():
 		return   # Dugi first (also one still to come: the cast's delay_s); a lab that settles is let settle
 	# (a run that keeps going, an orbit or a swing, is set up again once Dugi is done)
@@ -1224,7 +1256,8 @@ func _run_round_wait(delta: float) -> void:
 	_round_wait = maxf(0.0, _round_wait - delta)
 	if _round_wait > 0.0:
 		return
-	var talking := cast != null and cast.dugi != null and (cast.dugi.speaking() or (dialogue != null and dialogue.active))
+	var talking := cast != null and cast.dugi != null and (cast.dugi.speaking() or (dialogue != null and dialogue.active)
+		or _reason_waits)
 	if not talking:
 		_round_wait = -1.0
 		_celebrate_round()
@@ -1235,6 +1268,7 @@ func skip_round_wait() -> void:
 	if _round_wait < 0.0:
 		return
 	_close_dialogue()
+	_reason_waits = false   # (read too)
 	if cast != null and cast.dugi != null:
 		cast.dugi.stop(true)
 	_round_wait = 0.0
