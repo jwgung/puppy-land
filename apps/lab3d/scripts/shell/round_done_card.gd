@@ -1,6 +1,6 @@
 ## The round-done card (2026-10-28): when the child finishes a spot's last stage in this visit, a
 ## card in the middle of the view shows the round's stamps, big, and two big buttons: [더 해 보기] (the card
-## goes, the lab stays) and [다음으로] (blue; back to the map, like ← 지도). Pictures only (2026-10-28
+## goes, the lab is set up again) and [다음으로] (blue; back to the map, like ← 지도). Pictures only (2026-10-28
 ## user decision: no headline or caption). While it is up nothing behind it takes a touch: a dim
 ## over the whole view stops every press (the QuestionShield pattern), and it lets go of input in the
 ## frame it closes (MOUSE_FILTER_IGNORE before queue_free).
@@ -66,7 +66,7 @@ func _init(stamp_count: int, with_piece := false) -> void:
 	var buttons := Ui.hbox(16)
 	buttons.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	stack.add_child(buttons)
-	# [더 해 보기] first and quiet (the card goes, the lab stays); [다음으로] last and blue, the way on
+	# [더 해 보기] first and quiet (the card goes, the lab is set up again); [다음으로] last and blue, the way on
 	# (back to the map, like ← 지도): the two no longer look alike.
 	stay_button = Ui.button("더 해 보기", "ChoiceButton", 84)
 	stay_button.name = "Stay"

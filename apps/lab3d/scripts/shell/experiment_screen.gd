@@ -544,7 +544,7 @@ func _on_back_pressed() -> void:
 ## next time, like any unanswered visit).
 func handle_back() -> bool:
 	if _done_card != null:
-		_done_card.close()   # back closes the round-done card first (the lab stays, like 더 해 보기)
+		_done_card.close()   # back closes the round-done card first (the lab stays as it is)
 		_done_card = null
 		return true
 	if mission_round != null and mission_round.clue_open() and dialogue != null and dialogue.active:
