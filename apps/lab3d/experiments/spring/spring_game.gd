@@ -6,9 +6,9 @@
 ## reaches −d. A stage asks for the bell at d = 0.5, then 1 m, then the same 1 m with the heavy ball
 ## (MissionRound: the lab's `bell_reach` = how far the first swing goes past the rest, as shown,
 ## beyond the stage's threshold d − 0.05; one change a stage, 2026-11-01: the swing's size does not
-## depend on the mass, the heavy ball only swings slower). The piece hangs in the bell as its clapper; each stamp lights a
-## lamp on the bell's post, the last shakes the piece out (LabGame.launch_piece). Visual only: no body;
-## the ball and the numbers are SpringModel's as before.
+## depend on the mass, the heavy ball only swings slower). The piece hangs in the bell as its
+## clapper; each stamp lights a lamp on the bell's post, the last shakes the piece out
+## (LabGame.launch_piece). Visual only: no body; the ball and the numbers are SpringModel's as before.
 class_name SpringGame
 extends LabGame
 

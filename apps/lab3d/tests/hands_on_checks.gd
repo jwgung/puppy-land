@@ -362,21 +362,27 @@ func check_bridge_and_reason() -> void:
 	var lab: Experiment = screen.experiment
 	var box: DialogueBox = screen.dialogue
 	screen._predict_pick_choice(str(predict.answer))
-	var grew := false
 	var said := ""
 	for i in 30:
 		await tree.process_frame
-		grew = grew or screen._mission_pill.scale.x > 1.05
 		if box.active and box.visible and said == "":
 			said = box.joined()
 	var want := "%s %s" % [predict.bridge, MissionRound.mission_line(definition, 0)]
-	if said != want or box.speaker != "dugi" or box.face != str(predict.bridge_face) or screen.strip_pulses != 1 or not grew:
-		problems.append("bridge: said '%s' (want '%s'), %s %s, pulses %d, grew %s" % [said, want, box.speaker, box.face, screen.strip_pulses, grew])
+	var stage_text := str(MissionRound.missions(definition).stages[0].text)
+	# While he tells it the strip keeps the pick and does not pulse (the kids look at his box first).
+	if said != want or box.speaker != "dugi" or box.face != str(predict.bridge_face) or screen.strip_pulses != 0 \
+			or screen._mission_text.text == stage_text:
+		problems.append("bridge: said '%s' (want '%s'), %s %s, pulses %d, strip '%s'" % [said, want, box.speaker, box.face,
+			screen.strip_pulses, screen._mission_text.text])
+	screen.handle_back()   # Dugi's bridge closes: the first mission shows on the strip, pulsing once
+	var grew := false
 	for i in roundi(ExperimentScreen.PULSE_S * 60.0) + 5:
 		await tree.process_frame
+		grew = grew or screen._mission_pill.scale.x > 1.05
+	if screen._mission_text.text != stage_text or screen.strip_pulses != 1 or not grew:
+		problems.append("bridge: after his box the strip reads '%s', pulses %d, grew %s" % [screen._mission_text.text, screen.strip_pulses, grew])
 	if screen._mission_pill.scale != Vector2.ONE or screen._mission_pill.self_modulate != Color.WHITE:
 		problems.append("bridge: the strip did not settle after its pulse")
-	screen.handle_back()   # Dugi's bridge closes
 	# The first drop: nothing tells the reason before Puppy's line; right after it Dugi does.
 	var r: float = lab.BALL_RADIUS
 	await _drag_to(screen, lab.balls.red.global_position, Vector3(lab.starts.red.x, 6.0 + r, lab.starts.red.z))

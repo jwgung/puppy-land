@@ -16,10 +16,10 @@ extends LabGame
 const CHEST := Vector3(0.4, 0.3, 0.3)
 const ROPE := 0.5                        # m from the drum's bottom down to the chest's lid
 const GAP := 0.06                        # m between the drum's side and the chest
-## The lid's angle (deg) after 0, 1, 2 stamps: shut (the piece glints through the crack) until the
+## The lid's angle (deg) before the last stamp: shut (the piece glints through the crack) until the
 ## last stamp throws it open as the big drum lifts the chest (2026-11-01: the chest's story is one goal,
 ## lifting it out; floating a drum does not open a lid).
-const LID_DEG := [8.0, 8.0, 8.0]
+const LID_SHUT := 8.0
 const LID_OPEN := 115.0
 const LID_S := 0.45
 const FLOOR_Y := 0.2                     # the tank floor (BuoyancyLab FLOOR_Y)
@@ -77,7 +77,7 @@ func _follow() -> void:
 
 func _cleared(stage_index: int, last: bool) -> void:
 	_lid_from = _lid.rotation_degrees.x
-	_lid_to = -LID_OPEN if last else -float(LID_DEG[mini(stage_index + 1, LID_DEG.size() - 1)])
+	_lid_to = -LID_OPEN if last else -LID_SHUT
 	_lid_at = _t
 	if last:
 		launch_piece(Vector3(1.6, 6.2, 0.6), lab_g())
@@ -86,7 +86,7 @@ func _cleared(stage_index: int, last: bool) -> void:
 
 func _jump(stamps: int) -> void:
 	_lid_at = -1.0
-	_lid.rotation_degrees.x = -LID_OPEN if stamps >= stages else -float(LID_DEG[mini(stamps, LID_DEG.size() - 1)])
+	_lid.rotation_degrees.x = -LID_OPEN if stamps >= stages else -LID_SHUT
 	if stamps < stages and piece != null and piece_state != "taken":
 		set_piece_state("held")
 	_follow()

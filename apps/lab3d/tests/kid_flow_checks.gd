@@ -222,8 +222,8 @@ func check_intro() -> void:
 
 
 ## Dugi names the force at work while he explains the stages too, not only in his introduction
-## (2026-11-01 user: "진자운동이라거나 탄성력이라거나 이런 말을 전혀 안해"): every game lab's stage says
-## name its INTRO_TERMS term at least once.
+## (2026-11-01 user: "진자운동이라거나 탄성력이라거나 이런 말을 전혀 안해"): in every game lab at least one
+## stage's say names its INTRO_TERMS term.
 func check_stage_terms() -> void:
 	var missing := []
 	for definition in ExperimentRegistry.load_all():
@@ -264,7 +264,7 @@ func check_next_stage_reset() -> void:
 			shown_at = i
 			break
 	await _frames(60)
-	var kept: bool = lab.status() == "landed" and screen.next_resets == 0 and screen._mission_text.text == ""
+	var kept: bool = lab.status() == "landed" and screen.next_presses == 0 and screen._mission_text.text == ""
 	screen.experiment_action("release")   # the child's own try meanwhile: the button stays
 	await _frames(30)
 	var stays: bool = screen.next_shown()
@@ -273,7 +273,7 @@ func check_next_stage_reset() -> void:
 	# (the stamp signal alone here: the round's current stage is the one told)
 	var told: bool = screen.dialogue.active and screen.dialogue.joined() == MissionRound.mission_line(screen.definition.raw, r.stage())
 	var waiting: bool = screen._mission_text.text == ""   # the strip waits for his box
-	var reset: bool = lab.status() == "ready" and screen.next_resets == 1 and not screen.next_shown()
+	var reset: bool = lab.status() == "ready" and screen.next_presses == 1 and not screen.next_shown()
 	for i in 8:
 		screen.dialogue.advance()
 	await _frames(3)

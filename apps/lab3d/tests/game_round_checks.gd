@@ -34,10 +34,11 @@ func check_round() -> void:
 	var m: Manipulator = screen.manipulator
 	var stages: Array = MissionRound.missions(lab.definition.raw).get("stages", [])
 	var predict: Dictionary = MissionRound.predict(lab.definition.raw)
-	# The strip: one stamp per stage and the first stage's text.
+	# The strip: one stamp per stage; the first stage's text waits for Dugi's bridge after the answer
+	# (2026-11-01 user: the kids missed it on the strip).
 	expect.call(screen._mission_strip != null and screen._mission_strip.visible and screen._stamp_labels.size() == stages.size()
-		and screen._mission_text.text == str(stages[0].text),
-		"round: the strip shows one stamp per stage and the first stage", screen._mission_text.text)
+		and screen._mission_text.text == "",
+		"round: the strip shows one stamp per stage, the first stage's text waits for Dugi", screen._mission_text.text)
 	# The formula's answer is hidden before the throw (key card and sidebar both read "?": the card
 	# in a child's words, the sidebar with its unit).
 	screen._update_readouts(false)

@@ -159,10 +159,10 @@ var _confetti: Confetti = null
 var _done_card: RoundDoneCard = null
 var _next_due := false                # a stage was won and nothing was done since (its stamp may still fly)
 var _next_wait := -1.0                # >= 0: a stage was won, 다음 미션 shows once Dugi is done (_run_next_wait)
-var next_resets := 0                   # times 다음 미션 set the lab up again (tests)
+var next_presses := 0                  # times 다음 미션 was pressed (tests)
 var _next_button: Button = null        # 다음 미션 (2026-11-01: the child goes on when ready)
-var _mission_waits := false            # the next stage's text waits until Dugi has told it (다음 미션)
-var _mission_told := false             # 다음 미션 was pressed: the text shows once his box closes
+var _mission_text_held := false        # the stage's text is off the strip until Dugi has told it
+var _mission_announced := false        # his telling of it is on its way (the bridge, 다음 미션): the text shows once his box closes
 var _round_wait := -1.0               # >= 0: the round is done, the cheer waits for Dugi (_run_round_wait)
 var _piece_wait := -1.0                # s left waiting for the piece game's last step (< 0: not waiting)
 var _card_left := -1.0                 # s until the round-done card shows (after the confetti starts)
@@ -716,6 +716,10 @@ func _setup_game() -> void:
 	experiment.set_game_stage(mission_round.stage(), mission_round.stamps, false)   # the piece game (LabGame): the saved stamps
 	mission_round.open(dialogue != null)
 	if mission_round.asking():
+		# The first mission comes in his bridge after the answer, then on the strip (2026-11-01).
+		_mission_text_held = cast != null and cast.dugi != null
+		_mission_announced = _mission_text_held
+		_hold_mission_text()
 		_ask(mission_round.choices())
 
 
@@ -781,7 +785,7 @@ func _show_stamps(count: int) -> void:
 		(_stamp_labels[i] as StampSlot).set_filled(i < filled)
 	if _mission_text == null:
 		return
-	_mission_text.text = "" if _mission_waits else (mission_round.stage_text(stage) if stage >= 0 else DONE_TEXT)
+	_mission_text.text = "" if _mission_text_held else (mission_round.stage_text(stage) if stage >= 0 else DONE_TEXT)
 	var before := _key_ids
 	_build_key_cards(stage)
 	if _key_ids != before:
@@ -791,6 +795,28 @@ func _show_stamps(count: int) -> void:
 	_build_picks(stage)
 	mission_round.stage_shown()   # its automatic conditions are set once the lab is not mid-run
 	_apply_auto_conditions()
+
+
+## The strip without the stage's text (it waits for Dugi to tell it); the stamps, key cards and
+## picture buttons stay as _show_stamps set them.
+func _hold_mission_text() -> void:
+	if _mission_text != null:
+		_mission_text.text = ""
+		_fit_mission_strip()
+
+
+## The current stage's text on the strip (Dugi has told it), the strip pulsing once when he did. Only
+## the text: the stage's cards, buttons and conditions were set when its stamp came (_show_stamps).
+func _release_mission_text(pulse: bool) -> void:
+	_mission_text_held = false
+	_mission_announced = false
+	if _mission_text == null:
+		return
+	var stage := mission_round.stage()
+	_mission_text.text = mission_round.stage_text(stage) if stage >= 0 else DONE_TEXT
+	_fit_mission_strip()
+	if pulse:
+		_pulse_strip()
 
 
 ## missions.auto_conditions (2026-10-29: the collision's ball weights): the conditions the round asks
@@ -961,7 +987,8 @@ func _start_bridge() -> void:
 	if mission_round.bridge_line() != "" and cast != null and cast.dugi != null:
 		_dialogue_started = false
 		cast.dugi.explain(experiment.explain_point)
-	_pulse_strip()
+	if not _mission_text_held:
+		_pulse_strip()   # (a held text pulses when it shows, after his box: _run_mission_reveal)
 
 
 ## The mission strip grows a little and glows warm once (PULSE_S), around the pill's centre.
@@ -1054,6 +1081,11 @@ func _run_reason_wait() -> void:
 	if (dialogue != null and dialogue.active) or is_sidebar_open():
 		return   # the child is still reading him (or reading the sidebar: the reason waits for his box)
 	_reason_waits = false
+	_dugi_tells_again()
+
+
+## Dugi starts over and points at the lab: his box opens with the round's next line (take_line).
+func _dugi_tells_again() -> void:
 	cast.dugi.stop(true)
 	_dialogue_started = false
 	cast.dugi.explain(experiment.explain_point)
@@ -1173,6 +1205,8 @@ func _on_question_ended() -> void:
 		_put_guide_back()   # a nudge's paw ended over the lifted box: back over the box in its own place
 	_end_nudge()
 	_fit_picks()
+	if _mission_text_held and mission_round.pick == "":
+		_release_mission_text(false)   # unanswered (a pull on the ball): no bridge to tell it, the strip at once
 
 
 ## A stamp was saved (MissionRound.stamp_earned, after Puppy's win line): the next stage's text appears at once;
@@ -1182,8 +1216,8 @@ func _on_question_ended() -> void:
 func _on_stamp_earned(stamps: int) -> void:
 	_next_due = stamps < mission_round.stage_count()
 	_hide_next_button()
-	_mission_waits = _next_due and cast != null and cast.dugi != null   # Dugi tells it first (다음 미션)
-	_mission_told = false
+	_mission_text_held = _next_due and cast != null and cast.dugi != null   # Dugi tells it first (다음 미션)
+	_mission_announced = false
 	if _slam != null:
 		_slam.finish()
 	_show_stamps(stamps)
@@ -1243,7 +1277,7 @@ func _run_next_wait(delta: float) -> void:
 		or cast.explanation_pending() or _reason_waits)
 	if talking or _slam != null or not experiment.settled():
 		return   # Dugi first (also one still to come: the cast's delay_s); a lab that settles is let settle
-	# (a run that keeps going, an orbit or a swing, is set up again once Dugi is done)
+	# (a run that keeps going, an orbit or a swing: 다음 미션 shows once Dugi is done)
 	_next_wait = -1.0
 	_next_due = false
 	_show_next_button()
@@ -1255,9 +1289,8 @@ func _cancel_next() -> void:
 	_next_due = false
 	_next_wait = -1.0
 	_hide_next_button()
-	if _mission_waits:
-		_mission_waits = false
-		_show_stamps(mission_round.stamps)
+	if _mission_text_held:
+		_release_mission_text(false)
 
 
 ## 다음 미션 shows (bottom middle, over the picture buttons).
@@ -1300,29 +1333,25 @@ func next_mission() -> void:
 	_hide_next_button()
 	if experiment.status() != "ready":
 		experiment_action("reset")
-	next_resets += 1
-	if not _mission_waits or cast == null or cast.dugi == null:
-		_mission_waits = false
-		_show_stamps(mission_round.stamps)
+	next_presses += 1
+	if not _mission_text_held:   # (no Dugi to tell it: the strip at once)
+		_release_mission_text(false)
 		return
 	mission_round.announce()
-	_mission_told = true
+	_mission_announced = true
 	_close_dialogue()
-	cast.dugi.stop(true)
-	_dialogue_started = false
-	cast.dugi.explain(experiment.explain_point)
+	_dugi_tells_again()
 
 
-## The told mission shows on the strip once Dugi's box with it has closed.
+## The told mission shows on the strip, pulsing once, when Dugi's box with it has closed (the bridge's
+## first mission, or 다음 미션's): nothing of it is still to be told and no box is open. (A question that
+## ends unanswered shows it at once: _on_question_ended.)
 func _run_mission_reveal() -> void:
-	if not _mission_waits or not _mission_told or mission_round.announcing():
+	if not _mission_text_held or not _mission_announced or mission_round.asking() or mission_round.announcing():
 		return
-	if dialogue != null and dialogue.active:
+	if mission_round.bridge_line() != "" or (dialogue != null and dialogue.active):
 		return
-	_mission_waits = false
-	_mission_told = false
-	_show_stamps(mission_round.stamps)
-	_pulse_strip()
+	_release_mission_text(true)
 
 
 ## The last stamp is in: the celebration waits until Dugi's explanation of that stage is read (his

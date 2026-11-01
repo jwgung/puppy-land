@@ -73,12 +73,11 @@ const CONDITION_EPS := 1e-6
 const CARD_PLACES := 1
 ## Puppy's miss line needs the miss seen on this many polls in a row (a status of one step is not a result).
 const MISS_POLLS := 2
-## Dugi's bridge from the answer to the mission (predict.bridge) ends with one of these.
 ## Dugi tells each mission in his box before the strip shows it (2026-11-01 user: "미션이 좌측 상단에
 ## 나오니까, 애들이 잘 못찾더라. 두기두기나 퍼피가 미션을 한 번 대화상자에서 설명해주게"): "첫 번째 미션:
 ## <the stage's text>" after the answer (the bridge), the next ones when the child goes on (announce()).
 const ORDINALS := ["첫 번째", "두 번째", "세 번째"]
-const MISSION_FACE := "explain"
+const MISSION_FACE := "explain"   # the face he tells a mission with
 ## The statuses where a lab is not mid-run: the stage's automatic conditions are set only then.
 const AT_REST := ["ready", "rest"]
 
@@ -348,7 +347,8 @@ static func validate(definition: Dictionary) -> PackedStringArray:
 	var problems := PackedStringArray()
 	problems.append_array(_validate_missions(definition.get("missions"), definition.get("observations", []), definition.get("controls", [])))
 	problems.append_array(_validate_series(definition.get("missions"), definition.get("graph", {}).get("series", [])))
-	problems.append_array(_validate_predict(definition.get("predict")))
+	var stage_count: int = (missions(definition).get("stages", []) as Array).size() if missions(definition).get("stages") is Array else 0
+	problems.append_array(_validate_predict(definition.get("predict"), stage_count if stage_count > 0 else ProgressStore.MAX_STAMPS))
 	return problems
 
 
@@ -518,7 +518,7 @@ static func _validate_conditions(conditions: Variant, controls: Array, i: int) -
 ##  "answer": <a choice id>, "reason": <text>, "bridge"?: <Dugi's line from the answer to the mission>,
 ##  "stage"?: <the stage index whose result answers it, 0 by default: the reason comes after it>,
 ##  "bridge_face"?: <Story.FACES>}.
-static func _validate_predict(predict: Variant) -> PackedStringArray:
+static func _validate_predict(predict: Variant, stage_count := ProgressStore.MAX_STAMPS) -> PackedStringArray:
 	var problems := PackedStringArray()
 	if predict == null:
 		return problems
@@ -551,9 +551,10 @@ static func _validate_predict(predict: Variant) -> PackedStringArray:
 		problems.append("predict choices need distinct ids")
 	if predict.get("answer") not in ids:
 		problems.append("predict.answer must be one of the choice ids")
-	if predict.has("stage") and not (predict.stage is int or (predict.stage is float and predict.stage == floorf(predict.stage))) \
-			or predict.has("stage") and int(predict.stage) < 0:
-		problems.append("predict.stage must be a stage index (0, 1, ...)")
+	if predict.has("stage"):
+		var at: Variant = predict.stage
+		if not (_number(at) and float(at) == floorf(float(at)) and float(at) >= 0.0 and float(at) < float(stage_count)):
+			problems.append("predict.stage must be one of the stage indexes (0 .. %d)" % (stage_count - 1))
 	return problems
 
 
