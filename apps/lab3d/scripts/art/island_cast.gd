@@ -110,6 +110,13 @@ func hold_explanation() -> void:
 	_inside = 0.0
 
 
+## Dugi is about to explain this run by himself: the status is one to explain and he waits out
+## delay_s (the screen's set-up-again after a stage waits for him, 2026-11-01 review).
+func explanation_pending() -> bool:
+	return dugi != null and experiment != null and is_instance_valid(experiment) and _armed \
+		and experiment.status() in explain_on
+
+
 ## 처음으로: at once back to rest.
 func reset() -> void:
 	if dugi != null:

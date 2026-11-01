@@ -268,6 +268,51 @@ func check_next_stage_reset() -> void:
 		"kid flow: a child's own next try after the stamp cancels setting the lab up again",
 		"resets %d, status %s" % [screen.next_resets, lab.status()])
 	await _close(screen)
+	# Dugi explains a later stage by himself after the cast's delay_s (incline-friction waits 4.5 s): the
+	# lab is set up again only after that explanation, never under it (2026-11-01 review).
+	screen = await _open("free-fall")
+	r = screen.mission_round
+	r.end_question()
+	lab = screen.experiment
+	var cast: IslandCast = screen.cast
+	for run in 2:   # the first run has the prediction's reason (Dugi at once); the second is a later stage's
+		if run == 1:
+			cast.delay_s = 3.0   # longer than the stamp's flight + NEXT_WAIT_MIN_S
+		screen.experiment_action("release")
+		for i in 240:
+			await tree.process_frame
+			if lab.status() == "landed":
+				break
+		if run == 0:
+			for i in 60 * 6:
+				await tree.process_frame
+				if screen.dialogue.active:
+					screen.dialogue.advance()
+					screen.dialogue.advance()
+			screen.experiment_action("reset")
+			await _frames(2)
+	cast.rearm()
+	var explained := cast.explain_count
+	r.stamp_earned.emit(1)
+	var explained_at := -1
+	var read_at := -1
+	reset_at = -1
+	for i in 60 * 10:
+		await tree.process_frame
+		if explained_at < 0 and cast.explain_count > explained:
+			explained_at = i
+		if screen.dialogue.active:
+			if explained_at >= 0:
+				read_at = i   # his box with the stage's explanation, read
+			screen.dialogue.advance()
+			screen.dialogue.advance()
+		if lab.status() == "ready":
+			reset_at = i
+			break
+	expect.call(explained_at >= 0 and read_at >= explained_at and reset_at > read_at,
+		"kid flow: the lab is set up again after Dugi's own explanation of the stage is read (a long delay_s), not before it",
+		"explained at frame %d, read at %d, set up again at %d" % [explained_at, read_at, reset_at])
+	await _close(screen)
 
 
 func check_pace() -> void:

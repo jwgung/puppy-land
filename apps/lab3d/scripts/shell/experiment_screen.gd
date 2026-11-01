@@ -182,6 +182,7 @@ const DEMO_STAMP_EVERY_S := 1.6
 ## now, the finger seen on an object last frame (a new press is an attempt), the lines shown (tests).
 var _result_bubble: ResultBubble = null
 var _bubble_side := -1                   # the bubble's chosen place (an index of _fit_result_bubble's tries)
+var _bubble_saw_box := false             # Dugi's box was open at the bubble's last choice of side
 var _was_touching := false
 var result_count := {"win": 0, "miss": 0}
 ## The strip's one pulse after the answer that shows where the mission is (strip_pulses counts them, tests).
@@ -426,9 +427,9 @@ func _run_question() -> void:
 	if r.clue_open() and not dialogue.active:   # the clue (or Dugi's introduction) was read: the next line, or Dugi asks
 		dialogue.set_speaker("dugi")
 		r.clue_read()
-		dialogue.hold = r.clue_to_open().is_empty()   # the question holds; another line before it turns on a tap
 		if not r.asking():
-			return
+			return   # (no question after it: question_ended has let the box go)
+		dialogue.hold = r.clue_to_open().is_empty()   # the question holds; another line before it turns on a tap
 	elif not r.clue_to_open().is_empty() and not dialogue.active and not is_sidebar_open() and _layout_dialogue():
 		var clue := r.clue_to_open()   # [text, face, speaker]: Puppy's clue, then Dugi's introduction
 		dialogue.set_speaker(str(clue[2]), clue[1])
@@ -882,6 +883,12 @@ func _end_nudge() -> void:
 	_nudging = false
 	if hand_guide != null:
 		hand_guide.stop()
+		_put_guide_back()
+
+
+## The hand guide's own place: just over Dugi's box, under the strip, picks and later overlays.
+func _put_guide_back() -> void:
+	if hand_guide != null and dialogue != null:
 		view.move_child(hand_guide, dialogue.get_index() + 1)
 
 
@@ -1013,6 +1020,7 @@ func _on_result_told(_stage: int, won: bool, text: String, face: String) -> void
 	_result_bubble = ResultBubble.new(text, face, won)
 	view.add_child(_result_bubble)
 	_bubble_side = -1
+	_bubble_saw_box = dialogue != null and dialogue.active and dialogue.visible
 	_fit_result_bubble()
 
 
@@ -1041,7 +1049,9 @@ func _run_result_bubble(delta: float) -> void:
 			_result_bubble.queue_free()
 		_result_bubble = null
 		return
-	_fit_result_bubble(false)
+	var box_up := dialogue != null and dialogue.active and dialogue.visible
+	_fit_result_bubble(box_up and not _bubble_saw_box)   # Dugi's box opened under it: a side clear of it, gliding
+	_bubble_saw_box = box_up
 
 
 ## Where Puppy's line goes: just above Puppy on the view (the cat without him, else the view's upper
@@ -1123,6 +1133,7 @@ func _on_question_ended() -> void:
 	if _dialogue_index >= 0:
 		view.move_child(dialogue, _dialogue_index)   # back under the overlays it sat under
 		_dialogue_index = -1
+		_put_guide_back()   # a nudge's paw ended over the lifted box: back over the box in its own place
 	_end_nudge()
 	_fit_picks()
 
@@ -1186,13 +1197,15 @@ func _run_next_wait(delta: float) -> void:
 	_next_wait = maxf(0.0, _next_wait - delta)
 	if _next_wait > 0.0:
 		return
-	var talking := cast != null and cast.dugi != null and (cast.dugi.speaking() or (dialogue != null and dialogue.active))
+	var talking := cast != null and cast.dugi != null and (cast.dugi.speaking() or (dialogue != null and dialogue.active)
+		or cast.explanation_pending())
 	if talking or _slam != null or not experiment.settled():
-		return   # Dugi first; a run still moving is let finish
+		return   # Dugi first (also one still to come: the cast's delay_s); a lab that settles is let settle
+	# (a run that keeps going, an orbit or a swing, is set up again once Dugi is done)
 	_next_wait = -1.0
 	_next_due = false
 	if experiment.status() != "ready":
-		experiment_action("reset")
+		experiment_action("reset", false)
 		next_resets += 1
 
 
@@ -2095,9 +2108,12 @@ func _run_measured_action(id: String) -> void:
 	experiment.change_from_input(experiment.run_action.bind(id))
 
 
-func experiment_action(id: String) -> void:
+## `by_child`: false for the screen's own set-up-again after a stage (the camera the child turned stays,
+## the hand guide's wait is not the child's).
+func experiment_action(id: String, by_child := true) -> void:
 	_cancel_next()   # the child (or 다시) goes on: no setting up again after the stage
-	_poke_guide()
+	if by_child:
+		_poke_guide()
 	_drop_held_object()
 	if mission_round != null:
 		mission_round.acted(id == "reset")   # a run action (tests, --auto-release): an attempt like a let-go hand
@@ -2110,7 +2126,8 @@ func experiment_action(id: String) -> void:
 		else:
 			cast.user_changed()
 	if id == "reset":
-		_snap_camera_home()
+		if by_child:
+			_snap_camera_home()
 		_apply_auto_conditions()   # the stage's automatic conditions again (MissionRound.acted)
 	_refresh()
 
