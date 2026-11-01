@@ -27,7 +27,7 @@ apps/lab3d/
                                       View3D(3D 뷰·제스처), CameraRig(카메라 6모드·보조 시점), GraphView,
                                       Manipulator(물체 조작: 끌기·새총·꾹 누르기), ManipSurface(조작 평면), HoldRamp(꾹 누르는 동안 커지는 힘),
                                       PressHandleLab(지렛대·도르래 공용: 누르는 힘·막대·시계), RollingGraph(누르는 동안만 흐르는 10초 창 그래프), DialogueBox(두기두기 게임식 대화창),
-                                      StampSlam·Confetti·RoundDoneCard(도장 쾅, 색종이, 다 깼을 때 카드: 아래 "축하"), ResultBubble(퍼피의 결과 한 줄),
+                                      StampSlam·Confetti·RoundDoneCard(도장 쾅, 색종이, 다 깼을 때 카드: 아래 "축하"), ResultBubble(퍼피의 결과 한 줄), TapCatcher(대화창이 기다릴 때 3D 뷰 탭으로 쪽 넘김),
                                       HandGuide·GuideCoach(손 안내: 물체 위에서 손짓을 보여 주는 빵고양이 앞발 그림과 그 시점, 아래 "손 안내"),
                                       LabSounds(실험의 상태·충격을 읽어 소리를 고름: 아래 "소리")
   experiments/incline_friction/       빗면 마찰 실험(장면, InclineFrictionCorrector = 접촉 힘 보정 설정, InclineProps 소품)
@@ -465,7 +465,7 @@ Android 뒤로가기 한 번이 두 번 오는 문제(2026-10-29, SM-X115 Androi
 | 줄로 짐 들기 | "줄 하나로 무거운 상자를 올리면 힘이 많이 들까?" (많이 들어요) — 1줄 = 상자 무게 그대로 |
 | 미끄럼틀 | "미끄러운 강철 미끄럼틀에서 상자는 어떻게 될까?" (쌩 미끄러져요) — 강철 1단계 |
 
-- 시험: `tests/hands_on_checks.gd`(게임 실험 11개에 `다시`만; 실제 터치로 자유 낙하(두 공·새 시도·탭)·미끄럼틀·통·용수철·추가 놓으면 실행; 데모·`--auto-release`; 66줄의 길이·과학 낱말·기호·표정; 자유 낙하 실패 → 성공·용수철 반 흔들기 뒤 실패·짧은 누름 실패·조건 바꾸면 줄 없음, 말풍선이 퍼피를 가리키고 뷰 안·겹침 없음·2.5초 뒤 사라짐; 다리 문장·스트립 맥동·이유는 첫 결과 뒤·다음 미션 문장; 11개 질문이 1단계 공식으로 답이 보임; 궤도 프레임당 2·3 스텝·1배와 같은 모델·바퀴 도장·노트 문장; 놀이터 울타리 안·받침 간격·걷기·이름표; 도르래 1·2·4줄 × 바닥·꼭대기 줄 끝이 테두리·고리, 바퀴 가운데를 지나지 않음, 접선, 당기는 줄). 붉은 확인: `_check_miss()`를 빼면 결과 한 줄 시험이 실패, 예전 놀이터 배치는 놀이터 시험이 실패(이름표가 다른 모형 23·32 % 가림, 도르래 걷기가 시소 받침을 지남, 받침 0.77 m). 갱신: `run_tests`(게임 실험 버튼), `reset_checks`, `manipulation_checks`(놓으면 미끄러짐), `orbit_lab_checks`(TS 스텝 비교는 1배), `pulley_lab_checks`, `island_cast_checks`, `mission_checks`, `game_round_checks`, `faces_checks`(다리·이유 순서).
+- 시험: `tests/hands_on_checks.gd`(게임 실험 11개에 `다시`만; 실제 터치로 자유 낙하(두 공·새 시도·탭)·미끄럼틀·통·용수철·추가 놓으면 실행; 데모·`--auto-release`; 66줄의 길이·과학 낱말·기호·표정; 자유 낙하 실패 → 성공·용수철 반 흔들기 뒤 실패·짧은 누름 실패·조건 바꾸면 줄 없음, 말풍선이 퍼피를 가리키고 뷰 안·겹침 없음·5초 뒤 사라짐; 다리 문장·스트립 맥동·이유는 첫 결과 뒤·다음 미션 문장; 11개 질문이 1단계 공식으로 답이 보임; 궤도 프레임당 2·3 스텝·1배와 같은 모델·바퀴 도장·노트 문장; 놀이터 울타리 안·받침 간격·걷기·이름표; 도르래 1·2·4줄 × 바닥·꼭대기 줄 끝이 테두리·고리, 바퀴 가운데를 지나지 않음, 접선, 당기는 줄). 붉은 확인: `_check_miss()`를 빼면 결과 한 줄 시험이 실패, 예전 놀이터 배치는 놀이터 시험이 실패(이름표가 다른 모형 23·32 % 가림, 도르래 걷기가 시소 받침을 지남, 받침 0.77 m). 갱신: `run_tests`(게임 실험 버튼), `reset_checks`, `manipulation_checks`(놓으면 미끄러짐), `orbit_lab_checks`(TS 스텝 비교는 1배), `pulley_lab_checks`, `island_cast_checks`, `mission_checks`, `game_round_checks`, `faces_checks`(다리·이유 순서).
 - SM-X115(bench 진행): `다시`만 있는 자유 낙하, 다리 문장, 실패 말풍선과 이유, 성공 말풍선, 놀이터 지도, 도르래 4줄 바닥·들림, 놀이터 실험 배경 셋, 궤도 61 fps.
 
 ### 착지 자리 도미노·시소 고양이·궤도 앞길 (2026-10-29 사용자 요청, 4차)
