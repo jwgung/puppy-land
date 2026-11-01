@@ -45,6 +45,7 @@ func run() -> void:
 	await check_restart_in_app()
 	check_walk_times()
 	await check_walk_group()
+	await check_walk_route()
 	await check_rest_spot()
 	await check_scale()
 	await check_story_places()
@@ -416,6 +417,70 @@ func check_walk_group() -> void:
 		problems.append("an actor faced %.0f deg off where it went (%s)" % [worst_face, worst_at])
 	expect.call(problems.is_empty(), "map walk: Puppy and Dugi walk with the cat (a step behind, %.2f m apart at the closest, at most %.1f m behind), facing their way (worst %.0f deg), to the group's places; taps wait" % [min_apart, max_lag, worst_face],
 		"; ".join(problems))
+	await _free(screen)
+
+
+## The way between any two places (the square and every spot's stand, 2026-11-01 user: "지도에서 세마리
+## 이동 경로가 좀 어색함"): never over a stage, on the drawn paths except the steps on and off them
+## (ROUTE_OFF m at each end), never doubling back (no turn sharper than MAX_TURN over half a metre),
+## the walk at an even pace in the middle.
+const ROUTE_OFF := 1.6
+const MAX_TURN := 120.0
+
+
+func check_walk_route() -> void:
+	var screen := await _home(TABLET)
+	var problems := []
+	var ends := [["the square", Vector2(screen.HOME[0], screen.HOME[1])]]
+	for spot in screen._spots:
+		ends.append([spot.id, Vector2(spot.stand.x, spot.stand.z)])
+	var drawn: PackedVector2Array = screen.map.path_points
+	var worst_turn := 0.0
+	var worst_off := 0.0
+	for from: Array in ends:
+		for to: Array in ends:
+			if from[0] == to[0]:
+				continue
+			var way: PackedVector2Array = MapIsland.resample(screen.route(from[1], to[1]), 0.25)
+			var what := "%s -> %s" % [from[0], to[0]]
+			for spot in screen._spots:
+				var r := float(spot.radius)
+				var c := Vector2(spot.at.x, spot.at.z)
+				if r <= 0.0:
+					continue
+				for p in way:
+					if p.distance_to(c) < r:
+						problems.append("%s: over the %s stage" % [what, spot.id])
+						break
+			for i in way.size():
+				if i * 0.25 < ROUTE_OFF or (way.size() - 1 - i) * 0.25 < ROUTE_OFF:
+					continue
+				var off := INF
+				for q in drawn:
+					off = minf(off, way[i].distance_to(q))
+				worst_off = maxf(worst_off, off)
+				if off > MapIsland.PATH_WIDTH * 0.5 + 0.2:
+					problems.append("%s: %.2f m off the paths at %s" % [what, off, str(way[i])])
+					break
+			for i in range(2, way.size() - 2):
+				var a: Vector2 = way[i] - way[i - 2]
+				var b: Vector2 = way[i + 2] - way[i]
+				if a.length() > 1e-4 and b.length() > 1e-4:
+					var turn := rad_to_deg(absf(a.angle_to(b)))
+					worst_turn = maxf(worst_turn, turn)
+					if turn > MAX_TURN:
+						problems.append("%s: turns %.0f deg at %s" % [what, turn, str(way[i])])
+						break
+	# The pace: even in the middle (the old smoothstep was half again as fast there), slow at the ends.
+	var script: GDScript = load(HOME_SCREEN)
+	var total := 5.0
+	var mid: float = (script.walk_share(2.6, total) - script.walk_share(2.4, total)) / 0.2
+	var avg := 1.0 / total
+	var start: float = script.walk_share(0.1, total) / 0.1
+	if absf(mid - avg) > avg * 0.15 or start > avg * 0.5 or not is_equal_approx(script.walk_share(total, total), 1.0):
+		problems.append("pace: middle %.3f, start %.3f a second (average %.3f)" % [mid, start, avg])
+	expect.call(problems.is_empty(), "map walk: every way between two places stays off the stages, on the paths (worst %.2f m off), never doubles back (sharpest turn %.0f deg), at an even pace" % [worst_off, worst_turn],
+		"; ".join(problems.slice(0, 8)))
 	await _free(screen)
 
 

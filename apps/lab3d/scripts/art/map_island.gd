@@ -47,16 +47,25 @@ const ZONES := {
 }
 ## The cat's home square (x, z), where the paths meet and the cat waits when the map opens.
 const HOME := [0.5, 2.0]
-## The dirt paths (x, z polylines, smoothed by _smooth): from the square to every spot.
+## The dirt paths (x, z polylines, smoothed by _smooth): from the square to every spot. A path
+## never runs on under a stage to another spot (2026-11-01: the way to the free fall went over the
+## collision's plate, the one to the push over the ramp's): the free fall's branches off the throw's
+## path round the collision, the push's off the ramp's before its plate. A path ends under its own
+## spot's plate (the walk stops at the stand before it: IslandHomeScreen.route).
 const PATHS := [
 	[[0.5, 2.0], [-1.4, 1.9], [-3.5, 1.5]],
-	[[-3.5, 1.5], [-5.8, 2.1], [-8.1, 3.3]],
+	[[-2.2, 3.2], [-5.0, 3.0], [-8.1, 3.3]],
 	[[-1.4, 1.9], [-2.9, 4.3], [-4.7, 6.2]],
 	[[0.5, 2.0], [1.9, 3.9], [3.3, 6.2]],
-	[[3.3, 6.2], [5.6, 5.6], [6.6, 3.0]],
+	[[2.1, 4.4], [4.3, 4.4], [5.07, 2.75], [6.6, 3.0]],
 	[[0.5, 2.0], [0.4, -0.1], [0.3, -2.75]],
+	# The yard's front spots (2026-11-01): a short path from the middle one past each stand to its
+	# plate (the cat crossed the sand to them).
+	[[0.32, -1.9], [-1.12, -2.81], [-1.5, -3.95]],
+	[[0.32, -1.9], [1.56, -2.49], [1.9, -3.95]],
 	# Inside the yard (2026-10-29): up the middle between the front spots, then out to the back ones
-	# (their bend is the path point nearest to where the cat stands, so the walk never crosses a stage).
+	# (their bend is the path point nearest to where the cat stands; since 2026-11-01 the walk keeps
+	# off the stages itself, IslandHomeScreen.route).
 	[[0.3, -2.75], [0.35, -5.6]],
 	[[0.35, -5.6], [-2.7, -5.75], [-3.55, -6.35]],
 	[[0.35, -5.6], [3.6, -5.75], [4.35, -6.35]],
@@ -81,6 +90,7 @@ const SEA_Y := -0.2
 const SHORE_F := 0.955              # coast fraction where the beach meets the sea (BEACH_Y at SEA_Y)
 const SHALLOW := 1.0                # m of light shallow water outside the coast
 const PATH_WIDTH := 0.8
+const PATH_STEP := 0.35             # m between a drawn path's samples (the walk's way uses the same)
 const PATH_LIFT := 0.05             # m above the grass (no z-fight at 34 m)
 const OVERLAY_LIFT := 0.03          # yard sand, pond shore
 const PLAZA_LIFT := 0.07
@@ -559,8 +569,7 @@ func _add_paths(b: ArtMeshBuilder) -> void:
 	path_points = PackedVector2Array()
 	var colors := [ArtPalette.PATH, ArtPalette.PATH, ArtPalette.PATH]
 	for line in paths:
-		var points := _smooth(line)
-		var samples := _resample(points, 0.35)
+		var samples := path_samples(line, PATH_STEP)
 		for p in samples:
 			path_points.append(p)
 		var left: Array = []
@@ -580,6 +589,16 @@ func _add_paths(b: ArtMeshBuilder) -> void:
 			for s in 10:
 				disc.append(end + Vector2(cos(TAU * s / 10.0), sin(TAU * s / 10.0)) * PATH_WIDTH * 0.5)
 			_add_flat(b, end, disc, PATH_LIFT, ArtPalette.PATH)
+
+
+## A path as it is drawn: smoothed and sampled every `step` m (the walk's way follows it).
+static func path_samples(line: Array, step: float) -> PackedVector2Array:
+	return _resample(_smooth(line), step)
+
+
+## A polyline sampled every `step` m or less along it (its points kept).
+static func resample(points: PackedVector2Array, step: float) -> PackedVector2Array:
+	return _resample(points, step)
 
 
 static func _smooth(line: Array) -> PackedVector2Array:
