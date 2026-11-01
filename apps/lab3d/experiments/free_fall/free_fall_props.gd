@@ -7,8 +7,9 @@
 ##   to 10 grains per ball so three landings at once stay under the 32-grain budget),
 ## - each ball looks as heavy as it is (set_look, 2026-10-28): one stuff, its radius the cube root
 ##   of its mass against the 1 kg violet ball's 0.25 m, grown from the body's bottom (ArtJuice.look_scale),
-## - the bread cat (CatActor wearing the BreadCat look, 2026-10-27) behind and left of the leftmost
-##   ball, holding it on its pad with its left paw, on a stack of bread crates as tall as the ball is
+## - the bread cat (CatActor wearing the BreadCat look, 2026-10-27) behind the leftmost ball on its
+##   right, between the pink and the red ball (2026-11-02 user; it stood left of the pink one), holding
+##   it on its pad with its right paw, on a stack of bread crates as tall as the ball is
 ##   high (CatCrates); "공 놓기" lets go (the arm follows down), it cheers when all balls landed. A
 ##   finger holding that ball: the cat only stands by. Only meshes: the balls wait and fall as the
 ##   formula says.
@@ -17,8 +18,9 @@ extends PadProps
 
 const RULER_AT := Vector3(-3.6, 0.0, -1.4)
 const CRATE_MAX := 20             # a ball up to 8 m: crates no taller than about 0.4 m
-## Shoulder -> held ball: out to the left and in front (the cat stands behind the ball's pad).
-const CAT_HOLD_DIR := Vector3(0.36, 0.24, 0.9)
+## Shoulder -> held ball: out to the cat's right (-x) and in front (the cat stands behind the ball's
+## pad, between the two balls; 2026-11-02, before +x: the cat stood left of the pink ball).
+const CAT_HOLD_DIR := Vector3(-0.36, 0.24, 0.9)
 const RULER_HEIGHT := 8.5
 const PAD_SIZE := Vector3(0.56, 0.06, 0.56)
 

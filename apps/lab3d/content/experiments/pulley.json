@@ -90,14 +90,14 @@
     "hidden_until_end": ["required", "applied"],
     "hidden_series_until_end": ["required"],
     "stages": [
-      { "threshold": 200.0, "conditions": {"strands": "one", "mass": 20.0}, "text": "1줄로 보물 상자를 선반까지 올리기!", "say": "바퀴에 줄을 걸어 짐을 드는 도구를 도르래라고 해요. 줄 하나로 들면 상자 무게를 내 손이 다 받쳐요. 그래서 힘이 많이 들어요.", "say_face": "worried", "win": "영차영차! 선반까지 올렸어!", "win_face": "happy", "miss": "상자가 꿈쩍 안 해. 더 오래 눌러 봐!", "miss_face": "worried" },
+      { "threshold": 200.0, "conditions": {"strands": "one", "mass": 20.0}, "text": "1줄로 보물 상자를 선반까지 올리기!", "say": "바퀴에 줄을 걸어 짐을 드는 도구가 있어요. 이걸 도르래라고 해요. 줄 하나로 들면 상자 무게를 내 손이 다 받쳐요. 그래서 힘이 많이 들어요.", "say_face": "worried", "win": "영차영차! 선반까지 올렸어!", "win_face": "happy", "miss": "상자가 꿈쩍 안 해. 더 오래 눌러 봐!", "miss_face": "worried" },
       { "threshold": 100.0, "conditions": {"strands": "two", "mass": 20.0}, "text": "2줄로 보물 상자를 선반까지 올리기!", "say": "도르래에서 줄 두 개가 상자를 나눠 들어요. 그래서 힘이 반만 들어요. 대신 줄을 두 배 길게 당겨요.", "say_face": "explain", "win": "두 줄로 올렸어! 불이 켜졌어!", "win_face": "happy", "miss": "줄 두 개로 꾹 눌러 올려 봐!", "miss_face": "thinking" },
       { "threshold": 50.0, "conditions": {"strands": "four", "mass": 20.0}, "text": "4줄로 가볍게 선반까지 올리기!", "say": "줄 네 개가 나눠 들면 힘이 조금만 들어요. 대신 줄을 네 배 길게 당겨요.", "say_face": "happy", "win": "창살이 열렸어! 조각이 나와!", "win_face": "surprised", "miss": "줄 네 개로 꾹 눌러 올려 봐!", "miss_face": "thinking" }
     ]
   },
   "story": { "clue": "보물 상자 창살 안에 조각이 있어! 줄을 당겨서 상자를 높은 선반까지 올려 보자!", "clue_face": "explain", "map_clue": "줄 끝에 빨간 상자가 매달린 곳이야!", "map_clue_face": "explain" },
   "kid": {
-    "intro": "여기는 도르래 실험실이에요. 바퀴에 줄을 걸어 짐을 들어 올리는 도구를 도르래라고 해요. 짐을 잡은 줄이 많을수록 힘이 덜 들어요. 줄 수에 따라 힘이 어떻게 달라지는지 살펴봐요!",
+    "intro": "여기는 도르래 실험실이에요. 바퀴에 줄을 걸어 짐을 들어 올리는 도구가 있어요. 이걸 도르래라고 해요. 짐을 잡은 줄이 많을수록 힘이 덜 들어요. 줄 수에 따라 힘이 어떻게 달라지는지 살펴봐요!",
     "intro_face": "explain",
     "card": "strands",
     "title": "줄이 많으면 힘이 덜 들까?",
