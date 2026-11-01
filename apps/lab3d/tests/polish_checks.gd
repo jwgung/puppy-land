@@ -640,12 +640,17 @@ func check_story_places() -> void:
 	home = await _home(TABLET, false)
 	story = home.story
 	var lift_gap := []
+	var waited := 0
 	for i in 600:
 		story.advance(0.05)
 		if story._lift and story._star != null:
 			lift_gap.append(story._star.position.y - home.cat.position.y)   # the last: where it rides
 		if story.dialogue != null and story.dialogue.active:
 			story.dialogue.advance()
+		elif story.launch_waits:
+			waited += 1
+			if waited > 40:   # the child looks a moment, then pulls the whole way (it reaches the sky)
+				story.launch_star(StoryDirector.LAUNCH_V_MAX)
 		if not story.busy() and i > 100:
 			break
 	var group: Dictionary = home.group_at(home._spots[home._spot_index("orbit")])

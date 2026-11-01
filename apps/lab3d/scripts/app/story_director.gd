@@ -8,8 +8,12 @@
 ## - a found piece's flight (a round completed in a lab): after the spot's flag rises, a star piece
 ##   flies from the spot to the lookout (전망대) and the corner emblem (StarEmblem) fills a wedge.
 ## - the finale (the 11th piece at the lookout, once): the pieces gather into the whole star, Puppy and
-##   Dugi speak, the bread cat lifts the star and it rises to the sky; the sea sparkles, the boats light
-##   their lanterns and sail. The star then stays in the map's sky.
+##   Dugi speak, the bread cat lifts the star, and the child sends it up like the slingshot in the labs
+##   (2026-11-01 user: "여기서 배운 물리 실험을 이용해서 올려보내면 좋겟다"): pull the star down and let
+##   go; it flies straight up at the pull's speed under gravity (y = y0 + v t - g t^2 / 2). A weak pull
+##   rises and comes back down (Dugi: gravity pulled it back, pull harder); one that reaches the sky
+##   (v^2 / 2g past SKY_HIGH) stays there: the sea sparkles, the boats light their lanterns and sail.
+##   The star then stays in the map's sky.
 ##
 ## The camera: while a prologue or the finale plays the director draws the rig itself (the rig's own
 ## easing is paused; the child's view, goal_* and pan, is never touched) with eased moves between
@@ -26,7 +30,8 @@
 ## on a tap on him or 단서; a tapped locked spot gets "음… 여긴 아닌 것 같아." and a small shake; after
 ## HINT_DELAY_S without finding it the next spot glints (a small star twinkling, again and again).
 ##
-## Pictures and words only: the director never opens a lab, sets a control or reads a body. Its 3D
+## Pictures and words only: the director never opens a lab, sets a control or reads a body (the
+## finale's launch is its own formula, no physics body). Its 3D
 ## nodes are outside the map's default view or gone after the story (the map stays clean), apart from
 ## the sky star after the finale.
 class_name StoryDirector
@@ -50,6 +55,14 @@ const STAR_SIZE := 2.4
 const SKY_STAR_AT := Vector3(2.5, 8.5, -3.0)
 const SKY_STAR_SIZE := 0.9
 const SKY_HIGH := Vector3(3.0, 21.0, -6.0)
+## The finale's launch (2026-11-01): the pull straight down (UI units) gives the speed up, a full pull
+## LAUNCH_PULL_FULL the most, LAUNCH_V_MAX; the star flies y = y0 + v t - LAUNCH_G t^2 / 2 and reaches
+## the sky when its top y0 + v^2 / 2g gets to SKY_HIGH.y (about three quarters of a full pull).
+const LAUNCH_G := 9.8
+const LAUNCH_V_MAX := 25.0
+const LAUNCH_PULL_FULL := 170.0
+const LAUNCH_DEAD_ZONE := 16.0     # UI units a press may move and still be a tap (the manipulator's)
+const LAUNCH_DIP_M := 1.2          # m the star comes down under the paws at a full pull
 const PIECE_SIZE := 0.42
 const FLIGHT_IN_S := 0.6
 const FLIGHT_S := 1.3
@@ -107,6 +120,14 @@ var _boats_sail := -1.0
 var _flight_queue: Array = []
 var _flight: Dictionary = {}       # {id, node, from, to, t}
 var _lift := false                 # the finale's star rides above the cat's paws
+var launch_waits := false          # the finale waits for the child's pull on the star
+var launches := 0                  # pulls let go (tests)
+var _pull: Dictionary = {}         # {press, now} the finger pulling the star (screen, UI units)
+var _launch: Dictionary = {}       # {from, v, t} the star flying up
+var _retry_open := false           # Dugi's "pull harder" line is in the box
+var _pull_dots: PullDots = null    # the pull, from the paws down to the star
+var _aim_dots: PullDots = null     # how high this pull sends it (larger dots, up from the star)
+var launch_guide: HandGuide = null  # the paw showing the pull on the star (its own: the map's guide stops in a story)
 var _finale_due := false           # all pieces found, the finale not played: after the flights
 var _finale_done := false          # the star is back in the sky: the map is day
 ## The night map's exploration (refresh): the next spot ("" when all are found) and the found ones.
@@ -435,10 +456,13 @@ func _on_dialogue_closed() -> void:
 		else:
 			_end_cinematic()
 	elif part == "finale":
-		if page < pages.size() - 1:
+		if _retry_open:
+			_retry_open = false
+			_wait_launch()
+		elif page < pages.size() - 1:
 			_open_page(page + 1)
-		else:
-			_open_page(pages.size())   # the last part has no words
+		elif page == pages.size() - 1:
+			_open_page(pages.size())   # the last part has no words: the child's pull
 
 
 # --- the finale ---------------------------------------------------------------------------------
@@ -479,30 +503,166 @@ func _finale_page(i: int) -> void:
 			_move({"yaw": -15.0, "pitch": -16.0, "dist": 9.0, "target": at}, 2.0)
 		1:
 			_move({"yaw": -35.0, "pitch": -18.0, "dist": 10.0, "target": at}, 2.5)
-		2:   # no words: the cat hops over and lifts the star; it rises; the sea sparkles, the boats sail
+		2:   # Dugi: pull it like the slingshot; the cat hops over and lifts the star meanwhile
 			var spot := _lookout()
 			_hop_cat(home.cat.position, spot.stand, 1.1, 1.2)
 			SoundBoard.play(&"hop")
-			_move({"yaw": -25.0, "pitch": -12.0, "dist": 11.0, "target": at + Vector3.DOWN * 0.8}, 1.4)
+			_move(_launch_shot(), 1.4)
 			_beat(1.1, func() -> void:
 				home.cat.cheer(true, 3)
 				_lift = true)
-			_beat(2.1, func() -> void:
-				_lift = false
-				_move_star(SKY_HIGH, 2.2)
-				SoundBoard.play(&"piece_fly")
-				_move({"yaw": -10.0, "pitch": 18.0, "dist": 30.0, "target": SKY_HIGH}, 2.4))
-			_beat(4.3, func() -> void:
-				SoundBoard.play(&"finale")
-				_night(0.0, 2.6)   # the star is back: the day
-				_sparkle_sea()
-				sea.set_lanterns(true)
-				_boats_sail = 0.0
-				_move({"yaw": 15.0, "pitch": -14.0, "dist": 62.0, "target": Vector3(0.0, 4.0, -4.0)}, 2.6))
-			_beat(8.0, func() -> void:
-				_move_star(SKY_STAR_AT, RETURN_S)
-				_hop_cat(home.cat.position, home.trio_spot(home.cat), 1.0, 1.0)
-				_end_cinematic())
+		3:   # no words: the child pulls the star down and lets go
+			_lift = true
+			_wait_launch()
+
+
+## The shot while the child pulls: the cat, the star and the sky above them.
+func _launch_shot() -> Dictionary:
+	var paws: Vector3 = _lookout().stand + Vector3.UP * (2.0 * IslandHomeScreen.ACTOR_SCALE + 0.3)
+	return {"yaw": -25.0, "pitch": -6.0, "dist": 13.0, "target": paws + Vector3.UP * 1.6}
+
+
+## Waits for the pull (the paw shows it: press the star, pull down, let go).
+func _wait_launch() -> void:
+	launch_waits = true
+	_pull = {}
+	_move(_launch_shot(), 1.0)
+	if launch_guide == null:
+		launch_guide = HandGuide.new()
+		home.add_child(launch_guide)
+	home.move_child(launch_guide, shield.get_index() + 1)   # over the shield (the paw takes no touch)
+	var star_at := func() -> Vector2:
+		var at := home._world_to_screen(_star.global_position) if _star != null else Vector2.INF
+		return at if at != Vector2.INF else HandGuide.OFF_VIEW
+	launch_guide.play("pull", star_at, func() -> Vector2: return star_at.call() + Vector2(0.0, LAUNCH_PULL_FULL * 0.8), 3)
+
+
+## The speed (m/s) a pull of `pixels` straight down gives (0 inside the dead zone).
+static func launch_speed(pixels: float) -> float:
+	if pixels <= LAUNCH_DEAD_ZONE:
+		return 0.0
+	return LAUNCH_V_MAX * clampf(pixels / LAUNCH_PULL_FULL, 0.0, 1.0)
+
+
+## The star's highest point (y) when it leaves `from_y` at `speed` up: y0 + v^2 / 2g.
+static func launch_top(from_y: float, speed: float) -> float:
+	return from_y + speed * speed / (2.0 * LAUNCH_G)
+
+
+## The finger on the star while the finale waits: press, pull (the star comes down under the paws,
+## dots show how high it will go), let go (it flies).
+func _launch_input(kind: String, position: Vector2) -> void:
+	match kind:
+		"press":
+			_pull = {"press": position, "now": position}
+			if launch_guide != null:
+				launch_guide.stop()
+		"move":
+			if not _pull.is_empty():
+				_pull.now = position
+		"release":
+			if _pull.is_empty():
+				return
+			var pixels: float = maxf(0.0, (_pull.now as Vector2).y - (_pull.press as Vector2).y)
+			_pull = {}
+			_hide_pull()
+			var speed := launch_speed(pixels)
+			if speed > 0.0:
+				launch_star(speed)
+		"cancel":
+			_pull = {}
+			_hide_pull()
+
+
+## The star leaves the paws straight up at `speed` m/s (the pull's; tests call it too).
+func launch_star(speed: float) -> void:
+	if _star == null or not launch_waits:
+		return
+	launch_waits = false
+	launches += 1
+	_lift = false
+	_star.position = _paws_top()   # it leaves from the paws (also when the cat had only just got there)
+	_launch = {"from": _star.position, "v": speed, "t": 0.0}
+	SoundBoard.play(&"launch")
+	home.cat.cheer(true, 2)
+	var top := minf(launch_top(_star.position.y, speed), SKY_HIGH.y)
+	var look := Vector3(_star.position.x, (_star.position.y + top) * 0.5, _star.position.z)
+	_move({"yaw": -15.0, "pitch": 8.0, "dist": maxf(16.0, (top - _star.position.y) * 1.6), "target": look}, 0.9)
+
+
+func _step_launch(delta: float) -> void:
+	if not _pull.is_empty() and _star != null and home.cat != null:
+		var pixels: float = maxf(0.0, (_pull.now as Vector2).y - (_pull.press as Vector2).y)
+		var share := clampf(pixels / LAUNCH_PULL_FULL, 0.0, 1.0)
+		var cradle := _paws_top()
+		_star.position = cradle + Vector3.DOWN * LAUNCH_DIP_M * share
+		_show_pull(cradle, _star.position, launch_speed(pixels))
+	if _launch.is_empty() or _star == null:
+		return
+	_launch.t += delta
+	var from: Vector3 = _launch.from
+	var v: float = _launch.v
+	var t: float = _launch.t
+	var y := from.y + v * t - 0.5 * LAUNCH_G * t * t
+	_star.position = Vector3(from.x, y, from.z)
+	if y >= SKY_HIGH.y:
+		_launch = {}
+		_reach_sky()
+	elif t > v / LAUNCH_G and y <= from.y:
+		# It came back down (gravity): to the paws again, and Dugi says pull harder.
+		_launch = {}
+		_star.position.y = from.y
+		_lift = true
+		SoundBoard.play(&"land")
+		_move(_launch_shot(), 0.8)
+		_retry_open = true
+		dialogue.set_speaker("dugi", Story.finale_retry_face())
+		dialogue.open(Story.finale_retry_line())
+		_layout()
+
+
+## The star got to the sky: the day comes back, the sea sparkles, the boats sail; then it settles in
+## the map's sky and the cat hops home.
+func _reach_sky() -> void:
+	SoundBoard.play(&"finale")
+	_night(0.0, 2.6)
+	_sparkle_sea()
+	sea.set_lanterns(true)
+	_boats_sail = 0.0
+	_move_star(Vector3(_star.position.x, SKY_HIGH.y, _star.position.z), 0.4)
+	_move({"yaw": 15.0, "pitch": -14.0, "dist": 62.0, "target": Vector3(0.0, 4.0, -4.0)}, 2.6)
+	_beat(3.7, func() -> void:
+		_move_star(SKY_STAR_AT, RETURN_S)
+		_hop_cat(home.cat.position, home.trio_spot(home.cat), 1.0, 1.0)
+		_end_cinematic())
+
+
+func _paws_top() -> Vector3:
+	return home.cat.position + Vector3.UP * (2.0 * IslandHomeScreen.ACTOR_SCALE + 0.3)   # over the map-size cat's paws
+
+
+func _show_pull(cradle: Vector3, star_at: Vector3, speed: float) -> void:
+	if _pull_dots == null:
+		_pull_dots = PullDots.new()
+		home.world.add_child(_pull_dots)
+		_aim_dots = PullDots.new()
+		_aim_dots.scale = Vector3.ONE * AIM_DOT_SCALE
+		home.world.add_child(_aim_dots)
+	_pull_dots.show_line(star_at, cradle)
+	var top := minf(launch_top(star_at.y, speed), SKY_HIGH.y)
+	if speed > 0.0:
+		_aim_dots.show_line(star_at / AIM_DOT_SCALE, Vector3(star_at.x, top, star_at.z) / AIM_DOT_SCALE)
+	else:
+		_aim_dots.hide_line()
+
+
+const AIM_DOT_SCALE := 3.0         # the aim dots: three times the pull dots' size and spacing
+
+
+func _hide_pull() -> void:
+	if _pull_dots != null:
+		_pull_dots.hide_line()
+		_aim_dots.hide_line()
 
 
 # --- flights -----------------------------------------------------------------------------------
@@ -604,6 +764,7 @@ func advance(delta: float) -> void:
 			(b[1] as Callable).call()
 	_step_night(delta)
 	_step_star(delta)
+	_step_launch(delta)
 	_step_pieces(delta)
 	_step_cat(delta)
 	_step_boats(delta)
@@ -699,6 +860,13 @@ func _finish() -> void:
 		_star = null
 	_star_motion = {}
 	_lift = false
+	launch_waits = false
+	_launch = {}
+	_pull = {}
+	_retry_open = false
+	_hide_pull()
+	if launch_guide != null:
+		launch_guide.stop()
 	for s in _sparkles:
 		(s[0] as Node3D).queue_free()
 	_sparkles.clear()
@@ -727,12 +895,33 @@ func _finish() -> void:
 
 ## A tap anywhere but the box and 건너뛰기: the same as a tap on the box (the whole page, the next).
 func _on_shield_input(event: InputEvent) -> void:
+	if launch_waits and not (dialogue != null and dialogue.active):
+		_launch_event(event)
+		shield.accept_event()
+		return
 	var tap: bool = (event is InputEventScreenTouch and event.pressed) \
 		or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT
 			and event.device != InputEvent.DEVICE_ID_EMULATION)   # a touch's emulated click: one tap, one page
 	if tap:
 		tap_page()
 		shield.accept_event()
+
+
+## A pointer event on the shield while the finale waits for the pull (a touch, or the mouse that is
+## not a touch's emulated click): press / move / release for _launch_input.
+func _launch_event(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		if event.index == 0:
+			_launch_input("press" if event.pressed else ("cancel" if event.canceled else "release"), event.position)
+		elif event.pressed:
+			_launch_input("cancel", event.position)   # a second finger: no throw
+	elif event is InputEventScreenDrag:
+		if event.index == 0:
+			_launch_input("move", event.position)
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.device != InputEvent.DEVICE_ID_EMULATION:
+		_launch_input("press" if event.pressed else "release", event.position)
+	elif event is InputEventMouseMotion and event.device != InputEvent.DEVICE_ID_EMULATION:
+		_launch_input("move", event.position)
 
 
 func tap_page() -> void:
