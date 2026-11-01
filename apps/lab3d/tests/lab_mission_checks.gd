@@ -274,6 +274,7 @@ func _observed(lab: Experiment) -> String:
 func _ops(screen: Control, ops: Array) -> void:
 	var lab: Experiment = screen.experiment
 	for op in ops:
+		screen._cancel_next()   # each op is the child's touch: a try after a stamp keeps the lab as it is
 		match op[0]:
 			"ctl":
 				screen._set_control(op[1], op[2])
@@ -370,6 +371,9 @@ func _record(id: String, missions: bool) -> Array:
 	for attempt in ROUNDS[id].slice(0, 2):
 		await _ops(screen, attempt[1])
 		for k in int(attempt[2]):
+			# The lab set up again after a won stage (ExperimentScreen._run_next_wait) is the screen's
+			# own step for the next stage, not the round's judging: off here, the runs compared as they go.
+			screen._cancel_next()
 			await tree.physics_frame
 			await tree.process_frame
 			var row := [lab.status(), str(lab.observations())]

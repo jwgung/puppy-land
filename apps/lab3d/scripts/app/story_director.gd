@@ -160,7 +160,7 @@ func _exit_tree() -> void:
 # --- state -------------------------------------------------------------------------------------
 
 ## A prologue or the finale plays: the director has the camera and the screen (the map's labels,
-## top bar and taps wait).
+## map buttons and taps wait).
 func cinematic() -> bool:
 	return part == "prologue" or part == "finale"
 
@@ -237,6 +237,15 @@ func hush() -> void:
 	if riddle != null and riddle.active:
 		riddle.close(true)
 	_step_spot_glow(0.0)
+
+
+## A tap on the map beside Puppy's open box (not on a spot): his page turns as a tap on the box does.
+## True if a box was open.
+func tap_riddle() -> bool:
+	if riddle == null or not riddle.active:
+		return false
+	riddle.advance()
+	return true
 
 
 ## Back on the map (Android back): Puppy's open box closes first. True if it did.
@@ -712,7 +721,7 @@ func _finish() -> void:
 	page = -1
 	emblem.visible = true
 	home.set_cinematic(false)
-	_layout()   # the top bar is back: the emblem goes under it
+	_layout()   # the map buttons are back: the emblem goes beside them
 	ended.emit(which)
 
 
@@ -734,10 +743,10 @@ func tap_page() -> void:
 func _layout() -> void:
 	var view_size := home.view.size if home.view != null else home.size
 	if emblem != null:
-		# Top left (2026-10-30 user), under the top bar when it shows; the finale's 건너뛰기 is top right.
-		var bar: Control = home.find_child("TopBar", true, false)
-		var top := maxf(bar.size.y, bar.get_combined_minimum_size().y) if bar != null and bar.visible else 0.0
-		emblem.position = Vector2(DIALOGUE_MARGIN + 6.0, top + DIALOGUE_MARGIN + 6.0)
+		# Top left (2026-10-30 user), as far from the edges as the map's buttons (no top bar since
+		# 2026-10-31); the finale's 건너뛰기 is top right.
+		var inset := Ui.safe_insets(home)
+		emblem.position = Vector2(IslandHomeScreen.MAP_EDGE + inset.left, IslandHomeScreen.MAP_EDGE + inset.top)
 	if skip_button != null:
 		skip_button.size = skip_button.get_combined_minimum_size()
 		skip_button.position = Vector2(view_size.x - skip_button.size.x - DIALOGUE_MARGIN, DIALOGUE_MARGIN)

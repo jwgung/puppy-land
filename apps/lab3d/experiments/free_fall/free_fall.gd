@@ -405,6 +405,18 @@ func placement_allowed(id: String, transform: Transform3D) -> bool:
 	return true
 
 
+## A ball moved onto the other one stops beside it (two radii apart, on the side it came from).
+func nearest_placement(id: String, transform: Transform3D) -> Transform3D:
+	var at := transform
+	if id.begins_with(DROP):
+		return at
+	for other in ORDER:
+		if other != id and absf(at.origin.x - starts[other].x) < BALL_RADIUS * 2.0 - 0.001:
+			var side := signf(starts[id].x - starts[other].x)
+			at.origin.x = starts[other].x + (side if side != 0.0 else 1.0) * BALL_RADIUS * 2.0
+	return at
+
+
 func manipulation_placed(id: String, transform: Transform3D) -> void:
 	if id.begins_with(DROP):
 		# A ball let go on its drop line starts at that height, the others stay (2026-10-29), and the

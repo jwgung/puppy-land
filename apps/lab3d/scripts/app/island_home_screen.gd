@@ -59,7 +59,7 @@ var _raising: Dictionary = {}        # {id, flag, t} of the raise playing now
 var raised_count := 0                # flag raises played (tests)
 ## Screenshots (--demo-flag=<id>): that spot's round counts as just completed, in the bench store only.
 static var _demo_flag_done := false
-## The night map (2026-10-28, with the story only): the top bar's 단서 button (Puppy's riddle again)
+## The night map (2026-10-28, with the story only): the map's 단서 button (Puppy's riddle again)
 ## and the tapped locked spot's shake {tag, t} (map_lit shake_spot / shake_offset).
 var clue_button: Button
 var _shake: Dictionary = {}
@@ -168,7 +168,7 @@ func _ready() -> void:
 	rest_spot = _spot_index(ProgressStore.last_spot())
 	_place_trio(TRIO_YAW)
 	refresh_progress()
-	_build_top_bar()
+	_build_map_buttons()
 	_layout()
 	resized.connect(_layout)
 	if Story.enabled:
@@ -234,23 +234,19 @@ func _add_spot(world: Node3D, zone: String, id: String, info: Dictionary) -> voi
 		"stand": info.stand, "zone": zone, "marker": root, "tag": int(info.get("tag", 0))})
 
 
-## The top bar: the brand and the settings button (the home's own chrome, over the map).
-func _build_top_bar() -> void:
-	var bar := Ui.panel("TopBar")
-	bar.name = "TopBar"
-	add_child(bar)
+## The map's own buttons, 단서 and 설정, floating over its top right corner (2026-10-31 user: no top bar,
+## the app's name need not show; the bar ran edge to edge and a phone's rounded corners cut it). They
+## keep MAP_EDGE units, plus the screen's safe-area inset, from the edges.
+const MAP_EDGE := 20.0
+
+
+func _build_map_buttons() -> void:
 	var row := Ui.hbox(12)
-	bar.add_child(row)
-	var brand := Ui.vbox(0)
-	brand.add_child(Ui.label("빵고양이 과학섬", "HeadingLabel"))
-	brand.add_child(Ui.label("가고 싶은 곳을 눌러 봐요", "EyebrowLabel"))
-	row.add_child(brand)
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(spacer)
+	row.name = "MapButtons"
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(row)
 	clue_button = Ui.button("단서", "", 60)
 	clue_button.name = "ClueButton"
-	clue_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	clue_button.visible = false   # the night map shows it (StoryDirector.refresh)
 	clue_button.pressed.connect(func() -> void:
 		if story != null:
@@ -258,18 +254,19 @@ func _build_top_bar() -> void:
 	row.add_child(clue_button)
 	var settings := Ui.button("설정", "", 60)
 	settings.name = "SettingsButton"
-	settings.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	settings.pressed.connect(settings_requested.emit)
 	row.add_child(settings)
+	row.minimum_size_changed.connect(_layout)   # its size comes with the theme: placed again then
+	_layout.call_deferred()
 
 
 func _layout() -> void:
-	var bar: PanelContainer = find_child("TopBar", true, false)
-	if bar == null:
+	var row: Control = find_child("MapButtons", true, false)
+	if row == null:
 		return
-	var top: HBoxContainer = bar.get_child(0)
-	bar.position = Vector2(0.0, 0.0)
-	bar.size = Vector2(size.x, top.get_combined_minimum_size().y)
+	var inset := Ui.safe_insets(self)
+	row.size = row.get_combined_minimum_size()
+	row.position = Vector2(size.x - row.size.x - MAP_EDGE - inset.right, MAP_EDGE + inset.top)
 
 
 ## The stamps of every spot from the store (one file read), and the flags they stand.
@@ -503,13 +500,13 @@ func _place_trio(yaw: float) -> void:
 		actor.rotation.y = yaw
 
 
-## The story's prologue or finale has the screen: the top bar and the spot names hide (the labels are
+## The story's prologue or finale has the screen: the map's buttons and the spot names hide (the labels are
 ## placed again when it ends), taps go to the story.
 func set_cinematic(on: bool) -> void:
 	_cinematic = on
-	var bar: Control = find_child("TopBar", true, false)
-	if bar != null:
-		bar.visible = not on
+	var row: Control = find_child("MapButtons", true, false)
+	if row != null:
+		row.visible = not on
 	for id in _labels:
 		(_labels[id] as Control).visible = not on and _label_shown(str(id))
 	if not on:
@@ -842,7 +839,7 @@ func _make_label(spot: Dictionary) -> Control:
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(label)
 	add_child(box)
-	move_child(box, view.get_index() + 1)   # under the top bar
+	move_child(box, view.get_index() + 1)   # under the map buttons
 	return box
 
 
@@ -874,10 +871,13 @@ func _on_pointer(kind: String, position: Vector2) -> void:
 			_last = position
 		"release":
 			if _down[0] != Vector2.INF and not _down[1]:
+				var spot := _spot_at(position)
 				if story != null and story.next_id != "" and _puppy_at(position):
 					story.say_riddle()   # Puppy again: the riddle
+				elif spot < 0 and story != null and story.tap_riddle():
+					pass   # a tap beside Puppy's box turns its page (2026-10-31 user: a child got stuck)
 				else:
-					_walk_to_spot(_spot_at(position))
+					_walk_to_spot(spot)
 			_down[0] = Vector2.INF
 			_down[1] = false
 			_last = Vector2.INF

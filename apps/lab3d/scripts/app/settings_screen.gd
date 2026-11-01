@@ -1,5 +1,6 @@
 ## Settings: quality tier (ported from the spike's "Q" button), sound (효과음 / 배경 음악, SoundBoard),
-## the story (이야기 다시 보기, 처음부터 다시 하기) and the performance overlay. The on/off settings are
+## the story (이야기 다시 보기, 처음부터 다시 하기). No 개발자 card (2026-10-31 user: the fps overlay is not a
+## child's setting; measurements turn it on with --fps=1). The on/off settings are
 ## big check boxes (2026-10-29 user request: check boxes, not switches; UiTheme "CheckBox", a 64-unit
 ## row, the box 44 units). A vertical drag anywhere on the page scrolls it (Ui.scroller: DragScroll).
 ## Switching between low (Compatibility renderer) and medium/high (Mobile renderer) restarts the app.
@@ -7,7 +8,6 @@ class_name SettingsScreen
 extends Control
 
 signal back_requested
-signal fps_toggled(on: bool)
 ## 이야기 다시 보기: the map opens and the story's prologue plays again.
 signal story_requested
 ## 처음부터 다시 하기, confirmed: every saved progress is gone (ProgressStore.reset_all); the app goes
@@ -20,7 +20,6 @@ const DESCRIPTIONS := {
 	"high": "3D 화면을 원본 해상도로 그려요. 가장자리 다듬기는 보통과 같은 MSAA 2x이고, 성능이 좋은 기기용이에요.",
 }
 
-var show_fps := false
 ## Applies a tier; true when the app is restarting. Quality.set_tier unless a test replaces it.
 var set_tier := Callable()
 var _selected := ""
@@ -30,10 +29,10 @@ var _notice: Label
 ## The sound check boxes (tests press them): effects and music, each mutes its own bus.
 var sfx_switch: CheckBox
 var music_switch: CheckBox
-var fps_check: CheckBox
 ## 처음부터 다시 하기 and its confirmation (a second step: the question with 다시 하기 / 아니요).
 var restart_button: Button
 var restart_confirm: Control
+var _scroll: ScrollContainer
 var restart_yes: Button
 var restart_no: Button
 const RESTART_TEXT := "처음부터 다시 하기"
@@ -59,6 +58,7 @@ func _ready() -> void:
 	row.add_child(Ui.label("설정", "HeadingLabel"))
 
 	var scroll := Ui.scroller()
+	_scroll = scroll
 	layout.add_child(scroll)
 	var pad := Ui.margin(24)
 	pad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -106,16 +106,6 @@ func _ready() -> void:
 	column.add_child(_build_sound_card())
 	column.add_child(_build_story_card())
 
-	var debug_card := Ui.panel()
-	var debug := Ui.vbox(8)
-	debug_card.add_child(debug)
-	debug.add_child(Ui.label("개발자", "SectionLabel"))
-	fps_check = check_box("성능 표시 (fps)", show_fps)
-	fps_check.name = "FpsCheck"
-	fps_check.toggled.connect(fps_toggled.emit)
-	debug.add_child(fps_check)
-	debug.add_child(Ui.label("현재 렌더러: %s · 품질: %s" % [RenderingServer.get_current_rendering_method(), Quality.label()], "MutedLabel", true))
-	column.add_child(debug_card)
 	_select(_selected)
 
 
@@ -195,6 +185,15 @@ static func check_box(text: String, on := false) -> CheckBox:
 func show_restart_confirm(on: bool) -> void:
 	restart_confirm.visible = on
 	restart_button.visible = not on
+	if on and _scroll != null:
+		_bring_confirm_in()
+
+
+## The question is never below the page's end (once it has its size, a frame later).
+func _bring_confirm_in() -> void:
+	await get_tree().process_frame
+	if is_instance_valid(restart_confirm) and restart_confirm.visible:
+		_scroll.ensure_control_visible(restart_confirm)
 
 
 ## 다시 하기 (confirmed): the saved progress of the store in use is erased (the bench or test store in

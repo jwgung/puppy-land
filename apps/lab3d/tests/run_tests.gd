@@ -292,6 +292,11 @@ func _run() -> void:
 	_expect(hand != null and hand.can_instantiate(), "hand guide checks compile", "")
 	if hand != null and hand.can_instantiate():
 		await hand.new(self, _expect).run()
+	print("== a young child's way through the talk (2026-10-31: tap anywhere, the pictures shown, slower words) ==")
+	var kid_flow: GDScript = load("res://tests/kid_flow_checks.gd")
+	_expect(kid_flow != null and kid_flow.can_instantiate(), "kid flow checks compile", "")
+	if kid_flow != null and kid_flow.can_instantiate():
+		await kid_flow.new(self, _expect).run()
 	print("== the mission round as a module (MissionRound: clue, question, bridge, stamps, reason, misses, auto conditions) ==")
 	var round_module: GDScript = load("res://tests/mission_round_checks.gd")
 	_expect(round_module != null and round_module.can_instantiate(), "mission round checks compile", "")
@@ -390,6 +395,7 @@ func _run() -> void:
 	await _check_key_cards()
 	await _check_gesture_tip()
 	await _check_tip_rebuild()
+	await _check_tip_after_question()
 	await _check_back_button()
 	await _check_small_window_title()
 	DirAccess.remove_absolute(ProgressStore.path)
@@ -1433,7 +1439,7 @@ func _check_key_cards() -> void:
 
 
 ## The gesture hint: short, shown only the first time an experiment opens in an app run, fades on
-## the first gesture or after TIP_SECONDS, never overlaps the cards or buttons; the sidebar keeps the full text.
+## the first gesture (no timer), never overlaps the cards or buttons; the sidebar keeps the full text.
 func _check_gesture_tip() -> void:
 	var host := Control.new()
 	host.theme = load(UI_THEME).build()
@@ -1446,9 +1452,12 @@ func _check_gesture_tip() -> void:
 	var other: Dictionary = {}
 	for definition in definitions:
 		if definition.id == "incline-friction":
-			incline = definition
+			incline = definition.duplicate(true)
 		elif other.is_empty() and definition.get("tip_short", "") != "":
-			other = definition
+			other = definition.duplicate(true)
+	# Dugi's question holds the hint back until it is answered (_check_tip_after_question): not here.
+	incline.erase("predict")
+	other.erase("predict")
 	var first: Control = screen_class.new()
 	first.setup(incline)
 	host.add_child(first)
@@ -1485,19 +1494,51 @@ func _check_gesture_tip() -> void:
 	for i in 3:
 		await process_frame
 	var other_shown: bool = fresh._tip.visible
-	fresh._process(screen_class.TIP_SECONDS + 0.1)
-	for i in 40:
+	# No timer (2026-10-31 user: the words went by too fast for a child): it stays until the child does it.
+	for i in 60 * 10:
 		await process_frame
-	var timed_out: bool = not fresh._tip.visible
-	_expect(faded and hidden_again and other_shown and timed_out,
-		"gesture hint: fades on the first gesture, is not shown again on re-entry or after a condition change, another experiment still shows its own once, and the timer fades it",
-		"faded %s, again hidden %s, other shown %s, timed out %s" % [faded, hidden_again, other_shown, timed_out])
+	var stays: bool = fresh._tip.visible
+	_expect(faded and hidden_again and other_shown and stays,
+		"gesture hint: fades on the first gesture, is not shown again on re-entry or after a condition change, another experiment still shows its own once, and it stays until then (no timer)",
+		"faded %s, again hidden %s, other shown %s, stays %s" % [faded, hidden_again, other_shown, stays])
 	fresh.queue_free()
 	await process_frame
 	host.queue_free()
 
 
-## The hint counts as seen once it closed (timer or first gesture), not when the screen was built:
+## While Dugi asks, the hint waits (hidden, not used up) and comes back once the question is answered
+## (2026-10-31: before, the question hid it for good at once, so a child never saw it).
+func _check_tip_after_question() -> void:
+	var host := Control.new()
+	host.theme = load(UI_THEME).build()
+	host.size = TABLET_LANDSCAPE
+	root.add_child(host)
+	var screen_class: GDScript = load(EXPERIMENT_SCREEN)
+	screen_class.reset_tips_shown()
+	var definition := ExperimentRegistry.find("incline-friction")
+	var screen: Control = screen_class.new()
+	screen.setup(definition)
+	host.add_child(screen)
+	for i in 5:
+		await process_frame
+	var hidden_while_asking: bool = screen._asking() and not screen._tip.visible
+	screen._predict_pick_choice(str(MissionRound.predict(definition).get("answer", "")))
+	for i in 60:   # Dugi's bridge opens, then is read (a tap)
+		await process_frame
+		if screen.dialogue.active:
+			screen.dialogue.advance()
+			screen.dialogue.advance()
+	for i in 10:
+		await process_frame
+	var back: bool = screen._tip.visible and screen._tip.text != ""
+	_expect(hidden_while_asking and back, "gesture hint: hidden while Dugi asks, shown once the question is answered and his box closed",
+		"while asking hidden %s, after %s" % [hidden_while_asking, back])
+	screen_class.reset_tips_shown()
+	host.queue_free()
+	await process_frame
+
+
+## The hint counts as seen once it closed (the first gesture), not when the screen was built:
 ## a screen rebuilt before that (a condition change redraws it from the saved state) shows it again.
 func _check_tip_rebuild() -> void:
 	var host := Control.new()

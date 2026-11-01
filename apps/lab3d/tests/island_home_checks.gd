@@ -31,7 +31,7 @@ func run() -> void:
 
 
 ## The home renders: the map island as one static opaque mesh (landmarks, water, land with its baked
-## blob shadows: the draw and fill budget of the map on SM-P200), the cat, the 5 zones and 11 spots, the top bar with the brand and
+## blob shadows: the draw and fill budget of the map on SM-P200), the cat, the 5 zones and 11 spots, the map buttons (no top bar) and
 ## the settings button (no list button, 2026-10-27).
 func check_home_builds() -> void:
 	var screen := await _home(PHONE)
@@ -58,8 +58,12 @@ func check_home_builds() -> void:
 		var meshes: int = spot.marker.find_children("*", "MeshInstance3D", true, false).size()
 		if meshes != 1:
 			problems.append("%s holds %d meshes (want its flag only)" % [spot.id, meshes])
-	if screen.find_child("TopBar", true, false) == null:
-		problems.append("no top bar")
+	# No top bar or app name (2026-10-31 user): the map's own buttons over its corner.
+	if screen.find_child("TopBar", true, false) != null or screen.find_child("MapButtons", true, false) == null:
+		problems.append("a top bar, or no map buttons")
+	for label in screen.find_children("*", "Label", true, false):
+		if (label as Label).text in ["빵고양이 과학섬", "가고 싶은 곳을 눌러 봐요"]:
+			problems.append("the app's name or the bar's line still shows")
 	var buttons: Array = screen.find_children("ListButton", "", true, false)
 	var settings: Array = screen.find_children("SettingsButton", "", true, false)
 	if buttons.size() != 0 or settings.size() != 1:
@@ -71,7 +75,7 @@ func check_home_builds() -> void:
 	var center_screen: Vector2 = screen._world_to_screen(Vector3(0.0, 0.0, 0.0))
 	if center_screen == Vector2.INF or not Rect2(Vector2.ZERO, screen.size).has_point(center_screen):
 		problems.append("island centre not on screen %s" % str(center_screen))
-	expect.call(problems.is_empty(), "island home builds: map in 1 mesh, cat, 5 zones, 11 spots, top bar, 3/4 camera", "; ".join(problems))
+	expect.call(problems.is_empty(), "island home builds: map in 1 mesh, cat, 5 zones, 11 spots, map buttons, 3/4 camera", "; ".join(problems))
 	await _free(screen)
 
 
@@ -480,20 +484,22 @@ func check_buttons_and_layout() -> void:
 		var screen := await _home(setup[0])
 		await tree.process_frame
 		await tree.process_frame
-		var bar: PanelContainer = screen.find_child("TopBar", true, false)
+		var row: Control = screen.find_child("MapButtons", true, false)
 		var settings: Button = screen.find_child("SettingsButton", true, false)
 		var problems := []
-		if bar == null or settings == null:
-			problems.append("top bar / settings missing")
+		if row == null or settings == null:
+			problems.append("map buttons / settings missing")
 		else:
-			if not Rect2(Vector2.ZERO, screen.size).encloses(bar.get_global_rect()):
-				problems.append("top bar off screen")
-			if not Rect2(Vector2.ZERO, screen.size).encloses(settings.get_global_rect()):
-				problems.append("the settings button off screen")
+			# Clear of every edge by MAP_EDGE (a phone's rounded corners), in the top right corner.
+			var inner := Rect2(Vector2.ZERO, screen.size).grow(-IslandHomeScreen.MAP_EDGE + 0.5)
+			if not inner.encloses(settings.get_global_rect()) or not inner.encloses(row.get_global_rect()):
+				problems.append("the buttons are within %.0f units of an edge %s" % [IslandHomeScreen.MAP_EDGE, str(row.get_global_rect())])
+			if row.get_global_rect().get_center().x < screen.size.x * 0.5 or row.get_global_rect().position.y > IslandHomeScreen.MAP_EDGE + 1.0:
+				problems.append("the buttons are not in the top right corner")
 		# The 3D view fills the screen under the bar.
 		if screen.view.size != setup[0]:
 			problems.append("view size %s (want full %s)" % [str(screen.view.size), str(setup[0])])
-		expect.call(problems.is_empty(), "island home (%s): top bar with settings on the map, the 3D view full" % setup[1], "; ".join(problems))
+		expect.call(problems.is_empty(), "island home (%s): 단서 and 설정 float in the map's top right corner, clear of the edges; the 3D view full" % setup[1], "; ".join(problems))
 		await _free(screen)
 
 

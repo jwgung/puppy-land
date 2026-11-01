@@ -1,5 +1,5 @@
 ## Puppy's short result line after an attempt (2026-10-29 user: "after each attempt … a short line in
-## a small speech bubble near the game object / the cat for ~2.5 s"): a small white speech bubble with
+## a small speech bubble near the game object / the cat for ~2.5 s"; 5 s since 2026-10-31): a small white speech bubble with
 ## one short line (no face: 2026-10-30 user, Puppy is right there behind), its tail pointing at Puppy on
 ## the island (ExperimentScreen.show_result). A win says what the stamp did ("딩! 종이 울렸어!"), a
 ## miss what to try next ("종까지 조금 모자라! 더 당겨 봐!"; Puppy gives hints, never science: the
@@ -9,11 +9,14 @@
 class_name ResultBubble
 extends Control
 
-const SHOW_S := 2.5
+const SHOW_S := 5.0          # 2026-10-31 user: 2.5 s went by too fast for a child
 const POP_S := 0.16
 const FADE_S := 0.3
 const MAX_TEXT_WIDTH := 330.0
 const TAIL := 18.0           # the tail's length below the bubble (UI units)
+## The most the bubble moves in one frame while it shows (UI units): it follows Puppy gently and never
+## jumps (2026-10-31 user: "순간적으로 막 움직인다").
+const MAX_STEP := 6.0
 const TAIL_HALF := 11.0      # its half width where it leaves the bubble
 ## The look (2026-10-29 user: "말풍선 좀 더 예쁘게"): warm paper tinted by the result, a soft drop
 ## shadow, a rounded tail drawn over the bubble's edge, a bouncy pop.

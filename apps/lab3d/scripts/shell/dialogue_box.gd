@@ -19,7 +19,8 @@
 ## anyone who sets it); a box that holds (`hold`: a question waiting for its answer) stays on its
 ## last page. UI only:
 ## no full-screen layer; it takes taps only on the box and the bust (_has_point), the rest of its
-## rect passes them to the 3D view.
+## rect passes them to the 3D view. A tap elsewhere on the view while a box waits turns its page
+## through the screen's TapCatcher (tap_catcher.gd, 2026-10-31).
 class_name DialogueBox
 extends Control
 
@@ -27,7 +28,7 @@ extends Control
 signal closed
 
 const LINES := 2
-const CHARS_PER_S := 28.0
+const CHARS_PER_S := 18.0     # 2026-10-31 user: slower for a child (28 before)
 const READ_S := 3.0
 const READ_PER_CHAR_S := 0.06
 ## Whether an untouched page turns after its read time (off: only a tap turns a page).

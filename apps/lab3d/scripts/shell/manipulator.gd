@@ -13,9 +13,11 @@
 ##   centre height, keeping the offset between finger and object from the pick-up (an offset on
 ##   the surface, so a turning camera does not change it; the object follows the finger on screen
 ##   while the assist turns the view, see _follow_camera). A grazing ray
-##   leaves the object where it is; the object never leaves the region by more than SOFT_MARGIN.
-##   The object is frozen while held and follows the finger unsnapped; the footprint marker shows
-##   the grid point it will land on (white) or that it cannot be placed there (dark + wobble).
+##   leaves the object where it is; a finger past the region holds the object at its edge, and past
+##   a lab's limit inside it the marker and the landing place stay at that limit (2026-10-31: the
+##   limit is the most, not a refusal; the object lands there on release). The object is frozen while
+##   held and follows the finger unsnapped; the footprint marker shows the grid point it will land
+##   on (white), the nearest one the lab allows (Experiment.nearest_placement).
 ## - Height: an object whose rule allows it shows a vertical handle beside it when selected; the
 ##   knob drags the height along the surface normal only (snapped to its step).
 ## - Put down: a valid target places the object there (Experiment.manipulation_placed); an invalid
@@ -322,7 +324,7 @@ func _drag_to(position: Vector2) -> void:
 	var finger: Variant = _surface.project_ray(ray[0], ray[1], _lift + height)
 	if finger == null:
 		return   # grazing ray: keep the object where it is
-	_held = _surface.clamp_soft(finger + _grab, SOFT_MARGIN)
+	_held = _surface.clamp_soft(finger + _grab, 0.0)   # a limit is the most it goes (2026-10-31 user)
 	_move_body(_surface.pose(_held, _lift + height))
 	_update_target()
 
@@ -585,13 +587,20 @@ func _snap_height(rule: Dictionary, h: float) -> float:
 ## Recomputes the landing point and whether it is free; only when the grid point (or height) changed.
 ## An invalid place shakes the object when the target turns from valid to invalid (`announce`).
 func _update_target(announce := true) -> void:
-	var t := _surface.nearest_inside(_held) if _surface.contains(_held) else _surface.snap_point(_held)
+	# Past an edge or a lab's limit the object goes to the nearest allowed place there (2026-10-31
+	# user: "상한을 최대로 보고 거기서 동작"), not back to where it was picked up.
+	var t := _surface.nearest_inside(_held)
+	var xf := _surface.pose(t, _lift + height)
+	if not experiment.placement_allowed(active_id, xf):
+		var nearer := experiment.nearest_placement(active_id, xf)
+		if nearer != xf:
+			t = _surface.nearest_inside(_surface.to_plane(nearer.origin))
+			xf = _surface.pose(t, _lift + height)
 	if _target_set and t == target:
 		return
 	var was_valid := valid or not _target_set
 	_target_set = true
 	target = t
-	var xf := _surface.pose(t, _lift + height)
 	valid = _surface.contains(t) and _is_free(active_id, xf) and experiment.placement_allowed(active_id, xf)
 	if announce and was_valid and not valid:
 		var juice := experiment.manipulation_juice(active_id)

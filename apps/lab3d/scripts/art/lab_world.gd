@@ -643,13 +643,17 @@ func _add_haze(b: ArtMeshBuilder) -> void:
 func _add_clouds(b: ArtMeshBuilder) -> void:
 	b.ao_min = 0.85
 	b.ao_height = 0.6
+	var was_flat := b.flat
+	b.flat = false   # smooth shading: soft round puffs, not facets (2026-10-31 user)
 	for c in CLOUDS:
 		var d := Vector2(0.0, -1.0).rotated(deg_to_rad(c[0]))
 		var at := Vector3(_c.x + d.x * c[1], sea_y + c[2], _c.y + d.y * c[1])
 		var side := Vector3(-d.y, 0.0, d.x)
 		var k: float = c[3]
-		for puff in [[0.0, 0.0, 1.0], [1.15, -0.25, 0.72], [-1.1, -0.3, 0.75]]:
-			b.add_sphere(Transform3D(Basis().scaled(Vector3(1.0, 0.65, 1.0)), at + side * puff[0] * k + Vector3.UP * puff[1] * k), puff[2] * k, 3, 6, ArtPalette.CLOUD)
+		for puff in MapIsland.CLOUD_PUFFS:   # round puffs like the map's (2026-10-31 user)
+			b.add_sphere(Transform3D(Basis().scaled(Vector3(1.0, 0.8, 1.0)), at + side * puff[0] * k + Vector3.UP * puff[1] * k), puff[2] * k,
+				MapIsland.LAB_CLOUD_RINGS, MapIsland.LAB_CLOUD_SIDES, ArtPalette.CLOUD)
+	b.flat = was_flat
 
 
 static func _at(x: float, y: float, z: float, yaw_deg := 0.0) -> Transform3D:

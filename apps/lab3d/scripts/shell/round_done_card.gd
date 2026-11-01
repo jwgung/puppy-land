@@ -1,6 +1,6 @@
 ## The round-done card (2026-10-28): when the child finishes a spot's last stage in this visit, a
 ## card in the middle of the view shows the round's stamps, big, and two big buttons: [더 해 보기] (the card
-## goes, the lab stays) and [다음으로] (blue; back to the map, like ← 지도). Pictures only (2026-10-28
+## goes, the lab is set up again) and [다음으로] (blue; back to the map, like ← 지도). Pictures only (2026-10-28
 ## user decision: no headline or caption). While it is up nothing behind it takes a touch: a dim
 ## over the whole view stops every press (the QuestionShield pattern), and it lets go of input in the
 ## frame it closes (MOUSE_FILTER_IGNORE before queue_free).
@@ -14,10 +14,13 @@ const DIM := Color(0.08, 0.12, 0.2, 0.38)   # ExperimentScreen.QUESTION_DIM
 const DIM_FADE := 0.2
 const STAMP_R := 46.0
 const STAMP_GAP := 22.0
+## The found star piece stands over the stamps, centred (2026-10-31 user: not in their row), this big.
+const STAR_R := 62.0
+const STAR_GAP := 14.0
 const POP_S := 0.35
 
 var stamps := 3
-## The story: the round's star piece is drawn after the stamps (the piece the child just found).
+## The story: the round's star piece is drawn over the stamps (the piece the child just found).
 var piece := false
 var dim: ColorRect
 var card: PanelContainer
@@ -54,15 +57,16 @@ func _init(stamp_count: int, with_piece := false) -> void:
 	stamp_row = Control.new()
 	stamp_row.name = "Stamps"
 	stamp_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var slots := stamps + (1 if piece else 0)
-	stamp_row.custom_minimum_size = Vector2(slots * STAMP_R * 2.0 + (slots - 1) * STAMP_GAP, STAMP_R * 2.0 + 8.0)
+	var row_w := stamps * STAMP_R * 2.0 + maxi(0, stamps - 1) * STAMP_GAP
+	var star_h := (STAR_R * 2.0 + 8.0 + STAR_GAP) if piece else 0.0
+	stamp_row.custom_minimum_size = Vector2(maxf(row_w, STAR_R * 2.0 + 8.0), star_h + STAMP_R * 2.0 + 8.0)
 	stamp_row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	stamp_row.draw.connect(_draw_stamps)
 	stack.add_child(stamp_row)
 	var buttons := Ui.hbox(16)
 	buttons.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	stack.add_child(buttons)
-	# [더 해 보기] first and quiet (the card goes, the lab stays); [다음으로] last and blue, the way on
+	# [더 해 보기] first and quiet (the card goes, the lab is set up again); [다음으로] last and blue, the way on
 	# (back to the map, like ← 지도): the two no longer look alike.
 	stay_button = Ui.button("더 해 보기", "ChoiceButton", 84)
 	stay_button.name = "Stay"
@@ -95,12 +99,15 @@ func _fit() -> void:
 
 
 func _draw_stamps() -> void:
+	var w := stamp_row.custom_minimum_size.x
+	var row_w := stamps * STAMP_R * 2.0 + maxi(0, stamps - 1) * STAMP_GAP
+	var row_y := (STAR_R * 2.0 + 8.0 + STAR_GAP if piece else 0.0) + STAMP_R + 4.0
 	for i in stamps:
-		var c := Vector2(STAMP_R + i * (STAMP_R * 2.0 + STAMP_GAP), STAMP_R + 4.0)
+		var c := Vector2((w - row_w) * 0.5 + STAMP_R + i * (STAMP_R * 2.0 + STAMP_GAP), row_y)
 		StampSlam.draw_stamp(stamp_row, c, STAMP_R, true)
 	if piece:   # the found star piece, drawn like the 3D one (StarArt, 2026-10-29 user): chubby, round tips, a face
-		var c := Vector2(STAMP_R + stamps * (STAMP_R * 2.0 + STAMP_GAP), STAMP_R + 4.0)
-		var r := STAMP_R * 1.1
+		var c := Vector2(w * 0.5, STAR_R + 4.0)
+		var r := STAR_R
 		stamp_row.draw_colored_polygon(_chubby_star(c, r + 4.0, 1.0), ArtPalette.OUTLINE)
 		stamp_row.draw_colored_polygon(_chubby_star(c, r, 1.0), StarArt.DEEP)
 		stamp_row.draw_colored_polygon(_chubby_star(c + Vector2(-1.0, -1.5), r, 0.9), StarArt.MID)

@@ -198,7 +198,10 @@ func check_check_boxes() -> void:
 	var switches := screen.find_children("*", "CheckButton", true, false)
 	if not switches.is_empty():
 		problems.append("%d switches left" % switches.size())
-	var checks: Array = [screen.sfx_switch, screen.music_switch, screen.fps_check]
+	# No 개발자 card and no fps check box in the child's app (2026-10-31 user); --fps=1 still shows it.
+	if screen.find_child("FpsCheck", true, false) != null or _has_text(screen, "개발자") or _has_text(screen, "성능 표시"):
+		problems.append("the fps setting is still there")
+	var checks: Array = [screen.sfx_switch, screen.music_switch]
 	for check: CheckBox in checks:
 		if check == null or not (check is CheckBox):
 			problems.append("not a check box")
@@ -207,10 +210,8 @@ func check_check_boxes() -> void:
 		if check.size.y < 48.0 or icon == null or icon.get_height() < 40 or check.size.x < 200.0:
 			problems.append("%s: row %s, box %d (want a 48+ unit row, a 40+ unit box)" % [check.text, str(check.size), icon.get_height() if icon else 0])
 	# A tap on 배경 음악 toggles it, it is kept in the settings file and the next screen shows it.
-	var fps_seen := []
-	screen.fps_toggled.connect(func(on: bool) -> void: fps_seen.append(on))
 	var scroll: ScrollContainer = screen.find_children("*", "ScrollContainer", true, false)[0]
-	for check: CheckBox in [screen.music_switch, screen.fps_check]:
+	for check: CheckBox in [screen.music_switch]:
 		scroll.scroll_vertical += int(check.global_position.y - scroll.global_position.y - scroll.size.y * 0.4)
 		await tree.process_frame
 		await _tap(check.get_global_rect().get_center())
@@ -218,8 +219,6 @@ func check_check_boxes() -> void:
 	config.load(SoundBoard.path)
 	if config.get_value("sound", "music", true) != false:
 		problems.append("배경 음악 off not kept")
-	if fps_seen != [true]:
-		problems.append("fps check box emitted %s" % str(fps_seen))
 	host.queue_free()
 	await tree.process_frame
 	host = _host(TABLET)
@@ -231,7 +230,7 @@ func check_check_boxes() -> void:
 	screen.music_switch.button_pressed = true
 	host.queue_free()
 	await tree.process_frame
-	expect.call(problems.is_empty(), "settings: 효과음 / 배경 음악 / fps are big check boxes (no switch), a tap toggles, kept and read back", "; ".join(problems))
+	expect.call(problems.is_empty(), "settings: 효과음 / 배경 음악 are big check boxes (no switch, no fps setting), a tap toggles, kept and read back", "; ".join(problems))
 
 
 # --- 2. 처음부터 다시 하기 ------------------------------------------------------------------------------
@@ -268,6 +267,7 @@ func check_restart() -> void:
 	var problems := []
 	await _tap(screen.restart_button.get_global_rect().get_center())
 	await tree.process_frame
+	await tree.process_frame   # the page brings the question in
 	var asking: bool = screen.restart_confirm.visible and not screen.restart_button.visible
 	if not asking or _store_text() != full or restarts[0] != 0:
 		problems.append("first tap: confirm %s, store kept %s, restarts %d" % [asking, _store_text() == full, restarts[0]])
@@ -281,6 +281,7 @@ func check_restart() -> void:
 	if _store_text() != full or restarts[0] != 0:
 		problems.append("restart() without the question erased")
 	await _tap(screen.restart_button.get_global_rect().get_center())
+	await tree.process_frame
 	await tree.process_frame
 	await _tap(screen.restart_yes.get_global_rect().get_center())
 	var empty: bool = ProgressStore.load().is_empty() and not FileAccess.file_exists(ProgressStore.path) \
@@ -685,3 +686,13 @@ func _drag(from: Vector2, to: Vector2) -> void:
 	for i in 8:
 		await tree.process_frame
 	await _finger(to, "up")
+
+
+func _has_text(node: Node, text: String) -> bool:
+	for label in node.find_children("*", "Label", true, false):
+		if (label as Label).text.contains(text):
+			return true
+	for button in node.find_children("*", "Button", true, false):
+		if (button as Button).text.contains(text):
+			return true
+	return false

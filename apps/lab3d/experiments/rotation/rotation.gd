@@ -324,6 +324,17 @@ func placement_allowed(id: String, transform: Transform3D) -> bool:
 	return true
 
 
+## The fulcrum stops LOAD_GAP right of the load, the load LOAD_GAP left of the fulcrum (their limits).
+func nearest_placement(id: String, transform: Transform3D) -> Transform3D:
+	var at := transform
+	match id:
+		"fulcrum":
+			at.origin.x = maxf(at.origin.x, model.load_x + LOAD_GAP)
+		"load":
+			at.origin.x = minf(at.origin.x, model.pivot_x - LOAD_GAP)
+	return at
+
+
 ## The effort end is picked at the effort point on the beam (not the beam's centre).
 func manipulation_pick_point(id: String) -> Vector3:
 	return effort_point() if id == "effort" else super(id)

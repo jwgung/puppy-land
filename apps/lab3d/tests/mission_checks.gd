@@ -161,6 +161,10 @@ static func range_definition() -> Dictionary:
 const JARGON := ["가속도", "탈출", "반지름", "질량", "구속", "주기", "계수", "임계", "운동량", "마찰력", "부력",
 	"토크", "역학", "속력", "탄성", "밀도", "공식", "궤도", "v₀", "μ", "√", "=", "÷", "×", "m/s", " N", "kg"]
 
+## The force names Dugi's introduction (kid.intro) teaches in a child's words ("이 힘을 마찰력이라고
+## 해요", 2026-10-31 user: "용어를 알려는 줘야지"): only there, the rest of the game layer stays plain.
+const TAUGHT_TERMS := ["마찰력", "부력", "탄성"]
+
 
 ## The game layer of every lab speaks a child's words (Plan G2 follow-up, 2026-10-27): the title
 ## bar, the map's place, Dugi's say, the gesture tip, the key cards' captions, the stage texts, the
@@ -171,7 +175,8 @@ func check_kid_words() -> void:
 	for definition in ExperimentRegistry.load_all():
 		var texts := [ExperimentScreen.DONE_TEXT, ExperimentScreen.PICK_PREFIX]
 		for key in ExperimentRegistry.KID_TEXTS:
-			texts.append(ExperimentRegistry.kid_text(definition, key))
+			if key != "intro":   # checked below, with the taught force names allowed
+				texts.append(ExperimentRegistry.kid_text(definition, key))
 		texts.append_array(definition.get("kid", {}).get("states", {}).values())
 		texts.append_array(definition.get("kid", {}).get("minus", {}).values())
 		for id in definition.key_observations:
@@ -194,6 +199,10 @@ func check_kid_words() -> void:
 			for word in JARGON:
 				if word in text:
 					found.append("%s: '%s' in %s" % [definition.id, word, text])
+		var intro := ExperimentRegistry.kid_text(definition, "intro")
+		for word in JARGON:
+			if word in intro and not word in TAUGHT_TERMS:
+				found.append("%s: '%s' in %s" % [definition.id, word, intro])
 	expect.call(found.is_empty(), "kid words: the game layer of every lab has no formula names or symbols, and every key card a kid caption",
 		"; ".join(found))
 

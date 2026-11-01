@@ -16,7 +16,6 @@ class_name App
 extends Control
 
 const RESUME_PATH := "user://resume.txt"   # written by settings right after Quality.set_tier() requested a renderer restart
-const SETTINGS_PATH := "user://settings.cfg"
 ## Screen change (art direction): the new screen slides in from SLIDE_UNITS to the right and fades
 ## in over SLIDE_S. Only the screen's own position/modulate are tweened (no overlay layer).
 const SLIDE_UNITS := 48.0
@@ -54,9 +53,7 @@ func _ready() -> void:
 	overlay.add_child(_fps_label)
 	Bench.report.connect(_on_bench_report)
 
-	var config := ConfigFile.new()
-	config.load(SETTINGS_PATH)
-	_set_fps(Quality.cmdline_value("fps") == "1" or bool(config.get_value("ui", "show_fps", false)))
+	_set_fps(Quality.cmdline_value("fps") == "1")   # measurements only (no setting since 2026-10-31)
 	_definitions = ExperimentRegistry.load_all()
 	if Quality.cmdline_value("progress") == "bench" or demo_title(Quality.all_args()):
 		ProgressStore.path = ProgressStore.BENCH_PATH   # a measured map never raises the child's flags
@@ -164,7 +161,6 @@ func show_experiment(definition: Dictionary, state := {}, launch_args := false) 
 func show_settings(from_title := false) -> void:
 	_settings_from_title = from_title
 	var screen := SettingsScreen.new()
-	screen.show_fps = _show_fps
 	# Settings opens from the map (Plan G2) or the title and goes back to where it opened.
 	screen.back_requested.connect(func() -> void:
 		if from_title:
@@ -179,12 +175,6 @@ func show_settings(from_title := false) -> void:
 			show_title()
 		else:
 			show_list())
-	screen.fps_toggled.connect(func(on: bool) -> void:
-		_set_fps(on)
-		var config := ConfigFile.new()
-		config.load(SETTINGS_PATH)
-		config.set_value("ui", "show_fps", on)
-		config.save(SETTINGS_PATH))
 	_swap(screen, "settings")
 
 
