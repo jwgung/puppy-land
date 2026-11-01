@@ -64,7 +64,8 @@ const PATHS := [
 	[[0.32, -1.9], [-1.12, -2.81], [-1.5, -3.95]],
 	[[0.32, -1.9], [1.56, -2.49], [1.9, -3.95]],
 	# Inside the yard (2026-10-29): up the middle between the front spots, then out to the back ones
-	# (their bend is the path point nearest to where the cat stands, so the walk never crosses a stage).
+	# (their bend is the path point nearest to where the cat stands; since 2026-11-01 the walk keeps
+	# off the stages itself, IslandHomeScreen.route).
 	[[0.3, -2.75], [0.35, -5.6]],
 	[[0.35, -5.6], [-2.7, -5.75], [-3.55, -6.35]],
 	[[0.35, -5.6], [3.6, -5.75], [4.35, -6.35]],
@@ -89,6 +90,7 @@ const SEA_Y := -0.2
 const SHORE_F := 0.955              # coast fraction where the beach meets the sea (BEACH_Y at SEA_Y)
 const SHALLOW := 1.0                # m of light shallow water outside the coast
 const PATH_WIDTH := 0.8
+const PATH_STEP := 0.35             # m between a drawn path's samples (the walk's way uses the same)
 const PATH_LIFT := 0.05             # m above the grass (no z-fight at 34 m)
 const OVERLAY_LIFT := 0.03          # yard sand, pond shore
 const PLAZA_LIFT := 0.07
@@ -567,8 +569,7 @@ func _add_paths(b: ArtMeshBuilder) -> void:
 	path_points = PackedVector2Array()
 	var colors := [ArtPalette.PATH, ArtPalette.PATH, ArtPalette.PATH]
 	for line in paths:
-		var points := _smooth(line)
-		var samples := _resample(points, 0.35)
+		var samples := path_samples(line, PATH_STEP)
 		for p in samples:
 			path_points.append(p)
 		var left: Array = []
@@ -593,6 +594,11 @@ func _add_paths(b: ArtMeshBuilder) -> void:
 ## A path as it is drawn: smoothed and sampled every `step` m (the walk's way follows it).
 static func path_samples(line: Array, step: float) -> PackedVector2Array:
 	return _resample(_smooth(line), step)
+
+
+## A polyline sampled every `step` m or less along it (its points kept).
+static func resample(points: PackedVector2Array, step: float) -> PackedVector2Array:
+	return _resample(points, step)
 
 
 static func _smooth(line: Array) -> PackedVector2Array:

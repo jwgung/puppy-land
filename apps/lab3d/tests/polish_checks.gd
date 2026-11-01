@@ -438,10 +438,10 @@ func check_walk_route() -> void:
 	var worst_turn := 0.0
 	var worst_off := 0.0
 	for from: Array in ends:
-		for to: Array in ends.slice(1):
+		for to: Array in ends:
 			if from[0] == to[0]:
 				continue
-			var way: PackedVector2Array = MapIsland._resample(screen.route(from[1], to[1]), 0.25)
+			var way: PackedVector2Array = MapIsland.resample(screen.route(from[1], to[1]), 0.25)
 			var what := "%s -> %s" % [from[0], to[0]]
 			for spot in screen._spots:
 				var r := float(spot.radius)

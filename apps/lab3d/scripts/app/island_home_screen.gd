@@ -78,9 +78,10 @@ const RAISE_FILL := 0.42             # share of the view height the spot (landma
 
 const TAP_SLOP := 14.0               # UI units a press may move and still count as a tap
 ## The walk to a tapped spot (2026-10-29 user request: calmer; the three walk together). The cat
-## hops along the dirt paths (PATHS, the shortest way over their crossings, then straight to the
-## spot's stand) at WALK_SPEED, the whole walk taking at least WALK_MIN_S and at most WALK_MAX_S
-## (a far spot: a little quicker, never a long wait). Puppy and Dugi follow FOLLOW_LAG m behind on
+## hops along the dirt paths as they are drawn (route: the shortest way on them, off the stages,
+## stepping on and off at the nearest clear point) at WALK_SPEED, the whole walk taking at least
+## WALK_MIN_S and at most WALK_MAX_S (a far spot: a little quicker, never a long wait), speeding up
+## and slowing down over WALK_RAMP_S at its ends (walk_share). Puppy and Dugi follow FOLLOW_LAG m behind on
 ## the same way, FOLLOW_SIDE m to its left and right (stepping aside when the cat comes their way,
 ## never nearer each other than KEEP_APART), each facing where it goes with its own hop.
 ## Taps on spots are ignored until they arrive; then the lab opens.
@@ -88,6 +89,8 @@ const WALK_SPEED := 2.5              # m/s along the way
 const WALK_MIN_S := 1.5
 const WALK_MAX_S := 5.5             # (4.0 before 2026-11-01: the far spots were a dash)
 const WALK_RAMP_S := 0.5             # s they speed up at the start and slow down at the end
+const ROUTE_JOIN := 0.7              # m: a path's end this near another path joins it
+const ROUTE_CLEAR := 0.1             # m a step on or off the paths keeps off a stage's edge
 const WALK_IN_PLACE_S := 0.7         # the spot they stand at: a hop in place
 const HOP_HEIGHT := 0.16             # m the cat rises on a hop (the followers: their own share)
 const HOP_HZ := 2.2                  # hops per second while walking
@@ -608,7 +611,7 @@ func route(from: Vector2, to: Vector2) -> PackedVector2Array:
 	var lines: Array = []
 	for line in PATHS:
 		var row: Array[int] = []
-		for p in MapIsland.path_samples(line, ROUTE_STEP):
+		for p in MapIsland.path_samples(line, MapIsland.PATH_STEP):
 			row.append(add_node.call(p))
 		for k in row.size() - 1:
 			join.call(row[k], row[k + 1])
@@ -690,10 +693,6 @@ func route(from: Vector2, to: Vector2) -> PackedVector2Array:
 		points = out
 	return points
 
-
-const ROUTE_STEP := 0.35   # m between the way's samples on a path (MapIsland draws the ribbon at the same)
-const ROUTE_JOIN := 0.7    # m: a path's end this near another path joins it
-const ROUTE_CLEAR := 0.1   # m a step on or off the paths keeps off a stage's edge
 
 
 ## The segment a-b comes within `margin` m of a spot's stage (its round plate).
@@ -805,9 +804,10 @@ func _step_walk(delta: float) -> void:
 		var hop: Array = FOLLOW_HOPS[str(actor.name)]
 		_set_walker(actor, spots[actor], HOP_HEIGHT * float(hop[1]) * absf(sin((_walk_t + float(hop[0]) / HOP_HZ) * PI * HOP_HZ)), delta)
 	# Stepping into the group's places they turn to the landmark (no snap when they get there).
-	for actor: Node3D in [cat, puppy, dugi]:
-		if actor != null and settle > 0.0:
-			actor.rotation.y = lerp_angle(actor.rotation.y, group.facing, settle * (1.0 - exp(-TURN_RATE * delta)))
+	if settle > 0.0:
+		for actor: Node3D in trio():
+			if actor != null:
+				actor.rotation.y = lerp_angle(actor.rotation.y, group.facing, settle * (1.0 - exp(-TURN_RATE * delta)))
 	if k >= 1.0:
 		_walking = false
 		rest_spot = _walk_spot
