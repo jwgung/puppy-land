@@ -1,5 +1,5 @@
 ## Puppy's short result line after an attempt (2026-10-29 user: "after each attempt … a short line in
-## a small speech bubble near the game object / the cat for ~2.5 s"): a small white speech bubble with
+## a small speech bubble near the game object / the cat "; 5 s since 2026-10-31): a small white speech bubble with
 ## one short line (no face: 2026-10-30 user, Puppy is right there behind), its tail pointing at Puppy on
 ## the island (ExperimentScreen.show_result). A win says what the stamp did ("딩! 종이 울렸어!"), a
 ## miss what to try next ("종까지 조금 모자라! 더 당겨 봐!"; Puppy gives hints, never science: the

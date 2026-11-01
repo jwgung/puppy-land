@@ -25,6 +25,8 @@ func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:
 
 
 func run() -> void:
+	var store := ProgressStore.path
+	ProgressStore.path = ProgressStore.TEST_PATH   # the checks delete the store: never the child's
 	var root_size := tree.root.size
 	tree.root.size = Vector2i(TABLET)   # the taps go through the window
 	await check_clue_tap_anywhere()
@@ -36,6 +38,7 @@ func run() -> void:
 	check_pace()
 	tree.root.size = root_size
 	DirAccess.remove_absolute(ProgressStore.path)
+	ProgressStore.path = store
 
 
 func _open(id: String, keep_store := false) -> Control:

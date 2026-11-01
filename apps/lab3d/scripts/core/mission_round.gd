@@ -123,7 +123,7 @@ var predict_ended := false
 var _asking := false
 var _clue := ""
 ## Dugi's introduction of the lab (kid.intro, 2026-10-31 user: "처음에 이 실험이 무슨 실험인지, 어떤 힘을
-##보고 싶은 건지"): after Puppy's clue, before the question, every visit while stages are left (Story).
+## 보고 싶은 건지"): after Puppy's clue, before the question, every visit while stages are left (Story).
 var _intro := ""
 var _clue_open := false
 var _question := ""

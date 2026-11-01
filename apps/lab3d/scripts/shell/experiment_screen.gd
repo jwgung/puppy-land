@@ -25,7 +25,7 @@ const DEMO_RELEASE_DELAY_S := 0.4   # --auto-drag: the auto-release waits this l
 const CHOICE_SIZE := Vector2(210.0, 170.0)    # a prediction picture button (UI units)
 const QUESTION_DIM := Color(0.08, 0.12, 0.2, 0.38)   # the scrim behind Dugi's question
 const QUESTION_DIM_FADE := 0.2
-## Dugi's question unanswered this long: the picture buttons hop up and the paw taps one (2026-10-31
+## Dugi's question unanswered this long: the picture buttons pop and the paw taps one (2026-10-31
 ## user: a child did not know what to press). A tap beside them does the same at once.
 const NUDGE_S := 4.0
 const CHOICE_HOP := 7.0          # the picture buttons' hop while Dugi asks (UI units, upwards)
@@ -139,6 +139,7 @@ var _series_hidden := false           # the graph's hidden_series_until_end line
 var _question_shield: ColorRect         # while asking: dims and catches everything but the box and the buttons
 var _dialogue_index := -1               # the box's place among the overlays before the question lifted it
 var _choices: HBoxContainer = null    # the two picture buttons while asking
+var _nudge_pop: Tween = null          # their pop while nudged (nudge_choices)
 var _choices_popped := false          # the buttons' pop-in has run
 var _dialogue_right := NAN              # the open box's right end so far (_layout_dialogue)
 var _dialogue_right_for := Vector2.ZERO  # the view size it was found for
@@ -852,14 +853,17 @@ func _on_shield_input(event: InputEvent) -> void:
 		nudge_choices()
 
 
-## The picture buttons hop up once and the paw taps the first one (the question still waits).
+## The picture buttons pop once and the paw taps the first one (the question still waits).
 func nudge_choices() -> void:
 	if _choices == null:
 		return
 	_ask_age = 0.0
 	nudges += 1
 	_choices.pivot_offset = _choices.size * 0.5
+	if _nudge_pop != null:
+		_nudge_pop.kill()   # taps in a row: one pop at a time
 	var pop := create_tween()
+	_nudge_pop = pop
 	pop.tween_property(_choices, "scale", Vector2.ONE * 1.12, 0.12).set_trans(Tween.TRANS_SINE)
 	pop.tween_property(_choices, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	if hand_guide == null or _choices.get_child_count() == 0:

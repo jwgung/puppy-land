@@ -168,7 +168,7 @@ func _ready() -> void:
 	rest_spot = _spot_index(ProgressStore.last_spot())
 	_place_trio(TRIO_YAW)
 	refresh_progress()
-	_build_top_bar()
+	_build_map_buttons()
 	_layout()
 	resized.connect(_layout)
 	if Story.enabled:
@@ -240,7 +240,7 @@ func _add_spot(world: Node3D, zone: String, id: String, info: Dictionary) -> voi
 const MAP_EDGE := 20.0
 
 
-func _build_top_bar() -> void:
+func _build_map_buttons() -> void:
 	var row := Ui.hbox(12)
 	row.name = "MapButtons"
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE

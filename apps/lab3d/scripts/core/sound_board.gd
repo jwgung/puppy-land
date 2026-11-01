@@ -50,7 +50,7 @@ const MIN_GAP_S := 0.08
 const SFX_BUS := &"SFX"
 const MUSIC_BUS := &"Music"
 const SECTION := "sound"
-## The file in use: the app's settings (App.SETTINGS_PATH); tests point it at TEST_PATH.
+## The file in use: the app's settings; tests point it at TEST_PATH.
 const PATH := "user://settings.cfg"
 const TEST_PATH := "user://settings-test.cfg"
 const QualityScript := preload("res://scripts/core/quality.gd")
@@ -182,7 +182,7 @@ func _save() -> void:
 	if silent:
 		return
 	var config := ConfigFile.new()
-	config.load(path)   # keeps the file's other sections (ui/show_fps)
+	config.load(path)   # keeps the file's other sections
 	config.set_value(SECTION, "sfx", sfx_on)
 	config.set_value(SECTION, "music", music_on)
 	config.save(path)

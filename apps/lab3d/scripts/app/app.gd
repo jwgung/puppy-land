@@ -16,7 +16,6 @@ class_name App
 extends Control
 
 const RESUME_PATH := "user://resume.txt"   # written by settings right after Quality.set_tier() requested a renderer restart
-const SETTINGS_PATH := "user://settings.cfg"
 ## Screen change (art direction): the new screen slides in from SLIDE_UNITS to the right and fades
 ## in over SLIDE_S. Only the screen's own position/modulate are tweened (no overlay layer).
 const SLIDE_UNITS := 48.0
