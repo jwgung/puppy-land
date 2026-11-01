@@ -219,11 +219,17 @@ func check_hold_is_the_force() -> void:
 			lab.hold_started("box")
 		elif k == 91:
 			lab.hold_ended("box"), 180)
+	var frozen := {"at": -1.0}   # the push stops growing on the step the box started (2026-11-01)
 	var given := await _friction_run(func(lab: Experiment, k: int) -> void:
-		lab.set_applied_force(minf(80.0, 25.0 * k / 60.0) if k <= 90 else 0.0), 180)
+		if k > 90:
+			lab.set_applied_force(0.0)
+			return
+		if frozen.at < 0.0 and not lab.model.holding:
+			frozen.at = lab.applied_force()
+		lab.set_applied_force(frozen.at if frozen.at >= 0.0 else minf(80.0, 25.0 * k / 60.0)), 180)
 	var moved: bool = held[-1][2] > 0.1 and held[100][0] == 0.0
-	expect.call(held == given and moved,
-		"physics unchanged (friction): a 1.5 s hold and its let-go = the same force ramp given without the hand (applied force, speed, distance, state, engine box every step)",
+	expect.call(held == given and moved and frozen.at > 0.0,
+		"physics unchanged (friction): a 1.5 s hold and its let-go = the same force ramp given without the hand, staying at the push that started the box (applied force, speed, distance, state, engine box every step)",
 		"first difference at step %d; moved %s" % [_first_diff(held, given), moved])
 	# The lever: the hold's force on the beam = set_hand with the same ramp, step by step.
 	var lever_held := []
@@ -238,7 +244,7 @@ func check_hold_is_the_force() -> void:
 		for k in range(1, 151):
 			await tree.physics_frame   # the record: the state after step k
 			out.append([lab.model.applied(), lab.model.lifting(), lab.driver.engine_angle(), lab.load_body.global_position])
-			if not pass_hand:
+			if not pass_hand and not lab.model.lifting():   # (lifted: the press stays where it lifted it)
 				lab.set_hand(minf(400.0, 110.0 * (k + 1) / 60.0))   # the force of step k + 1
 		(lever_held if pass_hand else lever_given).append_array(out)
 		lab.queue_free()

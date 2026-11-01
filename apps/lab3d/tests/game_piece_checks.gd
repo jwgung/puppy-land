@@ -529,9 +529,10 @@ func check_incline() -> void:
 
 ## The push's path (2026-10-29 user "상자가 별을 막고 있어서, 이걸 치우면 별에 도달하는 길이 열리는 거로"):
 ## a stage is the box pushed off the path, the formula distance from the start past 1.5 m (shown).
-## With the hold (25 N/s up to 80 N) every stage's box gets there within 3 s on wood (and every
-## material's within 4 s), a tap (0.2 s) never moves it, and the shortest hold that passes is well
-## over a tap. Returns the shortest holds (s) per stage box on wood.
+## With the hold (25 N/s up to 80 N, staying at the push that started the box: 2026-11-01) every
+## stage's box gets there within 3 s on wood (and every material's within 4.5 s: the heavy box on
+## clay starts after 2.98 s and then slides at (mu_s - mu_k) g), a tap (0.2 s) never moves it, and
+## the shortest hold that passes is well over a tap. Returns the shortest holds (s) per stage box on wood.
 func push_hold_distance(lab: Experiment, seconds: float) -> float:
 	lab.reset_box()
 	lab.hold_started("box")
@@ -560,13 +561,13 @@ func check_push_path() -> void:
 				problems.append("%s %s: a tap moves it %.3f m" % [material, stages[i].conditions.mass, tap])
 			var found := -1.0
 			var hold := 0.3
-			while hold <= 4.0 + 1e-9:
+			while hold <= 4.5 + 1e-9:
 				var d: float = await push_hold_distance(lab, hold)
 				if _beats(definition, i, d):
 					found = hold
 					break
 				hold = snappedf(hold + 0.1, 0.1)
-			var limit := 3.0 if material == "wood" else 4.0
+			var limit := 3.0 if material == "wood" else 4.5
 			if found < 0.0 or found > limit or found <= 0.4:
 				problems.append("%s %s: off the path after a %.1f s hold (want 0.5..%.0f s)" % [material, stages[i].conditions.mass, found, limit])
 			if material == "wood":
@@ -612,7 +613,7 @@ func check_push_path() -> void:
 		problems.append("처음으로 does not give the cat back to the box")
 	lab.queue_free()
 	expect.call(problems.is_empty(),
-		"piece game (push): a stage is the box pushed off the path (formula distance past 1.5 m): on wood the light, normal and heavy box after a %s s hold (all materials within 4 s), never by a tap (0.2 s); each stamp opens a gate; after the last the cat waits for the box to rest, walks the path to the piece and the screen hands it over there" % str(shortest),
+		"piece game (push): a stage is the box pushed off the path (formula distance past 1.5 m): on wood the light, normal and heavy box after a %s s hold (all materials within 4.5 s), never by a tap (0.2 s); each stamp opens a gate; after the last the cat waits for the box to rest, walks the path to the piece and the screen hands it over there" % str(shortest),
 		"; ".join(problems))
 
 

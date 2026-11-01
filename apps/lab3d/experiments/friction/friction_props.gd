@@ -15,7 +15,7 @@
 ##   wobble.
 ## - the bread cat (CatActor wearing the BreadCat look, Task 4g) behind the box (-x): both paws on
 ##   the box's left face (where the box mesh is, squash included), leaning into the push with the
-##   force's share of the maximum static friction (the held push grows, so does the lean), shuffling
+##   force's share of the maximum static friction (the held push grows until the box starts, then stays; so does the lean), shuffling
 ##   along while the box moves; a small hop when the box comes to rest. Only meshes: the force, the
 ##   box and the panel are the lab's.
 class_name FrictionProps

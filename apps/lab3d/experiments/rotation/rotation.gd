@@ -3,8 +3,8 @@
 ## and holds the chosen effort point (the web's three points 가까이 / 중간 / 멀리, the red peg) on the
 ## beam itself (2026-10-28 user decision, no handle): while held the hand's force grows from 0 at
 ## PRESS_RATE N/s up to PRESS_MAX (HoldRamp) and a gauge beside it fills. When the force reaches
-## F = m g r_load / r_effort the beam turns to the web's lift angle (load side up); letting go puts it
-## back level. The fulcrum and the load stay (set_layout: tests; the web's lever has them fixed).
+## F = m g r_load / r_effort the beam turns to the web's lift angle (load side up) and the force and
+## the gauge stay there (2026-11-01); letting go puts it back level. The fulcrum and the load stay (set_layout: tests; the web's lever has them fixed).
 ## Conditions: the load mass (the web's mass input, 1-20 kg) and the effort point.
 ## Motion and every displayed number: LeverLabModel (LeverChallenge: required force, capped force on
 ## the beam, lifting, torques); LeverLabDriver poses the engine beam and load on it every step
@@ -28,9 +28,10 @@ const LOAD_GAP := 0.5              # the load stays this far left of the fulcrum
 const DEFAULT_PIVOT := -0.5
 const DEFAULT_LOAD := -2.5
 const REST_X := -2.75              # the rest block under the beam's left end
-## The held press (2026-10-28): 110 N/s, at most 400 N. The heaviest stage (20 kg, the near point:
-## F = 320.3 N) lifts after 2.91 s, the middle point (186.9 N) after 1.70 s, the far one (124.6 N)
-## after 1.13 s; a 1 kg load at the far point (6.2 N) after 0.06 s.
+## The held press (2026-10-28): 110 N/s, at most 400 N; it stops growing once the beam lifts
+## (2026-11-01). The heaviest stage (20 kg, the near point: F = 320.3 N) lifts after 2.91 s, the
+## middle point (186.9 N) after 1.70 s, the far one (124.6 N) after 1.13 s; a 1 kg load at the far
+## point (6.2 N) after 0.06 s.
 const PRESS_RATE := 110.0          # N per second of holding
 const PRESS_MAX := 400.0           # N
 const GAUGE_LEFT := 0.5            # m left of the effort point (the cat stands right of it)
@@ -76,6 +77,9 @@ func set_control(id: String, value: Variant) -> void:
 			model.fraction = float(option.fraction)
 		_:
 			return
+	if hand.held:
+		hand.start()   # a new condition under a held finger: the press grows again from 0
+		model.hand = 0.0
 	_changed()
 
 
@@ -98,6 +102,8 @@ func run_action(id: String) -> void:
 		model.pivot_x = DEFAULT_PIVOT
 		model.load_x = DEFAULT_LOAD
 		model.hand = 0.0
+		if hand.held:
+			hand.start()   # a finger still on the effort point: the press counts from 0 again
 		_placed.clear()
 		_restart_clock()
 		_was_lifted = false   # the pop below is the reaction; no lowering on top of it
@@ -154,6 +160,8 @@ func _physics_process(_delta: float) -> void:
 	if holding == "effort":
 		_tick_clock()
 		model.hand = hand.force()
+		if model.lifting():
+			hand.hold_there()   # (2026-11-01) the press stays at the force that lifted it, the gauge too
 	driver.hand_holds = holding == "load"
 	driver.step(1.0 / float(Engine.physics_ticks_per_second))
 	_track_lift()
