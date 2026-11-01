@@ -12,7 +12,8 @@
 ##
 ## The words are the lab's observe text exactly (or, for one open, other words of Dugi's: the
 ## mission's question or the prediction's reason — Plan G4), only split into pages of at most
-## LINES lines at the spaces, each sentence starting a line (joined() is the text again). Each page types out at
+## LINES lines at the spaces, each sentence starting a line (joined() is the text
+## again). Each page types out at
 ## CHARS_PER_S; a tap shows the whole page, the next tap turns the page, and after the last page
 ## it closes. Pages never turn by themselves (2026-10-28 user: only a tap turns a page; before, an
 ## untouched page turned after READ_S + READ_PER_CHAR_S per character — `auto_turn` keeps that for

@@ -95,7 +95,7 @@
     "hidden_series_until_end": ["formula"],
     "stages": [
       { "observe": "hit_1", "threshold": 0.5, "text": "낮게 던져서 가까운 상자 맞히기!", "say": "공은 늘 같은 세기로 날아가요. 중력이 공을 아래로 끌어당겨요. 낮게 던지면 금방 땅으로 내려와요. 그래서 가까운 상자에 닿아요.", "say_face": "explain", "win": "탁! 가까운 상자를 맞혔어!", "win_face": "happy", "miss": "더 낮게 던져 봐! 가까운 상자야!", "miss_face": "thinking" },
-      { "observe": "hit_2", "threshold": 0.5, "text": "얼마나 기울여 던질까? 먼 상자 맞히기!", "say": "비스듬히 던지면 공이 앞으로도 위로도 가요. 그래서 가장 멀리 날아가요. 그래서 먼 상자에 닿아요.", "say_face": "thinking", "win": "쿵! 먼 상자도 넘어갔어!", "win_face": "happy", "miss": "조금 비스듬히 던져 봐!", "miss_face": "thinking" },
+      { "observe": "hit_2", "threshold": 0.5, "text": "얼마나 기울여 던질까? 먼 상자 맞히기!", "say": "비스듬히 던지면 공이 앞으로도 위로도 가요. 가장 멀리 날아가서 먼 상자에 닿아요.", "say_face": "thinking", "win": "쿵! 먼 상자도 넘어갔어!", "win_face": "happy", "miss": "조금 비스듬히 던져 봐!", "miss_face": "thinking" },
       { "observe": "hit_3", "threshold": 0.5, "text": "높이 던져서 나무 위 상자 맞히기!", "say": "높이 던지면 공이 위로 많이 올라가요. 그리고 가까이 내려와요. 그래서 높은 나뭇가지의 상자에 닿아요.", "say_face": "explain", "win": "와! 나무 위 상자가 떨어졌어!", "win_face": "surprised", "miss": "더 높이, 위로 던져 봐!", "miss_face": "thinking" }
     ]
   },
