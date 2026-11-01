@@ -1046,8 +1046,8 @@ func _tell_reason() -> void:
 func _run_reason_wait() -> void:
 	if not _reason_waits or cast == null or cast.dugi == null:
 		return
-	if dialogue != null and dialogue.active:
-		return   # the child is still reading him
+	if (dialogue != null and dialogue.active) or is_sidebar_open():
+		return   # the child is still reading him (or reading the sidebar: the reason waits for his box)
 	_reason_waits = false
 	cast.dugi.stop(true)
 	_dialogue_started = false

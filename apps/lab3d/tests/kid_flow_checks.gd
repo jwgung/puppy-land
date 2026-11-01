@@ -359,7 +359,7 @@ func check_reason_waits() -> void:
 
 ## Puppy's result bubble beside him points at him from its side, above him from its bottom, below him
 ## from its top (2026-11-01 user: the tail went the wrong way), and never covers him: in every game lab,
-## a win and a miss, on the tablet and with the sidebar open (another view width).
+## a win and a miss, on the tablet.
 func check_bubble_tail() -> void:
 	var problems := []
 	var want := ["bottom", "left", "right", "top"]

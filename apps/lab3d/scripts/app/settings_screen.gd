@@ -223,10 +223,12 @@ func _select(tier: String) -> void:
 
 
 func _apply_tier() -> void:
-	if set_tier.call(_selected):
-		# Restarting: the next launch reopens the settings screen. Written only when Quality
-		# really requested the restart, otherwise the marker would outlive this run.
-		var marker := FileAccess.open(App.RESUME_PATH, FileAccess.WRITE)
-		if marker:
-			marker.store_string("settings")
+	# A restart reopens the settings screen: the marker is on disk before the restart can end this
+	# process (on Android at once, 2026-11-01), and removed when Quality did not restart after all.
+	var marker := FileAccess.open(App.RESUME_PATH, FileAccess.WRITE)
+	if marker:
+		marker.store_string("settings")
+		marker.close()
+	if not set_tier.call(_selected):
+		DirAccess.remove_absolute(App.RESUME_PATH)
 	_select(_selected)

@@ -225,12 +225,16 @@ func _ensure_renderer() -> bool:
 	var marker := FileAccess.open(RESTART_MARKER_PATH, FileAccess.WRITE)
 	if marker:
 		marker.store_string(wanted)
+		marker.close()   # on disk before this process ends
 	var restart_args := OS.get_cmdline_args()
 	var user_args := OS.get_cmdline_user_args()
 	if not user_args.is_empty():
 		restart_args.append("--")
 		restart_args.append_array(user_args)
 	if android_restart():
+		# The new process ends this one; if nothing does within a while, quit (the next launch uses
+		# the renderer), never stay on the old one saying it restarts.
+		get_tree().create_timer(3.0, true, false, true).timeout.connect(get_tree().quit)
 		return true
 	OS.set_restart_on_exit(true, restart_args)   # desktop (Godot restarts only there)
 	get_tree().quit()
