@@ -230,6 +230,24 @@ func _ensure_renderer() -> bool:
 	if not user_args.is_empty():
 		restart_args.append("--")
 		restart_args.append_array(user_args)
-	OS.set_restart_on_exit(true, restart_args)
+	if OS.has_feature("android") and android_restart():
+		return true
+	OS.set_restart_on_exit(true, restart_args)   # desktop (Godot restarts only there)
 	get_tree().quit()
+	return true
+
+
+## Android: Godot's own restart (its library's ProcessPhoenix, declared in every export's manifest)
+## starts the app again in a new process and ends this one, so the new renderer is used (2026-11-01
+## user: on the phone the app only closed; OS.set_restart_on_exit works on desktop only). False when
+## it is not there (then the app quits as before and the next launch uses the renderer).
+static func android_restart() -> bool:
+	if not Engine.has_singleton("AndroidRuntime"):
+		return false
+	var runtime: Object = Engine.get_singleton("AndroidRuntime")
+	var activity: Object = runtime.call("getActivity")
+	var phoenix: Object = JavaClassWrapper.wrap("org.godotengine.godot.utils.ProcessPhoenix")
+	if activity == null or phoenix == null:
+		return false
+	phoenix.call("triggerRebirth", activity)
 	return true

@@ -138,7 +138,7 @@ func _build_story_card() -> Control:
 	box.add_child(Ui.label("이야기", "SectionLabel"))
 	var replay := Ui.button("이야기 다시 보기", "", 60)
 	replay.name = "StoryReplay"
-	replay.pressed.connect(story_requested.emit)
+	replay.pressed.connect(story_requested.emit.call_deferred)   # after the tap (see restart())
 	box.add_child(replay)
 	restart_button = Ui.button(RESTART_TEXT, "", 60)
 	restart_button.name = "RestartButton"
@@ -204,7 +204,9 @@ func restart() -> void:
 	ProgressStore.reset_all()
 	ExperimentScreen.reset_tips_shown()
 	show_restart_confirm(false)
-	restart_requested.emit()
+	# After this input pass: the tap came through the scroller's replay (DragScroll), and changing the
+	# screen inside it crashed the app on the phone (2026-11-01, a native crash in the frame step).
+	restart_requested.emit.call_deferred()
 
 
 func _select(tier: String) -> void:

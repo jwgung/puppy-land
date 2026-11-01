@@ -192,6 +192,7 @@ func check_prologue_once_and_replay() -> void:
 	var button: Button = settings.find_child("StoryReplay", true, false)
 	if button != null:
 		button.pressed.emit()
+	await tree.process_frame   # (asked after the tap's input pass, SettingsScreen)
 	expect.call(button != null and button.text == "이야기 다시 보기" and asked[0] == 1 and Story.should_play_prologue(true),
 		"prologue: the settings' 이야기 다시 보기 asks for it again", "")
 	host.queue_free()
