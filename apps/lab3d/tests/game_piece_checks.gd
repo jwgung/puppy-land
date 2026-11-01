@@ -188,6 +188,7 @@ func check_projectile_round() -> void:
 	var piece_start: Vector3 = game.piece.global_position
 	var throws := [[30.0, 8.0, 0], [10.0, 8.0, 1], [10.0, 8.0, 1], [45.0, 8.0, 2], [65.0, 8.0, 3]]
 	for throw in throws:
+		screen._cancel_next()   # each throw goes on as after 다음 미션 (the next stage is judged only then)
 		screen._set_control("angle", throw[0])
 		screen.experiment_action("release")
 		var tipped_at := -1.0

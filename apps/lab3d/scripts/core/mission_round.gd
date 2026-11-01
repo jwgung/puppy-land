@@ -115,6 +115,7 @@ var store: Object
 var lab: Experiment = null
 ## The picked choice id ("" before an answer).
 var pick := ""
+var waiting_next := false   # a stage was won, the next one waits for 다음 미션 (wait_next)
 ## The reason's face: happy after a right guess, thinking after a wrong one (Story.REASON_FACE).
 var reason_face := Story.DEFAULT_FACE
 ## This attempt earned its stamp (cleared by the next attempt or the lab back at "ready").
@@ -624,6 +625,8 @@ func demo_stamp(count: int) -> void:
 
 
 func _hand_over(count: int) -> void:
+	_bridge = ""   # (a mission line he never got to tell is for a stage that is done now)
+	_announce = ""
 	tell(count - 1, true)   # Puppy's win line of the stage just cleared (2026-10-29)
 	stamp_earned.emit(count)
 
@@ -776,6 +779,17 @@ func announce() -> void:
 	_announce = mission_line(definition, stage())
 
 
+## A stage was won and the screen's 다음 미션 is still to be pressed: the next stage is not judged
+## (no stamp, no miss line) until go_on(), so it is never won before its mission is told.
+func wait_next() -> void:
+	waiting_next = true
+
+
+## 다음 미션 was pressed (or a test skips it): the current stage is judged again.
+func go_on() -> void:
+	waiting_next = false
+
+
 ## The current stage's mission is still to be told (announce(), not yet in his box).
 func announcing() -> bool:
 	return _announce != ""
@@ -873,7 +887,7 @@ func judge_run() -> void:
 	if status == "ready":
 		judged_run = false
 		return
-	var judging := not judged_run and stage() >= 0 and status in judge_on(definition, stage())
+	var judging := not judged_run and not waiting_next and stage() >= 0 and status in judge_on(definition, stage())
 	if not (judging or (not predict_ended and status in reveal_on(definition))) or not lab.settled():
 		return
 	var values := lab.observations()
@@ -895,7 +909,7 @@ func reveal() -> void:
 ## The attempt has no stamp and its run has come to one of the stage's miss_on results (settled, the
 ## finger up: `touching` false, the result number there) on MISS_POLLS polls in a row: Puppy's miss line, once.
 func check_miss(touching: bool) -> void:
-	if not _armed or judged_run:
+	if not _armed or judged_run or waiting_next:
 		_miss_polls = 0
 		return
 	var s := stage()

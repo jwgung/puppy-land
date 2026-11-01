@@ -1220,6 +1220,8 @@ func _on_question_ended() -> void:
 func _on_stamp_earned(stamps: int) -> void:
 	_next_due = stamps < mission_round.stage_count()
 	_hide_next_button()
+	if _next_due:
+		mission_round.wait_next()   # the next stage is not judged before 다음 미션 (its mission untold)
 	_mission_text_held = _next_due and cast != null and cast.dugi != null   # Dugi tells it first (다음 미션)
 	_mission_announced = false
 	if _slam != null:
@@ -1279,8 +1281,8 @@ func _run_next_wait(delta: float) -> void:
 		return
 	var talking := cast != null and cast.dugi != null and (cast.dugi.speaking() or (dialogue != null and dialogue.active)
 		or cast.explanation_pending() or _reason_waits)
-	if talking or _slam != null or not experiment.settled():
-		return   # Dugi first (also one still to come: the cast's delay_s); a lab that settles is let settle
+	if talking or _slam != null or not experiment.settled() or is_sidebar_open():
+		return   # Dugi first (and the sidebar closed: he tells the next mission in his box) (also one still to come: the cast's delay_s); a lab that settles is let settle
 	# (a run that keeps going, an orbit or a swing: 다음 미션 shows once Dugi is done)
 	_next_wait = -1.0
 	_next_due = false
@@ -1293,6 +1295,8 @@ func _cancel_next() -> void:
 	_next_due = false
 	_next_wait = -1.0
 	_hide_next_button()
+	if mission_round != null:
+		mission_round.go_on()
 	if _mission_text_held:
 		_release_mission_text(false)
 
@@ -1336,6 +1340,7 @@ func next_mission() -> void:
 	_hide_next_button()
 	if experiment.status() != "ready":
 		experiment_action("reset")
+	mission_round.go_on()
 	next_presses += 1
 	if not _mission_text_held:   # (no Dugi to tell it: the strip at once)
 		_release_mission_text(false)
@@ -1347,14 +1352,29 @@ func next_mission() -> void:
 
 
 ## The told mission shows on the strip, pulsing once, when Dugi's box with it has closed (the bridge's
-## first mission, or 다음 미션's): nothing of it is still to be told and no box is open. (A question that
-## ends unanswered shows it at once: _on_question_ended.)
+## first mission, or 다음 미션's): nothing of it is still to be told and no box is open; a line he did
+## not get to tell is told again (_retell_mission). (A question that ends unanswered shows it at once:
+## _on_question_ended.)
 func _run_mission_reveal() -> void:
-	if not _mission_text_held or not _mission_announced or mission_round.asking() or mission_round.announcing():
+	if not _mission_text_held or not _mission_announced or mission_round.asking():
 		return
-	if mission_round.bridge_line() != "" or (dialogue != null and dialogue.active):
+	if mission_round.bridge_line() != "" or mission_round.announcing():
+		_retell_mission()
+		return
+	if dialogue != null and dialogue.active:
 		return
 	_release_mission_text(true)
+
+
+## The mission line missed his box (it opens only while his arm goes up: the sidebar was open, a
+## touch stopped him, the box had no room): once he is at rest, no box or sidebar is open and no
+## finger holds the lab, he starts over and tells it.
+func _retell_mission() -> void:
+	if cast == null or cast.dugi == null or cast.dugi.speaking() or _reason_waits:
+		return
+	if (dialogue != null and dialogue.active) or is_sidebar_open() or (manipulator != null and manipulator.mode != ""):
+		return
+	_dugi_tells_again()
 
 
 ## The last stamp is in: the celebration waits until Dugi's explanation of that stage is read (his
@@ -1766,6 +1786,10 @@ func open_sidebar(animated := true) -> void:
 	if is_sidebar_open():
 		return
 	_close_dialogue()   # at once: a tap in this frame must reach the controls, not a stale box
+	if next_shown():   # 다음 미션 waits for the sidebar to close (he tells the mission in his box)
+		_hide_next_button()
+		_next_due = true
+		_next_wait = 0.0
 	_sidebar_state = "opening"
 	_sidebar.visible = true
 	_sidebar_button.visible = false

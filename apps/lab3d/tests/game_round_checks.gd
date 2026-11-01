@@ -143,6 +143,7 @@ func check_round() -> void:
 		"stamps %d, '%s'" % [ProgressStore.stamps(ProgressStore.load(), "projectile"), screen._mission_text.text])
 	var said := await _next_explanation(screen)
 	expect.call(said == str(predict.reason), "round: after the first throw Dugi tells the prediction's reason", said)
+	screen._cancel_next()   # the child goes on (다음 미션: the next stage is judged only then)
 	# Second throw straight away (no 처음으로): 45°, onto the far crate.
 	await _throw(screen, lab, 45.0, 8.0)
 	await _run_to_end(lab)
@@ -151,6 +152,7 @@ func check_round() -> void:
 	said = await _next_explanation(screen)
 	expect.call(said == str(stages[1].say), "round: later explanations are Dugi's say for the stage (here the one just cleared; the reason was told once)", said)
 	expect.call(not screen.cast.puppy.celebrating(), "round: no celebration before the last stamp", "")
+	screen._cancel_next()
 	# The third stage wants the high crate: the far crate's throw again (45°) earns nothing.
 	await _throw(screen, lab, 45.0, 8.0)
 	await _run_to_end(lab)

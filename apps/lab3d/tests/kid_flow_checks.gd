@@ -36,6 +36,7 @@ func run() -> void:
 	await check_intro()
 	check_stage_terms()
 	await check_next_stage_reset()
+	await check_next_waits()
 	await check_reason_waits()
 	await check_bubble_tail()
 	check_pace()
@@ -327,6 +328,66 @@ func check_next_stage_reset() -> void:
 		"kid flow: 다음 미션 comes after Dugi's own explanation of the stage is read (a long delay_s), not before it",
 		"explained at frame %d, read at %d, 다음 미션 at %d" % [explained_at, read_at, shown_at])
 	await _close(screen)
+
+
+
+## Before 다음 미션 the next stage is not judged (2026-11-01 review: the spring's stages 1 and 2 share
+## their conditions, so a second pull won stage 2 before its mission was told): no stamp, no line.
+## The button hides while the sidebar is open (he tells the mission in his box) and comes back when it
+## closes. A mission line he did not get to tell (a touch stopped his arm before his box opened) is
+## told again once he is at rest, and only then the strip shows it.
+func check_next_waits() -> void:
+	var screen := await _open("free-fall")
+	var r: MissionRound = screen.mission_round
+	r.end_question()
+	var lab: Experiment = screen.experiment
+	r.stamp_earned.emit(1)
+	var waits: bool = r.waiting_next
+	var stamps_before := r.stamps
+	var lines_before: int = screen.result_count.win + screen.result_count.miss
+	screen.experiment_action("release")   # a try before 다음 미션
+	for i in 60 * 5:
+		await tree.process_frame
+		if screen.dialogue.active:
+			screen.dialogue.advance()
+			screen.dialogue.advance()
+	var unjudged: bool = lab.status() == "landed" and r.stamps == stamps_before \
+		and screen.result_count.win + screen.result_count.miss == lines_before
+	for i in 60 * 6:
+		if screen.next_shown():
+			break
+		await tree.process_frame
+		if screen.dialogue.active:
+			screen.dialogue.advance()
+			screen.dialogue.advance()
+	var shown: bool = screen.next_shown()
+	screen.open_sidebar(false)
+	await _frames(2)
+	var hidden_open: bool = not screen.next_shown()
+	screen.next_mission()   # (hidden: nothing happens)
+	var not_pressed: bool = screen.next_presses == 0
+	screen.close_sidebar(false)
+	await _frames(int(ExperimentScreen.NEXT_WAIT_MIN_S * 60.0) + 10)
+	var back: bool = screen.next_shown()
+	screen.next_mission()
+	var goes_on: bool = not r.waiting_next
+	screen.cast.dugi.stop(true)   # a touch at once: his arm never got up, his box never opened
+	var missed: bool = not screen.dialogue.active and r.announcing() and screen._mission_text.text == ""
+	var told := false
+	for i in 60 * 3:
+		await tree.process_frame
+		if screen.dialogue.active:
+			told = screen.dialogue.joined() == MissionRound.mission_line(screen.definition.raw, r.stage())
+			break
+	for i in 8:
+		screen.dialogue.advance()
+	await _frames(3)
+	var strip: bool = screen._mission_text.text == r.text() and r.text() != ""
+	await _close(screen)
+	expect.call(waits and unjudged and shown and hidden_open and not_pressed and back and goes_on and missed and told and strip,
+		"kid flow: before 다음 미션 the next stage is not judged; the button hides while the sidebar is open; a mission line he missed is told again, then the strip shows it",
+		"waits %s, unjudged %s, shown %s, hidden with the sidebar %s, not pressed %s, back %s, goes on %s, missed %s, told again %s, strip %s"
+			% [waits, unjudged, shown, hidden_open, not_pressed, back, goes_on, missed, told, strip])
 
 
 func check_pace() -> void:
