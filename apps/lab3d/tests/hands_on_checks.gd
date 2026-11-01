@@ -368,8 +368,8 @@ func check_bridge_and_reason() -> void:
 		await tree.process_frame
 		grew = grew or screen._mission_pill.scale.x > 1.05
 		if box.active and box.visible and said == "":
-			said = box.text
-	var want := "%s %s" % [predict.bridge, MissionRound.BRIDGE_FIRST]
+			said = box.joined()
+	var want := "%s %s" % [predict.bridge, MissionRound.mission_line(definition, 0)]
 	if said != want or box.speaker != "dugi" or box.face != str(predict.bridge_face) or screen.strip_pulses != 1 or not grew:
 		problems.append("bridge: said '%s' (want '%s'), %s %s, pulses %d, grew %s" % [said, want, box.speaker, box.face, screen.strip_pulses, grew])
 	for i in roundi(ExperimentScreen.PULSE_S * 60.0) + 5:
@@ -399,7 +399,7 @@ func check_bridge_and_reason() -> void:
 	ProgressStore.save(store)
 	screen = await _open(definition, TABLET)
 	screen._predict_pick_choice(str(predict.answer))
-	if screen.mission_round.bridge_line() != "%s %s" % [predict.bridge, MissionRound.BRIDGE_NEXT]:
+	if screen.mission_round.bridge_line() != "%s %s" % [predict.bridge, MissionRound.mission_line(definition, 1)]:
 		problems.append("bridge at stage 2: '%s'" % screen.mission_round.bridge_line())
 	await _free(screen)
 	DirAccess.remove_absolute(ProgressStore.path)

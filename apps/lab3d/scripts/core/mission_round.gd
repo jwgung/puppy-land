@@ -74,8 +74,11 @@ const CARD_PLACES := 1
 ## Puppy's miss line needs the miss seen on this many polls in a row (a status of one step is not a result).
 const MISS_POLLS := 2
 ## Dugi's bridge from the answer to the mission (predict.bridge) ends with one of these.
-const BRIDGE_FIRST := "첫 번째 미션이에요."
-const BRIDGE_NEXT := "다음 미션이에요."
+## Dugi tells each mission in his box before the strip shows it (2026-11-01 user: "미션이 좌측 상단에
+## 나오니까, 애들이 잘 못찾더라. 두기두기나 퍼피가 미션을 한 번 대화상자에서 설명해주게"): "첫 번째 미션:
+## <the stage's text>" after the answer (the bridge), the next ones when the child goes on (announce()).
+const ORDINALS := ["첫 번째", "두 번째", "세 번째"]
+const MISSION_FACE := "explain"
 ## The statuses where a lab is not mid-run: the stage's automatic conditions are set only then.
 const AT_REST := ["ready", "rest"]
 
@@ -132,6 +135,7 @@ var _question_face := Story.DEFAULT_FACE
 var reason := ""
 var _bridge := ""
 var _bridge_face := Story.DEFAULT_FACE
+var _announce := ""   # the mission Dugi tells next (announce())
 var _first_result := false
 var _armed := false
 var _resolved := false
@@ -734,7 +738,7 @@ func answer(choice_id: String) -> String:
 	end_question()
 	var line := str(question.get("bridge", ""))
 	if line != "" and stage() >= 0:
-		_bridge = "%s %s" % [line, BRIDGE_FIRST if stage() == 0 else BRIDGE_NEXT]
+		_bridge = "%s %s" % [line, mission_line(definition, stage())]
 		_bridge_face = Story.face_or_default(question.get("bridge_face"))
 	return picked
 
@@ -755,13 +759,38 @@ func bridge_line() -> String:
 	return _bridge
 
 
-## What Dugi says when his box opens now [text, face], taken once: the bridge first, else the
-## prediction's reason after the first result line, else [] (his explanation of the stage, stage_say()).
+## "<n번째> 미션: <stage `index`'s text>" ("" past the stages): what Dugi tells before a mission shows.
+static func mission_line(definition: Dictionary, index: int) -> String:
+	var stages: Array = missions(definition).get("stages", [])
+	if index < 0 or index >= stages.size():
+		return ""
+	var ordinal: String = ORDINALS[index] if index < ORDINALS.size() else "%d번째" % (index + 1)
+	return "%s 미션: %s" % [ordinal, str(stages[index].get("text", ""))]
+
+
+## The child goes on to the current stage (the screen's 다음 미션): Dugi tells it when his box opens
+## next (take_line), once.
+func announce() -> void:
+	_announce = mission_line(definition, stage())
+
+
+## The current stage's mission is still to be told (announce(), not yet in his box).
+func announcing() -> bool:
+	return _announce != ""
+
+
+## What Dugi says when his box opens now [text, face], taken once: the bridge first (with the first
+## mission), else the next mission (announce()), else the prediction's reason after the first result
+## line of its stage, else [] (his explanation of the stage, stage_say()).
 func take_line() -> Array:
 	if _bridge != "":
 		var bridge := [_bridge, _bridge_face]
 		_bridge = ""
 		return bridge
+	if _announce != "":
+		var told := [_announce, MISSION_FACE]
+		_announce = ""
+		return told
 	if reason != "" and _first_result:
 		var told := [reason, reason_face]
 		reason = ""

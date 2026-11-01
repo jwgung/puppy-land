@@ -109,7 +109,7 @@ func check_clue_question_bridge() -> void:
 		"round module: the answer ends the question once, the pick and the reason's happy face kept", picked)
 	expect.call(round.answer("far") == "" and round.pick == "near" and ended.size() == 1,
 		"round module: a second answer after the question changes nothing", round.pick)
-	var bridge := "%s %s" % [predict.bridge, MissionRound.BRIDGE_FIRST]
+	var bridge := "%s %s" % [predict.bridge, MissionRound.mission_line(round.definition, 0)]
 	expect.call(round.bridge_line() == bridge and round.take_line() == [bridge, Story.face_or_default(predict.bridge_face)]
 		and round.take_line().is_empty() and round.reason == str(predict.reason),
 		"round module: the bridge comes first and once; the reason waits for the first result line", round.bridge_line())

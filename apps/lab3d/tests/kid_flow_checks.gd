@@ -236,8 +236,10 @@ func check_stage_terms() -> void:
 	expect.call(missing.is_empty(), "kid flow: every game lab's stage explanations name its force or tool (INTRO_TERMS)", ", ".join(missing))
 
 
-## A won stage (its stamp in): after Dugi's explanation the lab is back at its start for the next
-## stage; a child who already took the lab again keeps the try.
+## A won stage (its stamp in): after Dugi's explanation 다음 미션 shows and the lab stays as it is
+## (2026-11-01 user: "진도가 너무 빨라 … 천천히 가야돼"; the child goes on when ready). The next stage's
+## text waits off the strip; pressing 다음 미션 sets the lab up again, Dugi tells "두 번째 미션: …" in his
+## box, and the strip shows it once his box closes. A child's own try meanwhile keeps the button.
 func check_next_stage_reset() -> void:
 	var screen := await _open("free-fall")
 	var r: MissionRound = screen.mission_round
@@ -250,44 +252,38 @@ func check_next_stage_reset() -> void:
 			break
 	var landed: bool = lab.status() == "landed"
 	r.stamp_earned.emit(1)
-	var reset_at := -1
+	await _frames(2)
+	var hidden: bool = screen._mission_text.text == ""
+	var shown_at := -1
 	for i in 60 * 8:
 		await tree.process_frame
 		if screen.dialogue.active:
 			screen.dialogue.advance()
 			screen.dialogue.advance()
-		if lab.status() == "ready":
-			reset_at = i
+		if screen.next_shown():
+			shown_at = i
 			break
-	var once: bool = screen.next_resets == 1
-	expect.call(landed and reset_at > roundi(ExperimentScreen.NEXT_WAIT_MIN_S * 60.0) - 2 and once,
-		"kid flow: a won stage sets the lab up again (ready) after Dugi has explained, by itself",
-		"landed %s, ready after %d frames, resets %d" % [landed, reset_at, screen.next_resets])
+	await _frames(60)
+	var kept: bool = lab.status() == "landed" and screen.next_resets == 0 and screen._mission_text.text == ""
+	screen.experiment_action("release")   # the child's own try meanwhile: the button stays
+	await _frames(30)
+	var stays: bool = screen.next_shown()
+	screen.next_mission()
+	await _frames(int(DugiActor.RAISE_S * 60.0) + 6)
+	# (the stamp signal alone here: the round's current stage is the one told)
+	var told: bool = screen.dialogue.active and screen.dialogue.joined() == MissionRound.mission_line(screen.definition.raw, r.stage())
+	var waiting: bool = screen._mission_text.text == ""   # the strip waits for his box
+	var reset: bool = lab.status() == "ready" and screen.next_resets == 1 and not screen.next_shown()
+	for i in 8:
+		screen.dialogue.advance()
+	await _frames(3)
+	var strip: bool = screen._mission_text.text == r.text() and r.text() != ""
 	await _close(screen)
-	# A child who goes on by herself (here a new drop) before the lab is set up again keeps her try.
-	screen = await _open("free-fall")
-	r = screen.mission_round
-	r.end_question()
-	lab = screen.experiment
-	screen.experiment_action("release")
-	for i in 240:
-		await tree.process_frame
-		if lab.status() == "landed":
-			break
-	r.stamp_earned.emit(1)
-	await _frames(2)
-	screen.experiment_action("release")   # the child's own next try
-	for i in 60 * 4:
-		await tree.process_frame
-		if screen.dialogue.active:
-			screen.dialogue.advance()
-			screen.dialogue.advance()
-	expect.call(screen.next_resets == 0,
-		"kid flow: a child's own next try after the stamp cancels setting the lab up again",
-		"resets %d, status %s" % [screen.next_resets, lab.status()])
-	await _close(screen)
-	# Dugi explains a later stage by himself after the cast's delay_s (incline-friction waits 4.5 s): the
-	# lab is set up again only after that explanation, never under it (2026-11-01 review).
+	expect.call(landed and hidden and shown_at > roundi(ExperimentScreen.NEXT_WAIT_MIN_S * 60.0) - 2 and kept and stays and told and waiting and reset and strip,
+		"kid flow: a won stage shows 다음 미션 after Dugi's explanation and keeps the lab (a try meanwhile too); pressed, the lab is set up again, Dugi tells the next mission in his box, then the strip shows it",
+		"landed %s, text hidden %s, button after %d frames, lab kept %s, stays %s, told %s, strip waits %s, reset %s, strip after %s" % [landed, hidden, shown_at, kept, stays, told, waiting, reset, strip])
+	# Dugi explains a later stage by himself after the cast's delay_s (incline-friction waits 4.5 s):
+	# 다음 미션 comes only after that explanation is read, never under it (2026-11-01 review).
 	screen = await _open("free-fall")
 	r = screen.mission_round
 	r.end_question()
@@ -314,7 +310,7 @@ func check_next_stage_reset() -> void:
 	r.stamp_earned.emit(1)
 	var explained_at := -1
 	var read_at := -1
-	reset_at = -1
+	shown_at = -1
 	for i in 60 * 10:
 		await tree.process_frame
 		if explained_at < 0 and cast.explain_count > explained:
@@ -324,12 +320,12 @@ func check_next_stage_reset() -> void:
 				read_at = i   # his box with the stage's explanation, read
 			screen.dialogue.advance()
 			screen.dialogue.advance()
-		if lab.status() == "ready":
-			reset_at = i
+		if screen.next_shown():
+			shown_at = i
 			break
-	expect.call(explained_at >= 0 and read_at >= explained_at and reset_at > read_at,
-		"kid flow: the lab is set up again after Dugi's own explanation of the stage is read (a long delay_s), not before it",
-		"explained at frame %d, read at %d, set up again at %d" % [explained_at, read_at, reset_at])
+	expect.call(explained_at >= 0 and read_at >= explained_at and shown_at > read_at,
+		"kid flow: 다음 미션 comes after Dugi's own explanation of the stage is read (a long delay_s), not before it",
+		"explained at frame %d, read at %d, 다음 미션 at %d" % [explained_at, read_at, shown_at])
 	await _close(screen)
 
 

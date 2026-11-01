@@ -136,8 +136,9 @@ func check_round() -> void:
 		and screen._key_labels["range"].text == range_card,
 		"round: once the ball landed the formula range shows (card: one decimal in words; sidebar: full precision)",
 		"%s / %s" % [screen._key_labels["range"].text, range_text])
-	expect.call(ProgressStore.stamps(ProgressStore.load(), "projectile") == 1 and screen._mission_text.text == str(stages[1].text),
-		"round: the first throw onto the near crate earns the first stamp; the next stage shows",
+	# The next stage's text waits for Dugi to tell it (다음 미션, 2026-11-01).
+	expect.call(ProgressStore.stamps(ProgressStore.load(), "projectile") == 1 and screen._mission_text.text == "" and screen.mission_round.text() == str(stages[1].text),
+		"round: the first throw onto the near crate earns the first stamp; the next stage is current, its text waits for Dugi (다음 미션)",
 		"stamps %d, '%s'" % [ProgressStore.stamps(ProgressStore.load(), "projectile"), screen._mission_text.text])
 	var said := await _next_explanation(screen)
 	expect.call(said == str(predict.reason), "round: after the first throw Dugi tells the prediction's reason", said)

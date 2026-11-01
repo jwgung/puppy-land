@@ -245,7 +245,7 @@ func check_lab_faces() -> void:
 		# attempt's result line (here a miss), then at once.
 		for k in int(DugiActor.RAISE_S * 60.0) + 4:
 			await tree.process_frame
-		var bridge_ok: bool = box.active and box.text == "%s %s" % [predict.bridge, MissionRound.BRIDGE_FIRST] and box.face == str(predict.bridge_face)
+		var bridge_ok: bool = box.active and box.joined() == "%s %s" % [predict.bridge, MissionRound.mission_line(screen.definition.raw, 0)] and box.face == str(predict.bridge_face)
 		box.close(true)
 		screen.cast.dugi.stop(true)
 		await tree.process_frame
