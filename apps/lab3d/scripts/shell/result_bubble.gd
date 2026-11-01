@@ -13,7 +13,7 @@ const SHOW_S := 5.0          # 2026-10-31 user: 2.5 s went by too fast for a chi
 const POP_S := 0.16
 const FADE_S := 0.3
 const MAX_TEXT_WIDTH := 330.0
-const TAIL := 18.0           # the tail's length below the bubble (UI units)
+const TAIL := 18.0           # the tail's length (UI units), from the edge facing Puppy
 ## The most the bubble moves in one frame while it shows (UI units): it follows Puppy gently and never
 ## jumps (2026-10-31 user: "순간적으로 막 움직인다").
 const MAX_STEP := 6.0
@@ -171,11 +171,11 @@ func _draw_tail() -> void:
 			along = Vector2.DOWN
 			inward = Vector2.LEFT
 			base = Vector2(r.end.x - 1.5, clampf(to.y, r.position.y + 14.0, r.end.y - 14.0))
-		_:
+		"left":
 			along = Vector2.DOWN
 			inward = Vector2.RIGHT
 			base = Vector2(r.position.x + 1.5, clampf(to.y, r.position.y + 14.0, r.end.y - 14.0))
-	var half := minf(TAIL_HALF, (r.size.y * 0.5 - 4.0) if side in ["right", "left"] else TAIL_HALF)
+	var half := TAIL_HALF if side in ["top", "bottom"] else minf(TAIL_HALF, r.size.y * 0.5 - 4.0)
 	var dir := to - base
 	if dir.length() < 1.0:
 		return

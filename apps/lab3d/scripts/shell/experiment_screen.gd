@@ -64,6 +64,7 @@ var show_cast := true
 ## The lab's sounds (SoundBoard): reads its status and impacts only, beside the lab like the cast.
 var sounds: LabSounds
 var _dialogue_started := false          # the dialogue of the current explanation was opened
+var _reason_waits := false               # the prediction's reason waits for Dugi's open box (_tell_reason)
 
 # 3D overlays (children of the view, placed by _fit_overlays).
 var _title_bar: PanelContainer
@@ -182,7 +183,6 @@ const DEMO_STAMP_EVERY_S := 1.6
 ## now, the finger seen on an object last frame (a new press is an attempt), the lines shown (tests).
 var _result_bubble: ResultBubble = null
 var _bubble_side := -1                   # the bubble's chosen place (an index of _fit_result_bubble's tries)
-var _reason_waits := false               # the prediction's reason waits for Dugi's open box (_tell_reason)
 var _bubble_saw_box := false             # Dugi's box was open at the bubble's last choice of side
 var _was_touching := false
 var result_count := {"win": 0, "miss": 0}

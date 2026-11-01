@@ -230,7 +230,7 @@ func _ensure_renderer() -> bool:
 	if not user_args.is_empty():
 		restart_args.append("--")
 		restart_args.append_array(user_args)
-	if OS.has_feature("android") and android_restart():
+	if android_restart():
 		return true
 	OS.set_restart_on_exit(true, restart_args)   # desktop (Godot restarts only there)
 	get_tree().quit()
@@ -247,7 +247,7 @@ static func android_restart() -> bool:
 	var runtime: Object = Engine.get_singleton("AndroidRuntime")
 	var activity: Object = runtime.call("getActivity")
 	var phoenix: Object = JavaClassWrapper.wrap("org.godotengine.godot.utils.ProcessPhoenix")
-	if activity == null or phoenix == null:
+	if activity == null or phoenix == null or JavaClassWrapper.get_exception() != null:
 		return false
 	phoenix.call("triggerRebirth", activity)
-	return true
+	return JavaClassWrapper.get_exception() == null
