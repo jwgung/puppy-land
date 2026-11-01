@@ -1058,8 +1058,9 @@ func _run_result_bubble(delta: float) -> void:
 ## middle), its tail pointing at him; inside the view and clear of the other overlays (the title, the
 ## key cards, the strip, 다시, the picture buttons, the tip, Dugi's box) when it can be: above him,
 ## else beside him, else below. The side is chosen when the bubble opens (`choose`, also when a stamp
-## lands where it is) and kept; every other frame it only follows Puppy, at most ResultBubble.MAX_STEP
-## a frame (2026-10-31 user: it jumped as Dugi's box opened and the camera moved).
+## lands where it is or Dugi's box opens after it) and kept; it never jumps: once placed it moves at
+## most ResultBubble.MAX_STEP a frame, to a new side too, and else only follows Puppy (2026-10-31 user:
+## it jumped as Dugi's box opened and the camera moved).
 func _fit_result_bubble(choose := true) -> void:
 	if _result_bubble == null:
 		return

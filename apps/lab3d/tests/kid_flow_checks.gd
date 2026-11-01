@@ -277,7 +277,7 @@ func check_next_stage_reset() -> void:
 	var cast: IslandCast = screen.cast
 	for run in 2:   # the first run has the prediction's reason (Dugi at once); the second is a later stage's
 		if run == 1:
-			cast.delay_s = 3.0   # longer than the stamp's flight + NEXT_WAIT_MIN_S
+			cast.delay_s = ExperimentScreen.NEXT_WAIT_MIN_S + 2.0   # longer than the stamp's flight + the wait
 		screen.experiment_action("release")
 		for i in 240:
 			await tree.process_frame
