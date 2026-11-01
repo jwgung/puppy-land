@@ -243,6 +243,28 @@ func check_next_stage_reset() -> void:
 		"kid flow: a won stage sets the lab up again (ready) after Dugi has explained, by itself",
 		"landed %s, ready after %d frames, resets %d" % [landed, reset_at, screen.next_resets])
 	await _close(screen)
+	# A child who goes on by herself (here a new drop) before the lab is set up again keeps her try.
+	screen = await _open("free-fall")
+	r = screen.mission_round
+	r.end_question()
+	lab = screen.experiment
+	screen.experiment_action("release")
+	for i in 240:
+		await tree.process_frame
+		if lab.status() == "landed":
+			break
+	r.stamp_earned.emit(1)
+	await _frames(2)
+	screen.experiment_action("release")   # the child's own next try
+	for i in 60 * 4:
+		await tree.process_frame
+		if screen.dialogue.active:
+			screen.dialogue.advance()
+			screen.dialogue.advance()
+	expect.call(screen.next_resets == 0,
+		"kid flow: a child's own next try after the stamp cancels setting the lab up again",
+		"resets %d, status %s" % [screen.next_resets, lab.status()])
+	await _close(screen)
 
 
 func check_pace() -> void:

@@ -13,9 +13,10 @@
 ##   centre height, keeping the offset between finger and object from the pick-up (an offset on
 ##   the surface, so a turning camera does not change it; the object follows the finger on screen
 ##   while the assist turns the view, see _follow_camera). A grazing ray
-##   leaves the object where it is; the object never leaves the region by more than SOFT_MARGIN.
-##   The object is frozen while held and follows the finger unsnapped; the footprint marker shows
-##   the grid point it will land on (white) or that it cannot be placed there (dark + wobble).
+##   leaves the object where it is; a finger past the region or the lab's limit holds the object
+##   at that limit (2026-10-31: the limit is the most, not a refusal). The object is frozen while
+##   held and follows the finger unsnapped; the footprint marker shows the grid point it will land
+##   on (white), the nearest one the lab allows (Experiment.nearest_placement).
 ## - Height: an object whose rule allows it shows a vertical handle beside it when selected; the
 ##   knob drags the height along the surface normal only (snapped to its step).
 ## - Put down: a valid target places the object there (Experiment.manipulation_placed); an invalid
