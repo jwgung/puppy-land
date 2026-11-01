@@ -64,7 +64,7 @@ var show_cast := true
 ## The lab's sounds (SoundBoard): reads its status and impacts only, beside the lab like the cast.
 var sounds: LabSounds
 var _dialogue_started := false          # the dialogue of the current explanation was opened
-var _reason_waits := false               # the prediction's reason waits for Dugi's open box (_tell_reason)
+var _reason_waits := false               # the prediction's reason waits for Dugi's open box or the sidebar (_tell_reason)
 
 # 3D overlays (children of the view, placed by _fit_overlays).
 var _title_bar: PanelContainer
@@ -1033,7 +1033,8 @@ func result_bubble() -> ResultBubble:
 
 ## The prediction's reason, after the first result line (MissionRound.reason_due): Dugi explains it,
 ## with the reason in his box. A box he is in the middle of (the run's explanation, the bridge) is read
-## to its end first (2026-11-01 user: "설명 읽는데 넘어가는 장면"): the reason waits for it to close.
+## to its end first (2026-11-01 user: "설명 읽는데 넘어가는 장면"): the reason waits for it to close (and for an
+## open sidebar to close: he tells it in his box).
 func _tell_reason() -> void:
 	if cast == null or cast.dugi == null:
 		return   # (never today: the round asks nothing without Dugi, MissionRound.open)
@@ -1042,7 +1043,7 @@ func _tell_reason() -> void:
 	_run_reason_wait()
 
 
-## The reason told once Dugi's box is closed (at once when none is open).
+## The reason told once Dugi's box and the sidebar are closed (at once when neither is open).
 func _run_reason_wait() -> void:
 	if not _reason_waits or cast == null or cast.dugi == null:
 		return

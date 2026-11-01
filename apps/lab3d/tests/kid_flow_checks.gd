@@ -325,36 +325,46 @@ func check_pace() -> void:
 
 ## The prediction's reason after the first result line never cuts the box the child is reading
 ## (2026-11-01 user: "설명 읽는데 넘어가는 장면"): the open box keeps its words until it is closed, then
-## Dugi tells the reason.
+## Dugi tells the reason; with the sidebar open it waits for the sidebar and is told in his box.
 func check_reason_waits() -> void:
-	var screen := await _open("free-fall")
-	screen.mission_round.end_question()
-	var box: DialogueBox = screen.dialogue
-	var cast: IslandCast = screen.cast
-	for i in 60 * 3:
-		await tree.process_frame
-		if box.active:
-			break
-		if i == 2:
+	var reason := ""
+	var results := []
+	for with_sidebar in [false, true]:
+		var screen := await _open("free-fall")
+		screen.mission_round.end_question()
+		reason = MissionRound.predict(screen.definition.raw).get("reason", "")
+		var box: DialogueBox = screen.dialogue
+		var cast: IslandCast = screen.cast
+		var waiting := false
+		if with_sidebar:
+			screen.open_sidebar(false)
+			await _frames(2)
+			screen.show_result(0, false)   # the first result line: the reason is due
+			await _frames(60)
+			waiting = screen.reason_waits() and not box.active
+			screen.close_sidebar(false)
+		else:
 			cast.dugi.explain(screen.experiment.explain_point)
-	var reading := box.text
-	var opened := box.active
-	screen.show_result(0, false)   # the first result line: the reason is due
-	for i in 60:
-		await tree.process_frame
-	var kept: bool = box.active and box.text == reading and screen.reason_waits()
-	for i in 6:
-		box.advance()
-	for i in 60 * 3:
-		await tree.process_frame
-		if box.active and box.text != reading:
-			break
-	var reason: String = MissionRound.predict(screen.definition.raw).get("reason", "")
-	var told: bool = box.active and box.joined() == reason and not screen.reason_waits()
-	var seen := "opened %s, kept 1 s %s, reason after %s ('%s')" % [opened, kept, told, box.text.left(16)]
-	await _close(screen)
-	expect.call(opened and kept and told,
-		"kid flow: the prediction's reason waits for the box the child is reading, then Dugi tells it", seen)
+			for i in 60 * 3:
+				await tree.process_frame
+				if box.active:
+					break
+			var reading := box.text
+			screen.show_result(0, false)
+			await _frames(60)
+			waiting = box.active and box.text == reading and screen.reason_waits()
+			for i in 6:
+				box.advance()
+		for i in 60 * 3:
+			await tree.process_frame
+			if box.active and box.joined() == reason:
+				break
+		var told: bool = box.active and box.joined() == reason and not screen.reason_waits()
+		results.append([with_sidebar, waiting, told])
+		await _close(screen)
+	var ok := results.all(func(r: Array) -> bool: return r[1] and r[2])
+	expect.call(ok, "kid flow: the prediction's reason waits for the box the child is reading (and an open sidebar), then Dugi tells it in his box",
+		"[sidebar, waited, told] %s" % str(results))
 
 
 ## Puppy's result bubble beside him points at him from its side, above him from its bottom, below him

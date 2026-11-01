@@ -1766,11 +1766,14 @@ func _check_settings_marker(_definition: Dictionary) -> void:
 		DirAccess.remove_absolute(path)
 		var screen: Control = script.new()
 		screen.theme = load(UI_THEME).build()
-		screen.set_tier = func(_tier: String) -> bool: return restarts
+		var on_disk := [false]
+		screen.set_tier = func(_tier: String) -> bool:   # a restart can end the process inside it
+			on_disk[0] = FileAccess.file_exists(path)
+			return restarts
 		root.add_child(screen)
 		screen._select("medium" if root.get_node("Quality").tier != "medium" else "low")
 		screen._apply_tier()
-		outcomes[restarts] = FileAccess.file_exists(path)
+		outcomes[restarts] = FileAccess.file_exists(path) and on_disk[0]
 		screen.queue_free()
 	DirAccess.remove_absolute(path)
 	_expect(not outcomes[false] and outcomes[true], "resume marker is written only when set_tier restarts the app", str(outcomes))
