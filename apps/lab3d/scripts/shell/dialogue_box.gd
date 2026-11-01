@@ -12,7 +12,7 @@
 ##
 ## The words are the lab's observe text exactly (or, for one open, other words of Dugi's: the
 ## mission's question or the prediction's reason — Plan G4), only split into pages of at most
-## LINES lines at the spaces (joined() is the text again). Each page types out at
+## LINES lines at the spaces, each sentence starting a line (joined() is the text again). Each page types out at
 ## CHARS_PER_S; a tap shows the whole page, the next tap turns the page, and after the last page
 ## it closes. Pages never turn by themselves (2026-10-28 user: only a tap turns a page; before, an
 ## untouched page turned after READ_S + READ_PER_CHAR_S per character — `auto_turn` keeps that for
@@ -151,9 +151,29 @@ static func _glue_short(tokens: PackedStringArray) -> Array:
 	return out
 
 
-## Pages of at most LINES lines: [{"lines": [...], "seps": [separator after each line]}, ...].
+## The sentences of `words` (each ends in . ! or ? before a space; "…" goes on): a sentence starts
+## a new line in the box (2026-11-02 user: "애들거니까, 문장 좀 끊어서 해줘").
+static func sentences(words: String) -> PackedStringArray:
+	var out := PackedStringArray()
+	var start := 0
+	for i in words.length() - 1:
+		if words[i] in [".", "!", "?"] and words[i + 1] == " ":
+			out.append(words.substr(start, i + 1 - start))
+			start = i + 2
+	out.append(words.substr(start))
+	return out
+
+
+## Pages of at most LINES lines, each sentence on lines of its own: [{"lines": [...], "seps":
+## [separator after each line]}, ...].
 static func paginate(words: String, font: Font, size: int, width: float) -> Array:
-	var lines := wrap_lines(words, font, size, width)
+	var lines := []
+	var parts := sentences(words)
+	for i in parts.size():
+		var wrapped := wrap_lines(parts[i], font, size, width)
+		if i < parts.size() - 1 and not wrapped.is_empty():
+			wrapped[-1][1] = " "   # (joined() puts the space back)
+		lines.append_array(wrapped)
 	var out := []
 	for k in range(0, lines.size(), LINES):
 		var chunk: Array = lines.slice(k, k + LINES)

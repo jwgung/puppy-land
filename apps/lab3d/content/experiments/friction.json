@@ -100,7 +100,7 @@
     "hidden_until_end": ["max_static", "kinetic"],
     "hidden_series_until_end": ["max_static"],
     "stages": [
-      { "threshold": 1.5, "conditions": {"mass": "light"}, "text": "가벼운 상자를 밀어서 길 열기!", "say": "바닥이 상자를 붙잡고 버티는 힘을 마찰력이라고 해요. 마찰력보다 세게 밀면 상자가 미끄러져서 길에서 비켜요.", "say_face": "explain", "win": "상자가 길을 비켰어!", "win_face": "happy", "miss": "상자가 꿈쩍 안 해. 더 오래 눌러 봐!", "miss_face": "worried" },
+      { "threshold": 1.5, "conditions": {"mass": "light"}, "text": "가벼운 상자를 밀어서 길 열기!", "say": "바닥이 상자를 붙잡고 버티는 힘을 마찰력이라고 해요. 마찰력보다 세게 밀어 봐요. 상자가 미끄러져서 길에서 비켜요.", "say_face": "explain", "win": "상자가 길을 비켰어!", "win_face": "happy", "miss": "상자가 꿈쩍 안 해. 더 오래 눌러 봐!", "miss_face": "worried" },
       { "threshold": 1.5, "conditions": {"mass": "normal"}, "text": "보통 상자도 길에서 밀어 치우기!", "say": "상자가 무거우면 마찰력이 커서 바닥이 더 꽉 붙잡아요. 그래서 더 오래 꾹 눌러야 움직여요.", "say_face": "thinking", "win": "보통 상자도 비켰어! 문이 열렸어!", "win_face": "happy", "miss": "아직 길이 막혔어. 더 오래 눌러 봐!", "miss_face": "thinking" },
       { "threshold": 1.5, "conditions": {"mass": "heavy"}, "text": "무거운 상자까지 치우고 조각에게 가기!", "say": "제일 무거운 상자는 마찰력이 제일 커요. 그래서 제일 세게 밀어야 길이 열려요.", "say_face": "explain", "win": "길이 열렸어! 조각에게 가자!", "win_face": "surprised", "miss": "무거운 상자야! 아주 오래 눌러 봐!", "miss_face": "worried" }
     ]
@@ -111,7 +111,7 @@
     "intro_face": "explain",
     "card": "start_force",
     "place": "상자 밀기",
-    "say": "바닥이 상자를 붙잡고 버텨요. 무거운 상자일수록 꽉 붙잡아서 더 세게 밀어야 움직여요.",
+    "say": "바닥이 상자를 붙잡고 버텨요. 무거운 상자일수록 바닥이 꽉 붙잡아요. 더 세게 밀어야 움직여요.",
     "say_face": "explain",
     "tip": "상자를 꾹 누르고 있으면 밀어요!",
     "picks": {
