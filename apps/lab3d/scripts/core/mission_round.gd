@@ -619,7 +619,7 @@ func _changes() -> bool:
 # --- the flow on the screen ---------------------------------------------------------------------
 
 ## The round opens on the screen (once, after a restored state): Puppy's clue on the spot's first
-## visit (Story), then Dugi's question, while stages are left and there is Dugi to ask. `dugi`: the
+## visit (Story), Dugi's introduction (kid.intro, with the story), then Dugi's question, while stages are left and there is Dugi to ask. `dugi`: the
 ## screen has him (his box).
 func open(dugi: bool) -> void:
 	if stage() < 0 or not dugi:

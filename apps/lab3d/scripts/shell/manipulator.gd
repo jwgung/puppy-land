@@ -13,8 +13,9 @@
 ##   centre height, keeping the offset between finger and object from the pick-up (an offset on
 ##   the surface, so a turning camera does not change it; the object follows the finger on screen
 ##   while the assist turns the view, see _follow_camera). A grazing ray
-##   leaves the object where it is; a finger past the region or the lab's limit holds the object
-##   at that limit (2026-10-31: the limit is the most, not a refusal). The object is frozen while
+##   leaves the object where it is; a finger past the region holds the object at its edge, and past
+##   a lab's limit inside it the marker and the landing place stay at that limit (2026-10-31: the
+##   limit is the most, not a refusal; the object lands there on release). The object is frozen while
 ##   held and follows the finger unsnapped; the footprint marker shows the grid point it will land
 ##   on (white), the nearest one the lab allows (Experiment.nearest_placement).
 ## - Height: an object whose rule allows it shows a vertical handle beside it when selected; the
