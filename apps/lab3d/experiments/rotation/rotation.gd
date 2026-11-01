@@ -3,8 +3,8 @@
 ## and holds the chosen effort point (the web's three points 가까이 / 중간 / 멀리, the red peg) on the
 ## beam itself (2026-10-28 user decision, no handle): while held the hand's force grows from 0 at
 ## PRESS_RATE N/s up to PRESS_MAX (HoldRamp) and a gauge beside it fills. When the force reaches
-## F = m g r_load / r_effort the beam turns to the web's lift angle (load side up); letting go puts it
-## back level. The fulcrum and the load stay (set_layout: tests; the web's lever has them fixed).
+## F = m g r_load / r_effort the beam turns to the web's lift angle (load side up) and the force and
+## the gauge stay there (2026-11-01); letting go puts it back level. The fulcrum and the load stay (set_layout: tests; the web's lever has them fixed).
 ## Conditions: the load mass (the web's mass input, 1-20 kg) and the effort point.
 ## Motion and every displayed number: LeverLabModel (LeverChallenge: required force, capped force on
 ## the beam, lifting, torques); LeverLabDriver poses the engine beam and load on it every step

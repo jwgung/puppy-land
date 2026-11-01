@@ -54,6 +54,7 @@ func run() -> void:
 	await check_conditions()
 	await check_art()
 	await check_input_path()
+	await check_press_restarts()
 	await check_demo()
 	check_liftable_everywhere()
 	await check_liftable_on_the_lab()
@@ -325,6 +326,32 @@ func check_art() -> void:
 
 # --- 7-8. input path on a fresh screen --------------------------------------------------------
 
+## The lab alone (no screen to drop the hold): a condition change or 처음으로 under a held press that
+## lifted the beam starts the press again from 0, and it lifts again at the new F.
+func check_press_restarts() -> void:
+	var lab := await _lab()
+	lab.hold_started("effort")
+	var k := 0
+	while not lab.model.lifting() and k < 5 * STEP_HZ:
+		await tree.physics_frame
+		k += 1
+	var stuck: bool = lab.hand.stopped()
+	lab.set_control("mass", 10.0)
+	var zero: bool = lab.model.hand == 0.0 and not lab.hand.stopped()
+	k = 0
+	while not lab.model.lifting() and k < 5 * STEP_HZ:
+		await tree.physics_frame
+		k += 1
+	var again: bool = lab.model.lifting() and lab.hand.stopped() and lab.model.hand < lab.model.required() + lab.PRESS_RATE / STEP_HZ + 1e-9
+	lab.run_action("reset")
+	var reset_zero: bool = lab.model.hand == 0.0 and not lab.hand.stopped()
+	lab.hold_ended("effort")
+	await _free(lab)
+	expect.call(stuck and zero and again and reset_zero,
+		"rotation (lab alone): a condition change or 처음으로 under a held press starts it again from 0; it lifts again and stops at the new F",
+		"stopped %s, zero %s, lifted again %s, reset %s" % [stuck, zero, again, reset_zero])
+
+
 func check_input_path() -> void:
 	var screen: Control = await _open()
 	var lab: Experiment = screen.experiment
@@ -366,6 +393,14 @@ func check_input_path() -> void:
 	await tree.process_frame
 	var gauge: ForceGauge = lab.gauge
 	var gauge_ok: bool = gauge != null and gauge.visible and absf(gauge.fraction - lift_force / lab.PRESS_MAX) < 1e-9
+	# A condition changed under the held finger: the press is not stuck at the old lift force (the screen
+	# drops the hold, the lab itself starts the press again from 0).
+	lab.set_control("mass", 10.0)
+	var restarted: bool = not lab.hand.stopped() and lab.model.hand == 0.0 and lab.hand.force() == 0.0
+	await tree.physics_frame
+	restarted = restarted and lab.model.hand < 10.0 and not lab.model.lifting()
+	expect.call(restarted, "rotation: a condition change under the held finger starts the press again from 0 (not stuck at the old lift force)", "hand %.2f N" % lab.model.hand)
+	lab.set_control("mass", 20.0)
 	_touch(screen, press, false)
 	await tree.physics_frame
 	await tree.physics_frame

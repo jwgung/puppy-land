@@ -2,7 +2,7 @@
 ## a box on a level floor with friction, pushed towards +x by the bread cat. The child presses and
 ## holds the box itself (2026-10-28 user decision, no handle): while held the applied force grows
 ## from 0 at PUSH_RATE N/s up to PUSH_MAX (80 N, the old handle's +-80 N) - HoldRamp - and a gauge
-## beside the box fills; letting go sets it back to 0 at once and the box slides on until friction
+## beside the box fills, both stopping at the push that starts the box (2026-11-01); letting go sets it back to 0 at once and the box slides on until friction
 ## stops it (the web's handle let go). The box starts exactly when the ramped force passes
 ## mu_s m g (PushFrictionLaw). Conditions: material (the web's four, mu_s =
 ## friction + 0.18, mu_k = friction) and mass (the kid boxes 2 / 5 / 10 kg and the web's 8 kg start
@@ -59,7 +59,7 @@ var _graph_revision := 0
 ## -1 until it did): the mission's key card (2026-10-28). Read only: nothing reads it back.
 var start_force := -1.0
 ## The law held the box after the last step (a press that breaks it loose stops growing there; a
-## press on a box still sliding waits until it rests and breaks loose again).
+## press on a box still sliding stops once it passes mu_s m g).
 var _was_holding := true
 
 
@@ -220,8 +220,9 @@ func _physics_process(_delta: float) -> void:
 	model.step(force, dt)
 	if start_force < 0.0 and not model.holding:
 		start_force = model.max_static()   # the box broke loose: the push it took (mu_s m g)
-	if push.held and _was_holding and not model.holding:
-		push.hold_there()   # the press broke the box loose: it (and its gauge) stays at that force
+	if push.held and not model.holding and (_was_holding or push.force() > model.max_static()):
+		push.hold_there()   # the press broke the box loose (or, on a box still sliding, got to the
+		# push that would have): it and its gauge stay at that force
 	_was_holding = model.holding
 	_clock_steps += 1
 	var x := formula_x()

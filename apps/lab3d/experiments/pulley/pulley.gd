@@ -3,7 +3,8 @@
 ## child presses and holds the end of the pull strand (2026-10-28 user decision: the red grip went):
 ## the hand's force grows from 0 at PULL_RATE N/s up to PULL_MAX (HoldRamp) and a gauge beside it
 ## fills; once it reaches F = m g / n the rope comes down ROPE_SPEED m/s (a steady pull at F, on the
-## 5 cm grid, at most STROKE per hold) and the load rises the pulled length / n. Letting go keeps the
+## 5 cm grid, at most STROKE per hold; the force and the gauge stay there, 2026-11-01) and the load
+## rises the pulled length / n. Letting go keeps the
 ## rope (a ratchet) and the rope end goes back up for the next stroke (hand over hand), so the same
 ## height can be reached with any n. Conditions: the number of strands (the web's 1 / 2 / 4 buttons)
 ## and the load mass (the web's mass input, 1-20 kg).
