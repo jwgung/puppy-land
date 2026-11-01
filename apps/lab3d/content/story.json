@@ -1,5 +1,5 @@
 {
-  "about": "이야기 \"별 조각 찾기\"(2026-10-28 사용자 승인). 3D 앱(apps/lab3d Story)만 읽는다. 첫 실행 이야기(prologue, 8쪽)와 별을 다 찾은 뒤의 끝 이야기(finale). who: dugi = 두기두기(과학자, 이유·과학 설명), puppy = 퍼피(탐정, 단서와 이야기만, 과학은 설명하지 않음). face = 그 줄의 초상화 표정(explain 설명 · happy 기쁨 · surprised 놀람 · thinking 생각 · worried 걱정, 없으면 explain, 2026-10-29). 빵고양이는 말하지 않는다. 실험마다의 퍼피 단서는 각 실험 JSON의 story.clue. 밤 지도 탐험(2026-10-28 사용자 승인): order = 장소를 찾는 정해진 순서(다음 장소 = 이 순서에서 조각을 아직 못 찾은 첫 장소), 다음 장소의 퍼피 수수께끼는 각 실험 JSON의 story.map_clue, map_wrong = 잠긴 장소를 눌렀을 때 퍼피 말(map_wrong_face 표정).",
+  "about": "이야기 \"별 조각 찾기\"(2026-10-28 사용자 승인). 3D 앱(apps/lab3d Story)만 읽는다. 첫 실행 이야기(prologue, 8쪽)와 별을 다 찾은 뒤의 끝 이야기(finale). who: dugi = 두기두기(과학자, 이유·과학 설명), puppy = 퍼피(탐정, 단서와 이야기만, 과학은 설명하지 않음). face = 그 줄의 초상화 표정(explain 설명 · happy 기쁨 · surprised 놀람 · thinking 생각 · worried 걱정, 없으면 explain, 2026-10-29). 빵고양이는 말하지 않는다. 실험마다의 퍼피 단서는 각 실험 JSON의 story.clue. 밤 지도 탐험(2026-10-28 사용자 승인): order = 장소를 찾는 정해진 순서(다음 장소 = 이 순서에서 조각을 아직 못 찾은 첫 장소), 다음 장소의 퍼피 수수께끼는 각 실험 JSON의 story.map_clue, map_wrong = 잠긴 장소를 눌렀을 때 퍼피 말(map_wrong_face 표정). finale 3쪽(2026-11-01): 두기두기가 새총처럼 별을 당겨 쏘라고 하고, 아이가 별을 아래로 당겼다 놓는다. 너무 약하면 별이 다시 내려오고 finale_retry(두기두기, finale_retry_face 표정).",
   "order": ["free-fall", "projectile", "collision", "friction", "incline-friction", "spring", "constraints", "rotation", "pulley", "buoyancy", "orbit"],
   "map_wrong": "음… 여긴 아닌 것 같아.",
   "map_wrong_face": "thinking",
@@ -55,6 +55,13 @@
       "who": "dugi",
       "face": "happy",
       "text": "조각을 다시 맞추면 별이 빛을 낼 수 있어요. 하늘로 돌려보내요."
+    },
+    {
+      "who": "dugi",
+      "face": "explain",
+      "text": "새총처럼 별을 아래로 당겼다가 놓아 봐요! 세게 당길수록 더 빨리, 더 높이 날아가요."
     }
-  ]
+  ],
+  "finale_retry": "중력이 별을 다시 끌어내렸어요. 더 세게 당겨 봐요!",
+  "finale_retry_face": "thinking"
 }

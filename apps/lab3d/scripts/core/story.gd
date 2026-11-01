@@ -128,6 +128,15 @@ static func wrong_face() -> String:
 	return face_or_default(_load().get("map_wrong_face"))
 
 
+## Dugi's line when the finale's star came back down (2026-11-01: pull harder).
+static func finale_retry_line() -> String:
+	return str(_load().get("finale_retry", ""))
+
+
+static func finale_retry_face() -> String:
+	return face_or_default(_load().get("finale_retry_face"))
+
+
 # --- who says what (2026-10-29 user: Puppy never explains science, that is Dugi's job) -----------
 ## Words that explain science (why / how fast / which force). Puppy's lines (clues, riddles, the
 ## wrong-spot line, his story pages) never use them; Dugi's are exempt. A content test reads it.

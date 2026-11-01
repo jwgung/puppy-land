@@ -38,7 +38,8 @@ const PROLOGUE := [
 	["dugi", "조각마다 숨은 곳이 달라요. 공을 던지고, 상자를 밀고, 통을 띄워 봐야 꺼낼 수 있어요."],
 	["puppy", "빵고양이, 같이 가자!"],
 ]
-const FINALE := [["puppy", "조각을 모두 찾았어!"], ["dugi", "조각을 다시 맞추면 별이 빛을 낼 수 있어요. 하늘로 돌려보내요."]]
+const FINALE := [["puppy", "조각을 모두 찾았어!"], ["dugi", "조각을 다시 맞추면 별이 빛을 낼 수 있어요. 하늘로 돌려보내요."],
+	["dugi", "새총처럼 별을 아래로 당겼다가 놓아 봐요! 세게 당길수록 더 빨리, 더 높이 날아가요."]]
 
 
 func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:
@@ -347,7 +348,9 @@ func check_flight() -> void:
 
 
 ## The finale: when the 11th piece is at the lookout, once: the pieces gather into the star, Puppy then
-## Dugi speak, the cat lifts it and it rises; the sea sparkles, the lanterns light; then the child's
+## Dugi speak, the cat lifts it; the child pulls it down and lets go like the labs' slingshot
+## (2026-11-01): a weak pull rises to y0 + v^2 / 2g and comes back down under gravity (Dugi: pull
+## harder), a strong one reaches the sky; the sea sparkles, the lanterns light; then the child's
 ## camera, and the star stays in the map's sky (in the default view).
 func check_finale() -> void:
 	DirAccess.remove_absolute(ProgressStore.path)
@@ -373,16 +376,45 @@ func check_finale() -> void:
 			story.advance(0.05)
 		_tap_through(story.dialogue)
 	var lifted := false
+	for i in 40:
+		story.advance(0.05)
+		lifted = lifted or story._lift
+	# Waits for the pull: nothing flies by itself, the paw shows the pull on the star.
+	var waits: bool = story.launch_waits and story._launch.is_empty() and story.launch_guide != null and story.launch_guide.kind == "pull"
+	var at: Vector2 = home._world_to_screen(story._star.global_position)
+	# A tap (inside the dead zone) and an upward pull throw nothing; the paw shows the pull again.
+	_pull(story, at, 10.0)
+	_pull(story, at, -80.0)
+	var no_throw: bool = story.launches == 0 and story.launch_waits and story.launch_guide.kind == "pull"
+	# A weak pull (60 units down: 8.8 m/s, its top y0 + v^2 / 2g far under the sky): up and back down.
+	var from_y: float = story._paws_top().y   # it leaves from the paws
+	_pull(story, at, 60.0)
+	var weak_top := 0.0
+	for i in 80:
+		story.advance(0.05)
+		weak_top = maxf(weak_top, story._star.position.y)
+		if story._retry_open:
+			break
+	var want_top: float = StoryDirector.launch_top(from_y, StoryDirector.launch_speed(60.0))
+	var came_back: bool = story._retry_open and story.dialogue.text == Story.finale_retry_line() and story.dialogue.speaker == "dugi" \
+		and absf(weak_top - want_top) < 0.15 and weak_top < StoryDirector.SKY_HIGH.y and story.night > 0.0
+	_tap_through(story.dialogue)
+	story.advance(0.05)
+	# A strong pull (the whole way): it reaches the sky.
+	at = home._world_to_screen(story._star.global_position)
+	_pull(story, at, StoryDirector.LAUNCH_PULL_FULL)
 	var rose := 0.0
 	var sparkled := false
 	for i in 200:
 		story.advance(0.05)
-		lifted = lifted or story._lift
 		if story._star != null:
 			rose = maxf(rose, story._star.position.y)
 		sparkled = sparkled or story._sparkles.size() > 10
 	expect.call(gathered and str(words) == str(FINALE), "finale: the pieces gather into the star, then Puppy and Dugi speak", str(words))
-	expect.call(lifted and rose > 15.0 and sparkled, "finale: the cat lifts the star, it rises to the sky, the sea sparkles", "rose %.1f" % rose)
+	expect.call(lifted and waits and no_throw and came_back and story.launches == 2,
+		"finale: the cat lifts the star and it waits for the child's pull (the paw shows it; a tap or an upward pull throws nothing); a weak pull rises to y0 + v^2 / 2g and comes back down, Dugi says pull harder",
+		"lifted %s, waits %s, no throw %s, back %s (top %.2f, want %.2f), launches %d" % [lifted, waits, no_throw, came_back, weak_top, want_top, story.launches])
+	expect.call(rose >= StoryDirector.SKY_HIGH.y - 1e-3 and sparkled, "finale: a strong pull sends the star up to the sky, the sea sparkles", "rose %.1f" % rose)
 	for i in 40:
 		story.advance(0.05)
 	await tree.process_frame
@@ -419,6 +451,20 @@ func check_measurements() -> void:
 
 
 # --- helpers ---------------------------------------------------------------------------------------
+
+## A finger on the shield: presses at `at`, pulls `down` UI units straight down, lets go.
+func _pull(story: StoryDirector, at: Vector2, down: float) -> void:
+	for e in [[true, at], [null, at + Vector2(0.0, down * 0.5)], [null, at + Vector2(0.0, down)], [false, at + Vector2(0.0, down)]]:
+		var event: InputEvent
+		if e[0] == null:
+			event = InputEventScreenDrag.new()
+		else:
+			event = InputEventScreenTouch.new()
+			event.pressed = e[0]
+		event.position = e[1]
+		story._on_shield_input(event)
+		story.advance(0.016)
+
 
 ## Taps until this page is gone (the next page may open at once: it is not tapped).
 func _tap_through(box: DialogueBox) -> void:
