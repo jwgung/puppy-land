@@ -7,20 +7,18 @@
 ##   to 10 grains per ball so three landings at once stay under the 32-grain budget),
 ## - each ball looks as heavy as it is (set_look, 2026-10-28): one stuff, its radius the cube root
 ##   of its mass against the 1 kg violet ball's 0.25 m, grown from the body's bottom (ArtJuice.look_scale),
-## - the bread cat (CatActor wearing the BreadCat look, 2026-10-27) behind the leftmost ball on its
-##   right, between the pink and the red ball (2026-11-02 user; it stood left of the pink one), holding
-##   it on its pad with its right paw, on a stack of bread crates as tall as the ball is
-##   high (CatCrates); "공 놓기" lets go (the arm follows down), it cheers when all balls landed. A
-##   finger holding that ball: the cat only stands by. Only meshes: the balls wait and fall as the
-##   formula says.
+## - the bread cat (CatActor wearing the BreadCat look, 2026-10-27) stands on the floor exactly halfway
+##   between the two balls, a little behind their drop line (2026-11-02 user: "정확히 가운데 세워줘";
+##   before it held the left ball on a stack of bread crates beside it), watching; it cheers when all
+##   balls landed. Only meshes: the balls wait on their pads and fall as the formula says.
 class_name FreeFallProps
 extends PadProps
 
 const RULER_AT := Vector3(-3.6, 0.0, -1.4)
 const CRATE_MAX := 20             # a ball up to 8 m: crates no taller than about 0.4 m
-## Shoulder -> held ball: out to the cat's right (-x) and in front (the cat stands behind the ball's
-## pad, between the two balls; 2026-11-02, before +x: the cat stood left of the pink ball).
-const CAT_HOLD_DIR := Vector3(-0.36, 0.24, 0.9)
+## The cat's place behind the balls' drop line (z 0): far enough back that its bag hides no ball,
+## pad or button in the front view.
+const CAT_BEHIND := 0.9
 const RULER_HEIGHT := 8.5
 const PAD_SIZE := Vector3(0.56, 0.06, 0.56)
 
@@ -28,8 +26,7 @@ var juices: Dictionary = {}    # ball id -> ArtJuice
 var pads: Dictionary = {}      # ball id -> MeshInstance3D (the pad hinge node is the instance itself)
 var cat: CatActor
 var cat_stand: CatCrates
-## The ball the cat holds (the leftmost one) and the ball a finger holds ("" = none).
-var cat_ball := ""
+## The ball a finger holds ("" = none).
 var finger := ""
 var _ball_nodes: Dictionary = {}   # ball id -> body
 var _radius := 0.25                # the bodies' radius
@@ -99,23 +96,22 @@ func set_look(id: String, radius: float) -> void:
 	(juices[id] as ArtJuice).set_look_scale(radius / _radius)
 
 
-## The cat holds the leftmost waiting ball (its look's centre = `starts` + its look radius; id ->
-## bottom point) on its pad, or stands by while a finger holds that ball; its crates fit under it.
+## The cat stands exactly halfway between the leftmost and the rightmost ball (x), CAT_BEHIND m
+## behind them, on the floor (`starts`: id -> bottom point; their heights do not move it).
 func place_cat(starts: Dictionary) -> void:
 	if cat == null:
 		return
-	var left := ""
+	var lo := INF
+	var hi := -INF
 	for id in starts:
-		if left == "" or starts[id].x < starts[left].x:
-			left = id
-	cat_ball = left
-	cat.look_target = _ball_nodes.get(left)
-	var r: float = look_radii.get(left, _radius)
-	cat.hold(starts[left] + Vector3.UP * r, r, 0.0, finger != left, CAT_HOLD_DIR)
-	cat_stand.fit(cat, 0.0)
+		lo = minf(lo, starts[id].x)
+		hi = maxf(hi, starts[id].x)
+	cat.look_target = null
+	cat.stand(Vector3((lo + hi) * 0.5, 0.0, -CAT_BEHIND))
+	cat_stand.fit(cat, 0.0)   # (on the floor: no crates)
 
 
-## A finger picked up (`id`) or put down ("") a ball: the cat stands by while it holds the cat's ball.
+## A finger picked up (`id`) or put down ("") a ball (the cat stands where it stands).
 func set_finger(id: String, starts: Dictionary) -> void:
 	finger = id
 	place_cat(starts)
@@ -143,8 +139,6 @@ func released() -> void:
 			flip_pad(id, pad, "rotation:x", PI * 0.5)
 	for juice: ArtJuice in juices.values():
 		juice.stretch()
-	if cat != null:
-		cat.let_go(Vector3.DOWN)
 
 
 ## The balls were put back (reset, condition change): they pop in again.
