@@ -22,9 +22,9 @@ const AFTER_STAMP := 40          # frames an attempt runs on after its stamp (no
 const PIECE_LABS := ["free-fall", "collision", "spring", "friction", "incline-friction", "rotation", "pulley", "constraints", "buoyancy", "orbit"]
 
 ## Consecutive stages that may share a setup (user decisions 2026-10-29): the spring's near and far
-## bells (a pull that reaches the far bell also reaches the near one) and the drum's "any load" first
-## stage before the heavy load.
-const SHARED_ON_PURPOSE := ["spring 1-2", "buoyancy 1-2"]
+## bells (a pull that reaches the far bell also reaches the near one: the same light ball, only the
+## pull changes).
+const SHARED_ON_PURPOSE := ["spring 1-2"]
 
 ## Per lab: the attempts in order, [what, ops, frames, stamps after]. Ops: ["ctl", id, value],
 ## ["act", id], ["place", object, pull m] (the spring ball let go there), ["force", N] (the push),
@@ -59,9 +59,9 @@ const ROUNDS := {
 		["let go at 0.5 m: it reaches the near bell", [["place", "ball", 0.5]], 150, 1],
 		["let go at 0.9 m: short of the far bell (1 m)", [["place", "ball", 0.9]], 150, 1],
 		["let go at 1 m: it rings the far bell", [["place", "ball", 1.0]], 150, 2],
-		["the 1 kg ball at 1.5 m: it reaches the farthest bell, but the last bell wants the heavy ball", [["place", "ball", 1.5]], 150, 2],
-		["the 3 kg ball at 1.4 m: short of the farthest bell (1.5 m)", [["ctl", "mass", 3.0], ["place", "ball", 1.4]], 220, 2],
-		["the 3 kg ball at 1.5 m: as far as the light ball (the swing's size does not depend on the mass)", [["place", "ball", 1.5]], 220, 3],
+		["the 1 kg ball at 1 m again: the last bell wants the heavy ball (one change: the mass)", [["place", "ball", 1.0]], 150, 2],
+		["the 3 kg ball at 0.9 m: short of the far bell", [["ctl", "mass", 3.0], ["place", "ball", 0.9]], 220, 2],
+		["the 3 kg ball at 1 m: as far as the light ball (the swing's size does not depend on the mass)", [["place", "ball", 1.0]], 220, 3],
 	],
 	"friction": [
 		["the 8 kg start box held 2 s (31 N moves it far): not the light box", [["hold", 2.0]], 150, 0],
@@ -91,23 +91,22 @@ const ROUNDS := {
 		["from 4 m at 5 m/s: it leaves the star", [["ctl", "speed", 5.0], ["act", "launch"]], 600, 3],
 	],
 	"buoyancy": [
-		["the 70 kg load in the small drum sinks", [["ctl", "volume", "small"], ["act", "release"]], 900, 0],
-		["the big drum with the 70 kg load floats", [["ctl", "volume", "big"], ["act", "release"]], 1200, 1],
-		["the same again: the next stage wants a heavy load", [["act", "release"]], 1200, 1],
-		["the big drum with the heavy load (80 kg) floats", [["ctl", "mass", 80.0], ["act", "release"]], 1200, 2],
-		["the small drum with the heavy load sinks", [["ctl", "volume", "small"], ["act", "release"]], 900, 2],
-		["50 kg in the small drum stays under (neutral)", [["ctl", "mass", 50.0], ["act", "release"]], 900, 2],
-		["the small drum with the light load (45 kg) floats", [["ctl", "mass", 45.0], ["act", "release"]], 1200, 3],
+		["the start: the 70 kg load in the big drum floats, but the first stage wants the small drum", [["act", "release"]], 1200, 0],
+		["the small drum with the 70 kg load sinks: not yet the treasure chest's stage", [["ctl", "volume", "small"], ["act", "release"]], 900, 0],
+		["the small drum with the empty chest (45 kg) floats", [["ctl", "mass", 45.0], ["act", "release"]], 1200, 1],
+		["the same again: the next stage wants the treasure chest", [["act", "release"]], 1200, 1],
+		["the small drum with the treasure chest (80 kg) sinks: the stage's goal", [["ctl", "mass", 80.0], ["act", "release"]], 900, 2],
+		["the big drum with the empty chest floats: the last stage wants the treasure chest", [["ctl", "volume", "big"], ["ctl", "mass", 45.0], ["act", "release"]], 1200, 2],
+		["the big drum with the treasure chest floats and lifts it", [["ctl", "mass", 80.0], ["act", "release"]], 1200, 3],
 	],
 	"constraints": [
-		["L = 2 m on the earth: 2.9 s, not a long rope", [["act", "release"]], 330, 0],
-		["L = 3 m on the earth: 3.56 s, off the 3.2 s beat (a very long rope)", [["ctl", "length", 3.0], ["act", "release"]], 400, 0],
-		["L = 2.5 m on the earth: 3.25 s on the 3.2 s beat", [["ctl", "length", 2.5], ["act", "release"]], 400, 1],
-		["L = 2.5 m on the earth again: nothing", [["act", "release"]], 400, 1],
-		["the Moon, L = 2.5 m: 7.98 s, off the 6.3 s beat (and not a short rope)", [["ctl", "gravity", "moon"], ["act", "release"]], 600, 1],
-		["the Moon, L = 1.5 m: 6.18 s on the 6.3 s beat", [["ctl", "length", 1.5], ["act", "release"]], 500, 2],
-		["the Moon, L = 2.5 m again: off the 8.8 s beat", [["ctl", "length", 2.5], ["act", "release"]], 600, 2],
-		["the Moon, L = 3 m: 8.74 s on the 8.8 s beat", [["ctl", "length", 3.0], ["act", "release"]], 700, 3],
+		["L = 3 m on the earth: 3.56 s, off the 2.9 s beat", [["ctl", "length", 3.0], ["act", "release"]], 400, 0],
+		["L = 2 m on the earth: 2.9 s on the 2.9 s beat", [["ctl", "length", 2.0], ["act", "release"]], 330, 1],
+		["L = 2 m on the earth again: nothing", [["act", "release"]], 330, 1],
+		["L = 2.5 m on the earth: 3.25 s, off the 3.6 s beat", [["ctl", "length", 2.5], ["act", "release"]], 400, 1],
+		["L = 3 m on the earth: 3.56 s on the 3.6 s beat (one change: the rope)", [["ctl", "length", 3.0], ["act", "release"]], 400, 2],
+		["the Moon, L = 2.5 m: 7.98 s, off the 8.8 s beat (and not the long rope)", [["ctl", "gravity", "moon"], ["ctl", "length", 2.5], ["act", "release"]], 600, 2],
+		["the Moon, L = 3 m: 8.74 s on the 8.8 s beat (one change: the gravity)", [["ctl", "length", 3.0], ["act", "release"]], 700, 3],
 	],
 	"pulley": [
 		["one strand, a 10 kg load halfway: not the 20 kg load, not on the shelf", [["ctl", "mass", 10.0], ["stroke", 20]], 20, 0],
@@ -119,13 +118,13 @@ const ROUNDS := {
 	],
 	"incline-friction": [
 		["20° on wood holds", [["act", "release"]], 90, 0],
-		["25° on wood: it gets to the small dominoes, but not on steel", [["ctl", "angle", 25.0], ["act", "release"]], 200, 0],
-		["steel at 25°: to the small dominoes", [["ctl", "material", "steel"], ["act", "release"]], 200, 1],
-		["steel at 25° again: nothing", [["act", "release"]], 200, 1],
-		["wood at 25°: past the big dominoes, but not steep enough", [["ctl", "material", "wood"], ["act", "release"]], 200, 1],
-		["wood at 30°: to the big dominoes", [["ctl", "angle", 30.0], ["act", "release"]], 200, 2],
-		["rubber at 35°: past the pillar, but not steep enough", [["ctl", "material", "rubber"], ["ctl", "angle", 35.0], ["act", "release"]], 220, 2],
-		["rubber at 40°: to the red pillar", [["ctl", "angle", 40.0], ["act", "release"]], 220, 3],
+		["steel at 25°: past the yellow dominoes, but the first stage wants wood", [["ctl", "material", "steel"], ["ctl", "angle", 25.0], ["act", "release"]], 200, 0],
+		["wood at 25°: to the yellow dominoes (slower: 2.6 s down the slide)", [["ctl", "material", "wood"], ["act", "release"]], 320, 1],
+		["wood at 25° again: nothing", [["act", "release"]], 320, 1],
+		["wood at 27.5°: not steep enough for the blue dominoes' stage", [["ctl", "angle", 27.5], ["act", "release"]], 260, 1],
+		["wood at 35°: to the blue dominoes (one change: the slope)", [["ctl", "angle", 35.0], ["act", "release"]], 200, 2],
+		["wood at 45°: short of the red pillar, and the last stage wants steel", [["ctl", "angle", 45.0], ["act", "release"]], 220, 2],
+		["steel at 35°: to the red pillar (one change: the surface)", [["ctl", "material", "steel"], ["ctl", "angle", 35.0], ["act", "release"]], 220, 3],
 	],
 }
 
@@ -160,8 +159,8 @@ func check_conditions() -> void:
 			# that judges another goal of its own (the throw's next crate, 2026-10-29) is another task.
 			var other_goal: bool = str(stages[i].get("observe", "")) != "" and str(stages[i + 1].get("observe", "")) != "" \
 				and stages[i].observe != stages[i + 1].observe and stages[i].get("conditions", {}).is_empty() and stages[i + 1].get("conditions", {}).is_empty()
-			# User decisions (2026-10-29): the spring's bells (near, then farther: the same light ball) and the
-			# drum's first stage (the big drum with any load, then a heavy one) share a setup on purpose.
+			# User decision (2026-10-29): the spring's bells (near, then farther: the same light ball) share a
+			# setup on purpose.
 			var allowed := "%s %d-%d" % [definition.id, i + 1, i + 2] in SHARED_ON_PURPOSE
 			if not other_goal and not allowed and (stages[i + 1].get("change", []) as Array).is_empty() and not _disjoint(stages[i].get("conditions", {}), stages[i + 1].get("conditions", {})):
 				shared.append("%s %d-%d" % [definition.id, i + 1, i + 2])

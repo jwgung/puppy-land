@@ -34,7 +34,8 @@ GESTURES = {
     "pinch-fixed": [[(880, 650), (580, 650)], [(1040, 650), (1040, 650)]],            # finger 1 held still, only 0 moves -> zoom in
     "pan": [[(920, 560), (880, 560), (880, 840)], [(1000, 560), (1040, 560), (1040, 840)]],  # small spread, then move
     "one-finger": [[(700, 700), (1200, 700)]],                                         # empty-view drag
-    # Task 2b: drag the incline box (default start, front view, 20 deg) down the incline and land a
+    # Task 2b: drag the incline box (default start, front view, 20 deg: set it first, the default is 25 deg
+    # since 2026-11-01) down the incline and land a
     # second finger halfway: the drag is cancelled and the box goes back to its start.
     "drag-cancel": [[(1296, 350), (1120, 415), (960, 475)], [(500, 900), (500, 900), (500, 900)]],
 }

@@ -55,7 +55,7 @@
 ## screen judges every poll while the status is a judge_on one and keeps judging until the attempt
 ## earns its stamp (a growing value — orbit laps, a measured period — is judged when it gets there);
 ## then the attempt is done. A run that falls short changes nothing, and the next attempt is judged
-## against the same stage. One attempt clears at most the current stage. The stamps are the child's
+## against the same stage. After a stamp nothing is judged until the screen's 다음 미션 (wait_next, go_on). One attempt clears at most the current stage. The stamps are the child's
 ## collection — 3 m past, then 5 m past, then 7 m past (stamps: 0..MAX_STAMPS, one per stage).
 ##
 ## Stamps live in the progress store (`store`: FileProgress = ProgressStore, user://progress.cfg;
@@ -73,9 +73,11 @@ const CONDITION_EPS := 1e-6
 const CARD_PLACES := 1
 ## Puppy's miss line needs the miss seen on this many polls in a row (a status of one step is not a result).
 const MISS_POLLS := 2
-## Dugi's bridge from the answer to the mission (predict.bridge) ends with one of these.
-const BRIDGE_FIRST := "첫 번째 미션이에요."
-const BRIDGE_NEXT := "다음 미션이에요."
+## Dugi tells each mission in his box before the strip shows it (2026-11-01 user: "미션이 좌측 상단에
+## 나오니까, 애들이 잘 못찾더라. 두기두기나 퍼피가 미션을 한 번 대화상자에서 설명해주게"): "첫 번째 미션:
+## <the stage's text>" after the answer (the bridge), the next ones when the child goes on (announce()).
+const ORDINALS := ["첫 번째", "두 번째", "세 번째"]
+const MISSION_FACE := "explain"   # the face he tells a mission with
 ## The statuses where a lab is not mid-run: the stage's automatic conditions are set only then.
 const AT_REST := ["ready", "rest"]
 
@@ -96,7 +98,7 @@ signal stamp_earned(stamps: int)
 ## Puppy's result line of `stage` after an attempt (`won`: its stamp came; else a miss). `text` ""
 ## when the stage has none (nothing to show).
 signal result_told(stage: int, won: bool, text: String, face: String)
-## Dugi tells the prediction's reason now: the first result line of the visit came (take_line()).
+## Dugi tells the prediction's reason now: the first result line of predict.stage's stage came (take_line()).
 signal reason_due
 ## The first run has its result (reveal_on): the question is over and the strip shows the stage again.
 signal revealed
@@ -113,6 +115,8 @@ var store: Object
 var lab: Experiment = null
 ## The picked choice id ("" before an answer).
 var pick := ""
+## A stage was won and the next one waits for 다음 미션 (wait_next, go_on).
+var waiting_next := false
 ## The reason's face: happy after a right guess, thinking after a wrong one (Story.REASON_FACE).
 var reason_face := Story.DEFAULT_FACE
 ## This attempt earned its stamp (cleared by the next attempt or the lab back at "ready").
@@ -132,6 +136,7 @@ var _question_face := Story.DEFAULT_FACE
 var reason := ""
 var _bridge := ""
 var _bridge_face := Story.DEFAULT_FACE
+var _announce := ""   # the mission Dugi tells next (announce())
 var _first_result := false
 var _armed := false
 var _resolved := false
@@ -168,6 +173,13 @@ static func missions(definition: Dictionary) -> Dictionary:
 static func predict(definition: Dictionary) -> Dictionary:
 	var predict: Variant = definition.get("predict")
 	return predict if predict is Dictionary else {}
+
+
+## The stage whose result answers the question (predict.stage, 0 by default; 2026-11-01: one change a
+## stage, so the pendulum's long rope and the drum's heavy chest come in stage 2): the reason is told
+## after that stage's first result line.
+static func reason_stage(definition: Dictionary) -> int:
+	return int(predict(definition).get("stage", 0))
 
 
 ## The statuses a stage is judged on (the run's result states): stage `stage`'s own judge_on, else
@@ -337,7 +349,9 @@ static func validate(definition: Dictionary) -> PackedStringArray:
 	var problems := PackedStringArray()
 	problems.append_array(_validate_missions(definition.get("missions"), definition.get("observations", []), definition.get("controls", [])))
 	problems.append_array(_validate_series(definition.get("missions"), definition.get("graph", {}).get("series", [])))
-	problems.append_array(_validate_predict(definition.get("predict")))
+	var stages: Variant = missions(definition).get("stages")
+	var stage_count: int = (stages as Array).size() if stages is Array else 0
+	problems.append_array(_validate_predict(definition.get("predict"), stage_count if stage_count > 0 else ProgressStore.MAX_STAMPS))
 	return problems
 
 
@@ -505,8 +519,9 @@ static func _validate_conditions(conditions: Variant, controls: Array, i: int) -
 ## `predict` (Plan G4, optional): Dugi's question before the run —
 ## {"question": <text>, "choices": [{"id", "label", "picture": <PredictPictures kind>} x 2],
 ##  "answer": <a choice id>, "reason": <text>, "bridge"?: <Dugi's line from the answer to the mission>,
+##  "stage"?: <the stage index whose result answers it, 0 by default: the reason comes after it>,
 ##  "bridge_face"?: <Story.FACES>}.
-static func _validate_predict(predict: Variant) -> PackedStringArray:
+static func _validate_predict(predict: Variant, stage_count := ProgressStore.MAX_STAMPS) -> PackedStringArray:
 	var problems := PackedStringArray()
 	if predict == null:
 		return problems
@@ -539,6 +554,10 @@ static func _validate_predict(predict: Variant) -> PackedStringArray:
 		problems.append("predict choices need distinct ids")
 	if predict.get("answer") not in ids:
 		problems.append("predict.answer must be one of the choice ids")
+	if predict.has("stage"):
+		var at: Variant = predict.stage
+		if not (_number(at) and float(at) == floorf(float(at)) and float(at) >= 0.0 and float(at) < float(stage_count)):
+			problems.append("predict.stage must be one of the stage indexes (0 .. %d)" % (stage_count - 1))
 	return problems
 
 
@@ -607,6 +626,8 @@ func demo_stamp(count: int) -> void:
 
 
 func _hand_over(count: int) -> void:
+	_bridge = ""   # (a mission line he never got to tell is for a stage that is done now)
+	_announce = ""
 	tell(count - 1, true)   # Puppy's win line of the stage just cleared (2026-10-29)
 	stamp_earned.emit(count)
 
@@ -723,7 +744,7 @@ func answer(choice_id: String) -> String:
 	end_question()
 	var line := str(question.get("bridge", ""))
 	if line != "" and stage() >= 0:
-		_bridge = "%s %s" % [line, BRIDGE_FIRST if stage() == 0 else BRIDGE_NEXT]
+		_bridge = "%s %s" % [line, mission_line(definition, stage())]
 		_bridge_face = Story.face_or_default(question.get("bridge_face"))
 	return picked
 
@@ -744,13 +765,49 @@ func bridge_line() -> String:
 	return _bridge
 
 
-## What Dugi says when his box opens now [text, face], taken once: the bridge first, else the
-## prediction's reason after the first result line, else [] (his explanation of the stage, stage_say()).
+## "<n번째> 미션: <stage `index`'s text>" ("" past the stages): what Dugi tells before a mission shows.
+static func mission_line(definition: Dictionary, index: int) -> String:
+	var stages: Array = missions(definition).get("stages", [])
+	if index < 0 or index >= stages.size() or not (stages[index] is Dictionary):
+		return ""
+	var ordinal: String = ORDINALS[index] if index < ORDINALS.size() else "%d번째" % (index + 1)
+	return "%s 미션: %s" % [ordinal, str(stages[index].get("text", ""))]
+
+
+## The child goes on to the current stage (the screen's 다음 미션): Dugi tells it when his box opens
+## next (take_line), once.
+func announce() -> void:
+	_announce = mission_line(definition, stage())
+
+
+## A stage was won and the screen's 다음 미션 is still to be pressed: the next stage is not judged
+## (no stamp, no miss line) until go_on(), so it is never won before its mission is told.
+func wait_next() -> void:
+	waiting_next = true
+
+
+## 다음 미션 was pressed (or a test skips it): the current stage is judged again.
+func go_on() -> void:
+	waiting_next = false
+
+
+## The current stage's mission is still to be told (announce(), not yet in his box).
+func announcing() -> bool:
+	return _announce != ""
+
+
+## What Dugi says when his box opens now [text, face], taken once: the bridge first (with the first
+## mission), else the next mission (announce()), else the prediction's reason after the first result
+## line of its stage, else [] (his explanation of the stage, stage_say()).
 func take_line() -> Array:
 	if _bridge != "":
 		var bridge := [_bridge, _bridge_face]
 		_bridge = ""
 		return bridge
+	if _announce != "":
+		var told := [_announce, MISSION_FACE]
+		_announce = ""
+		return told
 	if reason != "" and _first_result:
 		var told := [reason, reason_face]
 		reason = ""
@@ -831,7 +888,7 @@ func judge_run() -> void:
 	if status == "ready":
 		judged_run = false
 		return
-	var judging := not judged_run and stage() >= 0 and status in judge_on(definition, stage())
+	var judging := not judged_run and not waiting_next and stage() >= 0 and status in judge_on(definition, stage())
 	if not (judging or (not predict_ended and status in reveal_on(definition))) or not lab.settled():
 		return
 	var values := lab.observations()
@@ -853,7 +910,7 @@ func reveal() -> void:
 ## The attempt has no stamp and its run has come to one of the stage's miss_on results (settled, the
 ## finger up: `touching` false, the result number there) on MISS_POLLS polls in a row: Puppy's miss line, once.
 func check_miss(touching: bool) -> void:
-	if not _armed or judged_run:
+	if not _armed or judged_run or waiting_next:
 		_miss_polls = 0
 		return
 	var s := stage()
@@ -872,8 +929,8 @@ func tell(stage_index: int, won: bool) -> void:
 	_resolved = true
 	_miss_polls = 0
 	var line := result_line(definition, stage_index, won)
-	if not _first_result:
-		_first_result = true
+	if not _first_result and stage_index >= reason_stage(definition):
+		_first_result = true   # (the first result of the stage the question is about)
 		if reason != "":   # (never without Dugi: open() asks nothing then)
 			reason_due.emit()
 	result_told.emit(stage_index, won, str(line[0]), str(line[1]))

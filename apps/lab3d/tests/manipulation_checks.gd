@@ -387,7 +387,7 @@ func check_incline_drag(definition: Dictionary) -> void:
 	# A view looking nearly along the incline's line is the one a line drag has to turn;
 	# the flat front view is fine for a line (check_default_view_drag).
 	rig.set_mode("front", true)
-	rig.goal_yaw = deg_to_rad(-70.0)   # nearly along the incline (its line within 35 deg of the view)
+	rig.goal_yaw = deg_to_rad(-80.0)   # nearly along the incline (its line within 35 deg of the view; -80 since the 25 deg default)
 	rig.snap()
 	await tree.process_frame
 	var flat_pitch := rig.goal_pitch
@@ -398,7 +398,7 @@ func check_incline_drag(definition: Dictionary) -> void:
 	var top_pitch := rig.goal_pitch
 	_touch(screen, 0, _run_point(screen, 2.0), false)
 	expect.call(turned and rig.mode == "top" and is_equal_approx(rig.goal_pitch, top_pitch) and not is_equal_approx(top_pitch, flat_pitch),
-		"switching the camera mode while holding keeps the new view after the drop", "pitch %.3f -> %.3f" % [top_pitch, rig.goal_pitch])
+		"switching the camera mode while holding keeps the new view after the drop", "pitch %.3f -> %.3f turned %s mode %s flat %.3f" % [top_pitch, rig.goal_pitch, turned, rig.mode, flat_pitch])
 	_swipe(screen, _at(screen, box.global_position), _run_point(screen, held_run), 2)
 	_touch(screen, 0, _run_point(screen, held_run), false)
 	# A sliding box can be picked up: the run stops, it waits at rest.

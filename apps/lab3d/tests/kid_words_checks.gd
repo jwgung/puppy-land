@@ -143,14 +143,14 @@ func check_content_lint() -> void:
 	var readout := ExperimentScreen.kid_value("m/s", 8.5, 1)
 	if readout != "1초에 8.5미터":
 		found.append("slingshot speed '%s'" % readout)
-	# The approved wordings (2026-10-28).
+	# The approved wordings (2026-10-28; the swing, slide, spring and drum stages 2026-11-01: one change a stage).
 	var want := {
 		"pulley": [ExperimentRegistry.kid_text(ExperimentRegistry.find("pulley"), "title"), "줄이 많으면 힘이 덜 들까?"],
-		"buoyancy": [MissionRound.missions(ExperimentRegistry.find("buoyancy")).stages[0].text, "보물 상자를 매단 큰 통을 물에 띄우기!"],
+		"buoyancy": [MissionRound.missions(ExperimentRegistry.find("buoyancy")).stages[0].text, "작은 통에 빈 상자를 매달아 띄우기!"],
 		"constraints": [ExperimentRegistry.find("constraints").story.clue, "거북이 시계 속에 조각이 있어! 공을 시계 추랑 똑같이 흔들어 보자!"],
 		# The piece game's stages (2026-10-29).
 		"spring": [MissionRound.missions(ExperimentRegistry.find("spring")).stages.map(func(s: Dictionary) -> String: return s.text),
-			["가벼운 공을 당겨 가까운 종 치기!", "더 멀리 당겨서 먼 종 치기!", "무거운 공으로 제일 먼 종 치기!"]],
+			["가벼운 공을 당겨 가까운 종 치기!", "같은 공을 더 멀리 당겨서 먼 종 치기!", "무거운 공으로 바꿔서 같은 먼 종 치기!"]],
 		"free-fall": [MissionRound.missions(ExperimentRegistry.find("free-fall")).stages.map(func(s: Dictionary) -> String: return s.text),
 			["빨간 공과 분홍 공을 같이 떨어뜨려 버튼 누르기!", "달에서 두 공을 맨 위에서 같이 떨어뜨리기!", "목성에서 두 공을 같이 1초 안에 떨어뜨리기!"]],
 		"collision": [MissionRound.missions(ExperimentRegistry.find("collision")).stages.map(func(s: Dictionary) -> String: return s.text),
@@ -159,11 +159,11 @@ func check_content_lint() -> void:
 		"projectile": [MissionRound.missions(ExperimentRegistry.find("projectile")).stages.map(func(s: Dictionary) -> String: return s.text),
 			["낮게 던져서 가까운 상자 맞히기!", "얼마나 기울여 던질까? 먼 상자 맞히기!", "높이 던져서 나무 위 상자 맞히기!"]],
 		"constraints_stages": [MissionRound.missions(ExperimentRegistry.find("constraints")).stages.map(func(s: Dictionary) -> String: return s.text),
-			["지구에서 긴 줄로 거북이 박자 맞추기!", "달에서 짧은 줄로 느린 거북이 박자 맞추기!", "달에서 아주 긴 줄로 아주 느린 박자 맞추기!"]],
+			["지구에서 보통 줄로 거북이 박자 맞추기!", "지구에서 줄만 길게 해서 느린 박자 맞추기!", "같은 긴 줄로 달에서 아주 느린 박자 맞추기!"]],
 		"pulley_stages": [MissionRound.missions(ExperimentRegistry.find("pulley")).stages.map(func(s: Dictionary) -> String: return s.text),
 			["1줄로 보물 상자를 선반까지 올리기!", "2줄로 보물 상자를 선반까지 올리기!", "4줄로 가볍게 선반까지 올리기!"]],
 		"incline-friction": [MissionRound.missions(ExperimentRegistry.find("incline-friction")).stages.map(func(s: Dictionary) -> String: return s.text),
-			["강철 미끄럼틀로 작은 도미노 넘어뜨리기!", "나무 미끄럼틀을 더 기울여 큰 도미노 넘어뜨리기!", "고무 미끄럼틀을 많이 기울여 빨간 기둥 넘어뜨리기!"]],
+			["나무 미끄럼틀을 조금 기울여 노란 도미노 넘어뜨리기!", "같은 나무로 더 많이 기울여 파란 도미노 넘어뜨리기!", "같은 기울기로 강철로 바꿔 빨간 기둥 넘어뜨리기!"]],
 	}
 	for id in want:
 		if want[id][0] != want[id][1]:

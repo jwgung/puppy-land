@@ -362,21 +362,27 @@ func check_bridge_and_reason() -> void:
 	var lab: Experiment = screen.experiment
 	var box: DialogueBox = screen.dialogue
 	screen._predict_pick_choice(str(predict.answer))
-	var grew := false
 	var said := ""
 	for i in 30:
 		await tree.process_frame
-		grew = grew or screen._mission_pill.scale.x > 1.05
 		if box.active and box.visible and said == "":
-			said = box.text
-	var want := "%s %s" % [predict.bridge, MissionRound.BRIDGE_FIRST]
-	if said != want or box.speaker != "dugi" or box.face != str(predict.bridge_face) or screen.strip_pulses != 1 or not grew:
-		problems.append("bridge: said '%s' (want '%s'), %s %s, pulses %d, grew %s" % [said, want, box.speaker, box.face, screen.strip_pulses, grew])
+			said = box.joined()
+	var want := "%s %s" % [predict.bridge, MissionRound.mission_line(definition, 0)]
+	var stage_text := str(MissionRound.missions(definition).stages[0].text)
+	# While he tells it the strip keeps the pick and does not pulse (the kids look at his box first).
+	if said != want or box.speaker != "dugi" or box.face != str(predict.bridge_face) or screen.strip_pulses != 0 \
+			or screen._mission_text.text == stage_text:
+		problems.append("bridge: said '%s' (want '%s'), %s %s, pulses %d, strip '%s'" % [said, want, box.speaker, box.face,
+			screen.strip_pulses, screen._mission_text.text])
+	screen.handle_back()   # Dugi's bridge closes: the first mission shows on the strip, pulsing once
+	var grew := false
 	for i in roundi(ExperimentScreen.PULSE_S * 60.0) + 5:
 		await tree.process_frame
+		grew = grew or screen._mission_pill.scale.x > 1.05
+	if screen._mission_text.text != stage_text or screen.strip_pulses != 1 or not grew:
+		problems.append("bridge: after his box the strip reads '%s', pulses %d, grew %s" % [screen._mission_text.text, screen.strip_pulses, grew])
 	if screen._mission_pill.scale != Vector2.ONE or screen._mission_pill.self_modulate != Color.WHITE:
 		problems.append("bridge: the strip did not settle after its pulse")
-	screen.handle_back()   # Dugi's bridge closes
 	# The first drop: nothing tells the reason before Puppy's line; right after it Dugi does.
 	var r: float = lab.BALL_RADIUS
 	await _drag_to(screen, lab.balls.red.global_position, Vector3(lab.starts.red.x, 6.0 + r, lab.starts.red.z))
@@ -399,7 +405,7 @@ func check_bridge_and_reason() -> void:
 	ProgressStore.save(store)
 	screen = await _open(definition, TABLET)
 	screen._predict_pick_choice(str(predict.answer))
-	if screen.mission_round.bridge_line() != "%s %s" % [predict.bridge, MissionRound.BRIDGE_NEXT]:
+	if screen.mission_round.bridge_line() != "%s %s" % [predict.bridge, MissionRound.mission_line(definition, 1)]:
 		problems.append("bridge at stage 2: '%s'" % screen.mission_round.bridge_line())
 	await _free(screen)
 	DirAccess.remove_absolute(ProgressStore.path)
@@ -414,7 +420,11 @@ func check_stage1_answers() -> void:
 	var answers := {}
 	for definition in ExperimentRegistry.load_all():
 		answers[definition.id] = str(MissionRound.predict(definition).get("answer", ""))
-	var stage := func(id: String) -> Dictionary: return MissionRound.missions(ExperimentRegistry.find(id)).stages[0]
+	# The stage the question is about (predict.stage, the first by default; 2026-11-01: one change a
+	# stage, so the swing's long rope and the drum's treasure chest come in stage 2).
+	var stage := func(id: String) -> Dictionary:
+		var lab_definition := ExperimentRegistry.find(id)
+		return MissionRound.missions(lab_definition).stages[MissionRound.reason_stage(lab_definition)]
 	# The throw: stage 1's low throws (0-20 deg, 8 m/s) land nearer than the slanted 45 deg one.
 	var v := 8.0
 	var low := v * v * sin(2.0 * deg_to_rad(15.0)) / g
@@ -455,36 +465,33 @@ func check_stage1_answers() -> void:
 	# The orbit: from 4 m the circular speed sqrt(GM / r) is under the escape speed: it goes round.
 	var radius := float(stage.call("orbit").conditions.radius)
 	_answer(problems, answers, "orbit", "stay" if sqrt(OrbitModel.DEFAULT_MU / radius) < sqrt(2.0 * OrbitModel.DEFAULT_MU / radius) else "leave")
-	# The drum: the big drum displaces more than every load's mass: it floats with any of them.
+	# The drum: the small drum with the treasure chest (stage 2) displaces less water than the load's mass.
 	var buoyancy := ExperimentRegistry.find("buoyancy")
 	var litres := 0.0
-	var heaviest := 0.0
 	for control in buoyancy.controls:
 		if control.id == "volume":
 			for option in control.options:
 				if option.id == stage.call("buoyancy").conditions.volume:
 					litres = float(option.volume) * 1000.0
-	for pick in buoyancy.kid.picks.get("mass", []):
-		heaviest = maxf(heaviest, float(pick.value))
-	_answer(problems, answers, "buoyancy", "floats" if heaviest < litres else "sinks")
-	# The swing: stage 1's long rope (>= 2.25 m) swings slower than the 2 m start rope.
+	var load := float(stage.call("buoyancy").conditions.mass.min)
+	_answer(problems, answers, "buoyancy", "floats" if load < litres else "sinks")
+	# The swing: stage 2's long rope (>= 2.75 m) swings slower than stage 1's 2 m rope.
 	var long_rope := float(stage.call("constraints").conditions.length.min)
 	_answer(problems, answers, "constraints", "slower" if TAU * sqrt(long_rope / g) > TAU * sqrt(2.0 / g) else "same")
 	# The pulley: one strand carries the whole weight (mg / 1), four would carry a quarter.
 	var pulley_stage: Dictionary = stage.call("pulley")
 	_answer(problems, answers, "pulley", "hard" if float(pulley_stage.conditions.mass) * g / 1.0 > float(pulley_stage.conditions.mass) * g / 4.0 else "easy")
-	# The slide: steel at the start angle (20 deg) slides (tan 20 deg > mu_s of steel).
+	# The slide: stage 1's wood at its smallest slope (25 deg) slides (tan 25 deg > mu_s of wood).
 	var incline := ExperimentRegistry.find("incline-friction")
-	var steel_mu := 1.0
-	var angle := 0.0
+	var incline_stage: Dictionary = stage.call("incline-friction")
+	var mu := 1.0
+	var angle := float(incline_stage.conditions.angle.min)
 	for control in incline.controls:
-		if control.id == "angle":
-			angle = float(control.default)
 		for option in control.get("options", []):
-			if option.id == "steel":
-				steel_mu = float(option.mu_s)
-	_answer(problems, answers, "incline-friction", "slides" if tan(deg_to_rad(angle)) > steel_mu else "stays")
-	expect.call(problems.is_empty() and answers.size() >= 11, "every lab's question is answered by doing its first stage (the formula of a stage-1 run gives the answer)", "; ".join(problems))
+			if option.id == incline_stage.conditions.material:
+				mu = float(option.mu_s)
+	_answer(problems, answers, "incline-friction", "slides" if tan(deg_to_rad(angle)) > mu else "stays")
+	expect.call(problems.is_empty() and answers.size() >= 11, "every lab's question is answered by doing its stage (predict.stage, the first by default: the formula of that stage's run gives the answer)", "; ".join(problems))
 
 
 func _answer(problems: Array, answers: Dictionary, id: String, want: String) -> void:

@@ -1776,7 +1776,7 @@ func _check_settings_marker(_definition: Dictionary) -> void:
 		outcomes[restarts] = FileAccess.file_exists(path) and on_disk[0]
 		screen.queue_free()
 	DirAccess.remove_absolute(path)
-	_expect(not outcomes[false] and outcomes[true], "resume marker is written only when set_tier restarts the app", str(outcomes))
+	_expect(not outcomes[false] and outcomes[true], "resume marker is on disk while set_tier runs and kept only when it restarts the app", str(outcomes))
 
 
 ## Bench lines stay valid JSON for any scene name, and the signal carries scene and p95 itself.

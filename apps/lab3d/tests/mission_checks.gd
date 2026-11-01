@@ -161,8 +161,9 @@ static func range_definition() -> Dictionary:
 const JARGON := ["가속도", "탈출", "반지름", "질량", "구속", "주기", "계수", "임계", "운동량", "마찰력", "부력",
 	"토크", "역학", "속력", "탄성", "밀도", "공식", "궤도", "v₀", "μ", "√", "=", "÷", "×", "m/s", " N", "kg"]
 
-## The force names Dugi's introduction (kid.intro) teaches in a child's words ("이 힘을 마찰력이라고
-## 해요", 2026-10-31 user: "용어를 알려는 줘야지"): only there, the rest of the game layer stays plain.
+## The force names Dugi teaches in a child's words ("이 힘을 마찰력이라고 해요", 2026-10-31 user: "용어를
+## 알려는 줘야지"): in his introduction (kid.intro), his explanations (kid.say, the stages' say) and the
+## prediction's reason (2026-11-01 user: "어떤 힘이 이런 일을 일으키는지"); the rest stays plain.
 const TAUGHT_TERMS := ["마찰력", "부력", "탄성"]
 
 
@@ -174,8 +175,11 @@ func check_kid_words() -> void:
 	var found := []
 	for definition in ExperimentRegistry.load_all():
 		var texts := [ExperimentScreen.DONE_TEXT, ExperimentScreen.PICK_PREFIX]
+		var dugi := []   # Dugi's explanations: checked below, with the taught force names allowed
 		for key in ExperimentRegistry.KID_TEXTS:
-			if key != "intro":   # checked below, with the taught force names allowed
+			if key in ["intro", "say"]:
+				dugi.append(ExperimentRegistry.kid_text(definition, key))
+			else:
 				texts.append(ExperimentRegistry.kid_text(definition, key))
 		texts.append_array(definition.get("kid", {}).get("states", {}).values())
 		texts.append_array(definition.get("kid", {}).get("minus", {}).values())
@@ -187,9 +191,10 @@ func check_kid_words() -> void:
 			texts.append(str(stage.text))
 			texts.append(str(stage.get("win", "")))    # Puppy's result lines (2026-10-29)
 			texts.append(str(stage.get("miss", "")))
+			dugi.append(str(stage.get("say", "")))
 		var predict := MissionRound.predict(definition)
 		texts.append(str(predict.get("question", "")))
-		texts.append(str(predict.get("reason", "")))
+		dugi.append(str(predict.get("reason", "")))
 		texts.append(str(predict.get("bridge", "")))   # Dugi's bridge to the first mission (2026-10-29)
 		for choice in predict.get("choices", []):
 			texts.append(str(choice.label))
@@ -199,10 +204,10 @@ func check_kid_words() -> void:
 			for word in JARGON:
 				if word in text:
 					found.append("%s: '%s' in %s" % [definition.id, word, text])
-		var intro := ExperimentRegistry.kid_text(definition, "intro")
-		for word in JARGON:
-			if word in intro and not word in TAUGHT_TERMS:
-				found.append("%s: '%s' in %s" % [definition.id, word, intro])
+		for line in dugi:
+			for word in JARGON:
+				if word in line and not word in TAUGHT_TERMS:
+					found.append("%s: '%s' in %s" % [definition.id, word, line])
 	expect.call(found.is_empty(), "kid words: the game layer of every lab has no formula names or symbols, and every key card a kid caption",
 		"; ".join(found))
 
