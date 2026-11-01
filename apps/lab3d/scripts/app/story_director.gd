@@ -160,7 +160,7 @@ func _exit_tree() -> void:
 # --- state -------------------------------------------------------------------------------------
 
 ## A prologue or the finale plays: the director has the camera and the screen (the map's labels,
-## top bar and taps wait).
+## map buttons and taps wait).
 func cinematic() -> bool:
 	return part == "prologue" or part == "finale"
 
@@ -721,7 +721,7 @@ func _finish() -> void:
 	page = -1
 	emblem.visible = true
 	home.set_cinematic(false)
-	_layout()   # the top bar is back: the emblem goes under it
+	_layout()   # the map buttons are back: the emblem goes beside them
 	ended.emit(which)
 
 

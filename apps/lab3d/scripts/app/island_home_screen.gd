@@ -59,7 +59,7 @@ var _raising: Dictionary = {}        # {id, flag, t} of the raise playing now
 var raised_count := 0                # flag raises played (tests)
 ## Screenshots (--demo-flag=<id>): that spot's round counts as just completed, in the bench store only.
 static var _demo_flag_done := false
-## The night map (2026-10-28, with the story only): the top bar's 단서 button (Puppy's riddle again)
+## The night map (2026-10-28, with the story only): the map's 단서 button (Puppy's riddle again)
 ## and the tapped locked spot's shake {tag, t} (map_lit shake_spot / shake_offset).
 var clue_button: Button
 var _shake: Dictionary = {}
@@ -839,7 +839,7 @@ func _make_label(spot: Dictionary) -> Control:
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(label)
 	add_child(box)
-	move_child(box, view.get_index() + 1)   # under the top bar
+	move_child(box, view.get_index() + 1)   # under the map buttons
 	return box
 
 

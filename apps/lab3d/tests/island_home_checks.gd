@@ -31,7 +31,7 @@ func run() -> void:
 
 
 ## The home renders: the map island as one static opaque mesh (landmarks, water, land with its baked
-## blob shadows: the draw and fill budget of the map on SM-P200), the cat, the 5 zones and 11 spots, the top bar with the brand and
+## blob shadows: the draw and fill budget of the map on SM-P200), the cat, the 5 zones and 11 spots, the map buttons (no top bar) and
 ## the settings button (no list button, 2026-10-27).
 func check_home_builds() -> void:
 	var screen := await _home(PHONE)
@@ -75,7 +75,7 @@ func check_home_builds() -> void:
 	var center_screen: Vector2 = screen._world_to_screen(Vector3(0.0, 0.0, 0.0))
 	if center_screen == Vector2.INF or not Rect2(Vector2.ZERO, screen.size).has_point(center_screen):
 		problems.append("island centre not on screen %s" % str(center_screen))
-	expect.call(problems.is_empty(), "island home builds: map in 1 mesh, cat, 5 zones, 11 spots, top bar, 3/4 camera", "; ".join(problems))
+	expect.call(problems.is_empty(), "island home builds: map in 1 mesh, cat, 5 zones, 11 spots, map buttons, 3/4 camera", "; ".join(problems))
 	await _free(screen)
 
 
