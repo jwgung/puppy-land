@@ -55,7 +55,8 @@
 ## screen judges every poll while the status is a judge_on one and keeps judging until the attempt
 ## earns its stamp (a growing value — orbit laps, a measured period — is judged when it gets there);
 ## then the attempt is done. A run that falls short changes nothing, and the next attempt is judged
-## against the same stage. After a stamp nothing is judged until the screen's 다음 미션 (wait_next, go_on). One attempt clears at most the current stage. The stamps are the child's
+## against the same stage. After a stamp nothing is judged until the screen goes on to
+## the next stage (wait_next, go_on). One attempt clears at most the current stage. The stamps are the child's
 ## collection — 3 m past, then 5 m past, then 7 m past (stamps: 0..MAX_STAMPS, one per stage).
 ##
 ## Stamps live in the progress store (`store`: FileProgress = ProgressStore, user://progress.cfg;
@@ -115,7 +116,7 @@ var store: Object
 var lab: Experiment = null
 ## The picked choice id ("" before an answer).
 var pick := ""
-## A stage was won and the next one waits for 다음 미션 (wait_next, go_on).
+## A stage was won and the next one waits for the screen to go on (wait_next, go_on).
 var waiting_next := false
 ## The reason's face: happy after a right guess, thinking after a wrong one (Story.REASON_FACE).
 var reason_face := Story.DEFAULT_FACE
@@ -774,19 +775,19 @@ static func mission_line(definition: Dictionary, index: int) -> String:
 	return "%s 미션: %s" % [ordinal, str(stages[index].get("text", ""))]
 
 
-## The child goes on to the current stage (the screen's 다음 미션): Dugi tells it when his box opens
+## The child goes on to the current stage (the screen, once Dugi has explained the last one): Dugi tells it when his box opens
 ## next (take_line), once.
 func announce() -> void:
 	_announce = mission_line(definition, stage())
 
 
-## A stage was won and the screen's 다음 미션 is still to be pressed: the next stage is not judged
+## A stage was won and the screen has not gone on yet (Dugi still explains it): the next stage is not judged
 ## (no stamp, no miss line) until go_on(), so it is never won before its mission is told.
 func wait_next() -> void:
 	waiting_next = true
 
 
-## 다음 미션 was pressed (or a test skips it): the current stage is judged again.
+## The screen went on to the next stage (or a test skips it): the current stage is judged again.
 func go_on() -> void:
 	waiting_next = false
 
