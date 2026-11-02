@@ -61,7 +61,9 @@ static func pages(part: String) -> Array:
 
 
 ## The story is read again on the next use (Locale.set_language: its words changed).
-static func reload() -> void:
+## (Not "reload": that is Script.reload, which recompiles the script and resets enabled and
+## app_may_enable: a language picked in the settings switched the story off, 2026-11-02.)
+static func forget_loaded() -> void:
 	_content = {}
 
 
