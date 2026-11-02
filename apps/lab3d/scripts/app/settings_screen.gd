@@ -14,7 +14,6 @@ signal story_requested
 ## back to the start (App: the title, or the map that plays the prologue).
 signal restart_requested
 
-
 ## Applies a tier; true when the app is restarting. Quality.set_tier unless a test replaces it.
 var set_tier := Callable()
 var _selected := ""

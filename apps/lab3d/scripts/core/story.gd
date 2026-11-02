@@ -17,7 +17,7 @@ class_name Story
 extends RefCounted
 
 const CONTENT_PATH := "res://content/story.json"
-## Who speaks: [name tag, portrait path pattern (%s = the face)] (DialogueBox.set_speaker).
+## Who speaks: [the name tag's Locale key, portrait path pattern (%s = the face)] (DialogueBox.set_speaker).
 const SPEAKERS := {
 	"dugi": ["speaker.dugi", "res://assets/characters/portraits/dugi_%s.webp"],
 	"puppy": ["speaker.puppy", "res://assets/characters/portraits/puppy_%s.webp"],
@@ -140,8 +140,10 @@ static func finale_retry_face() -> String:
 
 # --- who says what (2026-10-29 user: Puppy never explains science, that is Dugi's job) -----------
 ## Words that explain science (why / how fast / which force). Puppy's lines (clues, riddles, the
-## wrong-spot line, his story pages) never use them; Dugi's are exempt. A content test reads them
-## (the words are the language's: ui.json story.science_words, Locale).
+## wrong-spot line, his story pages) never use them; Dugi's are exempt. A content test reads them.
+## They are the language's (ui.json story.science_words).
+static func science_words() -> Array:
+	return Locale.list("story.science_words")
 
 
 ## Every line Puppy says: his story pages, every lab's clue and riddle, the wrong-spot line.

@@ -3,7 +3,9 @@ files written the old way): every string with Hangul (and every object with a Ha
 goes to the words file under content/locale/ko/ in the same shape, the rest stays. `about` notes stay
 with the data. Locale.overlay (scripts/core/locale.gd) puts them back together.
 
-  python3 tools/split_text.py content/experiments/spring.json [...]
+  cd apps/lab3d && python3 tools/split_text.py content/experiments/spring.json [...]
+
+Only files under content/ (not content/locale) are split.
 """
 import json
 import os
@@ -85,14 +87,22 @@ def dump(value, indent=0, width=110):
 
 
 def main(paths):
+    content = os.path.realpath("content")
     for path in paths:
+        real = os.path.realpath(path)
+        if not real.startswith(content + os.sep) or real.startswith(os.path.join(content, "locale") + os.sep):
+            raise SystemExit("%s: not a content file (run from apps/lab3d)" % path)
         with open(path, encoding="utf-8") as handle:
             source = json.load(handle)
         data, words = split(source)
+        rel = os.path.relpath(real, content)
+        out = os.path.join("content", "locale", "ko", rel)
+        if words is MISSING:
+            raise SystemExit("%s: no words to move (already split?)" % path)
+        if os.path.exists(out):
+            raise SystemExit("%s: %s exists (add the new words there by hand)" % (path, out))
         if overlay(data, words) != source:
             raise SystemExit("%s: the parts do not add up to the file" % path)
-        rel = os.path.relpath(path, "content")
-        out = os.path.join("content", "locale", "ko", rel)
         os.makedirs(os.path.dirname(out), exist_ok=True)
         with open(path, "w", encoding="utf-8") as handle:
             handle.write(dump(data) + "\n")

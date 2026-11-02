@@ -770,7 +770,8 @@ static func mission_line(definition: Dictionary, index: int) -> String:
 	var stages: Array = missions(definition).get("stages", [])
 	if index < 0 or index >= stages.size() or not (stages[index] is Dictionary):
 		return ""
-	var ordinal: String = Locale.list("mission.ordinals")[index] if index < Locale.list("mission.ordinals").size() else Locale.t("mission.ordinal_n") % (index + 1)
+	var ordinals := Locale.list("mission.ordinals")
+	var ordinal: String = ordinals[index] if index < ordinals.size() else Locale.t("mission.ordinal_n") % (index + 1)
 	return Locale.t("mission.line") % [ordinal, str(stages[index].get("text", ""))]
 
 

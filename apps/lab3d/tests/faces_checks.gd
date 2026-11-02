@@ -92,14 +92,14 @@ func check_puppy_words() -> void:
 	var lines := Story.puppy_lines()
 	var hits := []
 	for line in lines:
-		for word in Locale.list("story.science_words"):
+		for word in Story.science_words():
 			if str(line).contains(word):
 				hits.append("%s: %s" % [word, line])
 	# The list is not vacuous: Dugi's own words use it (and are allowed to).
 	var dugi_uses := false
 	for definition in ExperimentRegistry.load_all():
 		for stage in MissionRound.missions(definition).get("stages", []):
-			dugi_uses = dugi_uses or Locale.list("story.science_words").any(func(w: String) -> bool: return str(stage.get("say", "")).contains(w))
+			dugi_uses = dugi_uses or Story.science_words().any(func(w: String) -> bool: return str(stage.get("say", "")).contains(w))
 	expect.call(hits.is_empty() and lines.size() >= 27 and dugi_uses,
 		"faces: Puppy's %d lines (clues, riddles, not-here, story pages) explain no science (Dugi's lines may)" % lines.size(), "; ".join(hits))
 

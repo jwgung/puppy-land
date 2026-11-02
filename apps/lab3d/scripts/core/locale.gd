@@ -5,7 +5,7 @@
 ##   story.json             the story's words in the shape of content/story.json
 ## The data files keep everything else (numbers, ids, faces, notes `about`); `overlay()` puts the
 ## words back into them where they were (tools/split_text.py split them so). A text missing in the
-## language is the DEFAULT language's.
+## language is the DEFAULT language's (ui.json key by key; a content file's words laid over DEFAULT's).
 ##
 ## There is one language now (ko); `lang` is it.
 class_name Locale
@@ -26,7 +26,7 @@ static func t(key: String) -> String:
 	return value if value is String else key
 
 
-## The code's list or map `key` (ui.json), e.g. the ordinals; [] / {} when missing.
+## The code's text, list or map `key` (ui.json) in `lang`, else in DEFAULT (null when neither has it).
 static func value_of(key: String) -> Variant:
 	for code in [lang, DEFAULT]:
 		var table := _ui_of(code)
@@ -38,24 +38,29 @@ static func value_of(key: String) -> Variant:
 	return null
 
 
+## The code's list `key` (ui.json), e.g. the mission ordinals; [] when missing.
 static func list(key: String) -> Array:
 	var value: Variant = value_of(key)
 	return value if value is Array else []
 
 
+## The code's map `key` (ui.json), e.g. the camera views' names; {} when missing.
 static func map(key: String) -> Dictionary:
 	var value: Variant = value_of(key)
 	return value if value is Dictionary else {}
 
 
-## The words of content file `rel` (e.g. "experiments/spring.json") in `lang`, else in DEFAULT
-## (null when neither has the file).
+## The words of content file `rel` (e.g. "experiments/spring.json"): DEFAULT's, with `lang`'s laid
+## over them (null when neither has the file).
 static func words(rel: String) -> Variant:
-	for code in [lang, DEFAULT]:
-		var path := ROOT.path_join(code).path_join(rel)
-		if FileAccess.file_exists(path):
-			return JSON.parse_string(FileAccess.get_file_as_string(path))
-	return null
+	var out: Variant = _read(ROOT.path_join(DEFAULT).path_join(rel))
+	if lang != DEFAULT:
+		out = overlay(out, _read(ROOT.path_join(lang).path_join(rel)))
+	return out
+
+
+static func _read(path: String) -> Variant:
+	return JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else null
 
 
 ## `data` with `words` put back where they were: objects key by key, lists item by item, a text in
@@ -80,7 +85,6 @@ static func overlay(data: Variant, text: Variant) -> Variant:
 
 static func _ui_of(code: String) -> Dictionary:
 	if not _ui.has(code):
-		var path := ROOT.path_join(code).path_join("ui.json")
-		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else null
+		var parsed: Variant = _read(ROOT.path_join(code).path_join("ui.json"))
 		_ui[code] = parsed if parsed is Dictionary else {}
 	return _ui[code]

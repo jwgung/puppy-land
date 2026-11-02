@@ -85,9 +85,19 @@ func check_keys() -> void:
 		for key in table:
 			if not named.has(key):
 				problems.append("%s: %s is not used" % [code, key])
+			elif table[key] is String and _slots(table[key]) != _slots(str(Locale.value_of(key)) if Locale.value_of(key) is String else ""):
+				problems.append("%s: %s has other %% slots than %s" % [code, key, Locale.DEFAULT])
 	expect.call(problems.is_empty() and Locale.DEFAULT in langs and named.size() > 100,
 		"locale: every key the code names is in every language's ui.json (and none unused)",
 		"; ".join(problems.slice(0, 8)) if not problems.is_empty() else "%d keys, languages %s" % [named.size(), str(langs)])
+
+
+## The format slots of a text (%s, %d, %.1f ...), in order: a translation keeps them.
+static func _slots(text: String) -> Array:
+	var out := []
+	for m in RegEx.create_from_string("%[-+ 0-9.]*[sdfxXc%]").search_all(text):
+		out.append(m.get_string())
+	return out
 
 
 ## No code line (outside comments) has a word of its own in a string: the words are the language's.

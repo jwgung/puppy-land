@@ -2454,13 +2454,13 @@ static func format_observation(observation: Dictionary, value: Variant) -> Strin
 	return ScienceNote.format_observation(observation, value)
 
 
-## A number in a child's words (ExperimentRegistry.KID_UNITS): one decimal at most and the unit
+## A number in a child's words (ui.json kid.units): one decimal at most and the unit
 ## spelled out, "1.3초", "12.5미터", "1초에 12.5미터", "45도", "2줄". A mission stage judges this
 ## rounded number (MissionRound.shown). `minus` (optional) reads a
 ## negative value as its size after that word ("눌려서 0.3미터"). Only the rounding and the words
 ## differ from format_observation: the value is the same formula value.
 static func kid_value(unit: String, value: float, digits: int, minus := "") -> String:
-	var words: Array = Locale.map("kid_units").get(unit, ["", " " + unit])
+	var words: Array = Locale.map("kid.units").get(unit, ["", " " + unit])
 	var places := mini(digits, MissionRound.CARD_PLACES)
 	var text := Ui.number(absf(value), places)
 	var lead := ""
@@ -2476,7 +2476,7 @@ static func kid_value(unit: String, value: float, digits: int, minus := "") -> S
 static func card_text(definition: Dictionary, observation: Dictionary, value: Variant, hidden := false) -> String:
 	var unit := str(observation.get("unit", ""))
 	var bar := ExperimentRegistry.card_bar(definition, str(observation.get("id", ""))) > 0.0
-	var words: Array = Locale.map("kid_units").get(unit, ["", " " + unit]) if not bar else ["", ""]
+	var words: Array = Locale.map("kid.units").get(unit, ["", " " + unit]) if not bar else ["", ""]
 	if hidden:
 		return (str(words[0]) + "? " + str(words[1])).strip_edges()
 	var kid: Dictionary = definition.get("kid", {}) if definition.get("kid") is Dictionary else {}

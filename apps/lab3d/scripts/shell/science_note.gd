@@ -120,7 +120,7 @@ static func ai_apps() -> Array:
 
 ## Hands `text` to the AI apps `packages` through the system chooser, which lists only those of them
 ## that are on the device. Returns "chooser" (the chooser opened) or "clipboard" (desktop or a failed
-## intent: the text was copied, and the screen shows COPIED).
+## intent: the text was copied, and the screen shows note.copied).
 ## How (SM-X115, Android 16, 2026-10-29): Intent.createChooser(target, title) with a target that no
 ## app can take (ACTION_SEND for a package that does not exist), so the chooser has no apps of its
 ## own and no direct-share (contact) row, and EXTRA_INITIAL_INTENTS = one ACTION_SEND text/plain

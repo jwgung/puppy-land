@@ -187,7 +187,7 @@ func check_result_lines() -> void:
 				count += 1 if text != "" else 0
 				if text == "" or text.length() > LINE_MAX or text == str(stages[i].text) or not str(line[1]) in Story.FACES:
 					problems.append("%s %d %s: '%s' (%d)" % [definition.id, i + 1, "win" if won else "miss", text, text.length()])
-				for word in Locale.list("story.science_words"):
+				for word in Story.science_words():
 					if text.contains(word):
 						problems.append("%s %d: '%s' has %s" % [definition.id, i + 1, text, word])
 				if _kid_symbols(text):

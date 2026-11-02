@@ -44,7 +44,7 @@
   "incline-friction.status.left": "빗면을 벗어남",
   "incline-friction.status.ready": "놓기 전",
   "incline-friction.status.sliding": "미끄러지는 중",
-  "kid_units": {
+  "kid.units": {
     "": ["", ""],
     "m": ["", "미터"],
     "s": ["", "초"],

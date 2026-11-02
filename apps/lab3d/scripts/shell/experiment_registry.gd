@@ -148,7 +148,7 @@ static func validate(definition: Dictionary) -> PackedStringArray:
 ##           "bars": {<observation id>: <the value of a full bar>},
 ##           "picks": {<control id>: [the mission's picture buttons, ConditionPicks]}}
 ## Every key is optional; a missing one falls back to the full text (kid_text, card_label).
-## The key cards over the 3D view show a number with one decimal and its unit in words (KID_UNITS:
+## The key cards over the 3D view show a number with one decimal and its unit in words (ui.json kid.units:
 ## "1.3초", "1초에 12.5미터"); a game lab's key observations have such a unit (an energy, an
 ## acceleration, a force stays in "자세히"). A force that is the lab's goal (the push that started the
 ## box) is a bar instead (`bars`, 2026-10-28 "어려운 말들은 세부 쪽으로": no "뉴턴" on the kid screen):
@@ -158,7 +158,7 @@ static func validate(definition: Dictionary) -> PackedStringArray:
 const KID_TEXTS := {"title": "title", "place": "title", "say": "observe", "tip": "tip_short", "intro": "intro"}
 const KID_MAPS := ["cards", "states", "minus"]
 ## Observation unit -> [the words before the number, the words after it] on a key card: the
-## language's ui.json kid_units (Locale).
+## language's ui.json kid.units (Locale).
 
 
 static func _validate_kid(kid: Variant, ids: Array) -> PackedStringArray:
@@ -216,14 +216,14 @@ static func _validate_story(story: Variant) -> PackedStringArray:
 	return problems
 
 
-## A game lab's key cards (it has `kid`): every key observation's unit has its words (KID_UNITS) or
+## A game lab's key cards (it has `kid`): every key observation's unit has its words (ui.json kid.units) or
 ## the observation is a bar (kid.bars); kid.card and every stage's `card` are key observations.
 static func _validate_kid_cards(definition: Dictionary) -> PackedStringArray:
 	var problems := PackedStringArray()
 	var kid: Dictionary = definition.kid if definition.get("kid") is Dictionary else {}
 	var bars: Dictionary = kid.get("bars") if kid.get("bars") is Dictionary else {}
 	for observation in definition.observations:
-		if observation.get("id") in definition.key_observations and not Locale.map("kid_units").has(str(observation.get("unit", ""))) \
+		if observation.get("id") in definition.key_observations and not Locale.map("kid.units").has(str(observation.get("unit", ""))) \
 				and not bars.has(observation.get("id")):
 			problems.append("key_observations: %s (%s) has no kid unit words; keep it in the sidebar" % [observation.id, observation.unit])
 	if kid.has("card") and not kid.card in definition.key_observations:
