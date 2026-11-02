@@ -93,16 +93,15 @@ static func _story_text(definition: Dictionary, key: String) -> String:
 
 
 # --- the night map's exploration (2026-10-28 user-approved: explore the night map in a fixed order) --
-# The spots are found one by one in a fixed order (content/story.json `order`). Only the next spot
+# The spots are found one by one in a fixed order (the island's `order`, Island). Only the next spot
 # (the first in the order whose piece is not found) and the found spots open; Puppy says the next
 # one's riddle on the map. Nothing new is saved: all of it follows from the found pieces (stamps), so
 # an old save (some spots complete, out of order) works: its found spots are open and lit, the next is
 # the first unfound one in the order.
 
-## The fixed order the spots are found in (all 11 spots, each once).
+## The fixed order the spots are found in (the island's `order`: every spot once).
 static func order() -> Array:
-	var raw: Variant = _load().get("order", [])
-	return raw.filter(func(id: Variant) -> bool: return id is String) if raw is Array else []
+	return Island.current().order
 
 
 ## The next spot to find: the first in the order whose piece is not found ("" when all are found).
@@ -174,13 +173,9 @@ static func night_level(count: int, finale_done: bool) -> float:
 	return 2.0 * pow(left, NIGHT_CURVE)
 
 
-## The 11 spots, in the map's order (MapIsland.ZONES).
+## The island's spots, in the map's order (Island.spots).
 static func spots() -> Array:
-	var out := []
-	for zone in MapIsland.ZONES:
-		for spot in MapIsland.ZONES[zone].spots:
-			out.append(spot[0])
-	return out
+	return Island.current().spots()
 
 
 ## The spots whose piece is found: every stage stamped (an old save counts too).

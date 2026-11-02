@@ -557,7 +557,7 @@ func check_orbit_pace() -> void:
 
 func check_yard_spread() -> void:
 	var problems := []
-	var spec: Dictionary = MapIsland.ZONES["놀이터"]
+	var spec: Dictionary = Island.current().zones["yard"]
 	var spots: Array = spec.spots
 	var fence := PackedVector2Array(MapIsland.yard_outline(spec, 0.15))
 	for a in spots.size():
@@ -583,7 +583,7 @@ func check_yard_spread() -> void:
 				continue
 			# The walk from the square to the spot keeps off every other stage.
 			var stand := Vector2(spot.stand.x, spot.stand.z)
-			for p in home.route(Vector2(home.HOME[0], home.HOME[1]), stand):
+			for p in home.route(home.island.home, stand):
 				for other: Dictionary in home._spots:
 					if other.id != spot.id and p.distance_to(Vector2(other.at.x, other.at.z)) < float(other.radius) + 0.1:
 						problems.append("%s: the walk crosses the %s stage" % [spot.id, other.id])

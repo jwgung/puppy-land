@@ -411,7 +411,7 @@ func _open_page(i: int) -> void:
 
 
 func _prologue_page(i: int) -> void:
-	var home_at := Vector3(MapIsland.HOME[0], 0.0, MapIsland.HOME[1])
+	var home_at := Vector3(home.island.home.x, 0.0, home.island.home.y)
 	match i:
 		0:   # the far sea of 퍼피랜드: islands, boats; a slow drift
 			_move({"yaw": 6.0, "pitch": -9.0, "dist": 138.0, "target": FIRST_SHOT.target}, 7.0)
@@ -478,7 +478,7 @@ func play_finale() -> void:
 
 func _lookout() -> Dictionary:
 	for spot in home._spots:
-		if spot.id == "orbit":
+		if spot.id == home.island.lookout:
 			return spot
 	return home._spots[0]
 
