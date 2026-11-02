@@ -57,7 +57,8 @@ if [[ $what == play ]]; then
     play && /^version\/code=/ { $0 = "version/code=" code }
     play && /^version\/name=/ { $0 = "version/name=\"" name "\"" }
     { print }' exports/export_presets.cfg.orig > export_presets.cfg
-  grep -q '^name="Android Play"' export_presets.cfg || { echo "play: no \"Android Play\" preset" >&2; exit 1; }
+  # The version edit above targets [preset.1.options]: that must be the "Android Play" preset.
+  awk '/^\[preset\./ { s = $0 } s == "[preset.1]" && /^name=/ { print }' export_presets.cfg | grep -qx 'name="Android Play"' || { echo "play: preset.1 is not the \"Android Play\" preset" >&2; exit 1; }
   mkdir -p exports/android
   out=exports/android/puppy-land-$name-v$code.aab
   rm -f "$out"

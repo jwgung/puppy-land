@@ -2070,8 +2070,10 @@ func _build_sidebar() -> void:
 	_sections["more_explanation"] = _build_explanation()
 	_more.add_child(_sections.more_explanation)
 	# Last: the question for an AI app (or any app), never in a measurement; off unless turned on
-	# (ScienceNote.enabled, or the button's own device check --ask=show).
-	if not measurement and (ScienceNote.enabled or Quality.cmdline_value("ask") == "show"):
+	# (ScienceNote.enabled, or the button's own device check --ask=show; the Play build (feature "play")
+	# ignores the switch, so a launch intent cannot turn the button on for a child).
+	var ask_switch := not OS.has_feature("play") and Quality.cmdline_value("ask") == "show"
+	if not measurement and (ScienceNote.enabled or ask_switch):
 		_sections["ask"] = _build_ask()
 		_sections.ask.name = "Note_ask"
 		column.add_child(_sections.ask)

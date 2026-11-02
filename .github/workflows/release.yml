@@ -58,9 +58,12 @@ jobs:
         run: |
           [ -n "$UPLOAD_KEYSTORE_BASE64" ] || { echo "::error::Secret UPLOAD_KEYSTORE_BASE64 is missing: a bundle without the upload key cannot go to the Play Store."; exit 1; }
           printf '%s' "$UPLOAD_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+      - name: Tests (a bundle is never built from a commit that fails them)
+        run: apps/lab3d/tools/build.sh test
       - name: Play bundle
         id: bundle
         env:
+          VERSION_NAME: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
           GODOT_ANDROID_KEYSTORE_RELEASE_PATH: ${{ runner.temp }}/upload.jks
           GODOT_ANDROID_KEYSTORE_RELEASE_USER: upload
           GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: ${{ secrets.UPLOAD_STORE_PASSWORD }}

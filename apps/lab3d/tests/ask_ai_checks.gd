@@ -30,6 +30,7 @@ func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:
 
 func run() -> void:
 	check_off_by_default()
+	var was_enabled := ScienceNote.enabled
 	ScienceNote.enabled = true   # the button is off in the app (2026-10-31); these checks test it on
 	for definition in ExperimentRegistry.load_all():
 		await check_lab(definition)
@@ -40,7 +41,7 @@ func run() -> void:
 	await check_desktop_copy()
 	await check_web_link()
 	await check_measurement()
-	ScienceNote.enabled = false
+	ScienceNote.enabled = was_enabled
 	await check_off_screen()
 
 
