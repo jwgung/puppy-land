@@ -135,12 +135,15 @@ apps/lab3d/
 
 실험의 문구(`title`·`category`·`question`·`steps`(3개)·`observe`·`terms`·`law`(`title`·`description`, 글이 있는 `equation`), 사이드바의 조작 안내 `tip`, 처음에만 뜨는 한 줄 `tip_short`, 조건·선택지·관찰값·그래프·액션의 이름, `kid`·`missions`·`predict`·`note`·`story`의 말)는 `content/locale/<언어>/experiments/<id>.json`에 데이터 파일과 같은 모양으로 있고, `content/experiments/<id>.json`에는 그 밖의 것(id, 숫자, 시점, 표정 이름, `icon`)만 있다. 아이에게 보이는 짧은 문구는 `kid` 블록이다(아래 "게임 문구").
 
-**언어 (2026-11-02, 사용자 "언어 분리만 먼저", [ADR 0004](../../docs/adr/0004-words-apart-by-language.md))**: 글은 모두 `content/locale/<언어>/`에 있고 지금 언어는 `ko` 하나다(`Locale.lang`, 기본 `Locale.DEFAULT`).
+**언어 (2026-11-02, 사용자 "언어 분리만 먼저", [ADR 0004](../../docs/adr/0004-words-apart-by-language.md))**: 글은 모두 `content/locale/<언어>/`에 있다. 2026-11-02 사용자 결정("기본을 영어로 하자. 그리고 한글이 거기에 추가되는 식")으로 기준 언어는 영어(`Locale.DEFAULT` = `en`)이고 한국어(`ko`)가 그 위에 겹친다(`Locale.LANGUAGES` = en, ko).
+- **앱의 언어**(`Locale.start`, App 시작 때): 설정에서 고른 언어(`user://language.cfg`), 없으면 기기 언어(`OS.get_locale_language()`가 ko면 한국어), 그 밖은 영어. 설정 맨 위 `언어` 카드에서 English / 한국어(각 언어 자기 말로)를 고르면 저장하고 정의와 이야기를 다시 읽어 설정 화면을 그 언어로 다시 만든다(`Locale.choose`, `ExperimentRegistry.reload`, `Story.reload`).
+- **언어별 그림**: 타이틀 로고(`assets/icon/splash.png` 한국어, `splash_en.png` 영어, `splash_banner.py --lang`), 퍼피 깃발 글자(과학섬 / SCIENCE: `puppy.glb` / `puppy_en.glb`, 초상화 `portraits/en/`, `puppy.py --lang`, `puppy_portrait.py --lang`). 부트 스플래시는 언어를 알기 전에 뜨므로 글 없는 세 얼굴(`assets/icon/boot_splash.png`). Android 앱 이름은 영어 "Bread Cat Science Island", 한국어 기기는 "빵고양이 과학섬"(`config/name_localized`).
+- **시험**: 시험은 한국어로 돈다(`run_tests.gd`가 `Locale.set_language("ko")`; 사용자가 정한 한국어 문장 그대로를 본다). 영어는 `locale_checks.gd`가 본다: 모든 언어가 기준 언어의 글을 같은 자리에 다 가짐, 각 언어의 `kid.states`가 그 언어의 상태 글을 가리킴, 퍼피의 줄이 그 언어의 과학 낱말(`story.science_words`)을 쓰지 않음, 언어 고르기(저장 > 기기 > 영어).
 - `ui.json`: 코드의 글. 키 → 글(또는 목록·표: 미션 순서 말 `mission.ordinals`, 퍼피가 쓰지 않는 과학 낱말 `story.science_words`, 카드 단위 말 `kid.units`, 품질 이름·설명, 카메라 시점 이름). 코드는 `Locale.t("키")`·`Locale.list`·`Locale.map`으로 읽는다. 실험의 상태 글(`<실험>.status.<상태>`)도 여기 있고, 실험 말 파일의 `kid.states`는 이 글을 키로 쓴다(같은 언어 안에서 맞춘다).
 - `experiments/<id>.json`·`story.json`: 데이터 파일과 같은 모양의 말. 읽을 때 `Locale.overlay`가 제자리에 넣는다(객체는 키마다, 목록은 순서대로). 그 언어에 없는 글은 `ko`의 글이다(`ui.json`은 키마다, 말 파일은 `ko` 파일 위에 그 언어 파일을 겹쳐서).
 - 나누기: `tools/split_text.py`가 한글이 든 글(한글 키를 가진 객체는 통째로)을 말 파일로 옮겼다. 메모 `about`은 데이터 파일에 남는다. 나누기 전후 레지스트리와 이야기가 읽은 정의는 키 순서만 다르고 같다(키 순서를 따르는 코드 없음).
 - 시험 `tests/locale_checks.gd`: 코드가 부르는 키가 모든 언어의 `ui.json`에 있고 안 쓰는 키가 없음, 코드(`scripts`·`experiments`)와 데이터 파일(`content/experiments`·`content/islands`·`content/story.json`)에 한글 글이 없음, overlay가 제자리에 넣음.
-- 남은 것: `content/ai_apps.json`의 앱 이름(뤼튼)은 앱 자신의 이름이라 그대로 둔다. 언어를 고르는 설정, 영어 글, 언어별 폰트는 아직 없다.
+- 남은 것: `content/ai_apps.json`의 앱 이름(뤼튼)은 앱 자신의 이름이라 그대로 둔다. 영어 글은 초안이다(사용자 검토 전). 한글이 아닌 다른 문자(일본어 등)의 폰트는 아직 없다.
 
 - 예전(Task 4a ~ 2026-10-30)에는 웹 2D와 문구를 나누려고 `content/mechanics-labs.json`에 따로 두고 `ExperimentRegistry.resolve()`가 합쳤다. 웹 2D를 지우면서 합친 결과를 그대로 각 실험 파일에 옮겼다([ADR 0002](../../docs/adr/0002-drop-web-2d.md)). 옮기기 전후 레지스트리가 읽은 정의는 `content` 키 말고는 같다.
 - 문구의 기호 중 Noto Sans CJK에 없는 것(`x₀`의 아래 첨자, `⚖`·`⌁`·`▰` 아이콘)은 DejaVu Sans 서브셋을 대체 글꼴로 그린다(`tools/subset_font.sh`가 두 서브셋을 함께 만든다).

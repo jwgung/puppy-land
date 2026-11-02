@@ -1,0 +1,111 @@
+{
+  "title": "How much easier with more pulley ropes?",
+  "category": "Turning and linking",
+  "question": "If more ropes hold up a heavy load, how much less force do you need?",
+  "steps": ["At the top, pick 1, 2 and then 4 ropes.", "Press and hold the rope's end to pull.", "Compare the rope you pulled with how high the load went."],
+  "observe": "See whether the less force you need, the longer the rope you pull for the same height.",
+  "terms": [
+    { "name": "Pulley", "description": "A wheel that changes the rope's direction or lowers the force needed." },
+    { "name": "Tension", "description": "The force with which a tight rope pulls the things tied to it." },
+    { "name": "Mechanical advantage", "description": "How many times easier a tool makes the force." }
+  ],
+  "law": {
+    "title": "Mechanical advantage of pulleys",
+    "description": "The more ropes hold the load, the less force you need, but the longer the distance you must pull.",
+    "equation": "F = mg/n · d_pull = n·d_lift"
+  },
+  "tip": "Press and hold the rope's end with one finger: the pull grows by 65 N each second (the bar beside it fills, up to 250 N; once it starts to move, the pull stays there). When it reaches the force needed, the rope is pulled 1 m each second and the load rises 1/n of the pulled rope (5 cm steps). Let go and the stopper holds the load, so press again. Change 1, 2 and 4 ropes in the conditions and compare the force needed and the rope pulled.",
+  "tip_short": "Press and hold the rope's end to pull",
+  "controls": [
+    {
+      "label": "Ropes holding the load",
+      "note": "Changing the ropes puts the load back on the floor to pull again from the start.",
+      "options": [
+        { "label": "1 rope", "note": "1 fixed pulley: only the direction changes" },
+        { "label": "2 ropes", "note": "1 moving pulley: half the force, twice the rope" },
+        { "label": "4 ropes", "note": "2 moving pulleys: a quarter of the force, 4 times the rope" }
+      ]
+    },
+    { "label": "Load mass" }
+  ],
+  "actions": [
+    { "label": "Start again" }
+  ],
+  "predict": {
+    "question": "Lifting the heavy chest with one rope, does it take a lot of force?",
+    "choices": [
+      { "label": "A lot" },
+      { "label": "A little" }
+    ],
+    "reason": "With one rope, your hand holds the chest's whole weight. So it takes a lot of force.",
+    "bridge": "Pull it and see for yourself!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Lift the treasure chest to the shelf with 1 rope!",
+        "say": "There is a tool that lifts loads with a rope over a wheel. It is called a pulley. With one rope, your hand holds the chest's whole weight. So it takes a lot of force.",
+        "win": "Heave-ho! It's up on the shelf!",
+        "miss": "The chest won't budge. Press it longer!"
+      },
+      {
+        "text": "Lift the treasure chest to the shelf with 2 ropes!",
+        "say": "With the pulley, two ropes share the chest. So it takes only half the force. But you pull twice as much rope.",
+        "win": "Up with two ropes! The light is on!",
+        "miss": "Press and hold to lift it with two ropes!"
+      },
+      {
+        "text": "Lift it to the shelf easily with 4 ropes!",
+        "say": "When four ropes share the load, it takes only a little force. But you pull four times as much rope.",
+        "win": "The bars opened! The piece is coming out!",
+        "miss": "Press and hold to lift it with four ropes!"
+      }
+    ]
+  },
+  "story": { "clue": "The piece is behind the bars of the treasure chest! Let's pull the rope and lift the chest to the high shelf!", "map_clue": "It's where a red chest hangs at the end of a rope!" },
+  "kid": {
+    "intro": "This is the pulley lab. There is a tool that lifts loads with a rope over a wheel. It is called a pulley. The more ropes hold the load, the less force it takes. Let's see how the force changes with the number of ropes!",
+    "title": "Do more ropes make it easier?",
+    "place": "Rope lift",
+    "say": "The more ropes, the less force it takes. But you have to pull the rope longer.",
+    "tip": "Press and hold the rope's end.",
+    "picks": {
+      "strands": [
+        { "label": "1 rope" },
+        { "label": "2 ropes" },
+        { "label": "4 ropes" }
+      ]
+    },
+    "cards": { "strands": "Ropes holding the load", "pulled": "Rope you pulled", "lift": "How high the load went" }
+  },
+  "note": {
+    "law": "With n ropes holding the load, the force needed is 1/n. But you have to pull n times as much rope.",
+    "numbers": [
+      { "label": "Load weight mg" },
+      { "label": "Ropes holding the load n" },
+      { "label": "Force needed F = mg/n" },
+      { "label": "Rope pulled → height the load went up" }
+    ]
+  },
+  "observations": [
+    { "label": "State" },
+    { "label": "Ropes holding the load n", "unit": "" },
+    { "label": "Load weight mg" },
+    { "label": "Force needed F = mg/n" },
+    { "label": "Your pull" },
+    { "label": "Rope pulled d_pull" },
+    { "label": "Height the load went up d_lift = d_pull/n" },
+    { "label": "Rope to pull for 1 m up (n × 1 m)" },
+    { "label": "Your work F × d_pull" },
+    { "label": "Potential energy the load gained mg × d_lift" }
+  ],
+  "graph": {
+    "title": "Force needed by the number of ropes",
+    "x": { "label": "Pulling time t" },
+    "y": { "label": "Force" },
+    "series": [
+      { "label": "Your pull" },
+      { "label": "Force needed" }
+    ]
+  }
+}

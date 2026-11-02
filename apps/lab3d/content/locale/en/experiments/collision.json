@@ -1,0 +1,128 @@
+{
+  "title": "Where does the motion go in a collision?",
+  "category": "Motion and force",
+  "question": "If the two balls weigh differently, how does the motion after the collision change?",
+  "steps": ["Give the two balls different weights.", "Change the collision direction with the velocity arrows.", "Compare the momentum arrows before and after the collision."],
+  "observe": "See whether, at the moment of the collision, the two objects give each other forces of the same size in opposite directions, and whether the momentum changes by the impulse received during the contact time.",
+  "terms": [
+    { "name": "Momentum", "description": "The amount of motion of an object, taking mass and velocity together." },
+    { "name": "Impulse", "description": "How much a force acting for some time changes the momentum." },
+    { "name": "Action and reaction", "description": "Two objects push on each other at the same time with forces of the same size in opposite directions." },
+    { "name": "Collision", "description": "Two objects give each other large forces during a short contact time." }
+  ],
+  "law": { "title": "Collision, momentum and impulse", "description": "The forces two objects give each other are equal and opposite, and force times contact time makes each object's change of momentum." },
+  "tip": "Press the blue ball, pull it away from the orange ball and let go: it rolls towards the orange ball. The length of the pull is the speed (0.5 m/s steps).",
+  "tip_short": "Pull the blue ball back and let go to roll it",
+  "controls": [
+    { "label": "Ball A mass (blue)" },
+    { "label": "Ball B mass (orange)" },
+    { "label": "Ball A velocity (right +)" },
+    { "label": "Ball B velocity (right +)" },
+    {
+      "label": "Ball A material",
+      "note": "The bounce follows the ball with the smaller restitution. Below 1 m/s, e = 0.",
+      "options": [
+        { "label": "Rubber", "note": "Restitution e = 0.88" },
+        { "label": "Wood", "note": "Restitution e = 0.50" },
+        { "label": "Steel", "note": "Restitution e = 0.72" },
+        { "label": "Clay", "note": "Restitution e = 0.08" }
+      ]
+    },
+    {
+      "label": "Ball B material",
+      "options": [
+        { "label": "Rubber", "note": "Restitution e = 0.88" },
+        { "label": "Wood", "note": "Restitution e = 0.50" },
+        { "label": "Steel", "note": "Restitution e = 0.72" },
+        { "label": "Clay", "note": "Restitution e = 0.08" }
+      ]
+    }
+  ],
+  "actions": [
+    { "label": "Go" },
+    { "label": "Start again" }
+  ],
+  "predict": {
+    "question": "What if the blue ball hits the orange ball hard?",
+    "choices": [
+      { "label": "The orange ball zooms" },
+      { "label": "Both stop" }
+    ],
+    "reason": "In the bump, the blue ball's motion passes to the orange ball. So the orange ball zooms away.",
+    "bridge": "Bump them and see for yourself!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Bump two balls of the same weight hard to crack the ice!",
+        "say": "When two balls bump, they push each other with the same force. This is called action and reaction. The faster the blue ball, the harder the bump. So the orange ball gets pushed a lot.",
+        "win": "Crack! The ice cracked!",
+        "miss": "Pull a little harder!"
+      },
+      {
+        "text": "Bump even harder with the heavy blue ball!",
+        "say": "A heavy blue ball has a lot of motion. So it pushes harder and gives the orange ball a bigger jolt.",
+        "win": "Crrrack! The crack got bigger!",
+        "miss": "Pull it all the way back and hit hard!"
+      },
+      {
+        "text": "Hit the heavy orange ball hard to break the ice!",
+        "say": "A heavy orange ball is hard to move. It needs a big jolt. Hit it hard with the heavy blue ball. The big jolt breaks the ice!",
+        "win": "Smash! The ice broke!",
+        "miss": "Pull it all the way back and hit!"
+      }
+    ]
+  },
+  "story": { "clue": "The piece is stuck in the ice! Let's bump the balls and break that ice!", "map_clue": "It's by the long rail with two balls on it!" },
+  "kid": {
+    "intro": "This is the ball bump lab. When two balls bump, they push each other with the same force. This is called action and reaction. The heavier and faster a ball is, the harder it pushes the other ball. Let's see how the balls move after the bump!",
+    "title": "What happens when balls bump?",
+    "place": "Ball bump",
+    "say": "In a bump, the two balls push each other. The blue ball's motion passes to the orange ball.",
+    "tip": "Pull the blue ball all the way back and let go!",
+    "picks": {
+      "mass_a": [
+        { "label": "Medium ball" },
+        { "label": "Heavy ball" }
+      ],
+      "mass_b": [
+        { "label": "Light ball" },
+        { "label": "Medium ball" },
+        { "label": "Slightly heavy ball" }
+      ]
+    },
+    "cards": { "before_a": "Blue ball before the bump", "after_b": "Orange ball after the bump", "impulse_b": "Jolt the orange ball got" },
+    "minus": { "before_a": "left", "after_b": "left" }
+  },
+  "note": {
+    "law": "Before and after the bump, the total momentum (mass × velocity) of the two balls is the same. What one ball loses, the other gains.",
+    "numbers": [
+      { "label": "Blue ball's velocity · before → after" },
+      { "label": "Orange ball's velocity · before → after" },
+      { "label": "Total momentum · before → after" }
+    ]
+  },
+  "observations": [
+    { "label": "State" },
+    { "label": "Restitution e of this collision" },
+    { "label": "Velocity A before" },
+    { "label": "Velocity B before" },
+    { "label": "Velocity A after" },
+    { "label": "Velocity B after" },
+    { "label": "Total momentum · before" },
+    { "label": "Total momentum · after" },
+    { "label": "Impulse on A, J = Δp" },
+    { "label": "Impulse on B" },
+    { "label": "Total kinetic energy · before" },
+    { "label": "Total kinetic energy · after" }
+  ],
+  "graph": {
+    "title": "Momentum of the two objects",
+    "x": { "label": "Time t" },
+    "y": { "label": "Momentum p (right +)" },
+    "series": [
+      { "label": "Ball A" },
+      { "label": "Ball B" }
+    ]
+  }
+}

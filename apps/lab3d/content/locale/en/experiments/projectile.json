@@ -1,0 +1,107 @@
+{
+  "title": "At what angle does a throw go farthest?",
+  "category": "Motion and force",
+  "question": "At the same speed, in which direction does a throw go the farthest?",
+  "steps": ["Drag the purple arrow to set the direction.", "Let the ball go and watch its path.", "Start again and compare with another angle."],
+  "observe": "See the curve made by the sideways speed and the downward acceleration together.",
+  "terms": [
+    { "name": "Velocity", "description": "Which way and how fast a thing moves." },
+    { "name": "Acceleration", "description": "How quickly the speed changes over time." },
+    { "name": "Projectile motion", "description": "The curved path a thrown thing makes while gravity acts on it." }
+  ],
+  "law": { "title": "Motion of a thrown object", "description": "While it moves sideways, gravity adds downward speed, so it moves in a curve." },
+  "tip": "Press the ball, pull it back and let go: it flies the other way. The pull's direction is the angle and its length is the speed. Tap the ball once to change its height with the yellow handle beside it. You can also drag the yellow handle at the arrow's tip to set the direction and speed.",
+  "tip_short": "Pull the ball back and let go to throw",
+  "controls": [
+    {
+      "label": "Gravity",
+      "options": [
+        { "label": "No gravity", "note": "No gravity · 0× · g = 0 m/s²" },
+        { "label": "Moon", "note": "Moon · 0.17× · g = 1.62 m/s²" },
+        { "label": "Earth", "note": "Earth · 1× · g = 9.81 m/s²" },
+        { "label": "Jupiter", "note": "Jupiter · 2.53× · g = 24.79 m/s²" }
+      ]
+    },
+    { "label": "Throw angle" },
+    { "label": "Throw height (under the ball)" }
+  ],
+  "actions": [
+    { "label": "Throw" },
+    { "label": "Start again" }
+  ],
+  "predict": {
+    "question": "If you throw low, where will the ball land?",
+    "choices": [
+      { "label": "Close" },
+      { "label": "Very far" }
+    ],
+    "reason": "Thrown low with the same strength, the ball comes down to the ground soon. So it lands close.",
+    "bridge": "Throw it and see for yourself!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Throw low and hit the near box!",
+        "say": "The ball always flies with the same strength. Gravity pulls the ball down. Thrown low, it comes down soon. So it reaches the near box.",
+        "win": "Thwack! You hit the near box!",
+        "miss": "Throw it lower! It's the near box!"
+      },
+      {
+        "text": "How slanted should you throw? Hit the far box!",
+        "say": "Thrown at a slant, the ball goes both forward and up. It flies the farthest and reaches the far box.",
+        "win": "Boom! The far box fell over too!",
+        "miss": "Throw it a bit slanted!"
+      },
+      {
+        "text": "Throw high and hit the box in the tree!",
+        "say": "Thrown high, the ball goes up a lot. Then it comes down close by. So it reaches the box on the high branch.",
+        "win": "Wow! The box in the tree fell down!",
+        "miss": "Throw it higher, upwards!"
+      }
+    ]
+  },
+  "story": { "clue": "If we hit the boxes one by one, I think the piece will come out!", "map_clue": "Something fell on the grass near the target!" },
+  "kid": {
+    "intro": "This is the ball throw lab. A thrown ball flies forward. All the while, the ground pulls the ball down. This pull is called gravity. Let's see where the ball lands for each throw angle!",
+    "title": "Let's throw the ball far!",
+    "place": "Ball throw",
+    "say": "The ball falls down while it goes forward. So it flies in a curve.",
+    "tip": "The ball flies the opposite way you pull. Pull down to throw it high!",
+    "cards": { "range": "How far", "flight_time": "Time in the air", "landing": "Where it landed" }
+  },
+  "note": {
+    "law": "At the same speed (8 m/s here), the closer the angle is to 45°, the farther it goes. Sideways it keeps the same speed, and downwards gravity pulls it.",
+    "numbers": [
+      { "label": "Distance R (with the throw height)" },
+      { "label": "Flight time T" },
+      { "label": "Highest point H" },
+      { "label": "Gravitational acceleration g" }
+    ]
+  },
+  "observations": [
+    { "label": "Gravitational acceleration g" },
+    { "label": "Time since the throw t" },
+    { "label": "Ball" },
+    { "label": "Throw height h₀" },
+    { "label": "Distance R (formula)" },
+    { "label": "Flight time T (formula)" },
+    { "label": "Highest point H (formula)" },
+    { "label": "Sideways distance x" },
+    { "label": "Height y" },
+    { "label": "Sideways speed" },
+    { "label": "Up-down speed (up +)" },
+    { "label": "Landing distance (simulation)" },
+    { "label": "Hit the near box (formula path, 1 = hit)" },
+    { "label": "Hit the far box (formula path, 1 = hit)" },
+    { "label": "Hit the high box (formula path, 1 = hit)" }
+  ],
+  "graph": {
+    "title": "Height of the ball",
+    "x": { "label": "Time t" },
+    "y": { "label": "Height y" },
+    "series": [
+      { "label": "Formula y(t)" },
+      { "label": "Simulation" }
+    ]
+  }
+}

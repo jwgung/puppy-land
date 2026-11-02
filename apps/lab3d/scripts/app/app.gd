@@ -54,6 +54,7 @@ func _ready() -> void:
 	Bench.report.connect(_on_bench_report)
 
 	_set_fps(Quality.cmdline_value("fps") == "1")   # measurements only (no setting since 2026-10-31)
+	Locale.start()   # the child's language (saved), else the device's, else English
 	_definitions = ExperimentRegistry.load_all()
 	if Quality.cmdline_value("progress") == "bench" or demo_title(Quality.all_args()):
 		ProgressStore.path = ProgressStore.BENCH_PATH   # a measured map never raises the child's flags
@@ -168,6 +169,10 @@ func show_settings(from_title := false) -> void:
 		else:
 			show_list())
 	screen.story_requested.connect(func() -> void: show_list(true))   # 이야기 다시 보기
+	# A language picked: the words are read again and the settings built again in it.
+	screen.language_changed.connect(func() -> void:
+		_definitions = ExperimentRegistry.load_all()
+		show_settings(from_title))
 	# 처음부터 다시 하기 (confirmed, the store already empty): the start, as on a first launch — the
 	# title when it may show, else the map (which plays the prologue: it was never seen now).
 	screen.restart_requested.connect(func() -> void:

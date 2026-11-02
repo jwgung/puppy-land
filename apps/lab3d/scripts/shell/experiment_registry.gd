@@ -43,6 +43,13 @@ static func load_all() -> Array[Dictionary]:
 	return result
 
 
+## The definitions are read again on the next load_all (Locale.set_language: their words changed).
+static func reload() -> void:
+	_cache = []
+	_hidden = []
+	_loaded = false
+
+
 ## The loaded definition with this id, listed or hidden ({} if there is none).
 static func find(id: String) -> Dictionary:
 	load_all()

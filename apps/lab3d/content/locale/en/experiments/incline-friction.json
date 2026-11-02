@@ -1,0 +1,116 @@
+{
+  "title": "How steep before it slides?",
+  "category": "Motion and force",
+  "question": "If you tilt the slope little by little, at what angle does the box start to slide?",
+  "steps": ["Pick the surface material and set the slope angle.", "Press Release box and see whether the box holds.", "Near the critical angle, change the angle a little and compare."],
+  "observe": "See whether the box starts to slide at the moment the part of gravity along the slope gets bigger than the maximum static friction.",
+  "terms": [
+    { "name": "Static friction", "description": "The force that holds touching objects so they do not slide." },
+    { "name": "Maximum static friction", "description": "The biggest friction that can hold an object just before it moves." },
+    { "name": "Kinetic friction", "description": "The friction that works against a sliding object's motion." },
+    { "name": "Critical angle", "description": "The smallest tilt at which an object on a slope starts to slide." }
+  ],
+  "law": { "title": "The slope and friction", "description": "When the part of gravity along the slope is bigger than the maximum static friction, the box slides, and while it slides, kinetic friction lowers the acceleration." },
+  "tip": "Drag the box with one finger to a start place on the slope: it starts sliding from there. Drag with two fingers to turn the view, and spread or pinch them to zoom and move.",
+  "tip_short": "Drag the box onto the slope and it slides",
+  "controls": [
+    { "label": "Slope angle" },
+    {
+      "label": "Surface material",
+      "note": "The box and the slope are of the same material.",
+      "options": [
+        { "label": "Steel" },
+        { "label": "Wood" },
+        { "label": "Rubber" },
+        { "label": "Clay" }
+      ]
+    }
+  ],
+  "actions": [
+    { "label": "Release box" },
+    { "label": "Start again" }
+  ],
+  "predict": {
+    "question": "If you tilt the wooden slide a little, will the box go down?",
+    "choices": [
+      { "label": "It slides down" },
+      { "label": "It won't budge" }
+    ],
+    "reason": "Even a little tilt lets gravity pull the box hard. Once that is bigger than friction, the box slides down.",
+    "bridge": "Tilt it, let go and see for yourself!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Tilt the wooden slide a little and knock down the yellow dominoes!",
+        "say": "Gravity pulls the box down, and the floor holds on to the box. The floor's holding force is called friction. With a little tilt, the pull beats friction. So the box goes down.",
+        "win": "Crash! The yellow dominoes fell!",
+        "miss": "Tilt it a little and let go from the top!"
+      },
+      {
+        "text": "Tilt the same wood more and knock down the blue dominoes!",
+        "say": "With a bigger tilt, gravity pulls the box down harder. So it is faster at the end and goes farther.",
+        "win": "The blue dominoes fell too!",
+        "miss": "Tilt the wood a lot and let go from the top!"
+      },
+      {
+        "text": "Keep the tilt, change to steel and knock down the red pillar!",
+        "say": "Steel is slippery, so its friction is small. So at the same tilt the box goes faster. It goes farther too.",
+        "win": "The red pillar fell!",
+        "miss": "Keep the tilt and change to steel!"
+      }
+    ]
+  },
+  "story": { "clue": "The piece is on top of the red pillar! Let's knock down the dominoes with the box!", "map_clue": "Look below the yellow slope!" },
+  "kid": {
+    "intro": "This is the slide lab. Gravity pulls the box down the slide. The floor holds on to the box. The floor's holding force is called friction. Change the floor's material and the tilt! Let's see how fast the box goes down.",
+    "title": "Let's slide a box down the slide!",
+    "place": "Slide",
+    "say": "With a big tilt the box slides. The steeper, the faster it gets.",
+    "tip": "Drag the box up the slope and let go!",
+    "picks": {
+      "material": [
+        { "label": "Steel" },
+        { "label": "Wood" },
+        { "label": "Rubber" }
+      ],
+      "angle": [
+        { "label": "A little tilt" },
+        { "label": "A big tilt" }
+      ]
+    },
+    "cards": { "critical_angle": "Sliding angle", "state": "The box?", "distance": "How far it slid", "bottom_speed": "Speed at the end" },
+    "states": { "Holding (still)": "Won't budge", "Sliding": "Sliding!", "Left the slope": "Reached the bottom" }
+  },
+  "note": {
+    "law": "The steeper the slope, the bigger the force pulling the box down, so it gains speed faster as it slides.",
+    "numbers": [
+      { "label": "Acceleration a" },
+      { "label": "Angle where it starts to slide θc" },
+      { "label": "Gravity along the slope mg sinθ" },
+      { "label": "Maximum static friction μₛmg cosθ" }
+    ]
+  },
+  "observations": [
+    { "label": "Critical angle θc (tan θc = μs)" },
+    { "label": "Box" },
+    { "label": "Gravity along the slope mg sinθ" },
+    { "label": "Maximum static friction μs·mg cosθ" },
+    { "label": "Acceleration a" },
+    { "label": "Distance moved (simulation)" },
+    { "label": "Start to the end of the slope" },
+    { "label": "Speed at the end of the slope v = √(2ad)" },
+    { "label": "Reaches the small dominoes (formula path, 1 = yes)" },
+    { "label": "Reaches the big dominoes (formula path, 1 = yes)" },
+    { "label": "Reaches the red pillar (formula path, 1 = yes)" }
+  ],
+  "graph": {
+    "title": "Distance after letting go",
+    "x": { "label": "Time t" },
+    "y": { "label": "Distance s" },
+    "series": [
+      { "label": "Formula ½at²" },
+      { "label": "Simulation" }
+    ]
+  }
+}

@@ -1,4 +1,5 @@
-"""The start screen picture, step 2: the "빵고양이 과학섬" ribbon banner over the trio's lower edge
+"""The start screen picture, step 2: the app's name ribbon banner ("빵고양이 과학섬", or in English
+"Bread Cat Science Island" with --lang en, 2026-11-02) over the trio's lower edge
 (splash.py renders the trio). A red ribbon with folded tails, the characters' brown outline and
 cream letters with a brown edge (the app's bold Korean face). Transparent around it: Godot's boot
 splash draws it centred on the sky colour (project.godot application/boot_splash).
@@ -6,6 +7,7 @@ splash draws it centred on the sky colour (project.godot application/boot_splash
 Run (system Python with Pillow and NumPy), from the repository root:
     python3 apps/lab3d/art_src/characters/splash_banner.py [--trio /tmp/op-splash/splash_trio.png] \
         [--out apps/lab3d/assets/icon/splash.png]
+    python3 apps/lab3d/art_src/characters/splash_banner.py --lang en --out apps/lab3d/assets/icon/splash_en.png
 """
 import argparse
 import os
@@ -14,7 +16,8 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONT = os.path.join(HERE, "..", "..", "assets", "fonts", "NotoSansKR-Lab3dSubset-Bold.otf")
-TITLE = "빵고양이 과학섬"
+TITLES = {"ko": "빵고양이 과학섬", "en": "Bread Cat Science Island"}
+TEXT_SHARE = 0.68            # the title fits in this share of the picture's width (the band is 0.76)
 SS = 2                       # drawn at 2x, then halved (smooth edges)
 OUT_W = 1200                 # final width (px); the boot splash shows it at its own size
 RED = (226, 72, 60, 255)
@@ -50,6 +53,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--trio", default="/tmp/op-splash/splash_trio.png")
     ap.add_argument("--out", default=os.path.join(HERE, "..", "..", "assets", "icon", "splash.png"))
+    ap.add_argument("--lang", default="ko", choices=sorted(TITLES))
     args = ap.parse_args()
 
     trio = Image.open(args.trio).convert("RGBA")
@@ -67,13 +71,17 @@ def main():
     canvas.alpha_composite(banner)
 
     d = ImageDraw.Draw(canvas)
+    title = TITLES[args.lang]
     size = int(band_h * 0.62)
     font = ImageFont.truetype(FONT, size)
-    box = d.textbbox((0, 0), TITLE, font=font, stroke_width=0)
+    while d.textlength(title, font=font) > canvas.width * TEXT_SHARE:   # a longer name: smaller letters
+        size -= 2
+        font = ImageFont.truetype(FONT, size)
+    box = d.textbbox((0, 0), title, font=font, stroke_width=0)
     x = (canvas.width - (box[2] - box[0])) / 2 - box[0]
     y = top + (band_h - (box[3] - box[1])) / 2 - box[1]
-    d.text((x, y + 5 * SS), TITLE, font=font, fill=RED_DARK)                      # drop
-    d.text((x, y), TITLE, font=font, fill=CREAM, stroke_width=6 * SS, stroke_fill=OUTLINE)
+    d.text((x, y + 5 * SS), title, font=font, fill=RED_DARK)                      # drop
+    d.text((x, y), title, font=font, fill=CREAM, stroke_width=6 * SS, stroke_fill=OUTLINE)
 
     bbox = canvas.getbbox()
     canvas = canvas.crop((0, bbox[1], canvas.width, bbox[3]))

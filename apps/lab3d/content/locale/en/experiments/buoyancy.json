@@ -1,0 +1,117 @@
+{
+  "title": "When does a thing float?",
+  "category": "Gravity and fluids",
+  "question": "If you change the weight, how does the part under water change?",
+  "steps": ["Drag the drum into the water.", "Let go and watch the force pushing up.", "Change the weight and compare how deep it sinks in."],
+  "observe": "See how the buoyancy grows as more of the volume is under water.",
+  "terms": [
+    { "name": "Buoyancy", "description": "The force with which water or air pushes a thing up." },
+    { "name": "Density", "description": "How much mass is packed into the same volume." },
+    { "name": "Volume under water", "description": "The volume of the part of a thing that is in the water." }
+  ],
+  "law": { "title": "Buoyancy", "description": "The more volume is under water, the bigger the force pushing up." },
+  "tip": "Drag the orange drum up or down with one finger into the water or above it and let go: it is let go right there (0.05 m steps). The blue arrow is buoyancy, the red arrow is weight. Change the drum's mass and volume and compare how deep it sinks in.",
+  "tip_short": "Drag the drum up or down and let go",
+  "controls": [
+    { "label": "Drum mass" },
+    {
+      "label": "Drum volume",
+      "note": "The density of water is 1000 kg/m³.",
+      "options": [
+        { "note": "Volume 0.1 m³ · height 0.5 m (the same volume of water weighs 100 kg)" },
+        { "note": "Volume 0.05 m³ · height 0.4 m (the same volume of water weighs 50 kg)" }
+      ]
+    }
+  ],
+  "actions": [
+    { "label": "Let go" },
+    { "label": "Start again" }
+  ],
+  "predict": {
+    "question": "If a small drum carries the heavy treasure chest, will it float?",
+    "choices": [
+      { "label": "It floats" },
+      { "label": "It sinks" }
+    ],
+    "reason": "The treasure chest is heavy, so the weight is bigger than the buoyancy. So the small drum sinks.",
+    "bridge": "First float the empty chest!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Hang the empty chest on the small drum and float it!",
+        "say": "Water pushes a drum in it upwards. This force is called buoyancy. The empty chest is light, so buoyancy wins. So even the small drum floats.",
+        "win": "Bob, bob! The small drum floats!",
+        "miss": "Hang the empty chest on the small drum!"
+      },
+      {
+        "text": "What if the same small drum carries the treasure chest?",
+        "say": "The treasure chest is heavy. Its weight is bigger than the buoyancy, so the small drum sinks.",
+        "win": "Oops, too heavy! It sank!",
+        "miss": "Hang the treasure chest on the small drum!"
+      },
+      {
+        "text": "Change to the big drum and bring up the treasure chest!",
+        "say": "A big drum pushes away a lot of water, so its buoyancy is big. So it floats up even with the heavy treasure chest.",
+        "win": "The treasure chest came up! I see the piece!",
+        "miss": "Change to the big drum!"
+      }
+    ]
+  },
+  "story": { "clue": "The piece is in a treasure chest under the water! Let's float a drum and bring the chest up.", "map_clue": "Something sparkles under the pond's water!" },
+  "kid": {
+    "intro": "This is the floating lab. Water pushes things in it upwards. This force is called buoyancy. The more water a drum pushes away, the bigger the buoyancy. Change the drum's size and the load! See whether it floats or sinks.",
+    "title": "Let's float a drum on the water!",
+    "place": "Floating",
+    "say": "The deeper the drum is in the water, the harder the water pushes it up. A big drum pushes away a lot of water, so it floats even when heavy.",
+    "tip": "Drag the drum up or down and let go!",
+    "picks": {
+      "mass": [
+        { "label": "Empty chest" },
+        { "label": "Treasure chest" }
+      ],
+      "volume": [
+        { "label": "Big drum" },
+        { "label": "Small drum" }
+      ]
+    },
+    "cards": { "depth": "How deep it is in", "floating_depth": "Depth when it floats", "state": "The drum?" },
+    "states": {
+      "Not let go yet · drag the drum into the water": "Put the drum in the water",
+      "Moving the drum": "Moving",
+      "Floating · buoyancy = weight": "Bobbing on the water",
+      "Staying where it is in the water": "Staying in the water",
+      "Sank to the bottom": "Sank"
+    }
+  },
+  "note": {
+    "law": "Water pushes the drum up as much as the volume under water. It floats when the buoyancy equals the weight.",
+    "formula": "F_buoyancy = ρ_water g V_under",
+    "numbers": [
+      { "label": "Drum's weight mg" },
+      { "label": "Buoyancy ρ_water g V_under" },
+      { "label": "Depth now" },
+      { "label": "Depth when it floats" }
+    ]
+  },
+  "observations": [
+    { "label": "State" },
+    { "label": "Result by density" },
+    { "label": "Drum's density ρ = m/V" },
+    { "label": "Depth when it floats (ρ/ρ_water × height)" },
+    { "label": "Depth now" },
+    { "label": "Buoyancy F = ρ_water g V_under" },
+    { "label": "Weight mg" },
+    { "label": "Net force (up +, with the water's drag)" },
+    { "label": "Speed" }
+  ],
+  "graph": {
+    "title": "Depth under water",
+    "x": { "label": "Time t" },
+    "y": { "label": "Depth" },
+    "series": [
+      { "label": "Drum" },
+      { "label": "Floating depth (formula)" }
+    ]
+  }
+}

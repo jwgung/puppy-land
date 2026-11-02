@@ -1,0 +1,115 @@
+{
+  "title": "Can a lever lift a heavy load?",
+  "category": "Turning and linking",
+  "question": "Is the same load easier to lift if you push far from the pivot?",
+  "steps": ["Pick one of the three push points on the bar.", "Press and hold the red push point on the bar.", "Change the push point and compare the force needed on the graph."],
+  "observe": "The longer the distance from the pivot to the push point, the less force you need. While you hold the push point, see whether the clockwise and counterclockwise torques balance the moment the bar lifts.",
+  "terms": [
+    { "name": "Lever", "description": "A bar resting on a pivot that turns a small force into a big one." },
+    { "name": "Pivot", "description": "The point a lever turns around." },
+    { "name": "Torque", "description": "How much a force tries to turn an object." },
+    { "name": "Rotational balance", "description": "When the clockwise and counterclockwise torques add up to 0." }
+  ],
+  "law": { "title": "The lever and rotational balance", "description": "When the bar is balanced, the torques on both sides of the pivot are the same size and in opposite directions." },
+  "tip": "Pick a push point (near, middle, far) and press and hold the bar's red push point with one finger. The push grows by 110 N each second (the bar beside it fills, up to 400 N; once it starts to move, the push stays there). Let go and the bar comes back down.",
+  "tip_short": "Press and hold the bar's red push point",
+  "controls": [
+    { "label": "Load mass" },
+    {
+      "label": "Push point",
+      "note": "Choose at what share of the distance from the pivot to the bar's right end you push.",
+      "options": [
+        { "label": "Near", "note": "35 % of pivot to right end" },
+        { "label": "Middle", "note": "60 % of pivot to right end" },
+        { "label": "Far", "note": "90 % of pivot to right end" }
+      ]
+    }
+  ],
+  "actions": [
+    { "label": "Start again" }
+  ],
+  "predict": {
+    "question": "If you push near the pivot, will the chest lift easily?",
+    "choices": [
+      { "label": "It takes a lot of force" },
+      { "label": "It lifts easily" }
+    ],
+    "reason": "Pushing near the pivot, the bar can hardly lift the chest. So you must push very hard.",
+    "bridge": "Press it and see for yourself!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Push the bar near the pivot to lift the treasure chest!",
+        "say": "The place that holds the bar up is called the pivot. Pushing near the pivot, the chest is hard to lift. You must push very hard.",
+        "win": "Heave-ho! The chest went up!",
+        "miss": "Press Near and hold it longer!"
+      },
+      {
+        "text": "Push the bar in the middle to lift the treasure chest!",
+        "say": "Pushing a bit farther from the pivot takes less force.",
+        "win": "Up it goes! The piece is coming up!",
+        "miss": "Press and hold the middle point!"
+      },
+      {
+        "text": "Push the bar far out to lift the treasure chest gently!",
+        "say": "The farther from the pivot you push, the less force it takes. The bar lifts the chest easily. A gentle push is enough.",
+        "win": "A gentle push lifted it!",
+        "miss": "Press the point far out!"
+      }
+    ]
+  },
+  "story": { "clue": "The piece is stuck under the treasure chest! Let's press the bar and lift the chest.", "map_clue": "There's something under the red seesaw!" },
+  "kid": {
+    "intro": "This is the lever lab. The place that holds the bar up is called the pivot. Push one side of the bar down and the load on the other side goes up. The farther from the pivot you push, the less force it takes. Let's see where it is easiest to push!",
+    "title": "Lift a heavy load with a bar!",
+    "place": "Seesaw lift",
+    "say": "The farther from the pivot you push, the less force it takes. So you can lift even a heavy load gently.",
+    "tip": "Press and hold the bar's red push point.",
+    "picks": {
+      "effort": [
+        { "label": "Near" },
+        { "label": "Middle" },
+        { "label": "Far" }
+      ]
+    },
+    "cards": { "effort_arm": "Distance to where you push", "advantage": "How many times easier", "state": "The bar?" },
+    "states": {
+      "Pick a push point and press the red point on the bar": "Press and hold",
+      "Holding down the red push point": "Pushing",
+      "Pushing · not enough force yet": "Not enough force yet",
+      "Lifted! The push is enough": "Lifted!",
+      "Moving the pivot or the load": "Moving"
+    }
+  },
+  "note": {
+    "law": "The farther from the pivot you push, the smaller the force that lifts the load. It lifts when force × distance (torque) is the same on both sides.",
+    "numbers": [
+      { "label": "Load weight F₂ = mg" },
+      { "label": "Pivot to load r₂" },
+      { "label": "Pivot to push point r₁" },
+      { "label": "Force needed to lift F₁" }
+    ]
+  },
+  "observations": [
+    { "label": "State" },
+    { "label": "Load weight F₂ = mg" },
+    { "label": "Pivot to load r₂" },
+    { "label": "Pivot to push point r₁" },
+    { "label": "Force needed to lift F₂r₂/r₁" },
+    { "label": "Your push F₁" },
+    { "label": "Mechanical advantage r₁/r₂", "unit": "times" },
+    { "label": "Load-side torque F₂r₂ (counterclockwise)" },
+    { "label": "Your torque F₁r₁ (clockwise)" },
+    { "label": "Total torque F₂r₂ − F₁r₁ (0 when lifted)" }
+  ],
+  "graph": {
+    "title": "Force needed on the lever",
+    "x": { "label": "Pressing time t" },
+    "y": { "label": "Force" },
+    "series": [
+      { "label": "Your push" },
+      { "label": "Force needed to lift" }
+    ]
+  }
+}
