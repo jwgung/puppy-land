@@ -178,6 +178,21 @@ static func build() -> Theme:
 	theme.set_stylebox("pressed", "TitleStartButton", start_down)
 	theme.set_stylebox("hover_pressed", "TitleStartButton", start_down)
 	theme.set_stylebox("focus", "TitleStartButton", StyleBoxEmpty.new())
+	# 다음 미션 (2026-11-02 user: the blue one was "겁나 구려"): the same red ribbon as 시작하기, a little
+	# smaller: storybook like the dialogue, Dugi's choices and the stamps, not the panels' blue.
+	theme.set_type_variation("NextMissionButton", "Button")
+	theme.set_font_size("font_size", "NextMissionButton", 28)
+	theme.set_font("font", "NextMissionButton", bold)
+	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color"]:
+		theme.set_color(state, "NextMissionButton", DIALOGUE_PAPER)
+	var next_down := _box(TITLE_RED.darkened(0.08), DIALOGUE_LINE, 20, 32, 10, Color.TRANSPARENT, CHOICE_LINE, CHOICE_LINE)
+	next_down.content_margin_top += CHOICE_LIP - CHOICE_LINE
+	next_down.expand_margin_top = -(CHOICE_LIP - CHOICE_LINE)
+	theme.set_stylebox("normal", "NextMissionButton", _box(TITLE_RED, DIALOGUE_LINE, 20, 32, 10, Color.TRANSPARENT, CHOICE_LINE, CHOICE_LIP))
+	theme.set_stylebox("hover", "NextMissionButton", _box(TITLE_RED.lightened(0.06), DIALOGUE_LINE, 20, 32, 10, Color.TRANSPARENT, CHOICE_LINE, CHOICE_LIP))
+	theme.set_stylebox("pressed", "NextMissionButton", next_down)
+	theme.set_stylebox("hover_pressed", "NextMissionButton", next_down)
+	theme.set_stylebox("focus", "NextMissionButton", StyleBoxEmpty.new())
 	theme.set_type_variation("TitleButton", "Button")
 	theme.set_font_size("font_size", "TitleButton", 20)
 	theme.set_font("font", "TitleButton", bold)
