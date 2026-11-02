@@ -237,10 +237,10 @@ func check_stage_terms() -> void:
 	expect.call(missing.is_empty(), "kid flow: every game lab's stage explanations name its force or tool (INTRO_TERMS)", ", ".join(missing))
 
 
-## A won stage (its stamp in): after Dugi's explanation 다음 미션 shows and the lab stays as it is
-## (2026-11-01 user: "진도가 너무 빨라 … 천천히 가야돼"; the child goes on when ready). The next stage's
-## text waits off the strip; pressing 다음 미션 sets the lab up again, Dugi tells "두 번째 미션: …" in his
-## box, and the strip shows it once his box closes. A child's own try meanwhile keeps the button.
+## A won stage (its stamp in): once Dugi's explanation is read the round goes on by itself (2026-11-02
+## user: "다음미션 버튼을 없애는게 나을듯. 그냥 미션 깨면 자연스럽게 다음 미션으로"): not before
+## NEXT_WAIT_MIN_S, the lab is set up again, Dugi tells "두 번째 미션: …" in his box, and the strip shows
+## it once his box closes (until then its text waits off the strip).
 func check_next_stage_reset() -> void:
 	var screen := await _open("free-fall")
 	var r: MissionRound = screen.mission_round
@@ -254,37 +254,31 @@ func check_next_stage_reset() -> void:
 	var landed: bool = lab.status() == "landed"
 	r.stamp_earned.emit(1)
 	await _frames(2)
-	var hidden: bool = screen._mission_text.text == ""
-	var shown_at := -1
+	var hidden: bool = screen._mission_text.text == "" and screen.next_goes == 0
+	var went_at := -1
 	for i in 60 * 8:
 		await tree.process_frame
+		if screen.next_goes > 0:
+			went_at = i
+			break
 		if screen.dialogue.active:
 			screen.dialogue.advance()
 			screen.dialogue.advance()
-		if screen.next_shown():
-			shown_at = i
-			break
-	await _frames(60)
-	var kept: bool = lab.status() == "landed" and screen.next_presses == 0 and screen._mission_text.text == ""
-	screen.experiment_action("release")   # the child's own try meanwhile: the button stays
-	await _frames(30)
-	var stays: bool = screen.next_shown()
-	screen.next_mission()
 	await _frames(int(DugiActor.RAISE_S * 60.0) + 6)
 	# (the stamp signal alone here: the round's current stage is the one told)
 	var told: bool = screen.dialogue.active and screen.dialogue.joined() == MissionRound.mission_line(screen.definition.raw, r.stage())
 	var waiting: bool = screen._mission_text.text == ""   # the strip waits for his box
-	var reset: bool = lab.status() == "ready" and screen.next_presses == 1 and not screen.next_shown()
+	var reset: bool = lab.status() == "ready" and screen.next_goes == 1 and not r.waiting_next
 	for i in 8:
 		screen.dialogue.advance()
 	await _frames(3)
 	var strip: bool = screen._mission_text.text == r.text() and r.text() != ""
 	await _close(screen)
-	expect.call(landed and hidden and shown_at > roundi(ExperimentScreen.NEXT_WAIT_MIN_S * 60.0) - 2 and kept and stays and told and waiting and reset and strip,
-		"kid flow: a won stage shows 다음 미션 after Dugi's explanation and keeps the lab (a try meanwhile too); pressed, the lab is set up again, Dugi tells the next mission in his box, then the strip shows it",
-		"landed %s, text hidden %s, button after %d frames, lab kept %s, stays %s, told %s, strip waits %s, reset %s, strip after %s" % [landed, hidden, shown_at, kept, stays, told, waiting, reset, strip])
+	expect.call(landed and hidden and went_at > roundi(ExperimentScreen.NEXT_WAIT_MIN_S * 60.0) - 2 and told and waiting and reset and strip,
+		"kid flow: a won stage goes on by itself after Dugi's explanation (no button): the lab is set up again, Dugi tells the next mission in his box, then the strip shows it",
+		"landed %s, text hidden %s, went on after %d frames, told %s, strip waits %s, reset %s, strip after %s" % [landed, hidden, went_at, told, waiting, reset, strip])
 	# Dugi explains a later stage by himself after the cast's delay_s (incline-friction waits 4.5 s):
-	# 다음 미션 comes only after that explanation is read, never under it (2026-11-01 review).
+	# the next mission comes only after that explanation is read, never under it (2026-11-01 review).
 	screen = await _open("free-fall")
 	r = screen.mission_round
 	r.end_question()
@@ -308,33 +302,34 @@ func check_next_stage_reset() -> void:
 			await _frames(2)
 	cast.rearm()
 	var explained := cast.explain_count
+	var goes: int = screen.next_goes
 	r.stamp_earned.emit(1)
 	var explained_at := -1
 	var read_at := -1
-	shown_at = -1
+	went_at = -1
 	for i in 60 * 10:
 		await tree.process_frame
 		if explained_at < 0 and cast.explain_count > explained:
 			explained_at = i
+		if screen.next_goes > goes:
+			went_at = i
+			break
 		if screen.dialogue.active:
 			if explained_at >= 0:
 				read_at = i   # his box with the stage's explanation, read
 			screen.dialogue.advance()
 			screen.dialogue.advance()
-		if screen.next_shown():
-			shown_at = i
-			break
-	expect.call(explained_at >= 0 and read_at >= explained_at and shown_at > read_at,
-		"kid flow: 다음 미션 comes after Dugi's own explanation of the stage is read (a long delay_s), not before it",
-		"explained at frame %d, read at %d, 다음 미션 at %d" % [explained_at, read_at, shown_at])
+	expect.call(explained_at >= 0 and read_at >= explained_at and went_at > read_at,
+		"kid flow: the next mission comes after Dugi's own explanation of the stage is read (a long delay_s), not before it",
+		"explained at frame %d, read at %d, went on at %d" % [explained_at, read_at, went_at])
 	await _close(screen)
 
 
-## Before 다음 미션 the next stage is not judged (2026-11-01 review: the spring's stages 1 and 2 share
-## their conditions, so a second pull won stage 2 before its mission was told): no stamp, no line.
-## The button hides while the sidebar is open (he tells the mission in his box) and comes back when it
-## closes. A mission line he did not get to tell (a touch stopped his arm before his box opened) is
-## told again once he is at rest, and only then the strip shows it.
+## Before the round goes on the next stage is not judged (2026-11-01 review: the spring's stages 1 and
+## 2 share their conditions, so a second pull won stage 2 before its mission was told): no stamp, no
+## line. It waits while the sidebar is open (he tells the mission in his box) and goes on by itself
+## once it closes. A mission line he did not get to tell (a touch stopped him) is told again, and only
+## then the strip shows it.
 func check_next_waits() -> void:
 	var screen := await _open("free-fall")
 	var r: MissionRound = screen.mission_round
@@ -344,32 +339,22 @@ func check_next_waits() -> void:
 	var waits: bool = r.waiting_next
 	var stamps_before := r.stamps
 	var lines_before: int = screen.result_count.win + screen.result_count.miss
-	screen.experiment_action("release")   # a try before 다음 미션
+	screen.open_sidebar(false)
+	screen.experiment_action("release")   # a try before the round goes on
 	for i in 60 * 5:
 		await tree.process_frame
-		if screen.dialogue.active:
-			screen.dialogue.advance()
-			screen.dialogue.advance()
 	var unjudged: bool = lab.status() == "landed" and r.stamps == stamps_before \
 		and screen.result_count.win + screen.result_count.miss == lines_before
-	for i in 60 * 6:
-		if screen.next_shown():
+	var held_open: bool = screen.next_goes == 0 and r.waiting_next   # (the sidebar is open)
+	screen.close_sidebar(false)
+	for i in 60 * 8:
+		if screen.next_goes > 0:
 			break
 		await tree.process_frame
 		if screen.dialogue.active:
 			screen.dialogue.advance()
 			screen.dialogue.advance()
-	var shown: bool = screen.next_shown()
-	screen.open_sidebar(false)
-	await _frames(2)
-	var hidden_open: bool = not screen.next_shown()
-	screen.next_mission()   # (hidden: nothing happens)
-	var not_pressed: bool = screen.next_presses == 0
-	screen.close_sidebar(false)
-	await _frames(int(ExperimentScreen.NEXT_WAIT_MIN_S * 60.0) + 10)
-	var back: bool = screen.next_shown()
-	screen.next_mission()
-	var goes_on: bool = not r.waiting_next
+	var goes_on: bool = screen.next_goes == 1 and not r.waiting_next
 	screen.cast.dugi.stop(true)   # a touch at once: his arm never got up, his box never opened
 	var missed: bool = not screen.dialogue.active and r.announcing() and screen._mission_text.text == ""
 	var told := false
@@ -383,10 +368,10 @@ func check_next_waits() -> void:
 	await _frames(3)
 	var strip: bool = screen._mission_text.text == r.text() and r.text() != ""
 	await _close(screen)
-	expect.call(waits and unjudged and shown and hidden_open and not_pressed and back and goes_on and missed and told and strip,
-		"kid flow: before 다음 미션 the next stage is not judged; the button hides while the sidebar is open; a mission line he missed is told again, then the strip shows it",
-		"waits %s, unjudged %s, shown %s, hidden with the sidebar %s, not pressed %s, back %s, goes on %s, missed %s, told again %s, strip %s"
-			% [waits, unjudged, shown, hidden_open, not_pressed, back, goes_on, missed, told, strip])
+	expect.call(waits and unjudged and held_open and goes_on and missed and told and strip,
+		"kid flow: before the round goes on the next stage is not judged; it waits while the sidebar is open, then goes on by itself; a mission line he missed is told again, then the strip shows it",
+		"waits %s, unjudged %s, held while the sidebar is open %s, goes on %s, missed %s, told again %s, strip %s"
+			% [waits, unjudged, held_open, goes_on, missed, told, strip])
 
 
 func check_pace() -> void:

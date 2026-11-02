@@ -166,9 +166,6 @@ static func build() -> Theme:
 	# The title screen (2026-10-29): 시작하기 is the logo's red ribbon (cream bold letters, the brown
 	# outline and lip), 이야기 다시 보기 / 설정 the dialogue's cream paper like Dugi's choices.
 	_ribbon_button(theme, "TitleStartButton", bold, 36, 22, 40, 12)
-	# 다음 미션 (2026-11-02 user: the blue one was "겁나 구려"): the same red ribbon as 시작하기, a little
-	# smaller: storybook like the dialogue, Dugi's choices and the stamps, not the panels' blue.
-	_ribbon_button(theme, "NextMissionButton", bold, 28, 20, 32, 10)
 	theme.set_type_variation("TitleButton", "Button")
 	theme.set_font_size("font_size", "TitleButton", 20)
 	theme.set_font("font", "TitleButton", bold)
