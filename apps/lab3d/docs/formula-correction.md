@@ -124,7 +124,7 @@
 | 실험 | 공식 모델 | 웹과 같은 것 | 웹 적분을 따르지 않은 이유(측정) |
 |---|---|---|---|
 | 용수철 | `SpringModel`: `AnchoredSpringLaw`(k = 5 N/m)의 정확한 해를 t = k dt에서 취함. 감쇠 없으면 TS `harmonicDisplacement/Velocity`, 감쇠(b = 0.45)는 감쇠 진동 해(`PhysicsLaws` 추가, TS 법칙 RK4와 1e-9) | k, b, 질량 | 웹 명시적 오일러는 10초에 에너지 +52% |
-| 부력 | `BuoyancyModel`: `BuoyancyRegionLaw`(잠긴 비율 선형 = 세운 기둥에 정확, 물 저항 1.8/s)와 중력, 반암시적 오일러 4번 나눔(60 Hz), 웹 바닥 규칙(e 0.5, 1 m/s 미만 정지) | 법칙, 물 1000 kg/m³, 바닥 규칙 | 웹 명시적 오일러는 가벼운 통이 10초에 뜰 깊이에서 0.72 m 벗어남 |
+| 부력 | `BuoyancyModel`: `BuoyancyRegionLaw`의 부력(잠긴 비율 선형 = 세운 기둥에 정확)과 실험의 물 저항(2026-11-02: 부가 질량 0.5 × 잠긴 배제 질량을 관성과 선형 감쇠 1.8/s에, 제곱 저항 ½ρCdAv\|v\| Cd 1.0; 웹 법칙은 통 질량에 비례해 5 kg 통이 17 m 솟았다)과 중력, 반암시적 오일러 4번 나눔(60 Hz), 웹 바닥 규칙(e 0.5, 1 m/s 미만 정지) | 법칙, 물 1000 kg/m³, 바닥 규칙 | 웹 명시적 오일러는 가벼운 통이 10초에 뜰 깊이에서 0.72 m 벗어남 |
 | 궤도 | `OrbitModel`: `PointGravityField`(GM 27 m³/s², 3 m에서 원 궤도 3 m/s)를 속도 Verlet 8번 나눔(60 Hz). 별 표면 + 행성 반지름(1.2 m)에서 충돌, 12 m에서 이탈로 끝. 예측은 `OrbitChallenge` | GM, 시작 조건, 충돌·이탈 규칙, 예측 | 웹 명시적 오일러는 20초에 반지름 3 → 3.83 m로 퍼짐 |
 
 - TS 오라클(`tools/{spring,buoyancy,orbit}-lab-vectors.test.ts` → `tests/*_lab_vectors.json`, 용수철 6·부력 7·궤도 8가지 경우): TS 코어 클래스·함수로 6스텝마다 상태·패널 값을 기록한다. 감시: TS를 바꾸면 vitest가 먼저 깨지고, `UPDATE_{SPRING,BUOYANCY,ORBIT}_VECTORS=1`로 다시 만든 뒤 Godot 쪽 불일치를 본다.
