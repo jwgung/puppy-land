@@ -81,34 +81,27 @@ func spots() -> Array:
 	return out
 
 
-## The zone of spot `id` ("" when none).
-func zone_of(id: String) -> String:
-	for zone in zones:
-		for spot in zones[zone].spots:
-			if spot[0] == id:
-				return zone
-	return ""
-
-
 ## The lab ground's look of `zone`: its `look`, else its ground.
 func look_of(zone: String) -> String:
 	var spec: Dictionary = zones.get(zone, {})
 	return str(spec.get("look", spec.get("ground", "")))
 
 
+## The look of a zone may also be "lookout" (LabWorld's railing over the sea).
 func _check() -> String:
 	if zones.is_empty():
 		return "no zones"
 	if radius_x <= 0.0 or radius_z <= 0.0:
 		return "no coast"
-	var ids := spots()
 	for zone in zones:
 		var spec: Variant = zones[zone]
-		if not spec is Dictionary or str(spec.get("ground", "")) not in GROUNDS or _array(spec.get("at")).size() != 2:
-			return "zone %s: ground or at" % zone
-		for spot: Variant in _array(spec.get("spots")):
+		if not spec is Dictionary or str(spec.get("ground", "")) not in GROUNDS or _array(spec.get("at")).size() != 2 \
+				or not spec.get("spots") is Array:
+			return "zone %s: ground, at or spots" % zone
+		for spot: Variant in spec.spots:
 			if not spot is Array or spot.size() != 3 or not spot[0] is String or _array(spot[1]).size() != 2:
 				return "zone %s: a spot is not [id, [x, z], yaw]" % zone
+	var ids := spots()
 	if lookout not in ids:
 		return "lookout %s is not a spot" % lookout
 	var sorted_order := order.duplicate()

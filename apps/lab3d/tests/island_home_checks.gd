@@ -44,7 +44,8 @@ func check_island_data() -> void:
 			problems.append("%s is not an experiment" % id)
 	var broken := []
 	for data in [{}, {"zones": island.zones, "coast": {"radius_x": 1.0, "radius_z": 1.0}, "lookout": island.lookout, "order": ["orbit"]},
-			{"zones": island.zones, "coast": {"radius_x": 1.0, "radius_z": 1.0}, "lookout": "nowhere", "order": island.order}]:
+			{"zones": island.zones, "coast": {"radius_x": 1.0, "radius_z": 1.0}, "lookout": "nowhere", "order": island.order},
+			{"zones": {"meadow": "grass"}, "coast": {"radius_x": 1.0, "radius_z": 1.0}, "lookout": island.lookout, "order": island.order}]:
 		broken.append(Island.from_data(data).problem)
 	if broken.has(""):
 		problems.append("a broken island reads without a problem: %s" % str(broken))

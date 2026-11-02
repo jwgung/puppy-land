@@ -490,7 +490,7 @@ func trio_rect() -> Rect2:
 	return out
 
 
-## Where the three stand: on the square (no spot yet) in a row across the view through HOME — Puppy
+## Where the three stand: on the square (no spot yet) in a row across the view through the square (island.home) — Puppy
 ## on the left, the cat in the middle, Dugi on the right — or at the spot they last walked to
 ## (rest_spot, saved in the store: after a lab they are where they went), in the group's places
 ## (group_at). They face `yaw` (the camera's: yaw 0 looks along -z from +z), towards the default view.
