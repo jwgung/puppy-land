@@ -1,0 +1,117 @@
+{
+  "title": "When do objects float?",
+  "category": "Gravity and fluids",
+  "question": "If you change the weight, how deep does it sink?",
+  "steps": ["Drag the barrel into the water.", "Let go and watch the force pushing up.", "Change the weight and compare how deep it sinks in."],
+  "observe": "See how the buoyancy grows as more of the volume is under water.",
+  "terms": [
+    { "name": "Buoyancy", "description": "The force with which water or air pushes a thing up." },
+    { "name": "Density", "description": "How much mass is packed into the same volume." },
+    { "name": "Volume under water", "description": "The volume of the part of a thing that is in the water." }
+  ],
+  "law": { "title": "Buoyancy", "description": "The more volume is under water, the bigger the force pushing up." },
+  "tip": "Drag the orange barrel up or down with one finger into the water or above it and let go: it stays right there (0.05 m steps). The blue arrow is buoyancy, the red arrow is weight. Change the barrel's mass and volume and compare how deep it sinks in.",
+  "tip_short": "Drag the barrel up or down and let go",
+  "controls": [
+    { "label": "Barrel mass" },
+    {
+      "label": "Barrel volume",
+      "note": "The density of water is 1000 kg/m³.",
+      "options": [
+        { "note": "Volume 0.1 m³ · height 0.5 m (the same volume of water weighs 100 kg)" },
+        { "note": "Volume 0.05 m³ · height 0.4 m (the same volume of water weighs 50 kg)" }
+      ]
+    }
+  ],
+  "actions": [
+    { "label": "Let go" },
+    { "label": "Start again" }
+  ],
+  "predict": {
+    "question": "If a small barrel carries the heavy treasure chest, will it float?",
+    "choices": [
+      { "label": "It floats" },
+      { "label": "It sinks" }
+    ],
+    "reason": "The treasure chest is heavy, so the weight is bigger than the buoyancy. So the small barrel sinks.",
+    "bridge": "First float the empty chest!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Hang the empty chest on the small barrel and float it!",
+        "say": "Water pushes a barrel in it upwards. This force is called buoyancy. The empty chest is light, so buoyancy wins. So even the small barrel floats.",
+        "win": "Bob, bob! The small barrel floats!",
+        "miss": "Hang the empty chest on the small barrel!"
+      },
+      {
+        "text": "What if the same small barrel carries the treasure chest?",
+        "say": "The treasure chest is heavy. Its weight is bigger than the buoyancy, so the small barrel sinks.",
+        "win": "Oops, too heavy! It sank!",
+        "miss": "Hang the treasure chest on the small barrel!"
+      },
+      {
+        "text": "Change to the big barrel and bring up the treasure chest!",
+        "say": "A big barrel pushes away a lot of water, so its buoyancy is big. So it floats up even with the heavy treasure chest.",
+        "win": "The treasure chest came up! I see the piece!",
+        "miss": "Change to the big barrel!"
+      }
+    ]
+  },
+  "story": { "clue": "The piece is in a treasure chest under the water! Let's float a barrel and bring the chest up.", "map_clue": "Something sparkles under the pond's water!" },
+  "kid": {
+    "intro": "This is the floating lab. Water pushes things in it upwards. This force is called buoyancy. The more water a barrel pushes away, the bigger the buoyancy. Change the barrel's size and the load! See whether it floats or sinks.",
+    "title": "Let's float a barrel on the water!",
+    "place": "Floating",
+    "say": "The deeper the barrel is in the water, the harder the water pushes it up. A big barrel pushes away a lot of water, so it floats even when heavy.",
+    "tip": "Drag the barrel up or down and let go!",
+    "picks": {
+      "mass": [
+        { "label": "Empty chest" },
+        { "label": "Treasure chest" }
+      ],
+      "volume": [
+        { "label": "Big barrel" },
+        { "label": "Small barrel" }
+      ]
+    },
+    "cards": { "depth": "Submerged depth", "floating_depth": "Floating depth", "state": "The barrel?" },
+    "states": {
+      "Not let go yet · drag the barrel into the water": "Put the barrel in the water",
+      "Moving the barrel": "Moving",
+      "Floating · buoyancy = weight": "Bobbing on the water",
+      "Staying where it is in the water": "Staying in the water",
+      "Sank to the bottom": "Sank"
+    }
+  },
+  "note": {
+    "law": "Water pushes the barrel up as much as the volume under water. It floats when the buoyancy equals the weight.",
+    "formula": "F_buoyancy = ρ_water g V_under",
+    "numbers": [
+      { "label": "Barrel's weight mg" },
+      { "label": "Buoyancy ρ_water g V_under" },
+      { "label": "Depth now" },
+      { "label": "Depth when it floats" }
+    ]
+  },
+  "observations": [
+    { "label": "State" },
+    { "label": "Result by density" },
+    { "label": "Barrel's density ρ = m/V" },
+    { "label": "Depth when it floats (ρ/ρ_water × height)" },
+    { "label": "Depth now" },
+    { "label": "Buoyancy F = ρ_water g V_under" },
+    { "label": "Weight mg" },
+    { "label": "Net force (up +, with the water's drag)" },
+    { "label": "Speed" }
+  ],
+  "graph": {
+    "title": "Depth under water",
+    "x": { "label": "Time t" },
+    "y": { "label": "Depth" },
+    "series": [
+      { "label": "Barrel" },
+      { "label": "Floating depth (formula)" }
+    ]
+  }
+}

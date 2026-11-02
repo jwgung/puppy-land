@@ -4,10 +4,14 @@ config_version=5
 [application]
 
 config/name="Puppy Land 3D"
+config/name_localized={
+"en": "Bread Cat Science Island",
+"ko": "빵고양이 과학섬"
+}
 config/description="Puppy Land 3D lab app (Phase 1): guided mechanics experiments on Godot 4 + Jolt"
 config/icon="res://assets/icon/icon.png"
 boot_splash/bg_color=Color(0.38431373, 0.7529412, 1, 1)
-boot_splash/image="res://assets/icon/splash.png"
+boot_splash/show_image=false
 boot_splash/stretch_mode=0
 run/main_scene="res://scenes/main.tscn"
 run/delta_smoothing=false

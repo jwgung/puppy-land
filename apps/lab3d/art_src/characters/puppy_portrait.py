@@ -6,7 +6,8 @@ the finale).
 
 Run (headless, Blender 4.5):
     blender -b --factory-startup -P apps/lab3d/art_src/characters/puppy_portrait.py -- \
-        [--out apps/lab3d/assets/characters/portraits] [--size 512] [--only happy,thinking]
+        [--out apps/lab3d/assets/characters/portraits] [--size 512] [--only happy,thinking] [--lang ko|en]
+    (--lang en: the flag reads SCIENCE; write them to assets/characters/portraits/en, 2026-11-02)
 
 Writes puppy_<face>.webp (RGBA, size x size, lossless WebP), one per expression (Story.FACES):
   explain    the model's own face (open smile), the free paw (viewer's right) up towards the words:
@@ -94,6 +95,8 @@ def main():
             size = int(argv[i + 1])
         elif a == "--only":
             only = argv[i + 1].split(",")
+        elif a == "--lang":
+            puppy.FLAG_TEXT = puppy.FLAG_TEXTS[argv[i + 1]]
     os.makedirs(out_dir, exist_ok=True)
     for name, spec in EXPRESSIONS.items():
         if only and name not in only:

@@ -144,6 +144,10 @@ func _run() -> void:
 	# child's (user://progress.cfg is checked unchanged at the end).
 	var real_progress := _file_state(ProgressStore.PATH)
 	ProgressStore.path = ProgressStore.TEST_PATH
+	# The checks read the Korean words (the user-approved sentences; the English ones: locale_checks).
+	Locale.app_may_choose = false
+	Locale.path = "user://language-test.cfg"
+	Locale.set_language("ko")
 	DirAccess.remove_absolute(ProgressStore.path)
 	# The story plays only where a check turns it on (tests/story_checks.gd): the App screens the
 	# other checks build never start it.
@@ -282,11 +286,6 @@ func _run() -> void:
 	_expect(slingshot != null and slingshot.can_instantiate(), "slingshot checks compile", "")
 	if slingshot != null and slingshot.can_instantiate():
 		await slingshot.new(self, _expect).run()
-	print("== the words by language (2026-11-02: content/locale/<lang>, Locale: every key, no words in the code or the data) ==")
-	var locale_checks: GDScript = load("res://tests/locale_checks.gd")
-	_expect(locale_checks != null and locale_checks.can_instantiate(), "locale checks compile", "")
-	if locale_checks != null and locale_checks.can_instantiate():
-		await locale_checks.new(self, _expect).run()
 	print("== the experiment definition (ExperimentDefinition: controls, options, ranges, grids, observations, manipulation rules) ==")
 	var definition_checks: GDScript = load("res://tests/experiment_definition_checks.gd")
 	_expect(definition_checks != null and definition_checks.can_instantiate(), "experiment definition checks compile", "")
@@ -412,6 +411,11 @@ func _run() -> void:
 		OS.delay_msec(250)   # real time for the mixer thread (--fixed-fps frames take almost none)
 		for i in 3:
 			await process_frame
+	print("== the words by language (2026-11-02: content/locale/<lang>, Locale: every key, no words in the code or the data) ==") # last: it switches the language and reads the content again
+	var locale_checks: GDScript = load("res://tests/locale_checks.gd")
+	_expect(locale_checks != null and locale_checks.can_instantiate(), "locale checks compile", "")
+	if locale_checks != null and locale_checks.can_instantiate():
+		await locale_checks.new(self, _expect).run()
 	_expect(_file_state(ProgressStore.PATH) == real_progress, "the tests never touch the real progress file (user://progress.cfg)", "")
 	print("RESULT: %s (%d failure(s))" % ["PASS" if _failures == 0 else "FAIL", _failures])
 	quit(1 if _failures > 0 else 0)

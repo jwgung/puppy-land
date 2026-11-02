@@ -2,7 +2,8 @@
 
 Run (headless):
     blender -b --factory-startup -P apps/lab3d/art_src/characters/puppy.py -- \
-        [--out apps/lab3d/assets/characters/puppy.glb] [--monocle on|off] [--flag on|off] [--hat on|off]
+        [--out apps/lab3d/assets/characters/puppy.glb] [--monocle on|off] [--flag on|off] [--hat on|off] \
+        [--lang ko|en]   # the flag's word: 과학섬 (puppy.glb) or SCIENCE (--lang en: puppy_en.glb, 2026-11-02)
 
 A golden-tan chibi puppy from the same storybook as the bread cat and Dugi (2026-10-23 user
 reference 1792701655210.png, the centre character), standing on its hind legs like Dugi: a big round
@@ -83,7 +84,8 @@ P = dict(
     # flag: butter yellow (bright against the sky and the grass), brown text like the outline
     pole="#c08a55", cloth="#ffe28a", cloth_trim="#f5b84e", ink="#6b3a1c",
 )
-FLAG_TEXT = "과학섬"
+FLAG_TEXTS = {"ko": "과학섬", "en": "SCIENCE"}
+FLAG_TEXT = FLAG_TEXTS[os.environ.get("PUPPY_LANG", "ko")]   # set_language() / --lang
 FONT = ("/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",)   # Noto Sans CJK Bold (Blender reads its first face)
 
 # Atlas layout (pixels, origin bottom-left like Blender UVs)
@@ -298,7 +300,7 @@ def text_mask(text, w, h, cx, height=0.56, ss=3):
     bpy.data.objects.remove(ob); bpy.data.curves.remove(cu); bpy.data.fonts.remove(font)
     W, H = w * ss, h * ss
     lo, hi = co.min(0), co.max(0)
-    k = height * H / (hi[1] - lo[1])
+    k = min(height * H / (hi[1] - lo[1]), 0.62 * W / (hi[0] - lo[0]))   # a long word: smaller, inside the cloth
     px = (co[:, 0] - (lo[0] + hi[0]) / 2) * k + cx * W
     py = (co[:, 1] - (lo[1] + hi[1]) / 2) * k + 0.5 * H
     m = np.zeros((H, W))
@@ -822,7 +824,7 @@ def stats():
 
 def parse_args():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-    opts = {"out": None, "monocle": "off", "flag": "on", "hat": "on", "arms": "A"}
+    opts = {"out": None, "monocle": "off", "flag": "on", "hat": "on", "arms": "A", "lang": "ko"}
     i = 0
     while i < len(argv):
         k = argv[i].lstrip("-")
@@ -835,6 +837,7 @@ def parse_args():
 
 if __name__ == "__main__":
     opts = parse_args()
+    FLAG_TEXT = FLAG_TEXTS[opts["lang"]]
     bc.clear_scene()
     set_arm_variant(opts["arms"])
     build(opts["monocle"] == "on", opts["flag"] != "off", opts["hat"] != "off")

@@ -1,0 +1,128 @@
+{
+  "title": "How hard to push to move it?",
+  "category": "Motion and force",
+  "question": "How big is the force at the moment the box stops holding and starts to move?",
+  "steps": ["Press and hold the box.", "Find on the graph the force at which the box first moves.", "Change the material and weight and compare the force needed."],
+  "observe": "Watch for the moment your push equals the maximum static friction.",
+  "terms": [
+    { "name": "Static friction", "description": "The force that holds touching objects so they do not slide." },
+    { "name": "Maximum static friction", "description": "The biggest friction that can hold an object just before it moves." },
+    { "name": "Friction coefficient", "description": "A number for how well two surfaces keep from sliding." },
+    { "name": "Thermal energy", "description": "What friction makes from part of the kinetic energy: inner energy of the object and the floor." }
+  ],
+  "law": {
+    "title": "Friction and energy change",
+    "description": "Static friction holds an object up to its limit, and when it slides, the work of friction turns mechanical energy into thermal energy.",
+    "equation": "Fₛ ≤ μₛN · W_friction = ΔE_thermal"
+  },
+  "tip": "Press and hold the box with one finger: the push grows by 25 N each second (the bar beside it fills, up to 80 N; once the box starts to move, the push stays there). Let go and the push is 0. Drag with two fingers to turn the view.",
+  "tip_short": "Press and hold the box to push it",
+  "controls": [
+    {
+      "label": "Material",
+      "note": "The box and the floor are of the same material.",
+      "options": [
+        { "label": "Rubber" },
+        { "label": "Wood" },
+        { "label": "Steel" },
+        { "label": "Clay" }
+      ]
+    },
+    {
+      "label": "Weight",
+      "options": [
+        { "label": "Light" },
+        { "label": "Medium" },
+        { "label": "Heavy" },
+        { "label": "First box", "note": "8 kg · the box there at the start" }
+      ]
+    }
+  ],
+  "actions": [
+    { "label": "Start again" }
+  ],
+  "predict": {
+    "question": "If you press the box, will it move right away?",
+    "choices": [
+      { "label": "It holds, then moves" },
+      { "label": "It moves right away" }
+    ],
+    "reason": "The floor holds on to the box. When your push gets stronger than that, it moves.",
+    "bridge": "Push it and see for yourself!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Push the light box to open the way!",
+        "say": "The force with which the floor holds on to the box is called friction. Push harder than friction and the box slides. So it moves out of the way.",
+        "win": "The box moved out of the way!",
+        "miss": "The box won't budge. Press it longer!"
+      },
+      {
+        "text": "Push the medium box off the path too!",
+        "say": "A heavier box has more friction, so the floor holds it tighter. So you have to press longer to make it move.",
+        "win": "The medium box moved too! The door opened!",
+        "miss": "The way is still blocked. Press it longer!"
+      },
+      {
+        "text": "Clear the heavy box too and go to the piece!",
+        "say": "The heaviest box has the most friction. So you have to push the hardest to open the way.",
+        "win": "The way is open! Let's go to the piece!",
+        "miss": "It's the heavy box! Press it for a long time!"
+      }
+    ]
+  },
+  "story": { "clue": "Boxes are blocking the way! If we clear them, we can get to the piece!", "map_clue": "It's where the red arrow pushes a box!" },
+  "kid": {
+    "intro": "This is the box push lab. The floor holds on to the box tightly so it does not slide. This force is called friction. You have to push harder than friction to move the box. Let's see how hard you must push for each box weight!",
+    "place": "Box push",
+    "say": "The floor holds on to the box. The heavier the box, the tighter the floor holds it. You have to push harder to move it.",
+    "tip": "Press and hold the box to push it!",
+    "picks": {
+      "mass": [
+        { "label": "Light box" },
+        { "label": "Medium box" },
+        { "label": "Heavy box" }
+      ]
+    },
+    "cards": { "state": "The box?", "start_force": "Push to move it", "distance": "How far the box went" },
+    "states": {
+      "Holding still · friction is stopping it": "Won't budge",
+      "Moving · the push beat friction": "Moving!",
+      "Sliding to a stop": "Slowly stopping",
+      "Reached the end of the floor": "Went all the way"
+    }
+  },
+  "note": {
+    "law": "The floor holds the box up to the maximum static friction. You have to push harder than that to move it, and the heavier the box, the bigger this force.",
+    "formula": "f_max = μₛ m g",
+    "numbers": [
+      { "label": "Your push F" },
+      { "label": "Maximum static friction μₛmg" },
+      { "label": "Friction now" },
+      { "label": "Push when it started to move" }
+    ]
+  },
+  "observations": [
+    { "label": "Box" },
+    { "label": "Your push F" },
+    { "label": "Maximum static friction μs·mg" },
+    { "label": "Push when it started to move (maximum static friction μs·mg, after it moved)" },
+    { "label": "Friction now" },
+    { "label": "Kinetic friction μk·mg" },
+    { "label": "Speed v" },
+    { "label": "Thermal energy (work of friction)" },
+    { "label": "Distance from the start" },
+    { "label": "Distance (simulation)" }
+  ],
+  "graph": {
+    "title": "The push and the holding force",
+    "x": { "label": "Time t" },
+    "y": { "label": "Force" },
+    "series": [
+      { "label": "Your push" },
+      { "label": "Maximum static friction" },
+      { "label": "Friction" }
+    ]
+  }
+}

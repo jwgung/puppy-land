@@ -1,0 +1,120 @@
+{
+  "title": "How do ropes and rods limit motion?",
+  "category": "Turning and linking",
+  "question": "Along what path does a weight on a rope move, and how fast does it swing?",
+  "steps": [
+    "Drag the rope's weight sideways to set the angle.",
+    "Let go and the pendulum moves.",
+    "Watch the distance from the pivot to the weight and the time of one swing there and back."
+  ],
+  "observe": "See whether the rope's length stays the same as the weight moves, and whether a longer rope swings more slowly.",
+  "terms": [
+    { "name": "Pendulum", "description": "A thing hanging from a fixed point that swings from side to side." },
+    { "name": "Pivot", "description": "The point where the rope or rod is tied and does not move." },
+    { "name": "Period", "description": "The time to swing there and back and return to the start." }
+  ],
+  "law": { "title": "Pendulums, ropes and rods", "description": "Inside a link of fixed length, gravity makes the weight swing back and forth." },
+  "tip": "Drag the blue rope weight with one finger to set the angle (5° steps) and let go: it swings. While you drag, the weight follows the white dotted path (the same distance from the pivot). Tap the weight to let it go again from the same angle.",
+  "tip_short": "Drag the weight to set the angle and let go",
+  "controls": [
+    {
+      "label": "Gravity",
+      "options": [
+        { "label": "No gravity", "note": "No gravity · 0× · g = 0 m/s²" },
+        { "label": "Moon", "note": "Moon · 0.17× · g = 1.62 m/s²" },
+        { "label": "Earth", "note": "Earth · 1× · g = 9.81 m/s²" },
+        { "label": "Jupiter", "note": "Jupiter · 2.53× · g = 24.79 m/s²" }
+      ]
+    },
+    { "label": "Rope length L" },
+    {
+      "label": "Damping",
+      "note": "The weight is 1 kg. With damping, the swing gets smaller little by little.",
+      "options": [
+        { "label": "A little", "note": "Rope 0.06 /s (as on the web)" },
+        { "label": "None", "note": "No air drag or friction: the swing stays the same" }
+      ]
+    }
+  ],
+  "actions": [
+    { "label": "Let go" },
+    { "label": "Start again" }
+  ],
+  "predict": {
+    "question": "Does a longer rope swing more slowly?",
+    "choices": [
+      { "label": "More slowly" },
+      { "label": "The same" }
+    ],
+    "reason": "With a longer rope, the pendulum goes around a longer path. So one swing there and back takes longer.",
+    "bridge": "First swing the medium rope and watch the beat!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "On the Earth, match the turtle's beat with the medium rope!",
+        "say": "A ball on a rope swinging back and forth is called a pendulum. Gravity pulls the ball down, so the pendulum swings. Remember this beat!",
+        "win": "Tick-tock! You matched the turtle's beat!",
+        "miss": "The beat is off. Try the medium rope!"
+      },
+      {
+        "text": "On the Earth, make only the rope longer and match the slow beat!",
+        "say": "With a longer rope, the pendulum goes around a longer path. So one swing there and back takes longer.",
+        "win": "Tick-tock! The long rope matched the beat too!",
+        "miss": "Change to the long rope!"
+      },
+      {
+        "text": "With the same long rope, match the very slow beat on the Moon!",
+        "say": "The Moon's gravity is weak, so it pulls the ball gently. So even the same rope swings very slowly on the Moon.",
+        "win": "The front door opened! The piece is coming out!",
+        "miss": "Go to the Moon with the same long rope!"
+      }
+    ]
+  },
+  "story": { "clue": "The piece is inside the turtle clock! Let's swing the ball just like the clock's pendulum!", "map_clue": "It's where a big yellow ball hangs from a post!" },
+  "kid": {
+    "intro": "This is the swing lab. A weight on a rope swinging back and forth is called a pendulum. Gravity pulls the ball down. The ball comes down and goes up on the other side. Let's see how slowly it swings for each rope length!",
+    "title": "Let's swing a ball on a rope!",
+    "place": "Swing",
+    "say": "The rope keeps its length, so the ball swings in a circle. With a longer rope, and on the Moon, it swings more slowly.",
+    "tip": "Drag the ball sideways and let go.",
+    "picks": {
+      "gravity": [
+        { "label": "Earth" },
+        { "label": "Moon" }
+      ],
+      "length": [
+        { "label": "Medium rope" },
+        { "label": "Long rope" }
+      ]
+    },
+    "cards": { "rope_distance": "Rope length", "rope_half_swing": "One swing there and back", "small_period": "There and back in a small swing" },
+    "states": { "Shows after one swing there and back": "Shows when it swings" }
+  },
+  "note": {
+    "law": "The longer the rope and the weaker the gravity, the more slowly the pendulum swings. The weight's mass does not matter.",
+    "numbers": [
+      { "label": "Rope length L" },
+      { "label": "Formula period 2π√(L/g) (small swing)" },
+      { "label": "Rope pendulum's time there and back (measured)" }
+    ]
+  },
+  "observations": [
+    { "label": "State" },
+    { "label": "Rope length L" },
+    { "label": "Rope: pivot to weight |A − B|" },
+    { "label": "Rope pendulum angle θ (right +)" },
+    { "label": "Small-angle period T ≈ 2π√(L/g)" },
+    { "label": "Rope pendulum's time there and back (formula model)" },
+    { "label": "Rope pendulum's time there and back (time to the other end × 2, formula model)" },
+    { "label": "Rope's pull on the weight T = mg cosθ + mv²/L" }
+  ],
+  "graph": {
+    "title": "Angle of the pendulum",
+    "x": { "label": "Time t" },
+    "y": { "label": "Angle θ (right +)" },
+    "series": [
+      { "label": "Rope" }
+    ]
+  }
+}

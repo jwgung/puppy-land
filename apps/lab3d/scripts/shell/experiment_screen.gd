@@ -938,6 +938,10 @@ func _choice_button(choice: Dictionary) -> Button:
 	caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	stack.add_child(caption)
+	# A longer answer (English, 2026-11-02 "They land together") widens the button, as the picks do.
+	var fit := func() -> void: button.custom_minimum_size.x = maxf(CHOICE_SIZE.x, caption.get_minimum_size().x + 24.0)
+	caption.minimum_size_changed.connect(fit)
+	caption.ready.connect(fit)
 	button.pressed.connect(_predict_pick_choice.bind(str(choice.get("id", ""))))
 	return button
 

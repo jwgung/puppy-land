@@ -55,6 +55,7 @@
     "줄": ["", "줄"],
     "배": ["", "배"]
   },
+  "language.name": "한국어",
   "list.eyebrow": "역학 실험실",
   "list.lead": "질문을 고르고, 조건을 바꾸며 무슨 일이 일어나는지 관찰해요.",
   "list.start": "실험 시작",
@@ -126,6 +127,7 @@
   "screen.time_scale_note": "시간을 %s배 빠르게 보여 줘요. 숫자는 실제 시간 그대로예요.",
   "settings.apply": "적용",
   "settings.back": "← 돌아가기",
+  "settings.language": "언어",
   "settings.music": "배경 음악",
   "settings.quality": "그래픽 품질",
   "settings.quality_current": "지금 쓰는 품질이에요.",

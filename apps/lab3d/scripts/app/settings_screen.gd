@@ -13,6 +13,9 @@ signal story_requested
 ## 처음부터 다시 하기, confirmed: every saved progress is gone (ProgressStore.reset_all); the app goes
 ## back to the start (App: the title, or the map that plays the prologue).
 signal restart_requested
+## The child picked another language (Locale.choose: saved, the words read again): App builds the
+## settings again in it.
+signal language_changed
 
 ## Applies a tier; true when the app is restarting. Quality.set_tier unless a test replaces it.
 var set_tier := Callable()
@@ -93,11 +96,44 @@ func _ready() -> void:
 	_apply = Ui.button(Locale.t("settings.apply"), "PrimaryButton", 64)
 	_apply.pressed.connect(_apply_tier)
 	quality.add_child(_apply)
+	column.add_child(_build_language_card())
 	column.add_child(quality_card)
 	column.add_child(_build_sound_card())
 	column.add_child(_build_story_card())
 
 	_select(_selected)
+
+
+## The language (2026-11-02): each named in its own words (English, 한국어), the one in use pressed.
+## Picking another saves it and builds the screens again in it (language_changed).
+var language_buttons := {}
+
+
+func _build_language_card() -> Control:
+	var card := Ui.panel()
+	var box := Ui.vbox(12)
+	card.add_child(box)
+	box.add_child(Ui.label(Locale.t("settings.language"), "SectionLabel"))
+	var row := Ui.hbox(12)
+	box.add_child(row)
+	var group := ButtonGroup.new()
+	for code in Locale.LANGUAGES:
+		var option := Ui.button(Locale.t_in(code, "language.name"), "ChipButton", 64)
+		option.toggle_mode = true
+		option.button_group = group
+		option.custom_minimum_size.x = 200.0
+		option.set_pressed_no_signal(code == Locale.lang)
+		option.pressed.connect(choose_language.bind(code))
+		row.add_child(option)
+		language_buttons[code] = option
+	return card
+
+
+func choose_language(code: String) -> void:
+	if code == Locale.lang:
+		return
+	Locale.choose(code)
+	language_changed.emit()
 
 
 ## 소리: two switches, both on by default (kept in user://settings.cfg by SoundBoard).

@@ -1,0 +1,111 @@
+{
+  "title": "Does a slightly different launch leave the orbit?",
+  "category": "Gravity and fluids",
+  "question": "If you change the launch speed or direction a little, is it a crash, an orbit or an escape?",
+  "steps": ["Press the blue planet and pull it back.", "Let go and it flies the opposite way.", "Change the length and direction a little to find all three results."],
+  "observe": "See how launches that look alike take different paths depending on the direction and the escape speed, and whether a bigger orbit radius makes a longer orbit period.",
+  "terms": [
+    { "name": "Orbit", "description": "The path of a thing moving around a body under its gravity." },
+    { "name": "Universal gravitation", "description": "The force with which all things with mass attract each other." },
+    { "name": "Escape speed", "description": "The smallest starting speed needed to get away from a body's gravity." },
+    { "name": "Kepler's law", "description": "Around the same central body, the bigger the orbit's radius, the longer its period." }
+  ],
+  "law": {
+    "title": "Universal gravitation and Kepler's law",
+    "description": "Gravity bends the direction of travel, and on a circular orbit the cube of the radius is proportional to the square of the period.",
+    "equation": "v_circle = √(GM/r) · T² ∝ r³"
+  },
+  "tip": "Press the blue planet, pull it and let go: it flies the opposite way. The pull's direction is the launch direction (5° steps) and its length is the speed (0.1 m/s steps). Pick the start radius with the picture buttons.",
+  "tip_short": "Pull the planet back and let go to launch",
+  "controls": [
+    { "label": "Launch speed" },
+    { "label": "Launch direction (90° = sideways counterclockwise, 0° = away from the star)" },
+    { "label": "Start radius (from the star's centre)" }
+  ],
+  "actions": [
+    { "label": "Launch" },
+    { "label": "Make it go round" },
+    { "label": "Start again" }
+  ],
+  "predict": {
+    "question": "Launched just right, what will the planet do?",
+    "choices": [
+      { "label": "Go around the star" },
+      { "label": "Leave the star" }
+    ],
+    "reason": "The star pulls the planet. At just the right speed, it neither falls in nor leaves. It goes round and round.",
+    "bridge": "Launch it and see for yourself!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Go around the star once, 4 meters away!",
+        "say": "The star's gravity pulls the planet. Launched just right, it doesn't fall in but goes round the star.",
+        "win": "Whee! It went around once!",
+        "miss": "Shoot it sideways, just right!"
+      },
+      {
+        "text": "Go around twice close to the star, at 2 meters!",
+        "say": "Close to the star, the gravity is strong. So it goes around faster.",
+        "win": "Wow, it went around twice!",
+        "miss": "Shoot it sideways, just right, from close by!"
+      },
+      {
+        "text": "From 4 meters, shoot it very hard to bring back the far piece!",
+        "say": "When it is very fast, the star's gravity can't hold it. Then the planet leaves the star and goes far away.",
+        "win": "Whoosh! It brought the piece back!",
+        "miss": "Shoot it a bit harder!"
+      }
+    ]
+  },
+  "story": { "clue": "One piece is floating far away in space! Let's shoot the planet and bring it back!", "map_clue": "The last one is at the island's highest lookout!" },
+  "kid": {
+    "intro": "This is the star orbit lab. The star pulls the planet towards it. This force is gravity too. The planet runs sideways while the star pulls it in. Running just right, it goes round and round. Let's see how fast to shoot it so it goes around!",
+    "title": "Let's go round and round the star!",
+    "place": "Star orbit",
+    "say": "The star pulls the planet and makes it go round and round. Close by, it goes around faster, and too fast, it leaves the star.",
+    "tip": "Pull the planet back and let go: it flies the other way!",
+    "picks": {
+      "radius": [
+        { "label": "2 meters" },
+        { "label": "3 meters" },
+        { "label": "4 meters" },
+        { "label": "5 meters" }
+      ]
+    },
+    "cards": { "state": "The planet?", "launch_speed": "Launch speed", "escape_speed": "Speed to leave" },
+    "states": { "Before the launch": "Not shot yet", "Going around the star": "Round and round the star", "Moving away from the star": "Moving away from the star" }
+  },
+  "note": {
+    "law": "The star's gravity pulls the planet and bends its path. At the circular orbit speed it goes round and round, and faster than the escape speed it leaves.",
+    "formula": "v_escape = √(2GM/r) = √2 · v_circle",
+    "numbers": [
+      { "label": "Launch speed" },
+      { "label": "Circular orbit speed √(GM/r)" },
+      { "label": "Escape speed √(2GM/r)" },
+      { "label": "Laps around the star" }
+    ]
+  },
+  "observations": [
+    { "label": "State" },
+    { "label": "Expected result" },
+    { "label": "Launch speed" },
+    { "label": "Circular orbit speed √(GM/r) · start radius" },
+    { "label": "Escape speed √(2GM/r) · start radius" },
+    { "label": "Orbit radius now r" },
+    { "label": "Expected circular period 2π√(r³/GM)" },
+    { "label": "Speed now" },
+    { "label": "Time of one lap" },
+    { "label": "Laps around the star", "unit": "" }
+  ],
+  "graph": {
+    "title": "Launch speed and orbit speeds",
+    "x": { "label": "Time t" },
+    "y": { "label": "Speed" },
+    "series": [
+      { "label": "Speed now" },
+      { "label": "Circular orbit speed (r now)" },
+      { "label": "Escape speed (r now)" }
+    ]
+  }
+}

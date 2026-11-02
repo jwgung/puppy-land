@@ -39,8 +39,12 @@ static func face_or_default(face: Variant) -> String:
 
 
 ## The portrait of `who` with `face` (an unknown face: the default).
+## Puppy's portraits show his flag's word: the English ones are in portraits/en (2026-11-02).
 static func portrait_path(who: String, face: String) -> String:
-	return str(SPEAKERS[who][1]) % face_or_default(face)
+	var path := str(SPEAKERS[who][1]) % face_or_default(face)
+	if who == "puppy" and Locale.lang == "en":
+		path = path.get_base_dir().path_join("en").path_join(path.get_file())
+	return path
 
 ## The story plays (App: the child's app; off for measurements, screenshots without --demo-story
 ## and tests that build screens directly).
@@ -54,6 +58,11 @@ static var _content: Dictionary = {}
 ## The story's pages: "prologue" or "finale" -> [{who, face, text}, ...] (face optional).
 static func pages(part: String) -> Array:
 	return _load().get(part, [])
+
+
+## The story is read again on the next use (Locale.set_language: its words changed).
+static func reload() -> void:
+	_content = {}
 
 
 static func _load() -> Dictionary:

@@ -9,7 +9,12 @@
 class_name PuppyActor
 extends Node3D
 
-const SCENE := preload("res://assets/characters/puppy.glb")
+## The model by language: his flag reads 과학섬 or SCIENCE (2026-11-02, art_src/characters/puppy.py --lang).
+const SCENES := {"ko": "res://assets/characters/puppy.glb", "en": "res://assets/characters/puppy_en.glb"}
+
+
+static func scene() -> PackedScene:
+	return load(SCENES.get(Locale.lang, SCENES[Locale.DEFAULT]))
 const WAVE_DEG := 7.0               # banner swing about the pole (deg) and its rate
 const WAVE_HZ := 0.45
 const FLUTTER := 0.3                # share of a faster second wave on top
@@ -45,7 +50,7 @@ func celebrating() -> bool:
 
 func _init() -> void:
 	name = "Puppy"
-	var model: Node3D = SCENE.instantiate()
+	var model: Node3D = scene().instantiate()
 	var root := model.get_node("Puppy") as Node3D
 	var body := root.get_node("Body") as MeshInstance3D
 	var material := ArtKit.toon_material((body.mesh.surface_get_material(0) as BaseMaterial3D).albedo_texture)

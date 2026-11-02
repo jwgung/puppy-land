@@ -18,7 +18,14 @@ signal settings_requested
 ## Headless test runs build App without a title unless a check turns it on (like Story.app_may_enable).
 static var app_may_show := true
 
-const LOGO := preload("res://assets/icon/splash.png")
+## The logo with the app's name in the language. The boot splash shows no picture (only the sky
+## colour): it comes before the language is known, and the faces alone read as a title with a hole
+## (2026-11-02 user: "타이틀에 또 빈칸생겼다").
+const LOGOS := {"ko": "res://assets/icon/splash.png", "en": "res://assets/icon/splash_en.png"}
+
+
+static func logo_texture() -> Texture2D:
+	return load(LOGOS.get(Locale.lang, LOGOS[Locale.DEFAULT]))
 ## The camera: a little lower than the map's (-55 deg) so the island fills the screen round the logo,
 ## turning once every TURN_S seconds (slow, a calm postcard).
 const PITCH_DEG := -36.0
@@ -79,7 +86,7 @@ func _ready() -> void:
 
 	logo = TextureRect.new()
 	logo.name = "TitleLogo"
-	logo.texture = LOGO
+	logo.texture = logo_texture()
 	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	logo.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -118,7 +125,7 @@ func _ready() -> void:
 func _layout() -> void:
 	if logo == null or size.x < 1.0:
 		return
-	var aspect := float(LOGO.get_height()) / LOGO.get_width()
+	var aspect := float(logo.texture.get_height()) / logo.texture.get_width()
 	var buttons := _buttons.get_combined_minimum_size()
 	var width := clampf(size.x * LOGO_SHARE, LOGO_MIN, LOGO_MAX)
 	# A short screen: the logo gives way so the block fits (the buttons keep their size).

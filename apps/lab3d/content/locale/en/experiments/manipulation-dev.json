@@ -1,0 +1,34 @@
+{
+  "title": "Handling check (development)",
+  "category": "Development",
+  "question": "Drag a box onto the floor, then change its height with the handle beside it.",
+  "steps": [
+    "Drag a box with one finger to another spot on the floor.",
+    "Drag the yellow handle beside the placed box up or down to change its height.",
+    "Press Drop boxes and see whether a raised box falls."
+  ],
+  "observe": "You can't place a box where it overlaps another box or the blue block, or outside the floor.",
+  "law": {
+    "title": "The handling plane",
+    "description": "While you drag, a box moves only on a plane parallel to the floor, and its height changes only with the handle.",
+    "equation": "grid 0.25 m · height 0–2 m"
+  },
+  "tip": "Drag a box with one finger to move it, then change its height with the yellow handle beside it.",
+  "actions": [
+    { "label": "Drop boxes" },
+    { "label": "Start again" }
+  ],
+  "observations": [
+    { "label": "Red box height" },
+    { "label": "Yellow box height" },
+    { "label": "Purple box height" }
+  ],
+  "graph": {
+    "title": "Box heights",
+    "x": { "label": "Box", "unit": "no." },
+    "y": { "label": "Height" },
+    "series": [
+      { "label": "Height above the floor" }
+    ]
+  }
+}
