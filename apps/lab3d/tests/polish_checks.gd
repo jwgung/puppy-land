@@ -431,7 +431,7 @@ const MAX_TURN := 120.0
 func check_walk_route() -> void:
 	var screen := await _home(TABLET)
 	var problems := []
-	var ends := [["the square", Vector2(screen.HOME[0], screen.HOME[1])]]
+	var ends := [["the square", screen.island.home]]
 	for spot in screen._spots:
 		ends.append([spot.id, Vector2(spot.stand.x, spot.stand.z)])
 	var drawn: PackedVector2Array = screen.map.path_points
@@ -494,7 +494,7 @@ func check_rest_spot() -> void:
 		var group: Dictionary = screen.group_at(spot)
 		var places: Array = [group[screen.cat], group[screen.puppy], group[screen.dugi]]
 		for p: Vector3 in places:
-			if screen.map.water_at(p.x, p.z) or MapIsland.coast_fraction(p.x, p.z) > MapIsland.grass_edge():
+			if screen.map.water_at(p.x, p.z) or screen.map.coast_fraction(p.x, p.z) > MapIsland.grass_edge():
 				problems.append("%s: %s off the grass" % [spot.id, str(p)])
 			for other in screen._spots:
 				if float(other.radius) > 0.0 and _flat(p).distance_to(_flat(other.at)) < float(other.radius) + 0.2:
@@ -544,7 +544,7 @@ func check_rest_spot() -> void:
 	ProgressStore.set_last_spot("no-such-spot")
 	screen = await _home(TABLET)
 	if screen.rest_spot != -1 or screen.cat.position.distance_to(screen.trio_spot(screen.cat)) > 0.01 \
-			or _flat(screen.cat.position).distance_to(Vector2(MapIsland.HOME[0], MapIsland.HOME[1])) > 0.01:
+			or _flat(screen.cat.position).distance_to(Island.current().home) > 0.01:
 		problems.append("an unknown saved spot: not on the square")
 	await _free(screen)
 	DirAccess.remove_absolute(ProgressStore.path)
@@ -591,7 +591,7 @@ func check_story_places() -> void:
 	ProgressStore.set_last_spot("pulley")
 	var home := await _home(TABLET, true)
 	var story: StoryDirector = home.story
-	if home.rest_spot != -1 or ProgressStore.last_spot() != "" or _flat(home.cat.position).distance_to(Vector2(MapIsland.HOME[0], MapIsland.HOME[1])) > 0.01:
+	if home.rest_spot != -1 or ProgressStore.last_spot() != "" or _flat(home.cat.position).distance_to(Island.current().home) > 0.01:
 		problems.append("prologue: the three are not on the square")
 	var cat_seen := false
 	for p in Story.pages("prologue").size():

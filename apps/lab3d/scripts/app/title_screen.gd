@@ -59,10 +59,11 @@ func _ready() -> void:
 	view.set_world(world)
 	env = MapIsland.make_environment()
 	view.viewport.add_child(env)
-	map = MapIsland.new(MapIsland.ZONES, MapIsland.PATHS, Vector2(MapIsland.HOME[0], MapIsland.HOME[1]))
+	var island := Island.current()
+	map = MapIsland.new(island)
 	var spots := []
-	for zone in MapIsland.ZONES:
-		for spot in MapIsland.ZONES[zone].spots:
+	for zone in island.zones:
+		for spot in island.zones[zone].spots:
 			spots.append([spot[0], Vector2(spot[1][0], spot[1][1]), spot[2]])
 	map.build(world, spots)
 	MapIsland.material().set_shader_parameter("lit_mask", 0)   # day: no spot lit (the night map's)

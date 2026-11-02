@@ -243,7 +243,7 @@ func _demo_story(value: String) -> Dictionary:
 			for spot in Story.order().filter(func(s: String) -> bool: return s != id).slice(0, count):
 				store[spot] = full.call(spot)
 		"finale":
-			id = "orbit"
+			id = Island.current().lookout
 			for spot in Story.spots():
 				store[spot] = full.call(spot)
 	if kind in ["flight", "finale"] and ExperimentRegistry.find(id).size() > 0:

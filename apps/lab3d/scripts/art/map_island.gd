@@ -13,71 +13,10 @@
 class_name MapIsland
 extends RefCounted
 
-## The map's layout (the home, IslandHomeScreen, and the labs' worlds, LabWorld, read it).
-## The 5 zones and their 11 spots. Each spot is an experiment id, where it stands on the island
-## (x, z) and its landmark's turn (deg). The zones group the labs by what they need, each its own
-## ground (below): the meadow (throws and falls), the hill (friction: the ramp at its foot,
-## the push on its top), the sand yard (springs, rotation, pulley, constraints), the pond
-## (buoyancy: the drum in the water, its dock towards the square) and the lookout's headland hill (orbit). Screen up is -z at the default view.
-const ZONES := {
-	"들판": {"at": [-6.0, 3.6], "ground": "meadow", "radius": 3.6, "spots": [
-		["projectile", [-4.7, 6.2], 70.0],
-		["collision", [-3.5, 1.5], 0.0],
-		["free-fall", [-8.1, 3.3], 0.0],
-	]},
-	"언덕": {"at": [6.6, 3.1], "ground": "hill", "radius": 3.4, "height": 1.5, "spots": [
-		["incline-friction", [3.3, 6.2], -25.0],
-		["friction", [6.6, 3.0], 0.0],
-	]},
-	# The yard (2026-10-29 user: "놀이터 네 곳이 너무 붙어 있어"): wider (8.8 x 4.9 -> 10.4 x 5.0 m) and
-	# its four spots staggered: two in front either side of the middle path, two at the back out to
-	# the sides (the order found with the map camera: no name on another name or on a model).
-	"놀이터": {"at": [0.4, -5.05], "ground": "yard", "size": [10.4, 5.0], "spots": [
-		["spring", [-1.5, -3.95], 0.0],
-		["rotation", [1.9, -3.95], 0.0],
-		["pulley", [-3.55, -6.35], 0.0],
-		["constraints", [4.35, -6.35], 0.0],
-	]},
-	"연못": {"at": [-7.5, -3.0], "ground": "pond", "radius": 2.0, "spots": [
-		["buoyancy", [-6.9, -2.4], -45.0],
-	]},
-	"전망대": {"at": [8.4, -3.9], "ground": "hill", "radius": 2.4, "height": 1.7, "spots": [
-		["orbit", [8.4, -3.9], 0.0],
-	]},
-}
-## The cat's home square (x, z), where the paths meet and the cat waits when the map opens.
-const HOME := [0.5, 2.0]
-## The dirt paths (x, z polylines, smoothed by _smooth): from the square to every spot. A path
-## never runs on under a stage to another spot (2026-11-01: the way to the free fall went over the
-## collision's plate, the one to the push over the ramp's): the free fall's branches off the throw's
-## path round the collision, the push's off the ramp's before its plate. A path ends under its own
-## spot's plate (the walk stops at the stand before it: IslandHomeScreen.route).
-const PATHS := [
-	[[0.5, 2.0], [-1.4, 1.9], [-3.5, 1.5]],
-	[[-2.2, 3.2], [-5.0, 3.0], [-8.1, 3.3]],
-	[[-1.4, 1.9], [-2.9, 4.3], [-4.7, 6.2]],
-	[[0.5, 2.0], [1.9, 3.9], [3.3, 6.2]],
-	[[2.1, 4.4], [4.3, 4.4], [5.07, 2.75], [6.6, 3.0]],
-	[[0.5, 2.0], [0.4, -0.1], [0.3, -2.75]],
-	# The yard's front spots (2026-11-01): a short path from the middle one past each stand to its
-	# plate (the cat crossed the sand to them).
-	[[0.32, -1.9], [-1.12, -2.81], [-1.5, -3.95]],
-	[[0.32, -1.9], [1.56, -2.49], [1.9, -3.95]],
-	# Inside the yard (2026-10-29): up the middle between the front spots, then out to the back ones
-	# (their bend is the path point nearest to where the cat stands; since 2026-11-01 the walk keeps
-	# off the stages itself, IslandHomeScreen.route).
-	[[0.3, -2.75], [0.35, -5.6]],
-	[[0.35, -5.6], [-2.7, -5.75], [-3.55, -6.35]],
-	[[0.35, -5.6], [3.6, -5.75], [4.35, -6.35]],
-	[[0.4, -0.1], [-3.0, -0.4], [-5.6, -1.1]],
-	[[0.4, -0.1], [4.0, -0.7], [6.6, -2.2], [8.4, -3.9]],
-]
-## The coast: an ellipse (wide like the tablet screen) plus a few smooth harmonics, and the
-## lookout's headland as one bump [angle deg (atan2(z, x)), metres, width deg].
-const RADIUS_X := 12.8
-const RADIUS_Z := 10.4
-const COAST_WAVES := [[3, 0.42, 0.7], [5, 0.28, 2.1], [7, 0.18, 4.0], [9, 0.1, 1.0]]
-const COAST_BUMPS := [[-25.0, 1.6, 22.0], [32.0, 0.6, 18.0]]
+## The layout (zones and spots, the cat's square, the paths, the coast, the decoration) is the
+## island's data (Island, content/islands/<island>.json); the constants below are how any island is
+## built. Screen up is -z at the default view.
+
 ## The top grid: rings as fractions of the coast radius, SECTORS around. Rings from GRASS_EDGE
 ## out are the beach, at the heights BEACH_Y (the last ring dips under the sea: the shoreline).
 const SECTORS := 60
@@ -95,27 +34,16 @@ const PATH_LIFT := 0.05             # m above the grass (no z-fight at 34 m)
 const OVERLAY_LIFT := 0.03          # yard sand, pond shore
 const PLAZA_LIFT := 0.07
 const PLAZA_RADIUS := 1.35
-## Decoration: trees [x, z, size], rocks [x, z, radius]; flowers are scattered (seeded) where
-## nothing else stands. Clouds [x, y, z, size] ring the island out of the top view.
-const TREES := [
-	[-9.4, 0.5, 0.9], [-5.9, -6.8, 0.9], [6.4, -6.3, 0.85], [10.3, 0.8, 0.9], [8.2, 5.9, 0.8],
-	[1.4, 7.9, 0.85], [-1.6, 7.6, 0.9], [-7.6, 6.0, 0.75], [2.9, 1.3, 0.7], [-7.0, 0.8, 0.7],
-]
-const ROCKS := [[10.6, -3.0, 0.4], [11.0, -1.4, 0.35], [-3.8, -1.8, 0.35], [-3.0, 7.2, 0.35], [5.6, 7.2, 0.4], [0.3, 5.6, 0.3]]
-## Far clouds [angle deg, distance, height, size] for low views (the map camera tilts to almost
-## level, 2026-10-27): beyond the island, in the sky band above the horizon.
-const FAR_CLOUDS := [[-100.0, 170.0, 28.0, 7.0], [-60.0, 210.0, 40.0, 9.0], [-20.0, 160.0, 24.0, 6.0],
-	[30.0, 190.0, 34.0, 8.0], [80.0, 175.0, 26.0, 7.0], [135.0, 200.0, 38.0, 9.0], [190.0, 165.0, 30.0, 7.0]]
+## Decoration: the island's trees, rocks, clouds and wave strokes; the flowers are scattered
+## (seeded) where nothing else stands.
 ## The sky backdrop: a cylinder SKY_RADIUS m round the island whose foot is the horizon (the sea, the
 ## clear colour, ends there), hazy towards it; and a haze band on the far sea.
 const SKY_RADIUS := 400.0
-const CLOUDS := [[-10.0, 5.5, -22.0, 1.7], [6.0, 6.5, -24.0, 2.0], [22.0, 5.0, -8.0, 1.5], [-23.0, 5.5, 4.0, 1.6], [12.0, 5.0, 21.0, 1.4]]
-const WAVES := [[200.0, 15.5, 2.4], [235.0, 18.0, 3.0], [280.0, 14.0, 2.0], [320.0, 17.5, 2.6], [10.0, 16.5, 2.4],
-	[55.0, 14.5, 2.2], [100.0, 15.0, 2.6], [145.0, 17.0, 2.2], [170.0, 21.0, 3.0], [300.0, 22.0, 3.0]]
 const FLOWER_SEED := 27
 const MEADOW_FLOWERS := 22
 const OTHER_FLOWERS := 18
 
+var island: Island
 var zones: Dictionary
 var paths: Array
 var home: Vector2
@@ -127,12 +55,12 @@ var decorations: Array = []
 var spot_info: Dictionary = {}
 
 
-## `zones` is ZONES (each zone's "ground" and size), `paths` its polylines of
-## [x, z] points, `home` the cat's square.
-func _init(zone_specs: Dictionary, path_specs: Array, home_at: Vector2) -> void:
-	zones = zone_specs
-	paths = path_specs
-	home = home_at
+## The map of `of` (Island: its zones, paths, square and coast).
+func _init(of: Island) -> void:
+	island = of
+	zones = island.zones
+	paths = island.paths
+	home = island.home
 	for zone in zones:
 		var spec: Dictionary = zones[zone]
 		if spec.ground == "hill":
@@ -143,20 +71,22 @@ func _init(zone_specs: Dictionary, path_specs: Array, home_at: Vector2) -> void:
 # --- the shape --------------------------------------------------------------------------------
 
 ## The coast's distance from the island centre in the direction `theta` (atan2(z, x)).
-static func coast_radius(theta: float) -> float:
+func coast_radius(theta: float) -> float:
 	var c := cos(theta)
 	var s := sin(theta)
-	var r := 1.0 / sqrt(c * c / (RADIUS_X * RADIUS_X) + s * s / (RADIUS_Z * RADIUS_Z))
-	for w in COAST_WAVES:
+	var rx := island.radius_x
+	var rz := island.radius_z
+	var r := 1.0 / sqrt(c * c / (rx * rx) + s * s / (rz * rz))
+	for w in island.coast_waves:
 		r += w[1] * sin(w[0] * theta + w[2])
-	for bump in COAST_BUMPS:
+	for bump in island.coast_bumps:
 		var t := angle_difference(theta, deg_to_rad(bump[0])) / deg_to_rad(bump[2])
 		r += bump[1] * exp(-t * t)
 	return r
 
 
 ## How far out (x, z) lies: 0 at the centre, 1 on the coast; the grass ends at RINGS[GRASS_EDGE].
-static func coast_fraction(x: float, z: float) -> float:
+func coast_fraction(x: float, z: float) -> float:
 	return Vector2(x, z).length() / coast_radius(atan2(z, x))
 
 
@@ -407,7 +337,7 @@ func _add_sea(b: ArtMeshBuilder) -> void:
 	var surf_in := func(t: float) -> float: return SHORE_F * coast_radius(t) - 0.1
 	var surf_out := func(t: float) -> float: return SHORE_F * coast_radius(t) + 0.3 + 0.08 * sin(9.0 * t)
 	_ring_band(b, [surf_in, ArtPalette.FOAM], [surf_out, ArtPalette.FOAM], SEA_Y + 0.02)
-	for w in WAVES:
+	for w in island.sea_waves:
 		_wave(b, deg_to_rad(w[0]), w[1], w[2])
 	_ring_band(b, [inner, ArtPalette.SEA_SHALLOW], [shallow, ArtPalette.SEA_SHALLOW], SEA_Y)
 
@@ -693,7 +623,7 @@ func _add_spot(b: ArtMeshBuilder, spot: Array, tag := 0) -> void:
 ## in the meadow and over the rest of the grass.
 func _add_decor(b: ArtMeshBuilder) -> void:
 	decorations.clear()
-	for t in TREES:
+	for t in island.trees:
 		var x: float = t[0]
 		var z: float = t[1]
 		var k: float = t[2]
@@ -710,7 +640,7 @@ func _add_decor(b: ArtMeshBuilder) -> void:
 		decorations.append(["tree", x, z, 1.0 * k])
 	b.ao_min = 0.75
 	b.ao_height = 0.3
-	for r in ROCKS:
+	for r in island.rocks:
 		var x: float = r[0]
 		var z: float = r[1]
 		var radius: float = r[2]
@@ -859,11 +789,11 @@ func _add_clouds(b: ArtMeshBuilder) -> void:
 	b.ao_height = 0.6
 	var was_flat := b.flat
 	b.flat = false   # smooth shading: soft round puffs, not facets (2026-10-31 user)
-	for c in CLOUDS:
+	for c in island.clouds:
 		var k: float = c[3]
 		for puff in CLOUD_PUFFS:
 			b.add_sphere(_at(c[0] + puff[0] * k, c[1] + puff[1] * k, c[2]), puff[2] * k, CLOUD_RINGS, CLOUD_SIDES, ArtPalette.CLOUD)
-	for c in FAR_CLOUDS:
+	for c in island.far_clouds:
 		var at := Vector3(cos(deg_to_rad(c[0])), 0.0, sin(deg_to_rad(c[0]))) * float(c[1]) + Vector3.UP * float(c[2])
 		var k: float = c[3]
 		for puff in CLOUD_PUFFS:

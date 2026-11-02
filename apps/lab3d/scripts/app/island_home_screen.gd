@@ -115,16 +115,14 @@ const SPOT_RADIUS := 2.2             # m: how far a tap may be from a spot and s
 const LABEL_FULL_DISTANCE := 34.0    # m: a spot name nearer than this is full size
 const LABEL_MIN_SCALE := 0.7          # the smallest a far spot name gets
 
-## The map's layout (MapIsland.ZONES, HOME, PATHS: the labs' worlds read it too, LabWorld).
-const ZONES := MapIsland.ZONES
-const HOME := MapIsland.HOME
-const PATHS := MapIsland.PATHS
+## The map's island (its zones, square and paths: the labs' worlds read it too, LabWorld).
+var island := Island.current()
 ## Dugi and Puppy wait on the square with the cat (2026-10-27 user requests: they were missing
 ## from the map; then "why an L shape, why facing different ways"): the three in one row across the
 ## view like a group photo, the cat in the middle, Puppy on its left, Dugi on its right, TRIO_GAP m
 ## apart, all three facing the same way: the default camera (+z). They stand still when the map
 ## turns ("don't turn their bodies with the camera"). The signpost stands outside the row's reach
-## (MapIsland: 1.3 m from HOME > TRIO_GAP + a body).
+## (MapIsland: 1.3 m from the square's middle > TRIO_GAP + a body).
 const TRIO_GAP := 0.85
 const TRIO_YAW := 0.0   # rad about +y from +z: every actor's model faces +z at 0 (BreadCat, labs' cast)
 
@@ -145,10 +143,10 @@ func _ready() -> void:
 	view.set_world(world)
 	env = MapIsland.make_environment()
 	view.viewport.add_child(env)
-	map = MapIsland.new(ZONES, PATHS, Vector2(HOME[0], HOME[1]))
+	map = MapIsland.new(island)
 	var spots := []
-	for zone in ZONES:
-		for spot in ZONES[zone].spots:
+	for zone in island.zones:
+		for spot in island.zones[zone].spots:
 			spots.append([spot[0], Vector2(spot[1][0], spot[1][1]), spot[2]])
 	var built := map.build(world, spots)
 	cat = CatActor.new(BreadCat.new())
@@ -160,8 +158,8 @@ func _ready() -> void:
 	for actor: Node3D in [cat, dugi, puppy]:
 		actor.scale = Vector3.ONE * ACTOR_SCALE
 
-	for zone in ZONES:
-		for spot in ZONES[zone].spots:
+	for zone in island.zones:
+		for spot in island.zones[zone].spots:
 			_add_spot(world, zone, spot[0], built[spot[0]])
 	light_spots([])
 
@@ -534,7 +532,7 @@ func trio_home() -> void:
 func trio_spot(actor: Node3D) -> Vector3:
 	if rest_spot >= 0:
 		return group_at(_spots[rest_spot]).get(actor, _spots[rest_spot].stand)
-	var home := Vector2(HOME[0], HOME[1])
+	var home := island.home
 	var right := Vector2(cos(TRIO_YAW), -sin(TRIO_YAW))
 	var place := {puppy: -1.0, cat: 0.0, dugi: 1.0}
 	var at: Vector2 = home + right * TRIO_GAP * float(place.get(actor, 0.0))
@@ -569,7 +567,7 @@ const STAGE_CLEAR := 0.3             # m a group place keeps off a stage's edge
 
 ## Grass to stand on: not water, inside the beach, off every stage.
 func _clear_ground(p: Vector2) -> bool:
-	if map.water_at(p.x, p.y) or MapIsland.coast_fraction(p.x, p.y) > MapIsland.grass_edge():
+	if map.water_at(p.x, p.y) or map.coast_fraction(p.x, p.y) > MapIsland.grass_edge():
 		return false
 	for other in _spots:
 		if float(other.radius) > 0.0 and p.distance_to(Vector2(other.at.x, other.at.z)) < float(other.radius) + STAGE_CLEAR:
@@ -609,7 +607,7 @@ func route(from: Vector2, to: Vector2) -> PackedVector2Array:
 			links[i].append(k)
 			links[k].append(i)
 	var lines: Array = []
-	for line in PATHS:
+	for line in island.paths:
 		var row: Array[int] = []
 		for p in MapIsland.path_samples(line, MapIsland.PATH_STEP):
 			row.append(add_node.call(p))

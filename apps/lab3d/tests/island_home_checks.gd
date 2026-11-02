@@ -17,6 +17,7 @@ func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:
 
 
 func run() -> void:
+	check_island_data()
 	await check_home_builds()
 	await check_map_layout()
 	await check_labels_and_taps()
@@ -28,6 +29,28 @@ func run() -> void:
 	await check_stamp_display()
 	await check_buttons_and_layout()
 	await check_back_navigation()
+
+
+## The island's layout is data (Island, content/islands/mechanics.json): it reads without a problem,
+## every spot is an experiment, the order finds each spot once and the lookout is a spot; a broken
+## file says what is wrong.
+func check_island_data() -> void:
+	var island := Island.current()
+	var problems := []
+	if island.problem != "":
+		problems.append(island.problem)
+	for id in island.spots():
+		if ExperimentRegistry.find(id).is_empty():
+			problems.append("%s is not an experiment" % id)
+	var broken := []
+	for data in [{}, {"zones": island.zones, "coast": {"radius_x": 1.0, "radius_z": 1.0}, "lookout": island.lookout, "order": ["orbit"]},
+			{"zones": island.zones, "coast": {"radius_x": 1.0, "radius_z": 1.0}, "lookout": "nowhere", "order": island.order}]:
+		broken.append(Island.from_data(data).problem)
+	if broken.has(""):
+		problems.append("a broken island reads without a problem: %s" % str(broken))
+	expect.call(problems.is_empty(),
+		"island data: the mechanics island reads from content/islands/mechanics.json (spots are experiments, order and lookout checked)",
+		"; ".join(problems) if not problems.is_empty() else "%d zones, %d spots, lookout %s" % [island.zones.size(), island.spots().size(), island.lookout])
 
 
 ## The home renders: the map island as one static opaque mesh (landmarks, water, land with its baked
@@ -49,8 +72,8 @@ func check_home_builds() -> void:
 	if statics != ["Island", "MapSky"]:
 		problems.append("static map meshes %s (want the island: land, water, landmarks, baked shadows; and the sky)" % str(statics))
 	var spots: int = world.get_children().filter(func(n: Node) -> bool: return n.name.begins_with("Spot_")).size()
-	if screen.ZONES.size() != 5:
-		problems.append("%d zones (want 5)" % screen.ZONES.size())
+	if screen.island.zones.size() != 5:
+		problems.append("%d zones (want 5)" % screen.island.zones.size())
 	if spots != 11:
 		problems.append("%d spots (want 11)" % spots)
 	# Each spot node holds only its flag (hidden until 3 stamps): the landmarks are in one mesh.
@@ -88,9 +111,9 @@ func check_map_layout() -> void:
 	var edge := MapIsland.grass_edge()
 	var problems := []
 	var on_grass := func(p: Vector2, margin: float) -> bool:
-		return p.length() + margin <= edge * MapIsland.coast_radius(atan2(p.y, p.x))
-	for zone in screen.ZONES:
-		var spec: Dictionary = screen.ZONES[zone]
+		return p.length() + margin <= edge * screen.map.coast_radius(atan2(p.y, p.x))
+	for zone in screen.island.zones:
+		var spec: Dictionary = screen.island.zones[zone]
 		var at := Vector2(spec.at[0], spec.at[1])
 		if spec.ground == "yard":
 			for p in MapIsland.yard_outline(spec, 0.0):
@@ -210,7 +233,7 @@ func check_cast_on_map() -> void:
 		await tree.process_frame
 		var map: MapIsland = screen.map
 		var problems := []
-		var home := Vector2(screen.HOME[0], screen.HOME[1])
+		var home: Vector2 = screen.island.home
 		for actor in [screen.dugi, screen.puppy]:
 			if actor == null or not actor.is_visible_in_tree():
 				problems.append("an actor is missing")

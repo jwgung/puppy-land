@@ -1,8 +1,8 @@
 ## The ground every lab stands on (2026-10-27 user decision: like a corner of the big island): a close-up
 ## corner of the home map's island (MapIsland), not a floating island of its own. The lab's centre
-## is its spot on the map (MapIsland.ZONES), the map is K times larger around it and turned
+## is its spot on the map (the island's zones, Island), the map is K times larger around it and turned
 ## so the lab's front view (-z) looks inland (towards the cat's square; the lookout along the
-## north coast, FACING). Seen from the lab:
+## north coast, the island's lab_facing). Seen from the lab:
 ## - a flat clearing of radius CLEAR at y = 0 in the zone's ground (the meadow's lighter grass,
 ##   the hill's grass, the play yard's sand inside its white picket fence, the pond's grass with
 ##   the pond just behind the apparatus, the lookout's railing over the sea), where
@@ -59,11 +59,9 @@ const FENCE_HEIGHT := 0.9
 const FENCE_CLEAR := CLEAR + 1.5     # the own yard's fence never comes nearer
 const RAILING_STEP := 2.0            # m between the lookout railing's posts
 const RAILING_COAST := COAST_MIN + 6.0
-## The zones' look in the lab (MapIsland.ZONES names).
-const THEMES := {"들판": "meadow", "언덕": "hill", "놀이터": "yard", "연못": "pond", "전망대": "lookout"}
-## Where a lab looks (map angle of its -z, deg, atan2(z, x)) when not towards the square: the
-## lookout along the north coast (the sea on its right, the island on its left).
-const FACING := {"orbit": -135.0}
+## The zone's look in the lab is the island's (Island.look_of: meadow, hill, yard, pond, lookout). Where a
+## lab looks (map angle of its -z, deg, atan2(z, x)) when not towards the square is the island's
+## `lab_facing` (the lookout along the north coast: the sea on its right, the island on its left).
 ## Clouds in the lab's sky [angle from the front view deg, distance, height above the sea, size]:
 ## over the far land and sea within the camera's turn (+-100 deg) and a few far ones.
 const CLOUDS := [[-38.0, 75.0, 15.0, 4.5], [-4.0, 95.0, 19.0, 5.5], [30.0, 80.0, 14.0, 4.2], [62.0, 70.0, 17.0, 4.0],
@@ -96,20 +94,21 @@ func _init(lab_id: String, lab_center: Vector3, physics_edge_x := INF) -> void:
 	center = lab_center
 	_c = Vector2(center.x, center.z)
 	edge_x = physics_edge_x
-	var zones: Dictionary = MapIsland.ZONES
-	zone = "들판"
+	var island := Island.current()
+	var zones: Dictionary = island.zones
+	zone = zones.keys()[0]
 	spot = _v2(zones[zone].at)
 	for name in zones:
 		for s in zones[name].spots:
 			if s[0] == lab_id:
 				zone = name
 				spot = _v2(s[1])
-	theme = THEMES.get(zone, "meadow")
-	var home := _v2(MapIsland.HOME)
-	facing = deg_to_rad(FACING[lab_id]) if FACING.has(lab_id) else (home - spot).angle()
+	theme = island.look_of(zone)
+	var home := island.home
+	facing = deg_to_rad(float(island.lab_facing[lab_id])) if island.lab_facing.has(lab_id) else (home - spot).angle()
 	_f = Vector2.from_angle(facing)
 	_r = Vector2(-_f.y, _f.x)
-	map = MapIsland.new(zones, MapIsland.PATHS, home)
+	map = MapIsland.new(island)
 	_h0 = map.hill_height(spot.x, spot.y) * HILL_SCALE
 	sea_y = -_h0 + SEA_DROP
 	for i in SECTORS:
@@ -172,7 +171,7 @@ func _coast_from_map(theta: float) -> float:
 	for k in 22:
 		var mid := (lo + hi) * 0.5
 		var p := spot + m_dir * mid
-		if MapIsland.coast_fraction(p.x, p.y) < 1.0:
+		if map.coast_fraction(p.x, p.y) < 1.0:
 			lo = mid
 		else:
 			hi = mid
@@ -418,7 +417,7 @@ func _add_landmarks(b: ArtMeshBuilder) -> void:
 ## The map's trees and rocks (TREE_SCALE x) on the far ground: not in the clearing, the yards, the
 ## ponds, on the sand or by a landmark.
 func _add_far_trees(b: ArtMeshBuilder) -> void:
-	for t in MapIsland.TREES:
+	for t in map.island.trees:
 		var at := to_lab(Vector2(t[0], t[1]))
 		var k: float = t[2] * TREE_SCALE
 		if _far_clear(at, 1.4 * k):
@@ -426,7 +425,7 @@ func _add_far_trees(b: ArtMeshBuilder) -> void:
 			far_things.append(["tree", at.x, at.y, 1.3 * k])
 	b.ao_min = 0.75
 	b.ao_height = 0.6
-	for r in MapIsland.ROCKS:
+	for r in map.island.rocks:
 		var at := to_lab(Vector2(r[0], r[1]))
 		var radius: float = r[2] * TREE_SCALE * 1.5
 		if _far_clear(at, radius * 1.5):
