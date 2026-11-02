@@ -24,7 +24,7 @@ const MAP_CLUES := {
 	"constraints": "기둥에 큰 노란 공이 매달린 곳이야!",
 	"rotation": "빨간 시소 밑에 뭔가 있어!",
 	"pulley": "줄 끝에 빨간 상자가 매달린 곳이야!",
-	"buoyancy": "연못 물속에서 반짝여!",
+	"buoyancy": "연못 가운데 바위섬에서 반짝여!",
 	"orbit": "마지막은 섬에서 제일 높은 전망대야!",
 }
 const WRONG := "음… 여긴 아닌 것 같아."

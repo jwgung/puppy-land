@@ -2,7 +2,11 @@
   "title": "When do objects float?",
   "category": "Gravity and fluids",
   "question": "If you change the weight, how deep does it sink?",
-  "steps": ["Drag the barrel into the water.", "Let go and watch the force pushing up.", "Change the weight and compare how deep it sinks in."],
+  "steps": [
+    "Drag the barrel into the water.",
+    "Let go and watch the force pushing up.",
+    "Change the weight and compare how deep it sinks in."
+  ],
   "observe": "See how the buoyancy grows as more of the volume is under water.",
   "terms": [
     { "name": "Buoyancy", "description": "The force with which water or air pushes a thing up." },
@@ -28,47 +32,50 @@
     { "label": "Start again" }
   ],
   "predict": {
-    "question": "If a small barrel carries the heavy treasure chest, will it float?",
+    "question": "If Bread Cat rides the small barrel, will it float?",
     "choices": [
       { "label": "It floats" },
       { "label": "It sinks" }
     ],
-    "reason": "The treasure chest is heavy, so the weight is bigger than the buoyancy. So the small barrel sinks.",
-    "bridge": "First float the empty chest!"
+    "reason": "Bread Cat and the load are heavy, so the weight is bigger than the buoyancy. So the small barrel sinks.",
+    "bridge": "First float the empty barrel!"
   },
   "missions": {
     "stages": [
       {
-        "text": "Hang the empty chest on the small barrel and float it!",
-        "say": "Water pushes a barrel in it upwards. This force is called buoyancy. The empty chest is light, so buoyancy wins. So even the small barrel floats.",
+        "text": "Float the small empty barrel!",
+        "say": "Water pushes a barrel in it upwards. This force is called buoyancy. The empty barrel is light, so buoyancy wins. So even the small barrel floats.",
         "win": "Bob, bob! The small barrel floats!",
-        "miss": "Hang the empty chest on the small barrel!"
+        "miss": "Make the small barrel light and float it!"
       },
       {
-        "text": "What if the same small barrel carries the treasure chest?",
-        "say": "The treasure chest is heavy. Its weight is bigger than the buoyancy, so the small barrel sinks.",
+        "text": "What if Bread Cat rides the small barrel?",
+        "say": "Bread Cat and the load are heavy. The weight is bigger than the buoyancy, so the small barrel sinks.",
         "win": "Oops, too heavy! It sank!",
-        "miss": "Hang the treasure chest on the small barrel!"
+        "miss": "Put Bread Cat on the small barrel!"
       },
       {
-        "text": "Change to the big barrel and bring up the treasure chest!",
-        "say": "A big barrel pushes away a lot of water, so its buoyancy is big. So it floats up even with the heavy treasure chest.",
-        "win": "The treasure chest came up! I see the piece!",
+        "text": "Change to the big barrel and carry Bread Cat to the rock!",
+        "say": "A big barrel pushes away a lot of water, so its buoyancy is big. So it floats even with Bread Cat on it.",
+        "win": "Whee! Bread Cat made it to the rock!",
         "miss": "Change to the big barrel!"
       }
     ]
   },
-  "story": { "clue": "The piece is in a treasure chest under the water! Let's float a barrel and bring the chest up.", "map_clue": "Something sparkles under the pond's water!" },
+  "story": {
+    "clue": "The piece fell on the rock in the middle of the pond! Let's float a barrel and get across!",
+    "map_clue": "Something sparkles on the rock in the pond!"
+  },
   "kid": {
-    "intro": "This is the floating lab. Water pushes things in it upwards. This force is called buoyancy. The more water a barrel pushes away, the bigger the buoyancy. Change the barrel's size and the load! See whether it floats or sinks.",
-    "title": "Let's float a barrel on the water!",
+    "intro": "This is the floating lab. Water pushes things in it upwards. This force is called buoyancy. The more water a barrel pushes away, the bigger the buoyancy. To get Bread Cat across to the rock, the barrel has to float. Change the barrel's size and the load!",
+    "title": "Float a barrel across to the rock!",
     "place": "Floating",
-    "say": "The deeper the barrel is in the water, the harder the water pushes it up. A big barrel pushes away a lot of water, so it floats even when heavy.",
+    "say": "The deeper the barrel is in the water, the harder the water pushes it up. A big barrel pushes away a lot of water, so it floats even with Bread Cat on it.",
     "tip": "Drag the barrel up or down and let go!",
     "picks": {
       "mass": [
-        { "label": "Empty chest" },
-        { "label": "Treasure chest" }
+        { "label": "Empty barrel" },
+        { "label": "With Bread Cat" }
       ],
       "volume": [
         { "label": "Big barrel" },

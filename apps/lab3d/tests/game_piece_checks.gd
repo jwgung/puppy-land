@@ -1028,22 +1028,21 @@ func check_pendulum_beat() -> void:
 		"; ".join(problems))
 
 
-## The drum: each stage's drum (with the chest, its mass the stage's) floats by the densities
-## (ρ = m / V < 1000 kg/m³); the stage's other picture buttons sink or stay; the chest hangs beside
-## the drum ROPE under its bottom and lies on the tank floor when the drum is low.
+## The barrel: each stage's barrel (its load the stage's) floats by the densities (ρ = m / V < 1000
+## kg/m³); the stage's other picture buttons sink or stay; the piece waits on the islet in the tank.
 func check_drum() -> void:
 	var definition := ExperimentRegistry.find("buoyancy")
 	var stages: Array = MissionRound.missions(definition).stages
 	var goals := _goals()
 	var lab: Experiment = await _lab("buoyancy")
 	var problems := []
-	# The chests are words (2026-11-01: 빈 상자 45, 보물 상자 80 kg; no number on the kid screen), one
-	# change a stage: the small drum floats the empty chest, the same drum sinks with the treasure chest
-	# (that stage's goal, "sunk"), the big drum floats the treasure chest. Each stage's fitting picks
-	# give its goal (float, or sink for stage 2), the other pick does not.
+	# The loads are words (2026-11-02: 빈 통 45, 빵고양이 태우기 80 kg; no number on the kid screen), one
+	# change a stage: the small empty barrel floats, the same barrel sinks with the cat (that stage's
+	# goal, "sunk"), the big barrel floats with the cat. Each stage's fitting picks give its goal
+	# (float, or sink for stage 2), the other pick does not.
 	var picks: Array = definition.kid.picks.mass.map(func(p: Dictionary) -> float: return float(p.value))
 	var labels: Array = definition.kid.picks.mass.map(func(p: Dictionary) -> String: return str(p.label))
-	if labels != ["빈 상자", "보물 상자"]:
+	if labels != ["빈 통", "빵고양이 태우기"]:
 		problems.append("the load picks read %s" % str(labels))
 	var goals_per := ["floats", "sinks", "floats"]
 	for i in stages.size():
@@ -1073,22 +1072,19 @@ func check_drum() -> void:
 	for st: Dictionary in stages:
 		if str(st.text).contains("킬로그램") or RegEx.create_from_string("[0-9]").search(str(st.text)) != null:
 			problems.append("a number in the stage text %s" % st.text)
+	# The islet: inside the tank, clear of the barrel's way down (the big barrel's side), its top above
+	# the water and below the cat's crates; the piece waits on it.
 	var game := lab.game as BuoyancyGame
-	lab.set_control("volume", "big")
-	lab.set_control("mass", 80.0)
-	await tree.physics_frame
-	var bottom: float = lab.drum.global_position.y - lab.drum_height() * 0.5
-	var c := game.chest_centre()
-	var hung: bool = absf(c.y - (bottom - BuoyancyGame.ROPE - BuoyancyGame.CHEST.y * 0.5)) < 1e-6 and c.x > lab.drum.global_position.x + lab.drum_radius()
-	lab.manipulation_placed("drum", Transform3D(Basis(), Vector3(0.0, BuoyancyGame.FLOOR_Y + lab.drum_height() * 0.5, 0.0)))
-	lab.reset_run()
-	await tree.physics_frame
-	var floor_y := game.chest_centre().y
-	if not hung or absf(floor_y - (BuoyancyGame.FLOOR_Y + BuoyancyGame.CHEST.y * 0.5)) > 1e-6:
-		problems.append("the chest: hung %s, on the floor at %.3f" % [hung, floor_y])
+	var rock_x := BuoyancyGame.ROCK_AT.x
+	var inside: bool = rock_x + BuoyancyGame.ROCK_R * 1.25 <= BuoyancyProps.HALF_X and absf(BuoyancyGame.ROCK_AT.y) + BuoyancyGame.ROCK_R * 1.25 <= BuoyancyProps.HALF_Z
+	var clear: bool = rock_x - BuoyancyGame.ROCK_R * 1.25 > 0.26 + 0.05
+	var top_ok: bool = BuoyancyGame.ROCK_TOP > lab.WATERLINE + 0.1 and BuoyancyGame.ROCK_TOP < BuoyancyProps.CAT_TOP
+	var on_top: bool = game.piece.position.distance_to(Vector3(rock_x, BuoyancyGame.ROCK_TOP + game.piece_size, BuoyancyGame.ROCK_AT.y)) < 1e-6
+	if not (inside and clear and top_ok and on_top):
+		problems.append("the islet: inside %s, clear of the barrel %s, top %s, piece on it %s" % [inside, clear, top_ok, on_top])
 	lab.queue_free()
 	expect.call(problems.is_empty(),
-		"piece game (drum): the chests are words (빈 상자·보물 상자), no number over the drum or in the stage texts; the small drum floats the empty chest (45 kg in 50 L), the same drum sinks with the treasure chest (80 kg: that stage's goal), the big drum floats it (80 kg in 100 L; ρ = m / V against 1000 kg/m³): one change a stage; the chest hangs beside the drum under its bottom and lies on the tank floor when the drum is low",
+		"piece game (barrel): the loads are words (빈 통·빵고양이 태우기), no number over the barrel or in the stage texts; the small barrel floats empty (45 kg in 50 L), the same barrel sinks with the cat (80 kg: that stage's goal), the big barrel floats with it (80 kg in 100 L; ρ = m / V against 1000 kg/m³): one change a stage; the piece waits on the islet, inside the tank and clear of the barrel",
 		"; ".join(problems))
 
 
@@ -1197,7 +1193,7 @@ func check_pieces() -> void:
 		await _frames(160)
 		var floating: bool = id == "orbit"   # in space: freed where it floats, no fall
 		# The push's piece waits on its stump for the cat walking the opened path (2026-10-29).
-		var rest_y: float = game.piece_size + (FrictionGame.STUMP_H if id == "friction" else 0.0)
+		var rest_y: float = game.piece_size + (FrictionGame.STUMP_H if id == "friction" else BuoyancyGame.ROCK_TOP if id == "buoyancy" else 0.0)
 		if game.piece_state != "out" or (not floating and absf(game.piece.global_position.y - rest_y) > 0.06):
 			problems.append("%s: the piece is not on the ground after its fall (%s at %s)" % [id, game.piece_state, game.piece.global_position])
 		await _free(screen)
@@ -1318,9 +1314,9 @@ func check_clue_glow() -> void:
 ## beat), Puppy's clue at the object, and the spring's fitting stage says the beat does not change with the pull.
 func check_words() -> void:
 	var want := {"projectile": "상자", "collision": "얼음", "free-fall": "버튼", "friction": "상자", "incline-friction": "도미노", "spring": "종",
-		"rotation": "보물 상자", "pulley": "선반", "constraints": "거북이 박자", "buoyancy": "상자", "orbit": "조각"}
+		"rotation": "보물 상자", "pulley": "선반", "constraints": "거북이 박자", "buoyancy": "바위섬", "orbit": "조각"}
 	var clue := {"projectile": "상자", "collision": "얼음", "free-fall": "버튼", "friction": "길", "incline-friction": "도미노", "spring": "종",
-		"rotation": "보물 상자", "pulley": "선반", "constraints": "거북이 시계", "buoyancy": "보물 상자", "orbit": "우주"}
+		"rotation": "보물 상자", "pulley": "선반", "constraints": "거북이 시계", "buoyancy": "바위섬", "orbit": "우주"}
 	var problems := []
 	for id in want:
 		var definition := ExperimentRegistry.find(id)

@@ -146,7 +146,8 @@ func _physics_process(_delta: float) -> void:
 func _process(_delta: float) -> void:
 	if drum == null:
 		return
-	props.update_cat(drum.global_position, not released and holding == "")
+	if game == null or not game.cat_busy():   # (crossing to the islet: the piece game moves the cat)
+		props.update_cat(drum.global_position, not released and holding == "")
 	if holding != "":
 		props.hide_forces()
 		return
@@ -246,7 +247,7 @@ func _build_world() -> void:
 	driver.history_steps = _history_steps()
 	driver.bind(model, drum)
 	driver.reset()
-	game = BuoyancyGame.new(self)   # the piece game: the chest tied to the drum (visual only)
+	game = BuoyancyGame.new(self)   # the piece game: the islet with the piece, the cat's crossing (visual only)
 	add_child(game)
 	game.build()
 
