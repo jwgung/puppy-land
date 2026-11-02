@@ -3,9 +3,9 @@
   "buoyancy.judgement.neutral": "Stays in the water (same as water)",
   "buoyancy.judgement.sinks": "Sinks (heavier than water)",
   "buoyancy.status.floating": "Floating · buoyancy = weight",
-  "buoyancy.status.held": "Moving the drum",
+  "buoyancy.status.held": "Moving the barrel",
   "buoyancy.status.moving": "Moving",
-  "buoyancy.status.ready": "Not let go yet · drag the drum into the water",
+  "buoyancy.status.ready": "Not let go yet · drag the barrel into the water",
   "buoyancy.status.staying": "Staying where it is in the water",
   "buoyancy.status.sunk": "Sank to the bottom",
   "camera.modes": {
@@ -14,7 +14,7 @@
     "top": "Top",
     "side": "Side",
     "follow": "Follow",
-    "orbit": "Free turn"
+    "orbit": "Free rotation"
   },
   "collision.leftwards": "to the left",
   "collision.status.collided": "After the bump · compare the momentum",
@@ -55,7 +55,7 @@
     "": ["", ""],
     "m": ["", " meters"],
     "s": ["", " seconds"],
-    "m/s": ["", " meters a second"],
+    "m/s": ["", " meters per second"],
     "°": ["", " degrees"],
     "kg": ["", " kilograms"],
     "times": ["", " times"]
@@ -103,7 +103,7 @@
   "projectile.status.out": "Flew off the island",
   "projectile.status.ready": "Before the throw",
   "pulley.status.ground": "Press and hold the rope's end to lift the load",
-  "pulley.status.held": "The stopper holds the load · press the rope's end again",
+  "pulley.status.held": "The catch holds the load · press the rope's end again",
   "pulley.status.pulling": "Pulling · a hand holds the load up",
   "pulley.status.top": "Up at the very top",
   "rotation.status.holding": "Holding down the red push point",

@@ -34,7 +34,7 @@
       { "label": "It takes a lot of force" },
       { "label": "It lifts easily" }
     ],
-    "reason": "Pushing near the pivot, the bar can hardly lift the chest. So you must push very hard.",
+    "reason": "Pushing near the pivot, it's hard for the bar to lift the chest. So you must push very hard.",
     "bridge": "Press it and see for yourself!"
   },
   "missions": {
@@ -73,7 +73,7 @@
         { "label": "Far" }
       ]
     },
-    "cards": { "effort_arm": "Distance to where you push", "advantage": "How many times easier", "state": "The bar?" },
+    "cards": { "effort_arm": "Distance to where you push", "advantage": "How much easier", "state": "The bar?" },
     "states": {
       "Pick a push point and press the red point on the bar": "Press and hold",
       "Holding down the red push point": "Pushing",

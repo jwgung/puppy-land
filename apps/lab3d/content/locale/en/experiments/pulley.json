@@ -14,7 +14,7 @@
     "description": "The more ropes hold the load, the less force you need, but the longer the distance you must pull.",
     "equation": "F = mg/n · d_pull = n·d_lift"
   },
-  "tip": "Press and hold the rope's end with one finger: the pull grows by 65 N each second (the bar beside it fills, up to 250 N; once it starts to move, the pull stays there). When it reaches the force needed, the rope is pulled 1 m each second and the load rises 1/n of the pulled rope (5 cm steps). Let go and the stopper holds the load, so press again. Change 1, 2 and 4 ropes in the conditions and compare the force needed and the rope pulled.",
+  "tip": "Press and hold the rope's end with one finger: the pull grows by 65 N each second (the bar beside it fills, up to 250 N; once it starts to move, the pull stays there). When it reaches the force needed, the rope is pulled 1 m each second and the load rises 1/n of the pulled rope (5 cm steps). Let go and the catch holds the load, so press again. Change 1, 2 and 4 ropes in the conditions and compare the force needed and the rope pulled.",
   "tip_short": "Press and hold the rope's end to pull",
   "controls": [
     {

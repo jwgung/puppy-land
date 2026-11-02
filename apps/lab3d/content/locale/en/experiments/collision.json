@@ -45,7 +45,7 @@
   "predict": {
     "question": "What if the blue ball hits the orange ball hard?",
     "choices": [
-      { "label": "The orange ball zooms" },
+      { "label": "The orange ball zooms away" },
       { "label": "Both stop" }
     ],
     "reason": "In the bump, the blue ball's motion passes to the orange ball. So the orange ball zooms away.",
@@ -61,7 +61,7 @@
       },
       {
         "text": "Bump even harder with the heavy blue ball!",
-        "say": "A heavy blue ball has a lot of motion. So it pushes harder and gives the orange ball a bigger jolt.",
+        "say": "A heavy blue ball has more momentum. So it pushes harder and gives the orange ball a bigger jolt.",
         "win": "Crrrack! The crack got bigger!",
         "miss": "Pull it all the way back and hit hard!"
       },
