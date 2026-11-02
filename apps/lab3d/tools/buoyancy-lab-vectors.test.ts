@@ -9,6 +9,10 @@
 // Displays: fluid.ts floatingSubmergedFraction (rho_object / rho_water), mechanics.ts density /
 // buoyantForce. The "web integrator" entry steps the same law the web's way (world.ts explicit
 // Euler, y += v h then v += a h, 120 Hz) to record why the lab does not copy it.
+// The water moving with the drum (2026-11-02): the law's buoyancy (drag 0) is kept; the lab's water
+// drag replaces the law's mass-proportional one: added mass ADDED_MASS x the submerged displaced
+// mass (in the inertia and the linear damping) and 1/2 rho Cd A v|v| on the submerged part, so a
+// light drum let go under water no longer shoots out (buoyancy_model.gd).
 // Runs in the root `npm test`. Regenerate: UPDATE_BUOYANCY_VECTORS=1 npx vitest run apps/lab3d
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -26,7 +30,9 @@ const DT = 1 / STEP_HZ;
 const SUBSTEPS = 4;
 const G = 9.81; // the 3D app's engine gravity (project default)
 const WATER = 1000; // kg/m^3
-const DRAG = 1.8; // BuoyancyRegionLaw default (1/s)
+const DRAG = 1.8; // BuoyancyRegionLaw default (1/s), on the drum and its added water
+const ADDED_MASS = 0.5; // share of the submerged displaced water that moves with the drum
+const DRAG_COEFFICIENT = 1.0; // Cd of a flat-ended cylinder moving along its axis
 const WATERLINE = 1.5; // the 3D tank (m, up)
 const FLOOR = 0.2;
 const RESTITUTION = MATERIALS.wood.restitution; // the buoyancy ball's material (the web preset's "wood")
@@ -47,7 +53,7 @@ class DrumLab {
   vy = 0;
 
   constructor(readonly drum: Drum, readonly mass: number, centre: number) {
-    this.law = new BuoyancyRegionLaw({ bodyId: "drum", waterline: -WATERLINE, displacedMass: WATER * drum.volume, gravityAcceleration: G, drag: DRAG });
+    this.law = new BuoyancyRegionLaw({ bodyId: "drum", waterline: -WATERLINE, displacedMass: WATER * drum.volume, gravityAcceleration: G, drag: 0 });
     this.y = centre;
   }
 
@@ -59,13 +65,25 @@ class DrumLab {
     };
   }
 
+  /** The law's buoyant force (N, up). */
   lawForce(): number {
-    return -this.law.forceOnBody(this.body(), [], context).vector.y;
+    return -this.law.forceOnBody(this.body(), [], context).vector.y || 0;
+  }
+
+  /** The drum's mass plus the water it pushes along (kg). */
+  inertia(): number {
+    return this.mass + ADDED_MASS * WATER * this.drum.volume * this.fraction();
+  }
+
+  /** The water's drag (N, up +): linear on the drum with its added water, quadratic on its end face. */
+  waterDrag(): number {
+    const area = this.drum.volume / this.drum.height;
+    return -(DRAG * this.inertia() + 0.5 * WATER * DRAG_COEFFICIENT * area * Math.abs(this.vy)) * this.vy * this.fraction();
   }
 
   net(): number {
     const state = this.body().state;
-    return this.lawForce() + this.gravity.force({ ...state, position: { x: 0, y: this.y } }, context).vector.y;
+    return this.lawForce() + this.waterDrag() + this.gravity.force({ ...state, position: { x: 0, y: this.y } }, context).vector.y;
   }
 
   fraction(): number {
@@ -79,7 +97,7 @@ class DrumLab {
     let entered = false;
     for (let i = 0; i < SUBSTEPS; i += 1) {
       const wasDry = this.y - this.drum.height / 2 >= WATERLINE;
-      this.vy += this.net() / this.mass * h;
+      this.vy += this.net() / this.inertia() * h;
       this.y += this.vy * h;
       if (wasDry && this.y - this.drum.height / 2 < WATERLINE && this.vy < 0) entered = true;
       if (this.y - this.drum.height / 2 < FLOOR) {
@@ -146,7 +164,7 @@ function webIntegrator(drum: Drum, mass: number, centre: number) {
   let semiWorst = 0;
   const reference = new DrumLab(drum, mass, centre);
   for (let k = 1; k <= 1200; k += 1) {
-    const a = lab.net() / mass;
+    const a = lab.net() / lab.inertia();
     lab.y += lab.vy * h;
     lab.vy += a * h;
     if (k % 2 === 0) {
@@ -186,6 +204,8 @@ function buildVectors() {
       buoyancyCase("small same density", SMALL, 35, above(SMALL), 600, 6),
       // Pushed to the floor and let go: it rises, jumps out a little and settles.
       buoyancyCase("pushed under", BIG, 70, FLOOR + BIG.height / 2, 600, 6),
+      // The lightest drum let go on the floor: it rises and bobs, it does not shoot out (2026-11-02).
+      buoyancyCase("light pushed under", BIG, 5, FLOOR + BIG.height / 2, 600, 6),
       // 60 s of the start: the motion past the graph and history window.
       buoyancyCase("long", BIG, 70, above(BIG), 3600, 30),
     ],
@@ -229,9 +249,17 @@ describe("buoyancy lab vectors", () => {
     expect(Math.abs(last("neutral").net as number)).toBeLessThan(1e-6);
   });
 
+  it("let a light drum rise from the floor without shooting out of the water", () => {
+    const light = buildVectors().cases.find((c) => c.name === "light pushed under")!;
+    const top = Math.max(...light.samples.map((s) => (s.y as number) - BIG.height / 2));
+    expect(top - WATERLINE).toBeLessThan(0.4);   // the web's law: 17 m
+    expect(Math.abs((light.samples.at(-1)!.depth as number) - light.floating_depth)).toBeLessThan(0.02);
+  });
+
   it("show why the lab does not copy the web's explicit Euler stepping", () => {
     const [light] = buildVectors().web_integrator;
-    expect(light.web_distance_from_floating_10s).toBeGreaterThan(0.5);
-    expect(light.web_distance_from_floating_10s).toBeGreaterThan(10 * light.lab_distance_from_floating_10s);
+    // (With the web's own mass-proportional drag it was 0.5 m off after 10 s; the lab's water damps
+    // more since 2026-11-02, and the explicit stepping still lands farther from the floating depth.)
+    expect(light.web_distance_from_floating_10s).toBeGreaterThan(light.lab_distance_from_floating_10s);
   });
 });
