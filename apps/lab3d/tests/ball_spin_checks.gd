@@ -1058,8 +1058,8 @@ func check_ball_colours() -> void:
 	for id in lab.ORDER:
 		var words: Array = FF_WORDS[id]
 		var colour: Color = FF_COLOURS[id]
-		if lab.BALLS[id].color != colour or lab.BALLS[id].name != words[0]:
-			problems.append("%s: BALLS %s %s" % [id, lab.BALLS[id].name, lab.BALLS[id].color.to_html(false)])
+		if lab.BALLS[id].color != colour or lab.ball_name(id) != words[0]:
+			problems.append("%s: BALLS %s %s" % [id, lab.ball_name(id), lab.BALLS[id].color.to_html(false)])
 		var mesh_colour := _ball_colour(lab.balls[id].get_node("Visual") as MeshInstance3D)
 		if not _near(mesh_colour, colour):
 			problems.append("%s: mesh %s" % [id, mesh_colour.to_html(false)])

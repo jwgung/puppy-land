@@ -384,10 +384,10 @@ func observations() -> Dictionary:
 	var theta := deg_to_rad(angle_deg)
 	var normal := PhysicsLaws.incline_normal_load(MASS, G, theta)
 	var state_text: String = {
-		"ready": "놓기 전",
-		"holding": "버티는 중 (정지)",
-		"sliding": "미끄러지는 중",
-		"left": "빗면을 벗어남",
+		"ready": Locale.t("incline-friction.status.ready"),
+		"holding": Locale.t("incline-friction.status.holding"),
+		"sliding": Locale.t("incline-friction.status.sliding"),
+		"left": Locale.t("incline-friction.status.left"),
 	}.get(status(), "")
 	return {
 		"critical_angle": rad_to_deg(PhysicsLaws.critical_angle(mu_s)),

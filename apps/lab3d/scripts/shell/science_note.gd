@@ -12,15 +12,8 @@
 class_name ScienceNote
 extends RefCounted
 
-const ROLE := "나는 '빵고양이 과학섬' 앱에서 물리 실험을 하고 있어. 초등학생도 이해하게 쉽게 설명해 줘."
-const ENDING := "이 실험에 대해 더 궁금한 걸 물어볼게:"
-const CHOOSER_TITLE := "질문할 AI 앱 고르기"
 ## The chooser's own target: a package no app has, so only the AI apps (EXTRA_INITIAL_INTENTS) show.
 const NO_APP := "invalid.open_physics.no_app"
-const COPIED := "질문을 복사했어요. AI 앱에 붙여 넣어 보세요."
-## The web link under the button (a device with no AI app is not stuck, 2026-10-29) and its line.
-const WEB_LINK := "AI 앱이 없다면 웹에서 열기"
-const COPIED_WEB := "질문을 복사했어요. 웹 화면에 붙여 넣어 보세요."
 
 
 ## The web way: the question on the clipboard and the web AI opened (a browser, or its app).
@@ -40,19 +33,19 @@ const APPS_PATH := "res://content/ai_apps.json"
 ## are left out, as the note shows only "?" for them, and so are numbers with no value yet ("—").
 static func question(definition: ExperimentDefinition, experiment: Experiment, hidden: Array = []) -> String:
 	var note := ExperimentRegistry.note(definition.raw)
-	var lines := PackedStringArray([ROLE, ""])
-	lines.append("실험: %s" % definition.text("title"))
+	var lines := PackedStringArray([Locale.t("note.role"), ""])
+	lines.append(Locale.t("note.ask_title") % definition.text("title"))
 	var asked := definition.text("question")
 	if asked != "":
-		lines.append("실험 질문: %s" % asked)
-	lines.append("법칙: %s (공식: %s)" % [str(note.get("law", "")), str(note.get("formula", ""))])
+		lines.append(Locale.t("note.ask_question") % asked)
+	lines.append(Locale.t("note.ask_law") % [str(note.get("law", "")), str(note.get("formula", ""))])
 	var conditions := PackedStringArray()
 	for control in definition.controls():
 		var text := condition_text(control, experiment.control_value(control.id))
 		if text != "":
 			conditions.append("%s: %s" % [str(control.label), text])
 	if not conditions.is_empty():
-		lines.append("조건: " + " / ".join(conditions))
+		lines.append(Locale.t("note.ask_conditions") + " / ".join(conditions))
 	var values := experiment.observations()
 	var numbers := PackedStringArray()
 	for row in note.get("numbers", []):
@@ -62,13 +55,13 @@ static func question(definition: ExperimentDefinition, experiment: Experiment, h
 		var texts := ids.map(func(id: Variant) -> String: return format_observation(definition.observation(str(id)), values.get(id)))
 		numbers.append("- %s: %s" % [str(row.get("label", "")), " → ".join(PackedStringArray(texts))])
 	if not numbers.is_empty():
-		lines.append("이번 실험 숫자:")
+		lines.append(Locale.t("note.ask_numbers"))
 		lines.append_array(numbers)
 	var say := ExperimentRegistry.kid_text(definition.raw, "say")
 	if say != "":
-		lines.append("두기두기 설명: %s" % say)
+		lines.append(Locale.t("note.ask_dugi") % say)
 	lines.append("")
-	lines.append(ENDING)
+	lines.append(Locale.t("note.ending"))
 	return "\n".join(lines)
 
 
@@ -127,7 +120,7 @@ static func ai_apps() -> Array:
 
 ## Hands `text` to the AI apps `packages` through the system chooser, which lists only those of them
 ## that are on the device. Returns "chooser" (the chooser opened) or "clipboard" (desktop or a failed
-## intent: the text was copied, and the screen shows COPIED).
+## intent: the text was copied, and the screen shows note.copied).
 ## How (SM-X115, Android 16, 2026-10-29): Intent.createChooser(target, title) with a target that no
 ## app can take (ACTION_SEND for a package that does not exist), so the chooser has no apps of its
 ## own and no direct-share (contact) row, and EXTRA_INITIAL_INTENTS = one ACTION_SEND text/plain
@@ -168,7 +161,7 @@ static func _ai_chooser(intent_class: JavaClass, packages: Array, text: String) 
 	extras.putParcelableArray(intent_class.EXTRA_INITIAL_INTENTS, initial)
 	if JavaClassWrapper.get_exception() != null:
 		return null
-	var chooser: Object = intent_class.createChooser(target, CHOOSER_TITLE)
+	var chooser: Object = intent_class.createChooser(target, Locale.t("note.chooser_title"))
 	if chooser == null or JavaClassWrapper.get_exception() != null:
 		return null
 	chooser.putExtras(extras)

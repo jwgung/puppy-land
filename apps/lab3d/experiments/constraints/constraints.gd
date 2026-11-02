@@ -189,25 +189,25 @@ func _notify_released() -> void:
 
 func observations() -> Dictionary:
 	var state_text: String = {
-		"ready": "놓기 전 · 추를 끌어 각도를 정해요",
-		"held": "추를 옮기는 중 · 고정점에서 거리는 그대로예요",
-		"swinging": "흔들리는 중",
-		"weightless": "무중력 · 놓은 자리에 그대로 있어요",
+		"ready": Locale.t("constraints.status.ready"),
+		"held": Locale.t("constraints.status.held"),
+		"swinging": Locale.t("constraints.status.swinging"),
+		"weightless": Locale.t("constraints.status.weightless"),
 	}.get(status(), "")
 	var values := {
 		"state": state_text,
 		"length": length,
-		"small_period": models[0].small_angle_period() if g > 0.0 else "무중력에서는 흔들리지 않아요",
+		"small_period": models[0].small_angle_period() if g > 0.0 else Locale.t("constraints.no_swing"),
 	}
 	for i in SHOWN:   # the rod pendulum's numbers are not shown (2026-10-29)
 		var m := models[i]
 		var id := IDS[i]
 		values[id + "_distance"] = m.distance()
 		values[id + "_angle"] = rad_to_deg(m.angle)
-		values[id + "_period"] = m.period if m.period > 0.0 else "한 번 왕복하면 보여요"
+		values[id + "_period"] = m.period if m.period > 0.0 else Locale.t("constraints.swing_wait")
 		values[id + "_tension"] = m.tension()
 	# The mission's period (2026-10-28): known at the first turning point on the other side.
-	values["rope_half_swing"] = models[0].half_swing_period if models[0].half_swing_period > 0.0 else "한 번 왕복하면 보여요"
+	values["rope_half_swing"] = models[0].half_swing_period if models[0].half_swing_period > 0.0 else Locale.t("constraints.swing_wait")
 	return values
 
 

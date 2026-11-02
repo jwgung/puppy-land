@@ -273,7 +273,7 @@ func check_restart() -> void:
 	if not asking or _store_text() != full or restarts[0] != 0:
 		problems.append("first tap: confirm %s, store kept %s, restarts %d" % [asking, _store_text() == full, restarts[0]])
 	var question: Label = screen.restart_confirm.find_children("*", "Label", true, false)[0]
-	if question.text != screen.RESTART_QUESTION:
+	if question.text != Locale.t("settings.restart_question"):
 		problems.append("question '%s'" % question.text)
 	await _tap(screen.restart_no.get_global_rect().get_center())
 	if screen.restart_confirm.visible or not screen.restart_button.visible or _store_text() != full or restarts[0] != 0:

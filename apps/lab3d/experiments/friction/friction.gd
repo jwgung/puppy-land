@@ -269,11 +269,11 @@ func observations() -> Dictionary:
 	var state_text := ""
 	match status():
 		"end":
-			state_text = "바닥 끝에 닿았어요"
+			state_text = Locale.t("friction.status.end")
 		"holding":
-			state_text = "멈춰 있어요" if model.applied == 0.0 else "버티는 중 · 마찰이 막고 있어요"
+			state_text = Locale.t("friction.status.still") if model.applied == 0.0 else Locale.t("friction.status.holding")
 		"sliding":
-			state_text = "움직여요 · 주는 힘이 마찰을 이겼어요" if model.applied != 0.0 else "미끄러지다 멈추는 중"
+			state_text = Locale.t("friction.status.moving") if model.applied != 0.0 else Locale.t("friction.status.slowing")
 	return {
 		"state": state_text,
 		"applied": absf(model.applied),
@@ -284,7 +284,7 @@ func observations() -> Dictionary:
 		"heat": model.heat,
 		"distance": absf(model.displacement),
 		"measured": absf(engine_displacement()),
-		"start_force": start_force if start_force >= 0.0 else "밀어 보면 보여요",
+		"start_force": start_force if start_force >= 0.0 else Locale.t("friction.start_wait"),
 	}
 
 

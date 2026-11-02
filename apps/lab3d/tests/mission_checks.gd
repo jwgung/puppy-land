@@ -174,7 +174,7 @@ const TAUGHT_TERMS := ["마찰력", "부력", "탄성"]
 func check_kid_words() -> void:
 	var found := []
 	for definition in ExperimentRegistry.load_all():
-		var texts := [ExperimentScreen.DONE_TEXT, ExperimentScreen.PICK_PREFIX]
+		var texts := [ExperimentScreen.DONE_TEXT, Locale.t("screen.pick_prefix")]
 		var dugi := []   # Dugi's explanations: checked below, with the taught force names allowed
 		for key in ExperimentRegistry.KID_TEXTS:
 			if key in ["intro", "say"]:

@@ -109,7 +109,7 @@ func check_round() -> void:
 	(buttons[0] as Button).pressed.emit()
 	# The pick goes at once; Dugi's bridge to the first mission follows (2026-10-29, its own box).
 	expect.call(screen.mission_round.pick == "near" and not screen.mission_round.asking() and not box.active and screen._choices == null
-		and screen._mission_text.text == ExperimentScreen.PICK_PREFIX + "가까이",
+		and screen._mission_text.text == Locale.t("screen.pick_prefix") + "가까이",
 		"round: a picked picture is kept and the question goes at once", screen._mission_text.text)
 	expect.call(screen.dialogue.get_index() == dialogue_home and screen._question_shield == null,
 		"round: after the pick the dim goes and the box is back in its place among the overlays", "%d %d" % [screen.dialogue.get_index(), dialogue_home])

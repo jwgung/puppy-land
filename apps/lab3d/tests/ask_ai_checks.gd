@@ -80,7 +80,7 @@ func check_lab(definition: Dictionary) -> void:
 	var hidden: Array = screen._hidden_answers(screen.experiment.observations())
 	var text := ScienceNote.question(ExperimentDefinition.new(definition), screen.experiment, hidden)
 	var note := ExperimentRegistry.note(definition)
-	var want := [ScienceNote.ROLE, ScienceNote.ENDING, str(definition.title), str(note.law), str(note.formula),
+	var want := [Locale.t("note.role"), Locale.t("note.ending"), str(definition.title), str(note.law), str(note.formula),
 		ExperimentRegistry.kid_text(definition, "say")]
 	for control in definition.controls:
 		want.append("%s: %s" % [control.label, ScienceNote.condition_text(control, screen.experiment.control_value(control.id))])
@@ -214,14 +214,14 @@ func check_desktop_copy() -> void:
 	var screen := await _open_asking("spring", calls, "clipboard")
 	var want := _question(screen)
 	await _tap(screen._ask_button)
-	var shown: bool = screen._ask_status.visible and screen._ask_status.text == ScienceNote.COPIED
+	var shown: bool = screen._ask_status.visible and screen._ask_status.text == Locale.t("note.copied")
 	var clipboard_works := DisplayServer.has_feature(DisplayServer.FEATURE_CLIPBOARD)
 	if clipboard_works:
 		DisplayServer.clipboard_set("")
 	var result := ScienceNote.send_to_ai(_packages(), want)
 	var copied := DisplayServer.clipboard_get() if clipboard_works else ""
 	expect.call(calls.size() == 1 and shown and result == "clipboard" and (copied == want or not clipboard_works),
-		"ask AI: off Android the question is copied ('clipboard') and the screen shows '%s'" % ScienceNote.COPIED,
+		"ask AI: off Android the question is copied ('clipboard') and the screen shows '%s'" % Locale.t("note.copied"),
 		"calls %d, line %s, result %s, copied %s" % [calls.size(), shown, result, copied == want])
 	await _close(screen)
 
@@ -251,7 +251,7 @@ func check_web_link() -> void:
 	await _tap(link)
 	var want := _question(screen)
 	expect.call(below and calls.size() == 1 and calls[0] == want and screen._ask_status.visible
-		and screen._ask_status.text == ScienceNote.COPIED_WEB and link.text == ScienceNote.WEB_LINK
+		and screen._ask_status.text == Locale.t("note.copied_web") and link.text == Locale.t("note.web_link")
 		and ScienceNote.ai_web().begins_with("https://"),
 		"ask AI: the web link under the button copies this run's question and opens the web AI once (no AI app is not stuck)",
 		"below %s, %d calls, status %s" % [below, calls.size(), screen._ask_status.text])

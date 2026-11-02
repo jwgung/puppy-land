@@ -22,9 +22,9 @@ func _ready() -> void:
 	bar.add_child(row)
 	var brand := Ui.vbox(0)
 	brand.add_child(Ui.label("Puppy Land 3D", "HeadingLabel"))
-	brand.add_child(Ui.label("역학 실험실", "EyebrowLabel"))
+	brand.add_child(Ui.label(Locale.t("list.eyebrow"), "EyebrowLabel"))
 	row.add_child(brand)
-	var settings := Ui.button("설정", "", 60)
+	var settings := Ui.button(Locale.t("common.settings"), "", 60)
 	settings.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	settings.pressed.connect(settings_requested.emit)
 	row.add_child(settings)
@@ -38,8 +38,8 @@ func _ready() -> void:
 	var column := Ui.vbox(18)
 	pad.add_child(column)
 	column.add_child(IslandBanner.new())
-	column.add_child(Ui.label("실험 선택", "TitleLabel"))
-	column.add_child(Ui.label("질문을 고르고, 조건을 바꾸며 무슨 일이 일어나는지 관찰해요.", "MutedLabel", true))
+	column.add_child(Ui.label(Locale.t("list.title"), "TitleLabel"))
+	column.add_child(Ui.label(Locale.t("list.lead"), "MutedLabel", true))
 
 	var category := ""
 	for definition in definitions:
@@ -75,7 +75,7 @@ func _card(definition: Dictionary) -> Control:
 	text.add_child(Ui.label(definition.title, "HeadingLabel", true))
 	text.add_child(Ui.label(definition.question, "MutedLabel", true))
 	row.add_child(text)
-	var start := Ui.button("실험 시작", "PrimaryButton", 60)
+	var start := Ui.button(Locale.t("list.start"), "PrimaryButton", 60)
 	start.name = "Start"
 	start.size_flags_horizontal = Control.SIZE_SHRINK_END
 	start.size_flags_vertical = Control.SIZE_SHRINK_CENTER

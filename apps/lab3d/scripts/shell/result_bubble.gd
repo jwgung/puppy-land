@@ -3,7 +3,7 @@
 ## one short line (no face: 2026-10-30 user, Puppy is right there behind), its tail pointing at Puppy on
 ## the island (ExperimentScreen.show_result). A win says what the stamp did ("딩! 종이 울렸어!"), a
 ## miss what to try next ("종까지 조금 모자라! 더 당겨 봐!"; Puppy gives hints, never science: the
-## stage lines are checked against Story.SCIENCE_WORDS). These are not the removed celebration
+## stage lines are checked against Story.science_words()). These are not the removed celebration
 ## captions: one line, gone after SHOW_S, no touch taken (MOUSE_FILTER_IGNORE everywhere).
 ## Drawing only: one panel, one label and the tail; nothing in the lab changes.
 class_name ResultBubble

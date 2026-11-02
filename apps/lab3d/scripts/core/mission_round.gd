@@ -77,7 +77,6 @@ const MISS_POLLS := 2
 ## Dugi tells each mission in his box before the strip shows it (2026-11-01 user: "미션이 좌측 상단에
 ## 나오니까, 애들이 잘 못찾더라. 두기두기나 퍼피가 미션을 한 번 대화상자에서 설명해주게"): "첫 번째 미션:
 ## <the stage's text>" after the answer (the bridge), the next ones when the child goes on (announce()).
-const ORDINALS := ["첫 번째", "두 번째", "세 번째"]
 const MISSION_FACE := "explain"   # the face he tells a mission with
 ## The statuses where a lab is not mid-run: the stage's automatic conditions are set only then.
 const AT_REST := ["ready", "rest"]
@@ -771,8 +770,9 @@ static func mission_line(definition: Dictionary, index: int) -> String:
 	var stages: Array = missions(definition).get("stages", [])
 	if index < 0 or index >= stages.size() or not (stages[index] is Dictionary):
 		return ""
-	var ordinal: String = ORDINALS[index] if index < ORDINALS.size() else "%d번째" % (index + 1)
-	return "%s 미션: %s" % [ordinal, str(stages[index].get("text", ""))]
+	var ordinals := Locale.list("mission.ordinals")
+	var ordinal: String = ordinals[index] if index < ordinals.size() else Locale.t("mission.ordinal_n") % (index + 1)
+	return Locale.t("mission.line") % [ordinal, str(stages[index].get("text", ""))]
 
 
 ## The child goes on to the current stage (the screen, once Dugi has explained the last one): Dugi tells it when his box opens

@@ -57,7 +57,7 @@ func check_no_action_buttons() -> void:
 			continue
 		var screen := await _open(definition, TABLET)
 		var row: Array = screen._action_row.get_children()
-		if row.size() != 1 or (row[0] as Button).text != ExperimentScreen.RESET_SHORT or screen._action_buttons.keys() != ["reset"]:
+		if row.size() != 1 or (row[0] as Button).text != Locale.t("screen.reset_short") or screen._action_buttons.keys() != ["reset"]:
 			problems.append("%s: the row is %s" % [definition.id, str(row.map(func(b: Button) -> String: return b.text))])
 		for button: Button in screen.find_children("*", "Button", true, false):
 			if button.text in OLD_BUTTONS:
@@ -187,7 +187,7 @@ func check_result_lines() -> void:
 				count += 1 if text != "" else 0
 				if text == "" or text.length() > LINE_MAX or text == str(stages[i].text) or not str(line[1]) in Story.FACES:
 					problems.append("%s %d %s: '%s' (%d)" % [definition.id, i + 1, "win" if won else "miss", text, text.length()])
-				for word in Story.SCIENCE_WORDS:
+				for word in Story.science_words():
 					if text.contains(word):
 						problems.append("%s %d: '%s' has %s" % [definition.id, i + 1, text, word])
 				if _kid_symbols(text):

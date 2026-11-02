@@ -182,17 +182,17 @@ func _status_changed(previous: String, current: String) -> void:
 
 func observations() -> Dictionary:
 	var state_text: String = {
-		"ready": "놓기 전 · 통을 끌어 물에 넣어요",
-		"held": "통을 옮기는 중",
-		"moving": "움직이는 중",
-		"floating": "떠 있어요 · 부력 = 무게",
-		"staying": "물속에 그대로 머물러요",
-		"sunk": "바닥에 가라앉았어요",
+		"ready": Locale.t("buoyancy.status.ready"),
+		"held": Locale.t("buoyancy.status.held"),
+		"moving": Locale.t("buoyancy.status.moving"),
+		"floating": Locale.t("buoyancy.status.floating"),
+		"staying": Locale.t("buoyancy.status.staying"),
+		"sunk": Locale.t("buoyancy.status.sunk"),
 	}.get(status(), "")
 	var judgement_text: String = {
-		"floats": "뜸 (물보다 가벼움)",
-		"neutral": "물속에 머묾 (물과 같음)",
-		"sinks": "가라앉음 (물보다 무거움)",
+		"floats": Locale.t("buoyancy.judgement.floats"),
+		"neutral": Locale.t("buoyancy.judgement.neutral"),
+		"sinks": Locale.t("buoyancy.judgement.sinks"),
 	}.get(model.judgement(), "")
 	return {
 		"state": state_text,

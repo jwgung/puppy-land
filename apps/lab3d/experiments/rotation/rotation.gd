@@ -224,11 +224,11 @@ func _track_lift() -> void:
 
 func observations() -> Dictionary:
 	var state_text: String = {
-		"ready": "힘점을 골라 막대의 빨간 힘점을 꾹 눌러 보세요",
-		"holding": "빨간 힘점을 꾹 누르고 있어요",
-		"pressing": "누르는 중 · 아직 힘이 모자라요",
-		"lifted": "들렸다! 힘이 충분해요",
-		"moving": "받침점·짐 위치를 옮기는 중",
+		"ready": Locale.t("rotation.status.ready"),
+		"holding": Locale.t("rotation.status.holding"),
+		"pressing": Locale.t("rotation.status.pressing"),
+		"lifted": Locale.t("rotation.status.lifted"),
+		"moving": Locale.t("rotation.status.moving"),
 	}.get(status(), "")
 	return {
 		"state": state_text,

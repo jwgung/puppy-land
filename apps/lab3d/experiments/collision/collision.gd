@@ -222,11 +222,11 @@ func _notify_released() -> void:
 
 func observations() -> Dictionary:
 	var state_text: String = {
-		"ready": "출발 전 · 파란 공을 당겨 속도를 정해요",
-		"moving": "굴러가는 중",
-		"impact": "충돌! 충격량이 전달됐어요",
-		"collided": "충돌 뒤 · 운동량을 비교해 보세요",
-		"rest": "멈췄어요",
+		"ready": Locale.t("collision.status.ready"),
+		"moving": Locale.t("collision.status.moving"),
+		"impact": Locale.t("collision.status.impact"),
+		"collided": Locale.t("collision.status.collided"),
+		"rest": Locale.t("collision.status.rest"),
 	}.get(status(), "")
 	# Before the first collision "충돌 전" follows the balls (the start values while waiting).
 	var ua := model.before[0] if model.collided else model.va
@@ -394,7 +394,7 @@ func slingshot_setup() -> Dictionary:
 		return {}
 	return {"object": str(spec.object), "surface": manipulation_surface("pull_a"), "launch": launch_point,
 		"controls": ["velocity_a"], "value": func(pull: Vector2) -> Vector2: return Vector2(pull_velocity(pull.x), 0.0),
-		"readout": func(value: Vector2) -> String: return ExperimentScreen.kid_value("m/s", value.x, 1, "왼쪽으로"),
+		"readout": func(value: Vector2) -> String: return ExperimentScreen.kid_value("m/s", value.x, 1, Locale.t("collision.leftwards")),
 		"demo": [Vector2(-80.0, 0.0), Vector2(-130.0, 0.0)]}
 
 

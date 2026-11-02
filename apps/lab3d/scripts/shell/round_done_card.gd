@@ -68,12 +68,12 @@ func _init(stamp_count: int, with_piece := false) -> void:
 	stack.add_child(buttons)
 	# [더 해 보기] first and quiet (the card goes, the lab is set up again); [다음으로] last and blue, the way on
 	# (back to the map, like ← 지도): the two no longer look alike.
-	stay_button = Ui.button("더 해 보기", "ChoiceButton", 84)
+	stay_button = Ui.button(Locale.t("done.stay"), "ChoiceButton", 84)
 	stay_button.name = "Stay"
 	stay_button.custom_minimum_size.x = 190
 	stay_button.pressed.connect(func() -> void: _close(stay))
 	buttons.add_child(stay_button)
-	map_button = Ui.button("다음으로", "PrimaryButton", 84)
+	map_button = Ui.button(Locale.t("done.next"), "PrimaryButton", 84)
 	map_button.name = "ToMap"
 	map_button.custom_minimum_size.x = 190
 	map_button.pressed.connect(func() -> void: _close(to_map))
