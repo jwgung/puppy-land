@@ -11,6 +11,9 @@
 ##                       never the child's progress
 ##   --demo-story=<part> screenshots of the story in the bench store only (never the child's progress):
 ##                       prologue | clue:<id> | found:<id> | flight:<id> | finale | map[:<n>] (Story, _demo_story)
+##   --progress=complete  writes the child's progress as all done, once (2026-11-02 user: "apk 다 깬걸로
+##                       해줘. 보기 어렵다"): every stamp, the story's prologue, clues and finale seen, every
+##                       piece flown and flag up, so every spot opens on a day map. For looking at the app.
 ## plus the experiment screen's --camera / --ctl-<id> / --sidebar / --scroll-to / --auto-release / --auto-drag.
 class_name App
 extends Control
@@ -56,6 +59,8 @@ func _ready() -> void:
 	_set_fps(Quality.cmdline_value("fps") == "1")   # measurements only (no setting since 2026-10-31)
 	Locale.start()   # the child's language (saved), else the device's, else English
 	_definitions = ExperimentRegistry.load_all()
+	if Quality.cmdline_value("progress") == "complete":
+		complete_progress()
 	if Quality.cmdline_value("progress") == "bench" or demo_title(Quality.all_args()):
 		ProgressStore.path = ProgressStore.BENCH_PATH   # a measured map never raises the child's flags
 	# The story plays in the child's app only: never in a measurement (bench store, auto runs, silent).
@@ -219,6 +224,17 @@ func _slide_in(screen: Control) -> void:
 ##   finale        the map: the orbit spot just completed with the 10 others found: flag, flight, finale
 ##   map[:<n>]     the night map with the first n pieces of the order found (5 by default) and at the
 ##                 lookout, nothing but Puppy's riddle playing: fps measurements, screenshots
+## Every spot done (--progress=complete): full stamps, the story seen, the pieces at the lookout.
+static func complete_progress() -> void:
+	var store := {}
+	for spot in Story.spots():
+		store[spot] = MissionRound.missions(ExperimentRegistry.find(spot)).get("stages", []).size()
+		ProgressStore.set_mark(ProgressStore.CLUES, spot, true)
+	ProgressStore.save(store)
+	for part in ["prologue", "finale"]:
+		ProgressStore.set_mark(ProgressStore.STORY, part, true)
+
+
 func _demo_story(value: String) -> Dictionary:
 	if value == "":
 		return {}
