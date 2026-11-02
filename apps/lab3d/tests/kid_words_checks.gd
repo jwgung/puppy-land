@@ -146,7 +146,7 @@ func check_content_lint() -> void:
 	# The approved wordings (2026-10-28; the swing, slide, spring and drum stages 2026-11-01: one change a stage).
 	var want := {
 		"pulley": [ExperimentRegistry.kid_text(ExperimentRegistry.find("pulley"), "title"), "줄이 많으면 힘이 덜 들까?"],
-		"buoyancy": [MissionRound.missions(ExperimentRegistry.find("buoyancy")).stages[0].text, "작은 통에 빈 상자를 매달아 띄우기!"],
+		"buoyancy": [MissionRound.missions(ExperimentRegistry.find("buoyancy")).stages[0].text, "작은 빈 통을 물에 띄우기!"],
 		"constraints": [ExperimentRegistry.find("constraints").story.clue, "거북이 시계 속에 조각이 있어! 공을 시계 추랑 똑같이 흔들어 보자!"],
 		# The piece game's stages (2026-10-29).
 		"spring": [MissionRound.missions(ExperimentRegistry.find("spring")).stages.map(func(s: Dictionary) -> String: return s.text),

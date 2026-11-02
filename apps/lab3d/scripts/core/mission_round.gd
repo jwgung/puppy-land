@@ -176,7 +176,7 @@ static func predict(definition: Dictionary) -> Dictionary:
 
 
 ## The stage whose result answers the question (predict.stage, 0 by default; 2026-11-01: one change a
-## stage, so the pendulum's long rope and the drum's heavy chest come in stage 2): the reason is told
+## stage, so the pendulum's long rope and the cat on the small barrel come in stage 2): the reason is told
 ## after that stage's first result line.
 static func reason_stage(definition: Dictionary) -> int:
 	return int(predict(definition).get("stage", 0))

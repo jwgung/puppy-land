@@ -1,107 +1,155 @@
-## The buoyancy's piece game (2026-10-29 "조각 꺼내기", batch B): a small treasure chest is tied by a
-## short rope to the drum's side and hangs under the water beside it; the star piece peeks out under
-## its lid. The drum moves as BuoyancyModel says and the chest only follows it (it hangs ROPE below
-## the drum's bottom, and lies on the tank floor when the drum is that low). The stages (2026-11-01,
-## one change a stage): the small drum with the empty chest floats, the same drum with the heavy
-## treasure chest sinks (its goal: "sunk"), the big drum lifts the treasure chest (the stage's mass and
-## volume: the mass is the drum's and the chest's together). The lid stays shut until the last
-## stamp throws it open and the piece jumps out of the water onto the grass on uniform gravity
-## (LabGame.launch_piece).
-## Visual only: the chest has no body, no mass and no volume in the model (the drum's mass slider is
-## the whole load; the chest's own water is not counted, the user's design: "the chest is a visual
-## hanging below following the drum"); the drum and every number are the model's as before.
+## The buoyancy's piece game (2026-11-02 user: the chest pulled up out of the water read oddly for
+## finding a star piece; chosen: "통 뗏목으로 연못 건너기"): the star piece lies on a little rock islet
+## at the far side of the pond, out of the bread cat's reach on its crates. The stages (one change a
+## stage, the conditions as before): the small empty barrel floats, the same barrel with the cat on
+## it sinks (that stage's goal: "sunk"), the big barrel floats with the cat. On the last stamp the
+## cat hops onto the floating barrel and on to the islet, where the piece waits for its paws
+## (piece_ready, like the push's walk).
+## Visual only: the islet has no body and the cat no mass in the model (the mass slider is the
+## barrel's whole load, the cat included); the barrel and every number are the model's as before.
 class_name BuoyancyGame
 extends LabGame
 
-const CHEST := Vector3(0.4, 0.3, 0.3)
-const ROPE := 0.5                        # m from the drum's bottom down to the chest's lid
-const GAP := 0.06                        # m between the drum's side and the chest
-## The lid's angle (deg) before the last stamp: shut (the piece glints through the crack) until the
-## last stamp throws it open as the big drum lifts the chest (2026-11-01: the chest's story is one goal,
-## lifting it out; floating a drum does not open a lid).
-const LID_SHUT := 8.0
-const LID_OPEN := 115.0
-const LID_S := 0.45
 const FLOOR_Y := 0.2                     # the tank floor (BuoyancyLab FLOOR_Y)
+const ROCK_AT := Vector2(0.95, 0.15)     # x, z of the islet in the tank (right of the barrel's way)
+const ROCK_R := 0.24                     # its radius at the waterline
+const ROCK_TOP := 1.66                   # its flat top (the waterline is 1.5)
+const HOP_S := 0.55                      # s per hop (crates -> barrel, barrel -> islet)
+const HOP_UP := 0.35                     # m the hop rises over the higher end
+const WALK_AFTER := 0.6                  # s after the last stamp before the first hop
+const ROCK_COLOR := Color("8f98a6")
+const ROCK_LIGHT := Color("b8c0cc")
 
-var _chest: Node3D
-var _lid: Node3D
-var _rope: MeshInstance3D
-var _lid_from := 0.0
-var _lid_to := 0.0
-var _lid_at := -1.0
+var _rock: MeshInstance3D
+## The cat's crossing: "" (none), "pending" (after the last stamp), "hopping", "there".
+var walk_state := ""
+var _walk_after := 0.0
+var _hop_t := 0.0
+var _from := Vector3.ZERO
 
 
 func build() -> void:
-	_chest = Node3D.new()
-	_chest.name = "Chest"
-	add_child(_chest)
-	var body := ArtKit.instance(chest_mesh(CHEST, false))
-	body.name = "Body"
-	_chest.add_child(body)
-	_lid = Node3D.new()
-	_lid.name = "Lid"
-	_lid.position = Vector3(0.0, -CHEST.y * 0.5 + CHEST.y * 0.7, -CHEST.z * 0.5)
-	_chest.add_child(_lid)
-	_lid.add_child(ArtKit.instance(chest_lid_mesh(CHEST)))
-	_rope = ArtKit.instance(ArtKit.link_mesh(0.02, Color("e8dcc0")))
-	_rope.name = "Rope"
-	add_child(_rope)
-	make_piece(Vector3.ZERO, PIECE_SIZE * 0.55)
+	_rock = ArtKit.instance(rock_mesh())
+	_rock.name = "Islet"
+	_rock.position = Vector3(ROCK_AT.x, FLOOR_Y, ROCK_AT.y)
+	add_child(_rock)
+	make_piece(piece_home(), PIECE_SIZE * 0.55)
 	_jump(0)
-	_follow()
 
 
-## The chest's centre now: beside the drum, ROPE under its bottom, not under the tank floor.
-func chest_centre() -> Vector3:
+## The islet: a stack of facetted stones from the tank floor up to a flat top above the water.
+static func rock_mesh() -> Mesh:
+	var b := ArtKit.builder()
+	var h := ROCK_TOP - FLOOR_Y
+	b.add_cylinder(Transform3D(Basis(), Vector3(0.0, 0.0, 0.0)), ROCK_R * 1.25, ROCK_R * 1.05, h * 0.55, 7, ROCK_COLOR)
+	b.add_cylinder(Transform3D(Basis(Vector3.UP, 0.4), Vector3(0.0, h * 0.55, 0.0)), ROCK_R * 1.05, ROCK_R * 0.9, h * 0.45 - 0.04, 7, ROCK_LIGHT)
+	b.add_cylinder(Transform3D(Basis(Vector3.UP, 0.2), Vector3(0.0, h - 0.04, 0.0)), ROCK_R * 0.98, ROCK_R * 0.92, 0.04, 7, ArtPalette.MEADOW)   # a tuft of grass: an islet
+	return b.commit()
+
+
+## Where the piece waits: on the islet's top.
+func piece_home() -> Vector3:
+	return Vector3(ROCK_AT.x, ROCK_TOP + piece_size, ROCK_AT.y)
+
+
+## Where the cat stands on the islet (its base) and on the barrel's lid (the load's top, live).
+func islet_stand() -> Vector3:
+	return Vector3(ROCK_AT.x - 0.05, ROCK_TOP, ROCK_AT.y - 0.18)
+
+
+func barrel_stand() -> Vector3:
 	var l: Variant = host()
 	if l == null or l.drum == null:
-		return Vector3(0.6, FLOOR_Y + CHEST.y * 0.5, 0.0)
+		return Vector3(0.0, 1.6, 0.0)
 	var at: Vector3 = l.drum.global_position
-	var bottom: float = at.y - l.drum_height() * 0.5
-	var x: float = at.x + l.drum_radius() + GAP + CHEST.x * 0.5
-	return Vector3(x, maxf(FLOOR_Y + CHEST.y * 0.5, bottom - ROPE - CHEST.y * 0.5), at.z + 0.1)
+	var top: float = at.y + l.drum_height() * 0.5
+	return Vector3(at.x, top, at.z - 0.05)
 
 
-func _follow() -> void:
-	var c := chest_centre()
-	_chest.global_position = c
+func _cat() -> CatActor:
 	var l: Variant = host()
-	if l != null and l.drum != null:
-		var at: Vector3 = l.drum.global_position
-		var hook := Vector3(at.x + l.drum_radius() * 0.9, at.y - l.drum_height() * 0.5 + 0.06, at.z + 0.1)
-		ArtKit.stretch_link(_rope, hook, c + Vector3(0.0, CHEST.y * 0.5, 0.0))
-	if piece != null and piece_state == "held":
-		piece.global_position = c + Vector3(0.0, CHEST.y * 0.5 - 0.02, 0.03)
+	if l == null or not ("props" in l) or l.props == null:
+		return null
+	return l.props.cat
 
 
-func _cleared(stage_index: int, last: bool) -> void:
-	_lid_from = _lid.rotation_degrees.x
-	_lid_to = -LID_OPEN if last else -LID_SHUT
-	_lid_at = _t
-	if last:
-		launch_piece(Vector3(1.6, 6.2, 0.6), lab_g())
+## The cat crosses (or will): the lab leaves its pose to the game meanwhile.
+func cat_busy() -> bool:
+	return walk_state != ""
+
+
+func piece_ready() -> bool:
+	return walk_state not in ["pending", "hopping"]
+
+
+func _cleared(_stage_index: int, last: bool) -> void:
 	SoundBoard.play(&"glint")
+	if last:
+		walk_state = "pending"
+		_walk_after = _t + WALK_AFTER
 
 
 func _jump(stamps: int) -> void:
-	_lid_at = -1.0
-	_lid.rotation_degrees.x = -LID_OPEN if stamps >= stages else -LID_SHUT
+	walk_state = ""
 	if stamps < stages and piece != null and piece_state != "taken":
+		piece.position = piece_home()
 		set_piece_state("held")
-	_follow()
+
+
+## The run starts over: a crossing still to come or under way is over (the cat goes back to its
+## crates: the lab poses it again).
+func run_reset() -> void:
+	super()
+	if walk_state in ["pending", "hopping"]:
+		walk_state = ""
 
 
 func _process(delta: float) -> void:
 	super(delta)
-	_follow()
-	if _lid_at >= 0.0:
-		var k := (_t - _lid_at) / LID_S
-		_lid.rotation_degrees.x = lerpf(_lid_from, _lid_to, smooth(k))
-		if k >= 1.0:
-			_lid_at = -1.0
+	match walk_state:
+		"pending":
+			var cat := _cat()
+			if cat == null:
+				_arrive()
+			elif _t >= _walk_after:
+				_from = cat.position
+				_hop_t = 0.0
+				walk_state = "hopping"
+		"hopping":
+			_hop_t += delta
+			_step_cat()
 
 
-## The clue's glow (LabGame.highlight): a halo on the sunk chest (the piece under its lid), following the drum.
+## The cat at _hop_t along its two hops: crates -> the barrel's lid -> the islet (each an arc over
+## the higher end), facing where it goes; then it stands on the islet facing the camera.
+func _step_cat() -> void:
+	var cat := _cat()
+	if cat == null:
+		_arrive()
+		return
+	var hops := [_from, barrel_stand(), islet_stand()]
+	var k := _hop_t / HOP_S
+	var i := mini(int(k), 1)
+	if k >= 2.0:
+		cat.walk(hops[2], 0.0, 0.0)
+		cat.mode = "free"
+		_arrive()
+		return
+	var a: Vector3 = hops[i]
+	var e: Vector3 = hops[i + 1]
+	var f := clampf(k - i, 0.0, 1.0)
+	var at := a.lerp(e, smooth(f))
+	at.y = lerpf(a.y, e.y, f) + HOP_UP * sin(PI * f)
+	cat.walk(at, CatActor.facing(a, e), 0.0)
+
+
+func _arrive() -> void:
+	walk_state = "there"
+	if piece != null and piece_state == "held":
+		_rest_at = piece.global_position   # it waits on the islet for the cat's paws (the screen hands it over)
+		piece_state = "out"
+
+
+## The clue's glow (LabGame.highlight): the piece on its islet.
 func highlight_radius() -> float:
-	return 0.5
+	return 0.45
