@@ -247,14 +247,14 @@ func _build_map_buttons() -> void:
 	row.name = "MapButtons"
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(row)
-	clue_button = Ui.button("단서", "", 60)
+	clue_button = Ui.button(Locale.t("map.clue"), "", 60)
 	clue_button.name = "ClueButton"
 	clue_button.visible = false   # the night map shows it (StoryDirector.refresh)
 	clue_button.pressed.connect(func() -> void:
 		if story != null:
 			story.say_riddle())
 	row.add_child(clue_button)
-	var settings := Ui.button("설정", "", 60)
+	var settings := Ui.button(Locale.t("common.settings"), "", 60)
 	settings.name = "SettingsButton"
 	settings.pressed.connect(settings_requested.emit)
 	row.add_child(settings)

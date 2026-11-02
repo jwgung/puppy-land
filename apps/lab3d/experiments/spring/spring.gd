@@ -23,9 +23,6 @@ const END_X := ANCHOR_X + REST_LENGTH + EXT_MAX + 0.6   # the rod's end stand
 const BALL_LAYER := 3             # pickable; the ball touches nothing in the engine (mask 0)
 const REST_AMPLITUDE := 0.002     # m: a damped ball within this of the rest length, this slow, is at rest
 const REST_SPEED := 0.005         # m/s
-## The swing's readout until the ball has been back once (then the formula period, observations).
-const SWING_WAIT := "한 번 왕복하면 보여요"
-const REACH_WAIT := "흔들면 보여요"
 
 var model := SpringModel.new()
 var ball: RigidBody3D
@@ -173,10 +170,10 @@ func _notify_released() -> void:
 
 func observations() -> Dictionary:
 	var state_text: String = {
-		"ready": "놓기 전 · 공을 끌어 당겨요",
-		"held": "공을 당기는 중",
-		"moving": "왕복하는 중",
-		"rest": "제자리에 멈췄어요",
+		"ready": Locale.t("spring.status.ready"),
+		"held": Locale.t("spring.status.held"),
+		"moving": Locale.t("spring.status.moving"),
+		"rest": Locale.t("spring.status.rest"),
 	}.get(status(), "")
 	return {
 		"state": state_text,
@@ -191,10 +188,10 @@ func observations() -> Dictionary:
 		"natural_period": model.natural_period(),
 		"period": model.period(),
 		# The mission's swing (2026-10-28): the period once the ball has been back once (the cat's cheer).
-		"swing_period": model.period() if released and holding == "" and model.time() >= model.period() else SWING_WAIT,
+		"swing_period": model.period() if released and holding == "" and model.time() >= model.period() else Locale.t("spring.swing_wait"),
 		# The bell game (2026-10-29): how far past the rest the first swing goes on the squeezed side, once
 		# it got there (half a swing): x₀ e^(−γT/2) by the same law (x₀ without damping). Read only.
-		"bell_reach": first_swing_reach() if released and holding == "" and model.time() >= model.period() * 0.5 else REACH_WAIT,
+		"bell_reach": first_swing_reach() if released and holding == "" and model.time() >= model.period() * 0.5 else Locale.t("spring.reach_wait"),
 	}
 
 

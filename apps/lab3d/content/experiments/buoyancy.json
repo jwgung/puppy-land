@@ -1,37 +1,8 @@
 {
   "id": "buoyancy",
   "version": 1,
-  "title": "물체는 언제 물에 뜰까?",
-  "category": "중력과 유체",
   "icon": "≈",
-  "question": "공의 무게를 바꾸면 물에 잠기는 정도가 어떻게 달라질까요?",
-  "steps": [
-    "공을 물속으로 끌어 넣어요.",
-    "손을 놓고 위로 미는 힘을 봐요.",
-    "무게를 바꾸어 잠기는 깊이를 비교해요."
-  ],
-  "observe": "물에 잠긴 부피가 커질수록 부력이 커지는 모습을 보세요.",
-  "terms": [
-    {
-      "name": "부력",
-      "description": "물이나 공기가 물체를 위로 밀어 올리는 힘이에요."
-    },
-    {
-      "name": "밀도",
-      "description": "같은 부피 안에 질량이 얼마나 모여 있는지를 나타내요."
-    },
-    {
-      "name": "잠긴 부피",
-      "description": "물체 전체 중 물속에 들어가 있는 부분의 부피예요."
-    }
-  ],
-  "law": {
-    "title": "부력",
-    "description": "물에 잠긴 부피가 커질수록 위로 미는 힘이 커집니다.",
-    "equation": "Fᵦ = ρgV"
-  },
-  "tip": "주황 통을 한 손가락으로 위아래로 끌어 물속에 넣거나 물 위로 들었다가 손을 떼면 그 자리에서 놓여요(0.05 m 눈금). 파란 화살표는 부력, 빨간 화살표는 무게예요. 통 질량과 부피를 바꾸어 잠기는 깊이를 비교해요.",
-  "tip_short": "통을 위아래로 끌었다 놓아요",
+  "law": { "equation": "Fᵦ = ρgV" },
   "scene": "res://experiments/buoyancy/buoyancy.gd",
   "bench_id": "BU",
   "camera": {
@@ -52,33 +23,37 @@
   },
   "controls": [
     {
-      "id": "mass", "type": "slider", "label": "통 질량", "unit": " kg",
-      "min": 5.0, "max": 150.0, "step": 5.0, "default": 70.0, "digits": 0
+      "id": "mass",
+      "type": "slider",
+      "unit": " kg",
+      "min": 5.0,
+      "max": 150.0,
+      "step": 5.0,
+      "default": 70.0,
+      "digits": 0
     },
     {
-      "id": "volume", "type": "choice", "label": "통 부피", "default": "big",
-      "note": "물의 밀도는 1000 kg/m³예요.",
+      "id": "volume",
+      "type": "choice",
+      "default": "big",
       "options": [
-        { "id": "big", "label": "100 L", "volume": 0.1, "height": 0.5, "note": "부피 0.1 m³ · 높이 0.5 m (같은 무게의 물 100 kg)" },
-        { "id": "small", "label": "50 L", "volume": 0.05, "height": 0.4, "note": "부피 0.05 m³ · 높이 0.4 m (같은 무게의 물 50 kg)" }
+        { "id": "big", "label": "100 L", "volume": 0.1, "height": 0.5 },
+        { "id": "small", "label": "50 L", "volume": 0.05, "height": 0.4 }
       ]
     }
   ],
   "actions": [
-    { "id": "release", "label": "놓기", "style": "primary" },
-    { "id": "reset", "label": "처음으로" }
+    { "id": "release", "style": "primary" },
+    { "id": "reset" }
   ],
   "key_observations": ["depth", "floating_depth", "state"],
   "predict": {
-    "question": "작은 통에 무거운 보물 상자를 매달면 뜰까?",
     "question_face": "thinking",
     "choices": [
-      { "id": "floats", "label": "떠요", "picture": "drum_floats" },
-      { "id": "sinks", "label": "가라앉아요", "picture": "drum_sinks" }
+      { "id": "floats", "picture": "drum_floats" },
+      { "id": "sinks", "picture": "drum_sinks" }
     ],
     "answer": "sinks",
-    "reason": "보물 상자는 무거워서 무게가 부력보다 커요. 그래서 작은 통이 가라앉아요.",
-    "bridge": "먼저 빈 상자부터 띄워 봐요!",
     "bridge_face": "happy",
     "stage": 1
   },
@@ -89,59 +64,90 @@
     "hidden_until_end": ["judgement", "density", "floating_depth"],
     "hidden_series_until_end": ["floating"],
     "stages": [
-      { "conditions": {"volume": "small", "mass": {"max": 45.0}}, "text": "작은 통에 빈 상자를 매달아 띄우기!", "say": "물은 물에 잠긴 통을 위로 밀어 올려요. 이 힘을 부력이라고 해요. 빈 상자는 가벼워서 부력이 이겨요. 그래서 작은 통도 떠요.", "say_face": "explain", "win": "둥둥! 작은 통이 떴어!", "win_face": "happy", "miss": "작은 통에 빈 상자를 매달아 봐!", "miss_face": "thinking" },
-      { "conditions": {"volume": "small", "mass": {"min": 80.0}}, "judge_on": ["sunk"], "miss_on": ["floating", "staying"], "text": "같은 작은 통에 보물 상자를 매달면 어떻게 될까?", "say": "보물 상자는 무거워요. 무게가 부력보다 커서 작은 통이 가라앉아요.", "say_face": "thinking", "win": "앗, 너무 무거워서 가라앉았어!", "win_face": "surprised", "miss": "작은 통에 보물 상자를 매달아 봐!", "miss_face": "thinking" },
-      { "conditions": {"volume": "big", "mass": {"min": 80.0}}, "text": "큰 통으로 바꿔서 보물 상자 건져 올리기!", "say": "큰 통은 물을 많이 밀어내서 부력이 커요. 그래서 무거운 보물 상자를 매달아도 떠올라요.", "say_face": "explain", "win": "보물 상자가 올라왔어! 조각이 보여!", "win_face": "surprised", "miss": "큰 통으로 바꿔 봐!", "miss_face": "thinking" }
+      {
+        "conditions": {
+          "volume": "small",
+          "mass": { "max": 45.0 }
+        },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking"
+      },
+      {
+        "conditions": {
+          "volume": "small",
+          "mass": { "min": 80.0 }
+        },
+        "judge_on": ["sunk"],
+        "miss_on": ["floating", "staying"],
+        "say_face": "thinking",
+        "win_face": "surprised",
+        "miss_face": "thinking"
+      },
+      {
+        "conditions": {
+          "volume": "big",
+          "mass": { "min": 80.0 }
+        },
+        "say_face": "explain",
+        "win_face": "surprised",
+        "miss_face": "thinking"
+      }
     ]
   },
-  "story": { "clue": "물속 보물 상자에 조각이 있어! 통을 띄워서 상자를 건져 보자.", "clue_face": "surprised", "map_clue": "연못 물속에서 반짝여!", "map_clue_face": "explain" },
+  "story": { "clue_face": "surprised", "map_clue_face": "explain" },
   "kid": {
-    "intro": "여기는 물에 띄우기 실험실이에요. 물은 물속에 들어온 물건을 위로 밀어 올려요. 이 힘을 부력이라고 해요. 통이 물을 많이 밀어낼수록 부력이 커져요. 통 크기와 짐 무게를 바꿔 봐요! 뜨는지 가라앉는지 살펴봐요.",
     "intro_face": "explain",
     "card": "state",
-    "title": "통을 물에 띄워 보자!",
-    "place": "물에 띄우기",
-    "say": "물에 많이 잠길수록 물이 통을 더 세게 밀어 올려요. 큰 통은 물을 많이 밀어내서 무거워도 떠요.",
     "say_face": "explain",
-    "tip": "통을 위아래로 끌었다가 놓아 봐요!",
     "picks": {
       "mass": [
-        {"value": 45.0, "label": "빈 상자", "picture": "weight", "size": 0.825},
-        {"value": 80.0, "label": "보물 상자", "picture": "weight", "size": 1.0}
+        { "value": 45.0, "picture": "weight", "size": 0.825 },
+        { "value": 80.0, "picture": "weight", "size": 1.0 }
       ],
       "volume": [
-        {"value": "big", "label": "큰 통", "picture": "drum_big"},
-        {"value": "small", "label": "작은 통", "picture": "drum_small"}
+        { "value": "big", "picture": "drum_big" },
+        { "value": "small", "picture": "drum_small" }
       ]
-    },
-    "cards": {"depth": "물에 잠긴 깊이", "floating_depth": "뜰 때 잠기는 깊이", "state": "통은?"},
-    "states": {"놓기 전 · 통을 끌어 물에 넣어요": "통을 물에 넣어 봐요", "통을 옮기는 중": "옮기는 중", "떠 있어요 · 부력 = 무게": "둥둥 떠 있어요", "물속에 그대로 머물러요": "물속에 머물러요", "바닥에 가라앉았어요": "가라앉았어요"}
+    }
   },
   "note": {
-    "law": "물에 잠긴 부피만큼 물이 통을 위로 밀어 올려요. 부력이 무게와 같아지면 떠요.",
-    "formula": "F부력 = ρ물 g V잠김",
     "numbers": [
-      { "label": "통의 무게 mg", "ids": ["weight"] },
-      { "label": "부력 ρ물 g V잠김", "ids": ["buoyant"] },
-      { "label": "지금 잠긴 깊이", "ids": ["depth"] },
-      { "label": "뜰 때 잠기는 깊이", "ids": ["floating_depth"] }
+      {
+        "ids": ["weight"]
+      },
+      {
+        "ids": ["buoyant"]
+      },
+      {
+        "ids": ["depth"]
+      },
+      {
+        "ids": ["floating_depth"]
+      }
     ],
     "graph": false
   },
   "cast": {
-    "dugi": { "at": [2.5, 3.0], "explain_on": ["floating", "sunk", "staying"], "delay_s": 0.6 },
-    "puppy": { "at": [-5.25, -9.25] }
+    "dugi": {
+      "at": [2.5, 3.0],
+      "explain_on": ["floating", "sunk", "staying"],
+      "delay_s": 0.6
+    },
+    "puppy": {
+      "at": [-5.25, -9.25]
+    }
   },
   "observations": [
-    { "id": "state", "label": "상태" },
-    { "id": "judgement", "label": "밀도로 본 결과" },
-    { "id": "density", "label": "통의 밀도 ρ = m/V", "unit": "kg/m³", "digits": 0 },
-    { "id": "floating_depth", "label": "뜰 때 잠기는 깊이 (ρ/ρ물 × 높이)", "unit": "m", "digits": 3 },
-    { "id": "depth", "label": "지금 잠긴 깊이", "unit": "m", "digits": 3 },
-    { "id": "buoyant", "label": "부력 F = ρ물 g V잠김", "unit": "N", "digits": 0 },
-    { "id": "weight", "label": "무게 mg", "unit": "N", "digits": 0 },
-    { "id": "net", "label": "알짜힘 (위 +, 물의 저항 포함)", "unit": "N", "digits": 0 },
-    { "id": "speed", "label": "속력", "unit": "m/s", "digits": 2 }
+    { "id": "state" },
+    { "id": "judgement" },
+    { "id": "density", "unit": "kg/m³", "digits": 0 },
+    { "id": "floating_depth", "unit": "m", "digits": 3 },
+    { "id": "depth", "unit": "m", "digits": 3 },
+    { "id": "buoyant", "unit": "N", "digits": 0 },
+    { "id": "weight", "unit": "N", "digits": 0 },
+    { "id": "net", "unit": "N", "digits": 0 },
+    { "id": "speed", "unit": "m/s", "digits": 2 }
   ],
   "manipulation": {
     "grab_radius": 72.0,
@@ -150,12 +156,11 @@
     ]
   },
   "graph": {
-    "title": "물에 잠긴 깊이",
-    "x": { "label": "시간 t", "unit": "s", "max": 10.0 },
-    "y": { "label": "잠긴 깊이", "unit": "m", "min_max": 0.5 },
+    "x": { "unit": "s", "max": 10.0 },
+    "y": { "unit": "m", "min_max": 0.5 },
     "series": [
-      { "id": "depth", "label": "통", "color": "#ff7a1a", "style": "line" },
-      { "id": "floating", "label": "뜰 때 깊이 (공식)", "color": "#2d7cf6", "style": "line" }
+      { "id": "depth", "color": "#ff7a1a", "style": "line" },
+      { "id": "floating", "color": "#2d7cf6", "style": "line" }
     ]
   }
 }

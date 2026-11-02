@@ -90,7 +90,7 @@ func _ready() -> void:
 	_buttons.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_buttons.alignment = BoxContainer.ALIGNMENT_CENTER
 	add_child(_buttons)
-	start_button = Ui.button("시작하기", "TitleStartButton", 92)
+	start_button = Ui.button(Locale.t("title.start"), "TitleStartButton", 92)
 	start_button.name = "StartButton"
 	start_button.custom_minimum_size.x = 300.0
 	start_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -100,11 +100,11 @@ func _ready() -> void:
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_buttons.add_child(row)
-	story_button = Ui.button("이야기 다시 보기", "TitleButton", 56)
+	story_button = Ui.button(Locale.t("common.replay_story"), "TitleButton", 56)
 	story_button.name = "StoryButton"
 	story_button.pressed.connect(story_requested.emit)
 	row.add_child(story_button)
-	settings_button = Ui.button("설정", "TitleButton", 56)
+	settings_button = Ui.button(Locale.t("common.settings"), "TitleButton", 56)
 	settings_button.name = "SettingsButton"
 	settings_button.custom_minimum_size.x = 110.0
 	settings_button.pressed.connect(settings_requested.emit)

@@ -1,9 +1,11 @@
 ## Loads experiment content from content/experiments/index.json and validates each definition
 ## against the shell's interface. index.json `experiments` are listed on the list screen; `hidden`
 ## ones (development scenes) are only opened by id (--experiment=<id>).
-## Each experiment file holds all of its definition, texts included (title, question, steps, observe,
-## terms, law, tip, tip_short). Until 2026-10-30 the texts lived in content/mechanics-labs.json, shared
-## with the web 2D app (deprecated and removed, docs/adr/0002-drop-web-2d.md).
+## Each experiment file holds its definition's data; its words (title, question, steps, observe, terms,
+## law, tip, tip_short, labels, the kid and mission lines) are in the same shape in
+## content/locale/<lang>/experiments/<file> and are put back in when it loads (Locale.overlay,
+## 2026-11-02). Until 2026-10-30 the texts lived in content/mechanics-labs.json, shared with the web
+## 2D app (deprecated and removed, docs/adr/0002-drop-web-2d.md).
 class_name ExperimentRegistry
 extends RefCounted
 
@@ -57,7 +59,7 @@ static func _load_files(files: Array, into: Array[Dictionary]) -> void:
 		if not raw is Dictionary:
 			push_error("ExperimentRegistry: cannot read %s" % path)
 			continue
-		var definition: Dictionary = raw
+		var definition: Dictionary = Locale.overlay(raw, Locale.words("experiments".path_join(str(file_name))))
 		var problems := validate(definition)
 		if not problems.is_empty():
 			push_error("ExperimentRegistry: %s is invalid: %s" % [path, "; ".join(problems)])
@@ -155,9 +157,8 @@ static func validate(definition: Dictionary) -> PackedStringArray:
 ## full precision) stay the formula's (ExperimentScreen.card_text).
 const KID_TEXTS := {"title": "title", "place": "title", "say": "observe", "tip": "tip_short", "intro": "intro"}
 const KID_MAPS := ["cards", "states", "minus"]
-## Observation unit -> [the words before the number, the words after it] on a key card.
-const KID_UNITS := {"": ["", ""], "m": ["", "미터"], "s": ["", "초"], "m/s": ["1초에 ", "미터"],
-	"°": ["", "도"], "kg": ["", "킬로그램"], "바퀴": ["", "바퀴"], "줄": ["", "줄"], "배": ["", "배"]}
+## Observation unit -> [the words before the number, the words after it] on a key card: the
+## language's ui.json kid_units (Locale).
 
 
 static func _validate_kid(kid: Variant, ids: Array) -> PackedStringArray:
@@ -222,7 +223,7 @@ static func _validate_kid_cards(definition: Dictionary) -> PackedStringArray:
 	var kid: Dictionary = definition.kid if definition.get("kid") is Dictionary else {}
 	var bars: Dictionary = kid.get("bars") if kid.get("bars") is Dictionary else {}
 	for observation in definition.observations:
-		if observation.get("id") in definition.key_observations and not KID_UNITS.has(str(observation.get("unit", ""))) \
+		if observation.get("id") in definition.key_observations and not Locale.map("kid_units").has(str(observation.get("unit", ""))) \
 				and not bars.has(observation.get("id")):
 			problems.append("key_observations: %s (%s) has no kid unit words; keep it in the sidebar" % [observation.id, observation.unit])
 	if kid.has("card") and not kid.card in definition.key_observations:

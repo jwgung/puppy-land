@@ -282,6 +282,11 @@ func _run() -> void:
 	_expect(slingshot != null and slingshot.can_instantiate(), "slingshot checks compile", "")
 	if slingshot != null and slingshot.can_instantiate():
 		await slingshot.new(self, _expect).run()
+	print("== the words by language (2026-11-02: content/locale/<lang>, Locale: every key, no words in the code or the data) ==")
+	var locale_checks: GDScript = load("res://tests/locale_checks.gd")
+	_expect(locale_checks != null and locale_checks.can_instantiate(), "locale checks compile", "")
+	if locale_checks != null and locale_checks.can_instantiate():
+		await locale_checks.new(self, _expect).run()
 	print("== the experiment definition (ExperimentDefinition: controls, options, ranges, grids, observations, manipulation rules) ==")
 	var definition_checks: GDScript = load("res://tests/experiment_definition_checks.gd")
 	_expect(definition_checks != null and definition_checks.can_instantiate(), "experiment definition checks compile", "")
@@ -1336,7 +1341,7 @@ func _check_layout(definition: Dictionary) -> void:
 			"%s landscape: the 3D view fills the screen, sidebar closed" % name, "view %s" % screen.view.size)
 		var texts := _button_texts(screen)
 		# No camera chips anywhere, the 자세히 sidebar included (its 시점 section went, 2026-10-27 user request).
-		var view_chips := _button_texts(screen).filter(func(t: String) -> bool: return t in CameraRig.MODE_LABELS.values())
+		var view_chips := _button_texts(screen).filter(func(t: String) -> bool: return t in Locale.map("camera.modes").values())
 		_expect("정면으로" not in texts and view_chips.is_empty() and screen.view.rig.mode == "front",
 			"%s landscape: front camera, no 정면으로 button, no camera chips (over the view or in the sidebar)" % name, "mode %s, chips %s" % [screen.view.rig.mode, str(view_chips)])
 		var overlays: Array[Control] = [screen._title_bar, screen._top_buttons, screen._key_row, screen._action_row]
@@ -1354,7 +1359,7 @@ func _check_layout(definition: Dictionary) -> void:
 		# A game lab (2026-10-27): one card, reset as a small "다시" and (2026-10-29) no other button.
 		var lean := true
 		if game_lab:
-			lean = cards.size() == 1 and screen._action_buttons.reset.text == screen.RESET_SHORT \
+			lean = cards.size() == 1 and screen._action_buttons.reset.text == Locale.t("screen.reset_short") \
 				and screen._action_row.get_child_count() == 1 and screen._extra_actions.is_empty()
 		_expect(inside and apart and actions_ok and compact and lean and screen._key_row.get_child_count() == cards.size(),
 			"%s landscape: title, buttons, %d key card(s) and the actions sit inside the view without overlapping (a game lab: one card, only 다시)" % [name, cards.size()],

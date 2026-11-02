@@ -1,41 +1,7 @@
 {
   "id": "spring",
   "version": 1,
-  "title": "용수철은 에너지를 어떻게 돌려줄까?",
-  "category": "움직임과 힘",
   "icon": "⌁",
-  "question": "공을 더 멀리 당기면 돌아올 때 얼마나 빨라질까요?",
-  "steps": [
-    "공을 잡아 제자리에서 멀리 당겨요.",
-    "손을 놓고 에너지 막대를 봐요.",
-    "공의 무게를 바꾸어 왕복 운동을 비교해요."
-  ],
-  "observe": "복원력이 공에 한 일이 운동 에너지를 바꾸며, 용수철 에너지가 줄 때 운동 에너지가 커지는지 보세요.",
-  "terms": [
-    {
-      "name": "복원력",
-      "description": "늘어나거나 눌린 물체가 원래 모양으로 돌아가려는 힘이에요."
-    },
-    {
-      "name": "탄성 에너지",
-      "description": "늘어나거나 눌린 용수철에 저장된 에너지예요."
-    },
-    {
-      "name": "운동 에너지",
-      "description": "움직이는 물체가 가진 에너지예요."
-    },
-    {
-      "name": "일-에너지 정리",
-      "description": "물체에 한 알짜힘의 일이 운동 에너지 변화와 같다는 관계예요."
-    }
-  ],
-  "law": {
-    "title": "용수철과 일-에너지",
-    "description": "복원력이 한 일은 운동 에너지를 바꾸고, 마찰이 작으면 운동 에너지와 탄성 에너지의 합이 보존됩니다.",
-    "equation": "W알짜힘 = ΔK · E = ½mv² + ½kx²"
-  },
-  "tip": "주황 공을 한 손가락으로 막대를 따라 끌어 당기거나 밀었다가 손을 떼면 공이 왕복해요(0.1 m 눈금). 공을 톡 눌렀다 떼면 같은 자리에서 다시 놓아요. 오른쪽 막대에서 파란 운동 에너지와 보라 탄성 에너지를 비교해요.",
-  "tip_short": "공을 끌었다가 놓아 보세요",
   "scene": "res://experiments/spring/spring.gd",
   "bench_id": "SP",
   "camera": {
@@ -56,33 +22,37 @@
   },
   "controls": [
     {
-      "id": "mass", "type": "slider", "label": "공 질량", "unit": " kg",
-      "min": 0.5, "max": 5.0, "step": 0.5, "default": 1.0, "digits": 1
+      "id": "mass",
+      "type": "slider",
+      "unit": " kg",
+      "min": 0.5,
+      "max": 5.0,
+      "step": 0.5,
+      "default": 1.0,
+      "digits": 1
     },
     {
-      "id": "damping", "type": "choice", "label": "감쇠", "default": "none",
-      "note": "용수철 상수 k = 5 N/m예요. 감쇠가 있으면 에너지가 조금씩 줄어요.",
+      "id": "damping",
+      "type": "choice",
+      "default": "none",
       "options": [
-        { "id": "none", "label": "없음", "b": 0.0, "note": "마찰·공기 저항 없음: K + U가 그대로예요" },
-        { "id": "web", "label": "조금", "b": 0.45, "note": "감쇠 b = 0.45 N·s/m (웹과 같아요)" }
+        { "id": "none", "b": 0.0 },
+        { "id": "web", "b": 0.45 }
       ]
     }
   ],
   "actions": [
-    { "id": "release", "label": "놓기", "style": "primary" },
-    { "id": "reset", "label": "처음으로" }
+    { "id": "release", "style": "primary" },
+    { "id": "reset" }
   ],
   "key_observations": ["extension", "pull", "bell_reach"],
   "predict": {
-    "question": "공을 당겼다 놓으면 반대쪽으로 얼마나 갈까?",
     "question_face": "thinking",
     "choices": [
-      { "id": "full", "label": "당긴 만큼", "picture": "spring_reach_full" },
-      { "id": "short", "label": "조금만", "picture": "spring_reach_short" }
+      { "id": "full", "picture": "spring_reach_full" },
+      { "id": "short", "picture": "spring_reach_short" }
     ],
     "answer": "full",
-    "reason": "용수철은 당긴 만큼 공을 다시 당겨요. 그래서 공이 반대쪽으로도 당긴 만큼 가요.",
-    "bridge": "직접 당겼다 놓아 보면 알 수 있어요!",
     "bridge_face": "happy"
   },
   "missions": {
@@ -91,60 +61,89 @@
     "miss_on": ["moving", "rest"],
     "miss_needs": "bell_reach",
     "stages": [
-      { "threshold": 0.45, "conditions": {"mass": {"max": 1.0}}, "text": "가벼운 공을 당겨 가까운 종 치기!", "say": "용수철은 늘어난 만큼 공을 다시 끌어당겨요. 이 힘을 탄성력이라고 해요. 그래서 공이 반대쪽으로 당긴 만큼 가서 종을 쳐요.", "say_face": "explain", "win": "딩! 종이 울렸어!", "win_face": "happy", "miss": "종까지 조금 모자라! 더 당겨 봐!", "miss_face": "thinking" },
-      { "threshold": 0.95, "conditions": {"mass": {"max": 1.0}}, "text": "같은 공을 더 멀리 당겨서 먼 종 치기!", "say": "멀리 당길수록 탄성력이 커져요. 그래서 공이 반대쪽으로도 멀리 가요. 먼 종에 닿으려면 그만큼 당겨요.", "say_face": "thinking", "win": "딩동! 먼 종도 울렸어!", "win_face": "happy", "miss": "더 멀리 당겨 봐!", "miss_face": "thinking" },
-      { "threshold": 0.95, "conditions": {"mass": {"min": 2.5}}, "text": "무거운 공으로 바꿔서 같은 먼 종 치기!", "say": "무거운 공도 같은 만큼 당기면 같은 종까지 가요. 대신 무거워서 더 천천히 왔다 갔다 해요.", "say_face": "happy", "win": "땡! 무거운 공도 먼 종까지 갔어!", "win_face": "surprised", "miss": "무거운 공으로 먼 종만큼 당겨 봐!", "miss_face": "thinking" }
+      {
+        "threshold": 0.45,
+        "conditions": {
+          "mass": { "max": 1.0 }
+        },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking"
+      },
+      {
+        "threshold": 0.95,
+        "conditions": {
+          "mass": { "max": 1.0 }
+        },
+        "say_face": "thinking",
+        "win_face": "happy",
+        "miss_face": "thinking"
+      },
+      {
+        "threshold": 0.95,
+        "conditions": {
+          "mass": { "min": 2.5 }
+        },
+        "say_face": "happy",
+        "win_face": "surprised",
+        "miss_face": "thinking"
+      }
     ]
   },
-  "story": { "clue": "종 안에 조각이 매달려 있어! 공으로 종을 땡 쳐 보자!", "clue_face": "explain", "map_clue": "울타리 안, 통통 튀는 용수철 쪽이야!", "map_clue_face": "explain" },
+  "story": { "clue_face": "explain", "map_clue_face": "explain" },
   "kid": {
-    "intro": "여기는 용수철 실험실이에요. 늘어난 용수철은 원래 길이로 돌아가려고 해요. 그래서 공을 다시 끌어당겨요. 이 힘을 탄성력이라고 해요. 많이 늘일수록 탄성력이 커져요. 당긴 만큼 공이 얼마나 가는지 살펴봐요!",
     "intro_face": "explain",
     "card": "bell_reach",
-    "title": "용수철을 당겼다 놓아 보자!",
-    "place": "용수철",
-    "say": "당긴 만큼 용수철이 공을 다시 당겨요. 그래서 공이 반대쪽으로 당긴 만큼 가요. 무거운 공은 더 천천히 흔들리지만 같은 데까지 가요.",
     "say_face": "explain",
-    "tip": "공을 끌었다가 놓아 봐요!",
     "picks": {
       "mass": [
-        {"value": 1.0, "label": "가벼운 공", "picture": "ball_orange", "size": 0.693},
-        {"value": 3.0, "label": "무거운 공", "picture": "ball_orange", "size": 1.0}
+        { "value": 1.0, "picture": "ball_orange", "size": 0.693 },
+        { "value": 3.0, "picture": "ball_orange", "size": 1.0 }
       ]
-    },
-    "cards": {"extension": "얼마나 늘어났나", "pull": "얼마나 당겼나", "bell_reach": "반대쪽으로 간 길이", "swing_period": "한 번 왔다 갔다"},
-    "states": {"한 번 왕복하면 보여요": "흔들면 보여요"},
-    "minus": {"extension": "눌려서", "pull": "눌려서"}
+    }
   },
   "note": {
-    "law": "용수철은 늘어난 만큼 되돌리는 힘을 내요. 그래서 공은 당긴 만큼 반대쪽으로 가요. 무거운 공일수록 천천히 왔다 갔다 해요.",
     "formula": "T = 2π√(m/k)",
     "numbers": [
-      { "label": "당겼다 놓은 길이 x₀", "ids": ["pull"] },
-      { "label": "공식 주기 T = 2π√(m/k)", "ids": ["natural_period"] },
-      { "label": "한 번 왕복한 시간 (잰 값)", "ids": ["swing_period"] },
-      { "label": "반대쪽으로 간 길이 x₀e^(−γT/2)", "ids": ["bell_reach"] }
+      {
+        "ids": ["pull"]
+      },
+      {
+        "ids": ["natural_period"]
+      },
+      {
+        "ids": ["swing_period"]
+      },
+      {
+        "ids": ["bell_reach"]
+      }
     ],
     "graph": false
   },
   "cast": {
-    "dugi": { "at": [2.5, 5.75], "explain_on": ["moving", "rest"], "delay_s": 1.5 },
-    "puppy": { "at": [-9.0, -6.0] }
+    "dugi": {
+      "at": [2.5, 5.75],
+      "explain_on": ["moving", "rest"],
+      "delay_s": 1.5
+    },
+    "puppy": {
+      "at": [-9.0, -6.0]
+    }
   },
   "observations": [
-    { "id": "state", "label": "상태" },
-    { "id": "extension", "label": "늘어난 길이 x (+ 늘어남, − 눌림)", "unit": "m", "digits": 2 },
-    { "id": "pull", "label": "놓은 자리 x₀ (당겨 늘인 길이)", "unit": "m", "digits": 2 },
-    { "id": "speed", "label": "속력", "unit": "m/s", "digits": 2 },
-    { "id": "force", "label": "복원력 F = −kx (오른쪽 +)", "unit": "N", "digits": 2 },
-    { "id": "acceleration", "label": "가속도 a = F/m", "unit": "m/s²", "digits": 2 },
-    { "id": "kinetic", "label": "운동 에너지 K = ½mv²", "unit": "J", "digits": 2 },
-    { "id": "spring", "label": "탄성 에너지 U = ½kx²", "unit": "J", "digits": 2 },
-    { "id": "total", "label": "역학적 에너지 K + U", "unit": "J", "digits": 2 },
-    { "id": "natural_period", "label": "고유 주기 T₀ = 2π√(m/k) (감쇠 없을 때)", "unit": "s", "digits": 2 },
-    { "id": "period", "label": "실제 왕복 주기 T = 2π/ω_d (감쇠 없으면 T₀)", "unit": "s", "digits": 2 },
-    { "id": "swing_period", "label": "한 번 왕복한 시간 T (공식, 한 번 돌아온 뒤)", "unit": "s", "digits": 2 },
-    { "id": "bell_reach", "label": "첫 번에 반대쪽으로 간 길이 x₀e^(−γT/2) (감쇠 없으면 x₀)", "unit": "m", "digits": 2 }
+    { "id": "state" },
+    { "id": "extension", "unit": "m", "digits": 2 },
+    { "id": "pull", "unit": "m", "digits": 2 },
+    { "id": "speed", "unit": "m/s", "digits": 2 },
+    { "id": "force", "unit": "N", "digits": 2 },
+    { "id": "acceleration", "unit": "m/s²", "digits": 2 },
+    { "id": "kinetic", "unit": "J", "digits": 2 },
+    { "id": "spring", "unit": "J", "digits": 2 },
+    { "id": "total", "unit": "J", "digits": 2 },
+    { "id": "natural_period", "unit": "s", "digits": 2 },
+    { "id": "period", "unit": "s", "digits": 2 },
+    { "id": "swing_period", "unit": "s", "digits": 2 },
+    { "id": "bell_reach", "unit": "m", "digits": 2 }
   ],
   "manipulation": {
     "grab_radius": 72.0,
@@ -153,12 +152,11 @@
     ]
   },
   "graph": {
-    "title": "에너지가 바뀌는 모습",
-    "x": { "label": "시간 t", "unit": "s", "max": 10.0 },
-    "y": { "label": "에너지 비율", "unit": "%", "max": 100.0 },
+    "x": { "unit": "s", "max": 10.0 },
+    "y": { "unit": "%", "max": 100.0 },
     "series": [
-      { "id": "kinetic", "label": "움직임 (운동 에너지)", "color": "#2d7cf6", "style": "line" },
-      { "id": "spring", "label": "용수철 (탄성 에너지)", "color": "#7a5cf0", "style": "line" }
+      { "id": "kinetic", "color": "#2d7cf6", "style": "line" },
+      { "id": "spring", "color": "#7a5cf0", "style": "line" }
     ]
   }
 }

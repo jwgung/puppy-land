@@ -18,8 +18,6 @@ const OVERLAY_MARGIN := 12.0
 const KEY_CARD_WIDTH := 200.0
 const TIP_FADE_S := 0.3
 const TIP_MAX_WIDTH := 340.0
-## A game lab's reset button: a short word on a small button (the lab's own label stays in the JSON).
-const RESET_SHORT := "다시"
 const TIP_MIN_WIDTH := 240.0   # narrower than this beside the actions: the tip goes above them
 const DEMO_RELEASE_DELAY_S := 0.4   # --auto-drag: the auto-release waits this long after the demo put its object down
 const CHOICE_SIZE := Vector2(210.0, 170.0)    # a prediction picture button (UI units)
@@ -33,16 +31,9 @@ const CHOICE_HOP_SPEED := 3.0    # rad/s of the hop's sine (a hop every ~1 s)
 ## The strip's words for a 7-year-old: all stages done, and the picked prediction before the run.
 ## (2026-10-28 user decision: no celebration words; a finished round shows its stamps only.)
 const DONE_TEXT := ""
-const PICK_PREFIX := "내 생각: "
 const PICK_SIZE := Vector2(132.0, 112.0)    # a condition picture button (UI units, at least)
 const PICK_GAP := 10.0                      # between the buttons of one condition
 const PICK_GROUP_GAP := 22.0                # between two conditions' buttons
-const MORE_CLOSED := "더 보기"              # the science note's collapsed rest (_build_sidebar)
-const MORE_OPEN := "접기"
-const ASK_TEXT := "AI에게 더 물어보기"
-## The science note's line when a run is shown faster than it is (definition.time_scale()).
-const TIME_SCALE_NOTE := "시간을 %s배 빠르게 보여 줘요. 숫자는 실제 시간 그대로예요."
-const ASK_CAPTION := "이 실험의 조건과 숫자로 질문을 만들어, 고른 AI 앱에 보내요."
 
 ## Set by App for the screen it opens from --experiment: then the launch args (--ctl-*, --camera,
 ## ...) apply to this screen only (a rebuilt screen with a saved state restores that state instead).
@@ -977,7 +968,7 @@ func _predict_pick_choice(choice_id: String) -> void:
 		return
 	var picked := mission_round.answer(choice_id)
 	if _mission_text != null and picked != "":
-		_mission_text.text = PICK_PREFIX + picked
+		_mission_text.text = Locale.t("screen.pick_prefix") + picked
 		_fit_mission_strip()
 	_start_bridge()
 
@@ -1808,7 +1799,7 @@ func _build_view_overlays() -> void:
 	view.add_child(_title_bar)
 	var title_row := Ui.hbox(4)
 	_title_bar.add_child(title_row)
-	var back := Ui.button("← 지도", "FlatButton", 56)
+	var back := Ui.button(Locale.t("screen.back_to_map"), "FlatButton", 56)
 	back.pressed.connect(_on_back_pressed)
 	title_row.add_child(back)
 	_back_button = back
@@ -1826,7 +1817,7 @@ func _build_view_overlays() -> void:
 	view.add_child(_top_buttons)
 	# Settings live on the island map (Plan G2). The game's labs keep their sliders behind "자세히".
 	var game := not MissionRound.missions(definition.raw).is_empty()
-	_sidebar_button = Ui.button("자세히" if game else "설명·조건", "PrimaryButton", 56)
+	_sidebar_button = Ui.button(Locale.t("screen.sidebar_game") if game else Locale.t("screen.sidebar"), "PrimaryButton", 56)
 	_sidebar_button.pressed.connect(open_sidebar.bind(true))
 	_top_buttons.add_child(_sidebar_button)
 
@@ -1845,7 +1836,7 @@ func _build_view_overlays() -> void:
 		if game and action.id != "reset":
 			continue
 		var small: bool = game and action.id == "reset"
-		var button := Ui.button(RESET_SHORT if small else action.label, "PrimaryButton" if action.get("style") == "primary" and not small else "", 64)
+		var button := Ui.button(Locale.t("screen.reset_short") if small else action.label, "PrimaryButton" if action.get("style") == "primary" and not small else "", 64)
 		button.custom_minimum_size.x = 96 if small else 140
 		button.pressed.connect(experiment_action.bind(action.id))
 		_action_buttons[action.id] = button
@@ -2023,7 +2014,7 @@ func _build_sidebar() -> void:
 	heading.add_child(Ui.label(definition.text("category"), "EyebrowLabel"))
 	heading.add_child(Ui.label(definition.text("question"), "MutedLabel", true))
 	header.add_child(heading)
-	close_button = Ui.button("닫기", "", 56)
+	close_button = Ui.button(Locale.t("common.close"), "", 56)
 	close_button.name = "CloseSheet"
 	close_button.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	close_button.pressed.connect(close_sidebar.bind(true))
@@ -2052,7 +2043,7 @@ func _build_sidebar() -> void:
 		column.add_child(_sections[id])
 
 	# 더 보기: a button and the collapsed rest.
-	_more_button = Ui.button(MORE_CLOSED, "", 56)
+	_more_button = Ui.button(Locale.t("screen.more"), "", 56)
 	_more_button.name = "MoreButton"
 	_more_button.pressed.connect(func() -> void: set_more_open(not _more.visible))
 	column.add_child(_more_button)
@@ -2085,18 +2076,18 @@ func _build_sidebar() -> void:
 ## the question was copied instead.
 func _build_ask() -> Control:
 	var box := Ui.vbox(6)
-	_ask_button = Ui.button(ASK_TEXT, "", 56)
+	_ask_button = Ui.button(Locale.t("screen.ask_ai"), "", 56)
 	_ask_button.name = "AskAi"
 	_ask_button.pressed.connect(ask_ai)
 	box.add_child(_ask_button)
-	box.add_child(Ui.label(ASK_CAPTION, "MutedLabel", true))
+	box.add_child(Ui.label(Locale.t("screen.ask_caption"), "MutedLabel", true))
 	# No AI app on the device (the chooser then has nothing): copy and open the web AI instead.
-	_web_button = Ui.button(ScienceNote.WEB_LINK, "", 48)
+	_web_button = Ui.button(Locale.t("note.web_link"), "", 48)
 	_web_button.name = "AskWeb"
 	_web_button.flat = true
 	_web_button.pressed.connect(ask_web)
 	box.add_child(_web_button)
-	_ask_status = Ui.label(ScienceNote.COPIED, "MutedLabel", true)
+	_ask_status = Ui.label(Locale.t("note.copied"), "MutedLabel", true)
 	_ask_status.name = "AskStatus"
 	_ask_status.visible = false
 	box.add_child(_ask_status)
@@ -2111,7 +2102,7 @@ func ask_ai() -> void:
 		return
 	var packages := ScienceNote.ai_apps().map(func(app: Dictionary) -> String: return app.package)
 	var text := ScienceNote.question(definition, experiment, _hidden_answers(experiment.observations()))
-	_ask_status.text = ScienceNote.COPIED
+	_ask_status.text = Locale.t("note.copied")
 	_ask_status.visible = str(ask_handler.call(packages, text)) == "clipboard"
 
 
@@ -2120,7 +2111,7 @@ func ask_web() -> void:
 	if measurement or experiment == null:
 		return
 	web_handler.call(ScienceNote.question(definition, experiment, _hidden_answers(experiment.observations())))
-	_ask_status.text = ScienceNote.COPIED_WEB
+	_ask_status.text = Locale.t("note.copied_web")
 	_ask_status.visible = true
 
 
@@ -2129,7 +2120,7 @@ func set_more_open(open: bool) -> void:
 	if _more == null:
 		return
 	_more.visible = open
-	_more_button.text = MORE_OPEN if open else MORE_CLOSED
+	_more_button.text = Locale.t("screen.less") if open else Locale.t("screen.more")
 
 
 func is_more_open() -> bool:
@@ -2138,7 +2129,7 @@ func is_more_open() -> bool:
 
 ## 법칙: the lab's law in one plain sentence and its formula (note.law, note.formula).
 func _build_law(note: Dictionary) -> Control:
-	var parts := _section("법칙")
+	var parts := _section(Locale.t("screen.section_law"))
 	var body: VBoxContainer = parts[1]
 	body.add_child(Ui.label(str(note.get("law", "")), "", true))
 	var formula := Ui.label(str(note.get("formula", "")), "EquationLabel", true)
@@ -2147,7 +2138,7 @@ func _build_law(note: Dictionary) -> Control:
 	body.add_child(formula)
 	var pace := definition.time_scale()
 	if not is_equal_approx(pace, 1.0):
-		var paced := Ui.label(TIME_SCALE_NOTE % Ui.number(pace, 1), "MutedLabel", true)
+		var paced := Ui.label(Locale.t("screen.time_scale_note") % Ui.number(pace, 1), "MutedLabel", true)
 		paced.name = "TimeScaleNote"
 		body.add_child(paced)
 	return parts[0]
@@ -2156,7 +2147,7 @@ func _build_law(note: Dictionary) -> Control:
 ## 이번 실험 숫자: note.numbers, a caption and the value(s) of this run in their units (the panel's
 ## format_observation text); two ids read "before → after".
 func _build_numbers(note: Dictionary) -> Control:
-	var parts := _section("이번 실험 숫자")
+	var parts := _section(Locale.t("screen.section_numbers"))
 	var body: VBoxContainer = parts[1]
 	for row in note.get("numbers", []):
 		var tile := Ui.panel("Tile")
@@ -2186,7 +2177,7 @@ func _section(title: String) -> Array:
 
 
 func _build_conditions() -> Control:
-	var parts := _section("조건 바꾸기")
+	var parts := _section(Locale.t("screen.section_controls"))
 	var body: VBoxContainer = parts[1]
 	for control in definition.controls():
 		var row := Ui.hbox(8)
@@ -2329,7 +2320,7 @@ func _sync_control(id: String) -> void:
 
 ## The other numbers (in 더 보기): the observations the note does not list, two per row.
 func _build_observations(observations: Array) -> Control:
-	var parts := _section("다른 숫자")
+	var parts := _section(Locale.t("screen.section_other_numbers"))
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.add_theme_constant_override("h_separation", 10)
@@ -2350,7 +2341,7 @@ func _build_observations(observations: Array) -> Control:
 
 func _build_graph() -> Control:
 	var spec := definition.graph()
-	var parts := _section(spec.get("title", "그래프"))
+	var parts := _section(spec.get("title", Locale.t("screen.section_graph")))
 	_graph = GraphView.new()
 	_graph.spec = spec
 	parts[1].add_child(_graph)
@@ -2369,19 +2360,19 @@ func _build_graph() -> Control:
 		legend.add_child(item)
 	parts[1].add_child(legend)
 	var y_spec: Dictionary = spec.get("y", {})
-	parts[1].add_child(Ui.label("세로: %s (%s)" % [y_spec.get("label", ""), y_spec.get("unit", "")], "MutedLabel", true))
+	parts[1].add_child(Ui.label(Locale.t("screen.graph_y_axis") % [y_spec.get("label", ""), y_spec.get("unit", "")], "MutedLabel", true))
 	return parts[0]
 
 
 func _build_explanation() -> Control:
-	var parts := _section("설명")
+	var parts := _section(Locale.t("screen.section_about"))
 	var body: VBoxContainer = parts[1]
 	body.add_child(Ui.label(definition.text("title"), "HeadingLabel", true))
 	if definition.text("tip") != "":
 		var how := Ui.panel("SoftCard")
 		var how_body := Ui.vbox(6)
 		how.add_child(how_body)
-		how_body.add_child(Ui.label("조작 방법", "SectionLabel"))
+		how_body.add_child(Ui.label(Locale.t("screen.how_to"), "SectionLabel"))
 		how_body.add_child(Ui.label(definition.text("tip"), "MutedLabel", true))
 		body.add_child(how)
 	var steps := Ui.vbox(10)
@@ -2398,7 +2389,7 @@ func _build_explanation() -> Control:
 	var observe := Ui.panel("ObserveCard")
 	var observe_body := Ui.vbox(4)
 	observe.add_child(observe_body)
-	observe_body.add_child(Ui.label("관찰 포인트", "ObserveTitleLabel"))
+	observe_body.add_child(Ui.label(Locale.t("screen.observe"), "ObserveTitleLabel"))
 	observe_body.add_child(Ui.label(definition.text("observe"), "ObserveLabel", true))
 	body.add_child(observe)
 	var law := definition.law()
@@ -2469,7 +2460,7 @@ static func format_observation(observation: Dictionary, value: Variant) -> Strin
 ## negative value as its size after that word ("눌려서 0.3미터"). Only the rounding and the words
 ## differ from format_observation: the value is the same formula value.
 static func kid_value(unit: String, value: float, digits: int, minus := "") -> String:
-	var words: Array = ExperimentRegistry.KID_UNITS.get(unit, ["", " " + unit])
+	var words: Array = Locale.map("kid_units").get(unit, ["", " " + unit])
 	var places := mini(digits, MissionRound.CARD_PLACES)
 	var text := Ui.number(absf(value), places)
 	var lead := ""
@@ -2485,7 +2476,7 @@ static func kid_value(unit: String, value: float, digits: int, minus := "") -> S
 static func card_text(definition: Dictionary, observation: Dictionary, value: Variant, hidden := false) -> String:
 	var unit := str(observation.get("unit", ""))
 	var bar := ExperimentRegistry.card_bar(definition, str(observation.get("id", ""))) > 0.0
-	var words: Array = ExperimentRegistry.KID_UNITS.get(unit, ["", " " + unit]) if not bar else ["", ""]
+	var words: Array = Locale.map("kid_units").get(unit, ["", " " + unit]) if not bar else ["", ""]
 	if hidden:
 		return (str(words[0]) + "? " + str(words[1])).strip_edges()
 	var kid: Dictionary = definition.get("kid", {}) if definition.get("kid") is Dictionary else {}

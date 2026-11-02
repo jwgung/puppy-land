@@ -650,7 +650,7 @@ func check_drop_from_mm() -> void:
 	var landed: bool = lab.has_landed("red")
 	await _until_step(red, 5 * lab.GRAPH_EVERY_STEPS + 3)
 	var text: String = lab.observations().landing
-	var want := "%s %.2f" % [lab.BALLS.red.name, roundi(landing * STEP_HZ) / float(STEP_HZ)] if red.landed_step < 0 else "%s %.2f" % [lab.BALLS.red.name, red.landed_step / float(STEP_HZ)]
+	var want := "%s %.2f" % [lab.ball_name("red"), roundi(landing * STEP_HZ) / float(STEP_HZ)] if red.landed_step < 0 else "%s %.2f" % [lab.ball_name("red"), red.landed_step / float(STEP_HZ)]
 	var points: int = lab.graph_series().measured.size()
 	expect.call(landed and text.contains(want) and points == 2 + 5,   # both balls' first point, then the yellow one's (2026-10-29: two balls)
 		"landing: a drop from 5 mm lands by the formula, has a measured landing time and no graph point after the formula landing",

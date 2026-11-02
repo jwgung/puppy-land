@@ -14,10 +14,6 @@ extends Camera3D
 signal mode_changed(mode: String)
 
 const MODES := ["front", "three_quarter", "top", "side", "follow", "orbit"]
-const MODE_LABELS := {
-	"front": "정면", "three_quarter": "3/4", "top": "위", "side": "옆",
-	"follow": "따라가기", "orbit": "제한 회전",
-}
 const EASE_RATE := 8.0          # 1/s; ~95% of a transition in 0.37 s
 const ORBIT_RAD_PER_UNIT := 0.006
 const PAN_PER_UNIT := 0.0016    # world units per UI unit per metre of distance

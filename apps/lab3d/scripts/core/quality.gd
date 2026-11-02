@@ -36,7 +36,6 @@ const TIERS := {
 	"medium": {"renderer": "mobile", "view_scale": 0.6, "msaa": 2, "ui_mode": "native", "root_short": 720},
 	"high": {"renderer": "mobile", "view_scale": 1.0, "msaa": 2, "ui_mode": "native", "root_short": 0},
 }
-const TIER_LABELS := {"low": "낮음", "medium": "보통", "high": "높음"}
 
 var tier := DEFAULT_TIER
 var _overrides: Dictionary = {}

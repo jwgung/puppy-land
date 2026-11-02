@@ -821,7 +821,7 @@ func _begin(which: String) -> void:
 		dialogue = DialogueBox.new("")
 		home.add_child(dialogue)
 		dialogue.closed.connect(_on_dialogue_closed)
-		skip_button = Ui.button("건너뛰기", "", 56)
+		skip_button = Ui.button(Locale.t("story.skip"), "", 56)
 		skip_button.name = "SkipButton"
 		skip_button.pressed.connect(skip)
 		home.add_child(skip_button)

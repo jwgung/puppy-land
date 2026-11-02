@@ -104,7 +104,7 @@ func _init(own_words: String) -> void:
 	name_tag = Ui.panel("DialogueNameTag")
 	name_tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(name_tag)
-	name_label = Ui.label("두기두기", "DialogueNameLabel")
+	name_label = Ui.label(Locale.t("speaker.dugi"), "DialogueNameLabel")
 	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	name_tag.add_child(name_label)
 
@@ -268,7 +268,7 @@ func set_speaker(who: String, new_face := "") -> void:
 		return
 	speaker = who
 	face = f
-	name_label.text = Story.SPEAKERS[who][0]
+	name_label.text = Locale.t(Story.SPEAKERS[who][0])
 	portrait.texture = portrait_texture(who, f)
 	name_tag.size = name_tag.get_combined_minimum_size()
 	swaps += 1

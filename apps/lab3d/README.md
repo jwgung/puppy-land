@@ -12,7 +12,7 @@
 apps/lab3d/
   project.godot, export_presets.cfg   Jolt, 60 Hz 고정 스텝, 짧은 변 720 UI 단위, 방향 sensor, Android export
   scenes/main.tscn                    App(루트 Control)
-  scripts/core/                       autoload Quality(품질 단계)·Bench(OPBENCH/OPPERF)·Sound(SoundBoard: 효과음·배경 음악), Story(이야기 글·저장), Island(섬 배치 데이터), PhysicsLaws(TS 공식 포트, 10개 실험),
+  scripts/core/                       autoload Quality(품질 단계)·Bench(OPBENCH/OPPERF)·Sound(SoundBoard: 효과음·배경 음악), Story(이야기 글·저장), Island(섬 배치 데이터), Locale(언어별 글), PhysicsLaws(TS 공식 포트, 10개 실험),
                                       MissionRound(미션 라운드: missions·predict 규칙과 검사, 단서·질문·도장·결과 줄·이유의 흐름, ProgressStore 연결), ProgressStore(진행 저장)
   scripts/formula/                    공식 보정 계층: FormulaCorrector(공통)·FormulaBody·FormulaDriver, 방식별 보정기
   scripts/app/                        App(화면 전환·fps 표시), 섬 지도 홈(IslandHomeScreen)·목록·설정 화면, 이야기(StoryDirector·StarEmblem), UiTheme(섬 스타일 2D), Ui(위젯 헬퍼),
@@ -43,7 +43,8 @@ apps/lab3d/
   experiments/rotation/               지렛대 실험(장면, LeverLabModel = 웹 LeverChallenge, LeverLabDriver = 막대·짐 구동, RotationProps 소품)
   experiments/pulley/                 도르래 실험(장면, PulleyLabModel = 웹 PulleyAdvantageChallenge, PulleyLabDriver = 짐 구동, PulleyProps 소품)
   experiments/manipulation_dev/       조작 확인용 개발 장면(목록에 없음, --experiment=manipulation-dev)
-  content/experiments/                실험 정의 JSON(index.json + 실험별 파일: 문구와 3D 필드)
+  content/experiments/                실험 정의 JSON(index.json + 실험별 파일: 데이터, 말은 content/locale)
+  content/locale/<언어>/              글(ui.json: 코드의 글, experiments/·story.json: 데이터 파일과 같은 모양의 말)
   assets/characters/                  빵고양이·두기두기·퍼피 glb + 텍스처 아틀라스(소스: art_src/characters/bread_cat.py, dugi.py, puppy.py, Blender 스크립트), 두기두기 대화창 초상화 portraits/(모델 렌더, dugi_portrait.py)
   assets/props/                       털실 공·택배 박스 glb + 텍스처(소스: art_src/props/yarn_ball.py, parcel_box.py)
   assets/ui/                          손 안내의 빵고양이 앞발 그림 guide_paw.png(소스: tools/render_guide_paw.gd, 빵고양이 모델을 게임 재질로 렌더함, 젤리 없음)
@@ -80,7 +81,7 @@ apps/lab3d/
 
 ### 실험 목록
 
-목록 화면 순서는 `content/experiments/index.json`이다. 섬의 배치(구역 id `meadow`·`hill`·`yard`·`pond`·`lookout`과 장소 좌표, 광장, 흙길, 해안, 나무·바위·구름·물결, 광장 쪽을 보지 않는 실험의 방향, 별 조각이 모이는 장소 `lookout`, 밤 지도에서 찾는 순서 `order`)는 `content/islands/mechanics.json`이고 `Island`(`scripts/core/island.gd`)가 읽어 검사한다(2026-11-02, [ADR 0003](../../docs/adr/0003-one-app-one-island-per-field.md)). 지도 홈·타이틀·실험 땅(`LabWorld`)·이야기(`Story`)가 모두 `Island.current()`를 읽는다. 예전에는 `MapIsland`·`LabWorld` 상수와 `content/story.json`의 `order`에 있었다. 옮기기 전후 지도와 실험 땅 12개의 메시는 바이트까지 같다. 문구는 각 실험 파일에 있다.
+목록 화면 순서는 `content/experiments/index.json`이다. 섬의 배치(구역 id `meadow`·`hill`·`yard`·`pond`·`lookout`과 장소 좌표, 광장, 흙길, 해안, 나무·바위·구름·물결, 광장 쪽을 보지 않는 실험의 방향, 별 조각이 모이는 장소 `lookout`, 밤 지도에서 찾는 순서 `order`)는 `content/islands/mechanics.json`이고 `Island`(`scripts/core/island.gd`)가 읽어 검사한다(2026-11-02, [ADR 0003](../../docs/adr/0003-one-app-one-island-per-field.md)). 지도 홈·타이틀·실험 땅(`LabWorld`)·이야기(`Story`)가 모두 `Island.current()`를 읽는다. 예전에는 `MapIsland`·`LabWorld` 상수와 `content/story.json`의 `order`에 있었다. 옮기기 전후 지도와 실험 땅 12개의 메시는 바이트까지 같다. 문구는 언어 폴더에 있다(아래 "언어").
 
 | 실험 (id) | 웹 2D | 보정 방식 | 조건 | 조작 | 관찰값(공식) · 시뮬레이션 | 그래프 | Task |
 |---|---|---|---|---|---|---|---|
@@ -132,7 +133,14 @@ apps/lab3d/
 
 ### 실험 문구 (Task 4a, 2026-10-30부터 실험 파일에)
 
-실험의 문구(`title`·`category`·`icon`·`question`·`steps`(3개)·`observe`·`terms`·`law`(`title`·`description`·`equation`), 사이드바의 조작 안내 `tip`, 처음에만 뜨는 한 줄 `tip_short`)는 `content/experiments/<id>.json`에 3D 필드와 함께 있다. 아이에게 보이는 짧은 문구는 같은 파일의 `kid` 블록에 있다(아래 "게임 문구").
+실험의 문구(`title`·`category`·`question`·`steps`(3개)·`observe`·`terms`·`law`(`title`·`description`, 글이 있는 `equation`), 사이드바의 조작 안내 `tip`, 처음에만 뜨는 한 줄 `tip_short`, 조건·선택지·관찰값·그래프·액션의 이름, `kid`·`missions`·`predict`·`note`·`story`의 말)는 `content/locale/<언어>/experiments/<id>.json`에 데이터 파일과 같은 모양으로 있고, `content/experiments/<id>.json`에는 그 밖의 것(id, 숫자, 시점, 표정 이름, `icon`)만 있다. 아이에게 보이는 짧은 문구는 `kid` 블록이다(아래 "게임 문구").
+
+**언어 (2026-11-02, 사용자 "언어 분리만 먼저", [ADR 0004](../../docs/adr/0004-words-apart-by-language.md))**: 글은 모두 `content/locale/<언어>/`에 있고 지금 언어는 `ko` 하나다(`Locale.lang`, 기본 `Locale.DEFAULT`).
+- `ui.json`: 코드의 글. 키 → 글(또는 목록·표: 미션 순서 말 `mission.ordinals`, 퍼피가 쓰지 않는 과학 낱말 `story.science_words`, 카드 단위 말 `kid_units`, 품질 이름·설명, 카메라 시점 이름). 코드는 `Locale.t("키")`·`Locale.list`·`Locale.map`으로 읽는다. 실험의 상태 글(`<실험>.status.<상태>`)도 여기 있고, 실험 JSON의 `kid.states`는 이 글을 키로 쓴다(같은 언어 안에서 맞춘다).
+- `experiments/<id>.json`·`story.json`: 데이터 파일과 같은 모양의 말. 읽을 때 `Locale.overlay`가 제자리에 넣는다(객체는 키마다, 목록은 순서대로). 그 언어에 없는 글은 `ko`의 글이다.
+- 나누기: `tools/split_text.py`가 한글이 든 글(한글 키를 가진 객체는 통째로)을 말 파일로 옮겼다. 메모 `about`은 데이터 파일에 남는다. 나누기 전후 레지스트리와 이야기가 읽은 정의는 키 순서만 다르고 같다(키 순서를 따르는 코드 없음).
+- 시험 `tests/locale_checks.gd`: 코드가 부르는 키가 모든 언어의 `ui.json`에 있고 안 쓰는 키가 없음, 코드(`scripts`·`experiments`)와 데이터 파일(`content/experiments`·`content/islands`·`content/story.json`)에 한글 글이 없음, overlay가 제자리에 넣음.
+- 남은 것: `content/ai_apps.json`의 앱 이름(뤼튼)은 앱 자신의 이름이라 그대로 둔다. 언어를 고르는 설정, 영어 글, 언어별 폰트는 아직 없다.
 
 - 예전(Task 4a ~ 2026-10-30)에는 웹 2D와 문구를 나누려고 `content/mechanics-labs.json`에 따로 두고 `ExperimentRegistry.resolve()`가 합쳤다. 웹 2D를 지우면서 합친 결과를 그대로 각 실험 파일에 옮겼다([ADR 0002](../../docs/adr/0002-drop-web-2d.md)). 옮기기 전후 레지스트리가 읽은 정의는 `content` 키 말고는 같다.
 - 문구의 기호 중 Noto Sans CJK에 없는 것(`x₀`의 아래 첨자, `⚖`·`⌁`·`▰` 아이콘)은 DejaVu Sans 서브셋을 대체 글꼴로 그린다(`tools/subset_font.sh`가 두 서브셋을 함께 만든다).
@@ -311,7 +319,7 @@ Android 뒤로가기 한 번이 두 번 오는 문제(2026-10-29, SM-X115 Androi
 
 사용자 승인(2026-10-28). 과학섬은 바다 나라 **퍼피랜드**의 한 섬이다. 밤바다를 비춰 배가 길을 잃지 않게 하던 **길잡이 별**이 깨져 조각 11개가 섬의 실험 장소 11곳에 하나씩 떨어졌다. 장소의 도장 3개(그 실험을 다 깸) = 조각 하나를 찾음. 역할은 고정이다: 퍼피 = 탐정(단서: 무엇이 어디에, 과학은 설명하지 않음), 두기두기 = 과학자(이유: 왜), 빵고양이 = 몸으로 함(말하지 않음). 이야기는 그림과 말뿐이다: 실험의 물리·미션·조작·표시 값을 읽지도 바꾸지도 않는다.
 
-- **글**: 첫 이야기 8쪽과 끝 이야기 3쪽(2026-11-01 전 2쪽)과 끝 이야기의 다시 당기기 말(`finale_retry`)은 `content/story.json`(`who`: `dugi`·`puppy`, `face`: 표정(아래 "대화 표정"), `text`), 퍼피 단서는 실험 JSON마다 `story.clue`(`ExperimentRegistry`가 확인). 모두 사용자가 정한 문장 그대로(시험).
+- **글**: 첫 이야기 8쪽과 끝 이야기 3쪽(2026-11-01 전 2쪽)과 끝 이야기의 다시 당기기 말(`finale_retry`)은 `content/story.json`(`who`: `dugi`·`puppy`, `face`: 표정(아래 "대화 표정"))과 그 말 `content/locale/<언어>/story.json`(`text`), 퍼피 단서는 실험 JSON마다 `story.clue`(`ExperimentRegistry`가 확인). 모두 사용자가 정한 문장 그대로(시험).
 - **저장** (`ProgressStore`, `user://progress.cfg`의 새 구역, 도장 구역과 따로): `[story]` `prologue`·`finale` = true(본 뒤), `[clues]` 장소 = true(단서를 말한 뒤), `[pieces]` 장소 = false(실험에서 찾음, 지도에서 전망대로 날아갈 차례) / true(날아감). 키가 없으면 날아간 것으로 본다: 이야기 전 저장(이미 도장 3개인 장소)은 찾은 조각으로 세고 날아가기는 다시 하지 않는다. 이상한 값은 "안 봄/날아감"으로 읽는다.
 - **켜고 끄기** (`Story.enabled`): 아이의 앱에서만 켠다. 측정·확인 실행(`--progress=bench`, `--auto-drag`, `--auto-release`, `--demo-celebrate`, `--demo-flag`, `--sound=0`)은 끔(첫 이야기·단서·조각·문장 모두 없음, 진행도 쓰지 않음). 화면 찍기는 `--demo-story`(아래)로만 켜고 그때는 `progress-bench.cfg`만 쓴다.
 
@@ -914,7 +922,7 @@ python3 -I apps/lab3d/tools/device_gesture.py orbit  # orbit | pinch | pinch-fix
 
 ## 5. 실험 추가
 
-1. `content/experiments/<id>.json`을 만든다. 필드는 `incline-friction.json`을 따르고, 문구도 이 파일에 쓴다(1절 "실험 문구"). `ExperimentRegistry.validate()`가 검사하는 필수 필드는 `id`, `title`, `category`, `question`, `steps`, `observe`, `law`, `scene`, `camera`, `controls`, `actions`, `observations`, `key_observations`, `graph`다. 나머지(`icon`, `terms`, `tip`)는 선택이다.
+1. `content/experiments/<id>.json`을 만든다. 필드는 `incline-friction.json`을 따르고, 문구는 같은 모양으로 `content/locale/ko/experiments/<id>.json`에 쓴다(1절 "언어"; 한 파일에 쓴 뒤 `python3 tools/split_text.py content/experiments/<id>.json`으로 나눠도 된다). `ExperimentRegistry.validate()`가 검사하는 필수 필드는 `id`, `title`, `category`, `question`, `steps`, `observe`, `law`, `scene`, `camera`, `controls`, `actions`, `observations`, `key_observations`, `graph`다. 나머지(`icon`, `terms`, `tip`)는 선택이다.
    - 문구: `title`, `category`, `icon`, `question`, `steps`(3개), `observe`, `terms`, `law`(`title`·`description`·`equation`), `tip`, `tip_short`
    - `scene`: 실험 스크립트 경로, `bench_id`: OPBENCH 장면 이름
    - `camera`: `target`, `distance`, `distance_range`, `yaw_range_deg`, `pitch_range_deg`, `pan_radius`, `default_mode`(안내형 실험은 `front`), `views`(front·three_quarter·top·side·follow의 `yaw_deg`·`pitch_deg`, 선택 `distance`·`target`). 정면 시점에서 장치가 핵심 카드(왼쪽 위)·액션 버튼(오른쪽 아래)에 가리지 않는지 폰 가로(2340×1080)·태블릿 가로(1920×1200)에서 확인한다

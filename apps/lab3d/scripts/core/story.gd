@@ -8,7 +8,8 @@
 ## control, runs an action or reads a body (the labs' physics, missions, controls and numbers are
 ## the same with or without it).
 ##
-## This is the story's data and saved state: the words (content/story.json, each lab's story.clue),
+## This is the story's data and saved state: the words (content/story.json with its words in
+## content/locale/<lang>/story.json, each lab's story.clue),
 ## the marks in the ProgressStore (prologue / finale played, clue told, piece flown) and whether the
 ## story runs at all (`enabled`: App turns it on for the child's app, never for a measurement or a
 ## test that does not ask for it). The map's StoryDirector and the lab screen play it.
@@ -18,8 +19,8 @@ extends RefCounted
 const CONTENT_PATH := "res://content/story.json"
 ## Who speaks: [name tag, portrait path pattern (%s = the face)] (DialogueBox.set_speaker).
 const SPEAKERS := {
-	"dugi": ["두기두기", "res://assets/characters/portraits/dugi_%s.webp"],
-	"puppy": ["퍼피", "res://assets/characters/portraits/puppy_%s.webp"],
+	"dugi": ["speaker.dugi", "res://assets/characters/portraits/dugi_%s.webp"],
+	"puppy": ["speaker.puppy", "res://assets/characters/portraits/puppy_%s.webp"],
 }
 ## The portraits' expressions (2026-10-29 user request "대화시 표정을 좀 더 다양하게"), one picture per
 ## speaker and face (art_src/characters/*_portrait.py). Each line of the content may name its face
@@ -58,6 +59,7 @@ static func pages(part: String) -> Array:
 static func _load() -> Dictionary:
 	if _content.is_empty():
 		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(CONTENT_PATH))
+		parsed = Locale.overlay(parsed, Locale.words("story.json")) if parsed is Dictionary else null
 		_content = parsed if parsed is Dictionary else {}
 	return _content
 
@@ -138,9 +140,8 @@ static func finale_retry_face() -> String:
 
 # --- who says what (2026-10-29 user: Puppy never explains science, that is Dugi's job) -----------
 ## Words that explain science (why / how fast / which force). Puppy's lines (clues, riddles, the
-## wrong-spot line, his story pages) never use them; Dugi's are exempt. A content test reads it.
-const SCIENCE_WORDS := ["천천히", "빨리", "빨라", "느리", "느려", "중력", "무거운 공은", "가벼운 공은", "힘이",
-	"때문", "그래서", "왜냐하면", "끌어당", "밀어 올", "밀어내", "마찰", "속도", "빠르기", "무게가", "떨어진대"]
+## wrong-spot line, his story pages) never use them; Dugi's are exempt. A content test reads them
+## (the words are the language's: ui.json story.science_words, Locale).
 
 
 ## Every line Puppy says: his story pages, every lab's clue and riddle, the wrong-spot line.
