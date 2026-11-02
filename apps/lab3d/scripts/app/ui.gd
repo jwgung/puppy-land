@@ -140,3 +140,22 @@ static func scroller() -> ScrollContainer:
 ## "%.Nf" formatting with N from content (String.num drops trailing zeros).
 static func number(value: float, digits: int) -> String:
 	return ("%." + str(clampi(digits, 0, 4)) + "f") % value
+
+
+## The screen's safe-area insets in `node`'s canvas units {left, top, right, bottom} (a phone's rounded
+## corners, a camera cutout; 2026-10-31 user: the map's top bar was cut on a phone). Zero off a phone
+## (desktop, tests): the display there is not the window.
+static func safe_insets(node: CanvasItem) -> Dictionary:
+	var out := {"left": 0.0, "top": 0.0, "right": 0.0, "bottom": 0.0}
+	if not OS.has_feature("mobile") or node == null or not node.is_inside_tree():
+		return out
+	var window := Vector2(DisplayServer.window_get_size())
+	var safe := Rect2(DisplayServer.get_display_safe_area())
+	if window.x <= 0.0 or window.y <= 0.0 or safe.size.x <= 0.0:
+		return out
+	var k := node.get_viewport().get_visible_rect().size.x / window.x   # pixels -> canvas units
+	out.left = maxf(0.0, safe.position.x) * k
+	out.top = maxf(0.0, safe.position.y) * k
+	out.right = maxf(0.0, window.x - safe.end.x) * k
+	out.bottom = maxf(0.0, window.y - safe.end.y) * k
+	return out

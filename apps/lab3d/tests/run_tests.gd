@@ -144,6 +144,10 @@ func _run() -> void:
 	# child's (user://progress.cfg is checked unchanged at the end).
 	var real_progress := _file_state(ProgressStore.PATH)
 	ProgressStore.path = ProgressStore.TEST_PATH
+	# The checks read the Korean words (the user-approved sentences; the English ones: locale_checks).
+	Locale.app_may_choose = false
+	Locale.path = "user://language-test.cfg"
+	Locale.set_language("ko")
 	DirAccess.remove_absolute(ProgressStore.path)
 	# The story plays only where a check turns it on (tests/story_checks.gd): the App screens the
 	# other checks build never start it.
@@ -282,6 +286,11 @@ func _run() -> void:
 	_expect(slingshot != null and slingshot.can_instantiate(), "slingshot checks compile", "")
 	if slingshot != null and slingshot.can_instantiate():
 		await slingshot.new(self, _expect).run()
+	print("== the words by language (2026-11-02: content/locale/<lang>, Locale: every key, no words in the code or the data) ==")
+	var locale_checks: GDScript = load("res://tests/locale_checks.gd")
+	_expect(locale_checks != null and locale_checks.can_instantiate(), "locale checks compile", "")
+	if locale_checks != null and locale_checks.can_instantiate():
+		await locale_checks.new(self, _expect).run()
 	print("== the experiment definition (ExperimentDefinition: controls, options, ranges, grids, observations, manipulation rules) ==")
 	var definition_checks: GDScript = load("res://tests/experiment_definition_checks.gd")
 	_expect(definition_checks != null and definition_checks.can_instantiate(), "experiment definition checks compile", "")
@@ -292,6 +301,11 @@ func _run() -> void:
 	_expect(hand != null and hand.can_instantiate(), "hand guide checks compile", "")
 	if hand != null and hand.can_instantiate():
 		await hand.new(self, _expect).run()
+	print("== a young child's way through the talk (2026-10-31: tap anywhere, the pictures shown, slower words) ==")
+	var kid_flow: GDScript = load("res://tests/kid_flow_checks.gd")
+	_expect(kid_flow != null and kid_flow.can_instantiate(), "kid flow checks compile", "")
+	if kid_flow != null and kid_flow.can_instantiate():
+		await kid_flow.new(self, _expect).run()
 	print("== the mission round as a module (MissionRound: clue, question, bridge, stamps, reason, misses, auto conditions) ==")
 	var round_module: GDScript = load("res://tests/mission_round_checks.gd")
 	_expect(round_module != null and round_module.can_instantiate(), "mission round checks compile", "")
@@ -390,6 +404,7 @@ func _run() -> void:
 	await _check_key_cards()
 	await _check_gesture_tip()
 	await _check_tip_rebuild()
+	await _check_tip_after_question()
 	await _check_back_button()
 	await _check_small_window_title()
 	DirAccess.remove_absolute(ProgressStore.path)
@@ -1330,7 +1345,7 @@ func _check_layout(definition: Dictionary) -> void:
 			"%s landscape: the 3D view fills the screen, sidebar closed" % name, "view %s" % screen.view.size)
 		var texts := _button_texts(screen)
 		# No camera chips anywhere, the 자세히 sidebar included (its 시점 section went, 2026-10-27 user request).
-		var view_chips := _button_texts(screen).filter(func(t: String) -> bool: return t in CameraRig.MODE_LABELS.values())
+		var view_chips := _button_texts(screen).filter(func(t: String) -> bool: return t in Locale.map("camera.modes").values())
 		_expect("정면으로" not in texts and view_chips.is_empty() and screen.view.rig.mode == "front",
 			"%s landscape: front camera, no 정면으로 button, no camera chips (over the view or in the sidebar)" % name, "mode %s, chips %s" % [screen.view.rig.mode, str(view_chips)])
 		var overlays: Array[Control] = [screen._title_bar, screen._top_buttons, screen._key_row, screen._action_row]
@@ -1348,7 +1363,7 @@ func _check_layout(definition: Dictionary) -> void:
 		# A game lab (2026-10-27): one card, reset as a small "다시" and (2026-10-29) no other button.
 		var lean := true
 		if game_lab:
-			lean = cards.size() == 1 and screen._action_buttons.reset.text == screen.RESET_SHORT \
+			lean = cards.size() == 1 and screen._action_buttons.reset.text == Locale.t("screen.reset_short") \
 				and screen._action_row.get_child_count() == 1 and screen._extra_actions.is_empty()
 		_expect(inside and apart and actions_ok and compact and lean and screen._key_row.get_child_count() == cards.size(),
 			"%s landscape: title, buttons, %d key card(s) and the actions sit inside the view without overlapping (a game lab: one card, only 다시)" % [name, cards.size()],
@@ -1433,7 +1448,7 @@ func _check_key_cards() -> void:
 
 
 ## The gesture hint: short, shown only the first time an experiment opens in an app run, fades on
-## the first gesture or after TIP_SECONDS, never overlaps the cards or buttons; the sidebar keeps the full text.
+## the first gesture (no timer), never overlaps the cards or buttons; the sidebar keeps the full text.
 func _check_gesture_tip() -> void:
 	var host := Control.new()
 	host.theme = load(UI_THEME).build()
@@ -1446,9 +1461,12 @@ func _check_gesture_tip() -> void:
 	var other: Dictionary = {}
 	for definition in definitions:
 		if definition.id == "incline-friction":
-			incline = definition
+			incline = definition.duplicate(true)
 		elif other.is_empty() and definition.get("tip_short", "") != "":
-			other = definition
+			other = definition.duplicate(true)
+	# Dugi's question holds the hint back until it is answered (_check_tip_after_question): not here.
+	incline.erase("predict")
+	other.erase("predict")
 	var first: Control = screen_class.new()
 	first.setup(incline)
 	host.add_child(first)
@@ -1485,19 +1503,51 @@ func _check_gesture_tip() -> void:
 	for i in 3:
 		await process_frame
 	var other_shown: bool = fresh._tip.visible
-	fresh._process(screen_class.TIP_SECONDS + 0.1)
-	for i in 40:
+	# No timer (2026-10-31 user: the words went by too fast for a child): it stays until the child does it.
+	for i in 60 * 10:
 		await process_frame
-	var timed_out: bool = not fresh._tip.visible
-	_expect(faded and hidden_again and other_shown and timed_out,
-		"gesture hint: fades on the first gesture, is not shown again on re-entry or after a condition change, another experiment still shows its own once, and the timer fades it",
-		"faded %s, again hidden %s, other shown %s, timed out %s" % [faded, hidden_again, other_shown, timed_out])
+	var stays: bool = fresh._tip.visible
+	_expect(faded and hidden_again and other_shown and stays,
+		"gesture hint: fades on the first gesture, is not shown again on re-entry or after a condition change, another experiment still shows its own once, and it stays until then (no timer)",
+		"faded %s, again hidden %s, other shown %s, stays %s" % [faded, hidden_again, other_shown, stays])
 	fresh.queue_free()
 	await process_frame
 	host.queue_free()
 
 
-## The hint counts as seen once it closed (timer or first gesture), not when the screen was built:
+## While Dugi asks, the hint waits (hidden, not used up) and comes back once the question is answered
+## (2026-10-31: before, the question hid it for good at once, so a child never saw it).
+func _check_tip_after_question() -> void:
+	var host := Control.new()
+	host.theme = load(UI_THEME).build()
+	host.size = TABLET_LANDSCAPE
+	root.add_child(host)
+	var screen_class: GDScript = load(EXPERIMENT_SCREEN)
+	screen_class.reset_tips_shown()
+	var definition := ExperimentRegistry.find("incline-friction")
+	var screen: Control = screen_class.new()
+	screen.setup(definition)
+	host.add_child(screen)
+	for i in 5:
+		await process_frame
+	var hidden_while_asking: bool = screen._asking() and not screen._tip.visible
+	screen._predict_pick_choice(str(MissionRound.predict(definition).get("answer", "")))
+	for i in 60:   # Dugi's bridge opens, then is read (a tap)
+		await process_frame
+		if screen.dialogue.active:
+			screen.dialogue.advance()
+			screen.dialogue.advance()
+	for i in 10:
+		await process_frame
+	var back: bool = screen._tip.visible and screen._tip.text != ""
+	_expect(hidden_while_asking and back, "gesture hint: hidden while Dugi asks, shown once the question is answered and his box closed",
+		"while asking hidden %s, after %s" % [hidden_while_asking, back])
+	screen_class.reset_tips_shown()
+	host.queue_free()
+	await process_frame
+
+
+## The hint counts as seen once it closed (the first gesture), not when the screen was built:
 ## a screen rebuilt before that (a condition change redraws it from the saved state) shows it again.
 func _check_tip_rebuild() -> void:
 	var host := Control.new()
@@ -1725,14 +1775,17 @@ func _check_settings_marker(_definition: Dictionary) -> void:
 		DirAccess.remove_absolute(path)
 		var screen: Control = script.new()
 		screen.theme = load(UI_THEME).build()
-		screen.set_tier = func(_tier: String) -> bool: return restarts
+		var on_disk := [false]
+		screen.set_tier = func(_tier: String) -> bool:   # a restart can end the process inside it
+			on_disk[0] = FileAccess.file_exists(path)
+			return restarts
 		root.add_child(screen)
 		screen._select("medium" if root.get_node("Quality").tier != "medium" else "low")
 		screen._apply_tier()
-		outcomes[restarts] = FileAccess.file_exists(path)
+		outcomes[restarts] = FileAccess.file_exists(path) and on_disk[0]
 		screen.queue_free()
 	DirAccess.remove_absolute(path)
-	_expect(not outcomes[false] and outcomes[true], "resume marker is written only when set_tier restarts the app", str(outcomes))
+	_expect(not outcomes[false] and outcomes[true], "resume marker is on disk while set_tier runs and kept only when it restarts the app", str(outcomes))
 
 
 ## Bench lines stay valid JSON for any scene name, and the signal carries scene and p95 itself.

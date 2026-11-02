@@ -1,9 +1,11 @@
 ## Loads experiment content from content/experiments/index.json and validates each definition
 ## against the shell's interface. index.json `experiments` are listed on the list screen; `hidden`
 ## ones (development scenes) are only opened by id (--experiment=<id>).
-## Each experiment file holds all of its definition, texts included (title, question, steps, observe,
-## terms, law, tip, tip_short). Until 2026-10-30 the texts lived in content/mechanics-labs.json, shared
-## with the web 2D app (deprecated and removed, docs/adr/0002-drop-web-2d.md).
+## Each experiment file holds its definition's data; its words (title, question, steps, observe, terms,
+## law, tip, tip_short, labels, the kid and mission lines) are in the same shape in
+## content/locale/<lang>/experiments/<file> and are put back in when it loads (Locale.overlay,
+## 2026-11-02). Until 2026-10-30 the texts lived in content/mechanics-labs.json, shared with the web
+## 2D app (deprecated and removed, docs/adr/0002-drop-web-2d.md).
 class_name ExperimentRegistry
 extends RefCounted
 
@@ -41,6 +43,14 @@ static func load_all() -> Array[Dictionary]:
 	return result
 
 
+## The definitions are read again on the next load_all (Locale.set_language: their words changed).
+## (Not "reload": that is Script.reload, which recompiles the script and resets its static vars.)
+static func forget_loaded() -> void:
+	_cache = []
+	_hidden = []
+	_loaded = false
+
+
 ## The loaded definition with this id, listed or hidden ({} if there is none).
 static func find(id: String) -> Dictionary:
 	load_all()
@@ -57,7 +67,7 @@ static func _load_files(files: Array, into: Array[Dictionary]) -> void:
 		if not raw is Dictionary:
 			push_error("ExperimentRegistry: cannot read %s" % path)
 			continue
-		var definition: Dictionary = raw
+		var definition: Dictionary = Locale.overlay(raw, Locale.words("experiments".path_join(str(file_name))))
 		var problems := validate(definition)
 		if not problems.is_empty():
 			push_error("ExperimentRegistry: %s is invalid: %s" % [path, "; ".join(problems)])
@@ -138,6 +148,7 @@ static func validate(definition: Dictionary) -> PackedStringArray:
 ## the child-facing ones go here and the screen shows them in place of those (the sidebar keeps the
 ## full texts and the formula labels):
 ##   "kid": {"title": <the title bar>, "place": <the map's spot name>, "say": <Dugi's dialogue>, "say_face": <its face>,
+##           "intro": <Dugi's introduction of the lab before his question>, "intro_face": <its face>,
 ##           "tip": <the short gesture hint>, "card": <the one key observation shown as a card>,
 ##           "cards": {<observation id>: <its key card's caption>},
 ##           "states": {<a status text of the lab>: <its key card words>},
@@ -145,18 +156,17 @@ static func validate(definition: Dictionary) -> PackedStringArray:
 ##           "bars": {<observation id>: <the value of a full bar>},
 ##           "picks": {<control id>: [the mission's picture buttons, ConditionPicks]}}
 ## Every key is optional; a missing one falls back to the full text (kid_text, card_label).
-## The key cards over the 3D view show a number with one decimal and its unit in words (KID_UNITS:
+## The key cards over the 3D view show a number with one decimal and its unit in words (ui.json kid.units:
 ## "1.3초", "1초에 12.5미터"); a game lab's key observations have such a unit (an energy, an
 ## acceleration, a force stays in "자세히"). A force that is the lab's goal (the push that started the
 ## box) is a bar instead (`bars`, 2026-10-28 "어려운 말들은 세부 쪽으로": no "뉴턴" on the kid screen):
 ## the bar grows with the value up to its full length at the given value; the number is in "자세히".
 ## States and minus words change the card's words only: the lab's text and the value (the sidebar's,
 ## full precision) stay the formula's (ExperimentScreen.card_text).
-const KID_TEXTS := {"title": "title", "place": "title", "say": "observe", "tip": "tip_short"}
+const KID_TEXTS := {"title": "title", "place": "title", "say": "observe", "tip": "tip_short", "intro": "intro"}
 const KID_MAPS := ["cards", "states", "minus"]
-## Observation unit -> [the words before the number, the words after it] on a key card.
-const KID_UNITS := {"": ["", ""], "m": ["", "미터"], "s": ["", "초"], "m/s": ["1초에 ", "미터"],
-	"°": ["", "도"], "kg": ["", "킬로그램"], "바퀴": ["", "바퀴"], "줄": ["", "줄"], "배": ["", "배"]}
+## Observation unit -> [the words before the number, the words after it] on a key card: the
+## language's ui.json kid.units (Locale).
 
 
 static func _validate_kid(kid: Variant, ids: Array) -> PackedStringArray:
@@ -175,9 +185,9 @@ static func _validate_kid(kid: Variant, ids: Array) -> PackedStringArray:
 		elif key == "card":
 			if not kid.card in ids:
 				problems.append("kid.card must name an observation")
-		elif key == "say_face":
-			if not kid.say_face in Story.FACES:
-				problems.append("kid.say_face must be one of Story.FACES")
+		elif key == "say_face" or key == "intro_face":
+			if not kid[key] in Story.FACES:
+				problems.append("kid.%s must be one of Story.FACES" % key)
 		elif key == "picks":
 			pass   # ConditionPicks.validate (it needs the controls and the missions)
 		elif key == "bars":
@@ -186,7 +196,7 @@ static func _validate_kid(kid: Variant, ids: Array) -> PackedStringArray:
 					and bars.values().all(func(v: Variant) -> bool: return (v is float or v is int) and v > 0.0)):
 				problems.append("kid.bars must name observations with a full-bar value > 0 each")
 		elif not KID_TEXTS.has(key):
-			problems.append("kid.%s unknown (title, place, say, tip, card, cards, states, minus, bars, picks)" % key)
+			problems.append("kid.%s unknown (title, place, say, intro, tip, card, cards, states, minus, bars, picks)" % key)
 		elif not (kid[key] is String and kid[key] != ""):
 			problems.append("kid.%s must be a text" % key)
 	return problems
@@ -214,14 +224,14 @@ static func _validate_story(story: Variant) -> PackedStringArray:
 	return problems
 
 
-## A game lab's key cards (it has `kid`): every key observation's unit has its words (KID_UNITS) or
+## A game lab's key cards (it has `kid`): every key observation's unit has its words (ui.json kid.units) or
 ## the observation is a bar (kid.bars); kid.card and every stage's `card` are key observations.
 static func _validate_kid_cards(definition: Dictionary) -> PackedStringArray:
 	var problems := PackedStringArray()
 	var kid: Dictionary = definition.kid if definition.get("kid") is Dictionary else {}
 	var bars: Dictionary = kid.get("bars") if kid.get("bars") is Dictionary else {}
 	for observation in definition.observations:
-		if observation.get("id") in definition.key_observations and not KID_UNITS.has(str(observation.get("unit", ""))) \
+		if observation.get("id") in definition.key_observations and not Locale.map("kid.units").has(str(observation.get("unit", ""))) \
 				and not bars.has(observation.get("id")):
 			problems.append("key_observations: %s (%s) has no kid unit words; keep it in the sidebar" % [observation.id, observation.unit])
 	if kid.has("card") and not kid.card in definition.key_observations:

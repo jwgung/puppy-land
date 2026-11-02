@@ -305,21 +305,21 @@ func observations() -> Dictionary:
 	var landing := flight_time()
 	var apex := apex_height()
 	var state_text: String = {
-		"ready": "던지기 전",
-		"flying": "날아가는 중",
-		"landed": "바닥에 닿음",
-		"out": "섬 밖으로 날아감",
-		"fence": "울타리에 맞음",
-		"floating": "무중력: 곧게 날아가요",
+		"ready": Locale.t("projectile.status.ready"),
+		"flying": Locale.t("projectile.status.flying"),
+		"landed": Locale.t("projectile.status.landed"),
+		"out": Locale.t("projectile.status.out"),
+		"fence": Locale.t("projectile.status.fence"),
+		"floating": Locale.t("projectile.status.floating"),
 	}.get(status(), "")
 	return {
 		"g": g,
 		"time": t,
 		"state": state_text,
 		"launch_height": launch_height(),
-		"flight_time": landing if is_finite(landing) else "닿지 않아요",
-		"range": flight_range() if is_finite(landing) else "닿지 않아요",
-		"apex": apex if is_finite(apex) else "계속 올라가요",
+		"flight_time": landing if is_finite(landing) else Locale.t("projectile.no_landing"),
+		"range": flight_range() if is_finite(landing) else Locale.t("projectile.no_landing"),
+		"apex": apex if is_finite(apex) else Locale.t("projectile.rising"),
 		"x": formula_x(t),
 		"y": formula_y(t),
 		"vx": PhysicsLaws.constant_acceleration_velocity(launch_vx(), 0.0, t),
@@ -562,12 +562,12 @@ func slingshot_setup() -> Dictionary:
 ## The pull's angle in a child's words (no degrees on the kid screen; the number is in 자세히).
 static func angle_words(value: Vector2) -> String:
 	if value.x <= 25.0:
-		return "낮게"
+		return Locale.t("projectile.angle.low")
 	if value.x <= 55.0:
-		return "비스듬히"
+		return Locale.t("projectile.angle.slanted")
 	if value.x <= 75.0:
-		return "높이"
-	return "아주 높이"
+		return Locale.t("projectile.angle.high")
+	return Locale.t("projectile.angle.very_high")
 
 
 func manipulation_body(id: String) -> PhysicsBody3D:

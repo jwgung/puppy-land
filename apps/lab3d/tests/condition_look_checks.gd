@@ -452,7 +452,7 @@ func check_pick_sizes() -> void:
 			checked += 1
 			if absf(e[1] - pow(e[0] / top, 1.0 / 3.0)) > 6e-4 or not e[2] in ["ball_blue", "ball_orange", "ball_red", "box", "weight"]:
 				problems.append("%s %s kg: size %s, picture %s" % [id, e[0], e[1], e[2]])
-	expect.call(problems.is_empty() and checked >= 15,
+	expect.call(problems.is_empty() and checked >= 14,   # (the drum has two chests since 2026-11-01)
 		"mass look (picture buttons): a mass's picture is as big as the lab draws it, (m / the heaviest button)^(1/3): equal masses equal (the two 1 kg collision balls), heavier bigger",
 		"; ".join(problems))
 

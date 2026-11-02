@@ -92,14 +92,14 @@ func check_puppy_words() -> void:
 	var lines := Story.puppy_lines()
 	var hits := []
 	for line in lines:
-		for word in Story.SCIENCE_WORDS:
+		for word in Story.science_words():
 			if str(line).contains(word):
 				hits.append("%s: %s" % [word, line])
 	# The list is not vacuous: Dugi's own words use it (and are allowed to).
 	var dugi_uses := false
 	for definition in ExperimentRegistry.load_all():
 		for stage in MissionRound.missions(definition).get("stages", []):
-			dugi_uses = dugi_uses or Story.SCIENCE_WORDS.any(func(w: String) -> bool: return str(stage.get("say", "")).contains(w))
+			dugi_uses = dugi_uses or Story.science_words().any(func(w: String) -> bool: return str(stage.get("say", "")).contains(w))
 	expect.call(hits.is_empty() and lines.size() >= 27 and dugi_uses,
 		"faces: Puppy's %d lines (clues, riddles, not-here, story pages) explain no science (Dugi's lines may)" % lines.size(), "; ".join(hits))
 
@@ -222,6 +222,16 @@ func check_lab_faces() -> void:
 			box.advance()
 		await tree.process_frame
 		await tree.process_frame
+		# Dugi's introduction (its own face, kid.intro_face), then the question.
+		var intro_ok: bool = box.speaker == "dugi" and box.text == MissionRound.intro(screen.definition.raw)[0] \
+			and box.face == MissionRound.intro(screen.definition.raw)[1]
+		for k in 8:
+			if not box.active or box.hold:
+				break
+			box.advance()
+		await tree.process_frame
+		await tree.process_frame
+		clue_ok = clue_ok and intro_ok
 		var predict := MissionRound.predict(screen.definition.raw)
 		var question_ok: bool = box.speaker == "dugi" and box.text == str(predict.question) and box.face == "thinking"
 		var answer := str(predict.answer)
@@ -235,7 +245,7 @@ func check_lab_faces() -> void:
 		# attempt's result line (here a miss), then at once.
 		for k in int(DugiActor.RAISE_S * 60.0) + 4:
 			await tree.process_frame
-		var bridge_ok: bool = box.active and box.text == "%s %s" % [predict.bridge, MissionRound.BRIDGE_FIRST] and box.face == str(predict.bridge_face)
+		var bridge_ok: bool = box.active and box.joined() == "%s %s" % [predict.bridge, MissionRound.mission_line(screen.definition.raw, 0)] and box.face == str(predict.bridge_face)
 		box.close(true)
 		screen.cast.dugi.stop(true)
 		await tree.process_frame

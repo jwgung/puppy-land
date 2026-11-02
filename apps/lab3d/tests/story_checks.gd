@@ -25,7 +25,7 @@ const CLUES := {
 	"rotation": "무거운 보물 상자 밑에 조각이 끼어 있어! 막대를 눌러서 상자를 들어 보자.",
 	"pulley": "보물 상자 창살 안에 조각이 있어! 줄을 당겨서 상자를 높은 선반까지 올려 보자!",
 	"constraints": "거북이 시계 속에 조각이 있어! 공을 시계 추랑 똑같이 흔들어 보자!",
-	"buoyancy": "물속 보물 상자에 조각이 있어! 통을 띄워서 상자를 건져 보자.",
+	"buoyancy": "조각이 연못 가운데 바위섬에 떨어졌어! 통을 띄워서 건너가 보자!",
 	"orbit": "조각 하나가 저 멀리 우주에 떠 있어! 행성을 쏴서 데려오자!",
 }
 const PROLOGUE := [
@@ -38,7 +38,8 @@ const PROLOGUE := [
 	["dugi", "조각마다 숨은 곳이 달라요. 공을 던지고, 상자를 밀고, 통을 띄워 봐야 꺼낼 수 있어요."],
 	["puppy", "빵고양이, 같이 가자!"],
 ]
-const FINALE := [["puppy", "조각을 모두 찾았어!"], ["dugi", "조각을 다시 맞추면 별이 빛을 낼 수 있어요. 하늘로 돌려보내요."]]
+const FINALE := [["puppy", "조각을 모두 찾았어!"], ["dugi", "조각을 다시 맞추면 별이 빛을 낼 수 있어요. 하늘로 돌려보내요."],
+	["dugi", "새총처럼 별을 아래로 당겼다가 놓아 봐요! 세게 당길수록 더 빨리, 더 높이 날아가요."]]
 
 
 func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:
@@ -113,11 +114,11 @@ func check_prologue() -> void:
 	var home := await _home(TABLET, true)
 	var story: StoryDirector = home.story
 	var rig: CameraRig = home.view.rig
-	var bar: Control = home.find_child("TopBar", true, false)
+	var bar: Control = home.find_child("MapButtons", true, false)
 	var start_ok: bool = story != null and story.cinematic() and story.page == 0 and story.dialogue.active \
 		and story.dialogue.speaker == "dugi" and story.dialogue.text == PROLOGUE[0][1] and not rig.is_processing() \
 		and not bar.visible and story.skip_button.visible and rig.cur_distance > 100.0
-	expect.call(start_ok, "prologue: the first launch opens on the far sea (wide shot), Dugi's first page, 건너뛰기, no top bar",
+	expect.call(start_ok, "prologue: the first launch opens on the far sea (wide shot), Dugi's first page, 건너뛰기, no map buttons",
 		"distance %.0f" % rig.cur_distance)
 	var speakers := []
 	var max_pitch := -90.0
@@ -177,7 +178,7 @@ func check_prologue() -> void:
 ## Once: the next map opens without it; 이야기 다시 보기 in the settings plays it again.
 func check_prologue_once_and_replay() -> void:
 	var home := await _home(TABLET, Story.should_play_prologue())
-	expect.call(not home.story.busy() and home.find_child("TopBar", true, false).visible, "prologue: plays once (the next map opens without it)", "")
+	expect.call(not home.story.busy() and home.find_child("MapButtons", true, false).visible, "prologue: plays once (the next map opens without it)", "")
 	await _free(home)
 	var settings: Control = load(SETTINGS_SCREEN).new()
 	settings.set_tier = func(_t: String) -> bool: return false
@@ -192,6 +193,7 @@ func check_prologue_once_and_replay() -> void:
 	var button: Button = settings.find_child("StoryReplay", true, false)
 	if button != null:
 		button.pressed.emit()
+	await tree.process_frame   # (asked after the tap's input pass, SettingsScreen)
 	expect.call(button != null and button.text == "이야기 다시 보기" and asked[0] == 1 and Story.should_play_prologue(true),
 		"prologue: the settings' 이야기 다시 보기 asks for it again", "")
 	host.queue_free()
@@ -236,13 +238,19 @@ func check_clue() -> void:
 	_tap_through(box)
 	await tree.process_frame
 	await tree.process_frame
-	var asked: bool = box.active and box.speaker == "dugi" and box.name_label.text == "두기두기" and box.hold \
+	# Dugi tells what the lab is and which force it shows (kid.intro, 2026-10-31), then asks.
+	var intro: String = MissionRound.intro(screen.definition.raw)[0]
+	var introduced: bool = box.active and box.speaker == "dugi" and not box.hold and box.text == intro and not screen._choices.visible
+	_tap_through(box)
+	await tree.process_frame
+	await tree.process_frame
+	var asked: bool = introduced and box.active and box.speaker == "dugi" and box.name_label.text == "두기두기" and box.hold \
 		and box.text == str(MissionRound.predict(screen.definition.raw).question) and screen._choices.visible
-	expect.call(asked, "clue: then Dugi asks his question with the picture buttons", box.text)
+	expect.call(asked, "clue: then Dugi introduces the lab, then asks his question with the picture buttons", box.text)
 	await _free(screen)
 	screen = await _lab("projectile")
-	expect.call(screen.dialogue.speaker == "dugi" and screen.dialogue.text == str(MissionRound.predict(screen.definition.raw).question),
-		"clue: never again in the same lab (Dugi's question at once)", screen.dialogue.text)
+	expect.call(screen.dialogue.speaker == "dugi" and screen.dialogue.text == intro,
+		"clue: never again in the same lab (Dugi's introduction at once, then his question)", screen.dialogue.text)
 	await _free(screen)
 	Story.enabled = false
 	screen = await _lab("spring")
@@ -340,7 +348,9 @@ func check_flight() -> void:
 
 
 ## The finale: when the 11th piece is at the lookout, once: the pieces gather into the star, Puppy then
-## Dugi speak, the cat lifts it and it rises; the sea sparkles, the lanterns light; then the child's
+## Dugi speak, the cat lifts it; the child pulls it down and lets go like the labs' slingshot
+## (2026-11-01): a weak pull rises to y0 + v^2 / 2g and comes back down under gravity (Dugi: pull
+## harder), a strong one reaches the sky; the sea sparkles, the lanterns light; then the child's
 ## camera, and the star stays in the map's sky (in the default view).
 func check_finale() -> void:
 	DirAccess.remove_absolute(ProgressStore.path)
@@ -366,22 +376,51 @@ func check_finale() -> void:
 			story.advance(0.05)
 		_tap_through(story.dialogue)
 	var lifted := false
+	for i in 40:
+		story.advance(0.05)
+		lifted = lifted or story._lift
+	# Waits for the pull: nothing flies by itself, the paw shows the pull on the star.
+	var waits: bool = story.launch_waits and story._launch.is_empty() and story.launch_guide != null and story.launch_guide.kind == "pull"
+	var at: Vector2 = home._world_to_screen(story._star.global_position)
+	# A tap (inside the dead zone) and an upward pull throw nothing; the paw shows the pull again.
+	_pull(story, at, 10.0)
+	_pull(story, at, -80.0)
+	var no_throw: bool = story.launches == 0 and story.launch_waits and story.launch_guide.kind == "pull"
+	# A weak pull (60 units down: 8.8 m/s, its top y0 + v^2 / 2g far under the sky): up and back down.
+	var from_y: float = story._paws_top().y   # it leaves from the paws
+	_pull(story, at, 60.0)
+	var weak_top := 0.0
+	for i in 80:
+		story.advance(0.05)
+		weak_top = maxf(weak_top, story._star.position.y)
+		if story._retry_open:
+			break
+	var want_top: float = StoryDirector.launch_top(from_y, StoryDirector.launch_speed(60.0))
+	var came_back: bool = story._retry_open and story.dialogue.text == Story.finale_retry_line() and story.dialogue.speaker == "dugi" \
+		and absf(weak_top - want_top) < 0.15 and weak_top < StoryDirector.SKY_HIGH.y and story.night > 0.0
+	_tap_through(story.dialogue)
+	story.advance(0.05)
+	# A strong pull (the whole way): it reaches the sky.
+	at = home._world_to_screen(story._star.global_position)
+	_pull(story, at, StoryDirector.LAUNCH_PULL_FULL)
 	var rose := 0.0
 	var sparkled := false
 	for i in 200:
 		story.advance(0.05)
-		lifted = lifted or story._lift
 		if story._star != null:
 			rose = maxf(rose, story._star.position.y)
 		sparkled = sparkled or story._sparkles.size() > 10
 	expect.call(gathered and str(words) == str(FINALE), "finale: the pieces gather into the star, then Puppy and Dugi speak", str(words))
-	expect.call(lifted and rose > 15.0 and sparkled, "finale: the cat lifts the star, it rises to the sky, the sea sparkles", "rose %.1f" % rose)
+	expect.call(lifted and waits and no_throw and came_back and story.launches == 2,
+		"finale: the cat lifts the star and it waits for the child's pull (the paw shows it; a tap or an upward pull throws nothing); a weak pull rises to y0 + v^2 / 2g and comes back down, Dugi says pull harder",
+		"lifted %s, waits %s, no throw %s, back %s (top %.2f, want %.2f), launches %d" % [lifted, waits, no_throw, came_back, weak_top, want_top, story.launches])
+	expect.call(rose >= StoryDirector.SKY_HIGH.y - 1e-3 and sparkled, "finale: a strong pull sends the star up to the sky, the sea sparkles", "rose %.1f" % rose)
 	for i in 40:
 		story.advance(0.05)
 	await tree.process_frame
 	var sky: Node3D = story.sky_star
 	var on_view: Vector2 = home.view.rig.unproject_position(sky.global_position) / (Vector2(home.view.viewport.size) / home.view.size) if sky != null else Vector2.INF
-	var bar: Control = home.find_child("TopBar", true, false)
+	var bar: Control = home.find_child("MapButtons", true, false)
 	expect.call(not story.busy() and sky != null and Rect2(Vector2(0.0, bar.size.y), home.view.size - Vector2(0.0, bar.size.y)).has_point(on_view)
 		and story.sea.lanterns.all(func(l: Node3D) -> bool: return l.visible) and story.night == 0.0
 		and str(rig.get_state()) == str(_default_state(rig)) and rig.is_processing(),
@@ -403,7 +442,7 @@ func check_measurements() -> void:
 		"story: every measurement flag turns it off; a plain launch does not", "")
 	DirAccess.remove_absolute(ProgressStore.path)
 	var home := await _home(TABLET, Story.should_play_prologue())
-	expect.call(home.story == null and home.find_children("*", "StarEmblem", true, false).is_empty() and home.find_child("TopBar", true, false).visible,
+	expect.call(home.story == null and home.find_children("*", "StarEmblem", true, false).is_empty() and home.find_child("MapButtons", true, false).visible,
 		"story: off (a measurement) the map plays nothing and shows no emblem", "")
 	await _free(home)
 	var screen := await _lab("buoyancy")
@@ -412,6 +451,20 @@ func check_measurements() -> void:
 
 
 # --- helpers ---------------------------------------------------------------------------------------
+
+## A finger on the shield: presses at `at`, pulls `down` UI units straight down, lets go.
+func _pull(story: StoryDirector, at: Vector2, down: float) -> void:
+	for e in [[true, at], [null, at + Vector2(0.0, down * 0.5)], [null, at + Vector2(0.0, down)], [false, at + Vector2(0.0, down)]]:
+		var event: InputEvent
+		if e[0] == null:
+			event = InputEventScreenDrag.new()
+		else:
+			event = InputEventScreenTouch.new()
+			event.pressed = e[0]
+		event.position = e[1]
+		story._on_shield_input(event)
+		story.advance(0.016)
+
 
 ## Taps until this page is gone (the next page may open at once: it is not tapped).
 func _tap_through(box: DialogueBox) -> void:

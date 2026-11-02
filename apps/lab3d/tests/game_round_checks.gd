@@ -34,10 +34,11 @@ func check_round() -> void:
 	var m: Manipulator = screen.manipulator
 	var stages: Array = MissionRound.missions(lab.definition.raw).get("stages", [])
 	var predict: Dictionary = MissionRound.predict(lab.definition.raw)
-	# The strip: one stamp per stage and the first stage's text.
+	# The strip: one stamp per stage; the first stage's text waits for Dugi's bridge after the answer
+	# (2026-11-01 user: the kids missed it on the strip).
 	expect.call(screen._mission_strip != null and screen._mission_strip.visible and screen._stamp_labels.size() == stages.size()
-		and screen._mission_text.text == str(stages[0].text),
-		"round: the strip shows one stamp per stage and the first stage", screen._mission_text.text)
+		and screen._mission_text.text == "",
+		"round: the strip shows one stamp per stage, the first stage's text waits for Dugi", screen._mission_text.text)
 	# The formula's answer is hidden before the throw (key card and sidebar both read "?": the card
 	# in a child's words, the sidebar with its unit).
 	screen._update_readouts(false)
@@ -108,7 +109,7 @@ func check_round() -> void:
 	(buttons[0] as Button).pressed.emit()
 	# The pick goes at once; Dugi's bridge to the first mission follows (2026-10-29, its own box).
 	expect.call(screen.mission_round.pick == "near" and not screen.mission_round.asking() and not box.active and screen._choices == null
-		and screen._mission_text.text == ExperimentScreen.PICK_PREFIX + "가까이",
+		and screen._mission_text.text == Locale.t("screen.pick_prefix") + "가까이",
 		"round: a picked picture is kept and the question goes at once", screen._mission_text.text)
 	expect.call(screen.dialogue.get_index() == dialogue_home and screen._question_shield == null,
 		"round: after the pick the dim goes and the box is back in its place among the overlays", "%d %d" % [screen.dialogue.get_index(), dialogue_home])
@@ -136,11 +137,13 @@ func check_round() -> void:
 		and screen._key_labels["range"].text == range_card,
 		"round: once the ball landed the formula range shows (card: one decimal in words; sidebar: full precision)",
 		"%s / %s" % [screen._key_labels["range"].text, range_text])
-	expect.call(ProgressStore.stamps(ProgressStore.load(), "projectile") == 1 and screen._mission_text.text == str(stages[1].text),
-		"round: the first throw onto the near crate earns the first stamp; the next stage shows",
+	# The next stage's text waits for Dugi to tell it (다음 미션, 2026-11-01).
+	expect.call(ProgressStore.stamps(ProgressStore.load(), "projectile") == 1 and screen._mission_text.text == "" and screen.mission_round.text() == str(stages[1].text),
+		"round: the first throw onto the near crate earns the first stamp; the next stage is current, its text waits for Dugi (다음 미션)",
 		"stamps %d, '%s'" % [ProgressStore.stamps(ProgressStore.load(), "projectile"), screen._mission_text.text])
 	var said := await _next_explanation(screen)
 	expect.call(said == str(predict.reason), "round: after the first throw Dugi tells the prediction's reason", said)
+	screen._cancel_next()   # the child goes on (다음 미션: the next stage is judged only then)
 	# Second throw straight away (no 처음으로): 45°, onto the far crate.
 	await _throw(screen, lab, 45.0, 8.0)
 	await _run_to_end(lab)
@@ -149,6 +152,7 @@ func check_round() -> void:
 	said = await _next_explanation(screen)
 	expect.call(said == str(stages[1].say), "round: later explanations are Dugi's say for the stage (here the one just cleared; the reason was told once)", said)
 	expect.call(not screen.cast.puppy.celebrating(), "round: no celebration before the last stamp", "")
+	screen._cancel_next()
 	# The third stage wants the high crate: the far crate's throw again (45°) earns nothing.
 	await _throw(screen, lab, 45.0, 8.0)
 	await _run_to_end(lab)

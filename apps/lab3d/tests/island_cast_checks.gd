@@ -66,6 +66,7 @@ func run() -> void:
 		await check_placement(definition.id)
 		await check_layout(definition.id)
 	await check_dialogue()
+	check_sentence_lines()
 	await check_physics_unchanged()
 
 
@@ -764,6 +765,24 @@ func _record(id: String, with_cast: bool) -> Array:
 			explained = true
 	await _close(screen)
 	return [out, explained]
+
+
+## Each sentence starts its own line in the box (2026-11-02 user: "애들거니까, 문장 좀 끊어서 해줘"):
+## two short sentences are two lines of one page, a long one wraps on its own lines; the pages
+## joined back are the words exactly; "…" in a sentence does not break it.
+func check_sentence_lines() -> void:
+	var font: Font = load(UI_THEME).build().default_font
+	var words := "조각을 다시 맞추면 별이 빛을 낼 수 있어요. 하늘로 돌려보내요! 들판, 언덕… 섬 곳곳이야?"
+	var pages := DialogueBox.paginate(words, font, 28, 1200.0)
+	var lines: Array = []
+	var joined := ""
+	for pg in pages:
+		lines.append_array(pg.lines)
+		for j in pg.lines.size():
+			joined += pg.lines[j] + pg.seps[j]
+	var ok := lines == ["조각을 다시 맞추면 별이 빛을 낼 수 있어요.", "하늘로 돌려보내요!", "들판, 언덕… 섬 곳곳이야?"] \
+		and pages.size() == 2 and joined == words
+	expect.call(ok, "dialogue: each sentence starts its own line (two short ones share a page), the pages join back to the words", str(lines))
 
 
 func check_physics_unchanged() -> void:

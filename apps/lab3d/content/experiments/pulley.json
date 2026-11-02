@@ -1,37 +1,7 @@
 {
   "id": "pulley",
   "version": 1,
-  "title": "도르래 줄이 많으면 얼마나 쉬워질까?",
-  "category": "회전과 연결",
   "icon": "◉",
-  "question": "무거운 짐을 받치는 줄을 늘리면 필요한 힘은 얼마나 줄어들까요?",
-  "steps": [
-    "위쪽에서 1줄, 2줄, 4줄을 차례로 골라요.",
-    "줄 끝을 꾹 누르고 있어 당겨 봐요.",
-    "당긴 줄 길이와 짐이 올라간 높이를 비교해요."
-  ],
-  "observe": "필요한 힘이 적을수록 같은 높이에 더 긴 줄이 필요한지 보세요.",
-  "terms": [
-    {
-      "name": "도르래",
-      "description": "줄의 방향을 바꾸거나 필요한 힘을 줄여 주는 바퀴 장치예요."
-    },
-    {
-      "name": "장력",
-      "description": "팽팽한 줄이 연결된 물체를 당기는 힘이에요."
-    },
-    {
-      "name": "역학적 이득",
-      "description": "장치를 써서 힘이 몇 배 쉬워졌는지를 나타내요."
-    }
-  ],
-  "law": {
-    "title": "도르래의 역학적 이득",
-    "description": "짐을 받치는 줄이 많을수록 필요한 힘은 줄지만 당겨야 하는 거리는 늘어납니다.",
-    "equation": "F = mg/n · d당김 = nd상승"
-  },
-  "tip": "줄 끝을 한 손가락으로 꾹 누르고 있으면 당기는 힘이 1초에 65 N씩 커져요(옆 막대가 차올라요, 최대 250 N). 필요한 힘에 닿으면 줄이 1초에 1 m씩 당겨지고, 짐은 당긴 줄의 1/n만큼 올라가요(5 cm 눈금). 손을 떼면 멈추개가 짐을 잡으니 다시 눌러요. 조건에서 1줄·2줄·4줄을 바꾸어 필요한 힘과 당긴 줄 길이를 비교해요.",
-  "tip_short": "줄 끝을 꾹 누르고 있으면 당겨요",
   "scene": "res://experiments/pulley/pulley.gd",
   "bench_id": "PU",
   "camera": {
@@ -43,7 +13,12 @@
     "pan_radius": 6.0,
     "default_mode": "front",
     "views": {
-      "front": { "yaw_deg": 0.0, "pitch_deg": -4.0, "distance": 12.0, "target": [0.0, 2.9, 0.0] },
+      "front": {
+        "yaw_deg": 0.0,
+        "pitch_deg": -4.0,
+        "distance": 12.0,
+        "target": [0.0, 2.9, 0.0]
+      },
       "three_quarter": { "yaw_deg": 24.0, "pitch_deg": -14.0 },
       "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 13.0 },
       "side": { "yaw_deg": 90.0, "pitch_deg": -10.0, "distance": 11.0 },
@@ -52,33 +27,37 @@
   },
   "controls": [
     {
-      "id": "strands", "type": "choice", "label": "짐을 받치는 줄", "default": "one",
-      "note": "줄 수를 바꾸면 짐이 바닥으로 내려가고 처음부터 당겨요.",
+      "id": "strands",
+      "type": "choice",
+      "default": "one",
       "options": [
-        { "id": "one", "label": "1줄", "n": 1, "note": "고정 도르래 1개: 방향만 바뀌어요" },
-        { "id": "two", "label": "2줄", "n": 2, "note": "움직도르래 1개: 힘은 절반, 당길 줄은 2배" },
-        { "id": "four", "label": "4줄", "n": 4, "note": "움직도르래 2개: 힘은 4분의 1, 당길 줄은 4배" }
+        { "id": "one", "n": 1 },
+        { "id": "two", "n": 2 },
+        { "id": "four", "n": 4 }
       ]
     },
     {
-      "id": "mass", "type": "slider", "label": "짐 질량", "unit": " kg",
-      "min": 1.0, "max": 20.0, "step": 1.0, "default": 20.0, "digits": 0
+      "id": "mass",
+      "type": "slider",
+      "unit": " kg",
+      "min": 1.0,
+      "max": 20.0,
+      "step": 1.0,
+      "default": 20.0,
+      "digits": 0
     }
   ],
   "actions": [
-    { "id": "reset", "label": "처음으로", "style": "primary" }
+    { "id": "reset", "style": "primary" }
   ],
   "key_observations": ["strands", "pulled", "lift"],
   "predict": {
-    "question": "줄 하나로 무거운 상자를 올리면 힘이 많이 들까?",
     "question_face": "thinking",
     "choices": [
-      { "id": "hard", "label": "많이 들어요", "picture": "pulley_one_hard" },
-      { "id": "easy", "label": "조금 들어요", "picture": "pulley_one_easy" }
+      { "id": "hard", "picture": "pulley_one_hard" },
+      { "id": "easy", "picture": "pulley_one_easy" }
     ],
     "answer": "hard",
-    "reason": "줄 하나면 상자 무게를 내 손이 다 받쳐요. 그래서 힘이 많이 들어요.",
-    "bridge": "직접 당겨 보면 알 수 있어요!",
     "bridge_face": "happy"
   },
   "missions": {
@@ -90,54 +69,81 @@
     "hidden_until_end": ["required", "applied"],
     "hidden_series_until_end": ["required"],
     "stages": [
-      { "threshold": 200.0, "conditions": {"strands": "one", "mass": 20.0}, "text": "1줄로 보물 상자를 선반까지 올리기!", "say": "줄 하나로 들면 상자 무게를 내 손이 다 받쳐요. 그래서 힘이 많이 들어요.", "say_face": "worried", "win": "영차영차! 선반까지 올렸어!", "win_face": "happy", "miss": "상자가 꿈쩍 안 해. 더 오래 눌러 봐!", "miss_face": "worried" },
-      { "threshold": 100.0, "conditions": {"strands": "two", "mass": 20.0}, "text": "2줄로 보물 상자를 선반까지 올리기!", "say": "줄 두 개가 상자를 나눠 들어요. 그래서 힘이 반만 들어요. 대신 줄을 두 배 길게 당겨요.", "say_face": "explain", "win": "두 줄로 올렸어! 불이 켜졌어!", "win_face": "happy", "miss": "줄 두 개로 꾹 눌러 올려 봐!", "miss_face": "thinking" },
-      { "threshold": 50.0, "conditions": {"strands": "four", "mass": 20.0}, "text": "4줄로 가볍게 선반까지 올리기!", "say": "줄 네 개가 나눠 들면 힘이 조금만 들어요. 대신 줄을 네 배 길게 당겨요.", "say_face": "happy", "win": "창살이 열렸어! 조각이 나와!", "win_face": "surprised", "miss": "줄 네 개로 꾹 눌러 올려 봐!", "miss_face": "thinking" }
+      {
+        "threshold": 200.0,
+        "conditions": { "strands": "one", "mass": 20.0 },
+        "say_face": "worried",
+        "win_face": "happy",
+        "miss_face": "worried"
+      },
+      {
+        "threshold": 100.0,
+        "conditions": { "strands": "two", "mass": 20.0 },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking"
+      },
+      {
+        "threshold": 50.0,
+        "conditions": { "strands": "four", "mass": 20.0 },
+        "say_face": "happy",
+        "win_face": "surprised",
+        "miss_face": "thinking"
+      }
     ]
   },
-  "story": { "clue": "보물 상자 창살 안에 조각이 있어! 줄을 당겨서 상자를 높은 선반까지 올려 보자!", "clue_face": "explain", "map_clue": "줄 끝에 빨간 상자가 매달린 곳이야!", "map_clue_face": "explain" },
+  "story": { "clue_face": "explain", "map_clue_face": "explain" },
   "kid": {
+    "intro_face": "explain",
     "card": "strands",
-    "title": "줄이 많으면 힘이 덜 들까?",
-    "place": "줄로 짐 들기",
-    "say": "줄이 많을수록 힘이 덜 들어요. 대신 줄을 더 길게 당겨야 해요.",
     "say_face": "explain",
-    "tip": "줄 끝을 꾹 누르고 있어 봐요.",
     "picks": {
       "strands": [
-        {"value": "one", "label": "1줄", "picture": "pulley", "count": 1},
-        {"value": "two", "label": "2줄", "picture": "pulley", "count": 2},
-        {"value": "four", "label": "4줄", "picture": "pulley", "count": 4}
+        { "value": "one", "picture": "pulley", "count": 1 },
+        { "value": "two", "picture": "pulley", "count": 2 },
+        { "value": "four", "picture": "pulley", "count": 4 }
       ]
-    },
-    "cards": {"strands": "짐을 잡은 줄", "pulled": "내가 당긴 줄 길이", "lift": "짐이 올라간 높이"}
+    }
   },
   "note": {
-    "law": "짐을 받치는 줄이 n개면 필요한 힘은 n분의 1로 줄어요. 대신 줄을 n배 길게 당겨야 해요.",
     "formula": "F = mg / n",
     "numbers": [
-      { "label": "짐 무게 mg", "ids": ["weight"] },
-      { "label": "짐을 받치는 줄 n", "ids": ["strands"] },
-      { "label": "필요한 힘 F = mg/n", "ids": ["required"] },
-      { "label": "당긴 줄 → 짐이 올라간 높이", "ids": ["pulled", "lift"] }
+      {
+        "ids": ["weight"]
+      },
+      {
+        "ids": ["strands"]
+      },
+      {
+        "ids": ["required"]
+      },
+      {
+        "ids": ["pulled", "lift"]
+      }
     ],
     "graph": true
   },
   "cast": {
-    "dugi": { "at": [3.5, 4.0], "explain_on": ["held", "top"], "delay_s": 0.6 },
-    "puppy": { "at": [6.5, -7.5] }
+    "dugi": {
+      "at": [3.5, 4.0],
+      "explain_on": ["held", "top"],
+      "delay_s": 0.6
+    },
+    "puppy": {
+      "at": [6.5, -7.5]
+    }
   },
   "observations": [
-    { "id": "state", "label": "상태" },
-    { "id": "strands", "label": "짐을 받치는 줄 n", "unit": "줄", "digits": 0 },
-    { "id": "weight", "label": "짐 무게 mg", "unit": "N", "digits": 1 },
-    { "id": "required", "label": "필요한 힘 F = mg/n", "unit": "N", "digits": 1 },
-    { "id": "applied", "label": "내가 당기는 힘", "unit": "N", "digits": 1 },
-    { "id": "pulled", "label": "당긴 줄 길이 d당김", "unit": "m", "digits": 2 },
-    { "id": "lift", "label": "짐이 올라간 높이 d상승 = d당김/n", "unit": "m", "digits": 2 },
-    { "id": "per_metre", "label": "1 m 올릴 때 당기는 줄 (n × 1 m)", "unit": "m", "digits": 0 },
-    { "id": "work_in", "label": "내가 한 일 F × d당김", "unit": "J", "digits": 1 },
-    { "id": "work_out", "label": "짐이 얻은 위치 에너지 mg × d상승", "unit": "J", "digits": 1 }
+    { "id": "state" },
+    { "id": "strands", "digits": 0 },
+    { "id": "weight", "unit": "N", "digits": 1 },
+    { "id": "required", "unit": "N", "digits": 1 },
+    { "id": "applied", "unit": "N", "digits": 1 },
+    { "id": "pulled", "unit": "m", "digits": 2 },
+    { "id": "lift", "unit": "m", "digits": 2 },
+    { "id": "per_metre", "unit": "m", "digits": 0 },
+    { "id": "work_in", "unit": "J", "digits": 1 },
+    { "id": "work_out", "unit": "J", "digits": 1 }
   ],
   "manipulation": {
     "grab_radius": 72.0,
@@ -147,12 +153,11 @@
     "demo_action": "reset"
   },
   "graph": {
-    "title": "줄 수에 따른 필요한 힘",
-    "x": { "label": "당긴 시간 t", "unit": "s", "max": 10.0 },
-    "y": { "label": "힘", "unit": "N", "min_max": 50.0 },
+    "x": { "unit": "s", "max": 10.0 },
+    "y": { "unit": "N", "min_max": 50.0 },
     "series": [
-      { "id": "applied", "label": "내가 당기는 힘", "color": "#ff3b3b", "style": "line" },
-      { "id": "required", "label": "필요한 힘", "color": "#2d7cf6", "style": "line" }
+      { "id": "applied", "color": "#ff3b3b", "style": "line" },
+      { "id": "required", "color": "#2d7cf6", "style": "line" }
     ]
   }
 }

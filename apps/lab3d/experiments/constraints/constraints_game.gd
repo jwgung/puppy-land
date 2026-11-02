@@ -3,9 +3,9 @@
 ## the stage's slow beat (MissionRound: the stage's threshold, the beat in seconds); the star piece
 ## waits in the barred porch on the front of its shell. A stage asks for the string bob's swing to
 ## match the beat (the half swing x 2 of the formula model, as shown, within the stage's tolerance:
-## the earth's long rope 3.2 s, the Moon's short rope 6.3 s, the Moon's very long rope 8.8 s). During a
-## run the clock's pendulum starts with the bob on the bob's side (both let go at their far end), so
-## a matching swing goes along with it. A stamp lights a lamp; the last one opens the porch and the
+## the earth's 2 m rope 2.9 s, the earth's 3 m rope 3.6 s, the same rope on the Moon 8.8 s: one change
+## a stage, 2026-11-01). During a run the clock's pendulum starts with the bob on the bob's side (both
+## let go at their far end), so a matching swing goes along with it. A stamp lights a lamp; the last one opens the porch and the
 ## piece hops out on the lab's own gravity (LabGame.launch_piece: on the Moon it floats down slowly).
 ## Visual only: no body; the bobs and the numbers are PendulumLabModel's as before.
 class_name ConstraintsGame

@@ -285,14 +285,14 @@ func status() -> String:
 
 func observations() -> Dictionary:
 	var state_text: String = {
-		"ready": "발사 전",
-		"held": "바꾸는 중",
-		"orbiting": "별 둘레를 도는 중",
-		"leaving": "별에서 멀어지는 중",
-		"crash": "별에 부딪혔어요",
-		"far": "멀리 날아가 버렸어요",
+		"ready": Locale.t("orbit.status.ready"),
+		"held": Locale.t("orbit.status.held"),
+		"orbiting": Locale.t("orbit.status.orbiting"),
+		"leaving": Locale.t("orbit.status.leaving"),
+		"crash": Locale.t("orbit.status.crash"),
+		"far": Locale.t("orbit.status.far"),
 	}.get(status(), "")
-	var predicted_text: String = {"crash": "충돌", "orbit": "공전", "escape": "이탈"}.get(prediction.get("outcome", ""), "")
+	var predicted_text: String = {"crash": Locale.t("orbit.outcome.crash"), "orbit": Locale.t("orbit.outcome.orbit"), "escape": Locale.t("orbit.outcome.escape")}.get(prediction.get("outcome", ""), "")
 	return {
 		"state": state_text,
 		"predicted": predicted_text,

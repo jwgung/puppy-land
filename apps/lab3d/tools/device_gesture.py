@@ -34,9 +34,11 @@ GESTURES = {
     "pinch-fixed": [[(880, 650), (580, 650)], [(1040, 650), (1040, 650)]],            # finger 1 held still, only 0 moves -> zoom in
     "pan": [[(920, 560), (880, 560), (880, 840)], [(1000, 560), (1040, 560), (1040, 840)]],  # small spread, then move
     "one-finger": [[(700, 700), (1200, 700)]],                                         # empty-view drag
-    # Task 2b: drag the incline box (default start, front view, 20 deg) down the incline and land a
-    # second finger halfway: the drag is cancelled and the box goes back to its start.
-    "drag-cancel": [[(1296, 350), (1120, 415), (960, 475)], [(500, 900), (500, 900), (500, 900)]],
+    # Task 2b: drag the incline box (its default start, the front view, the default 25 deg; the box
+    # centre at run 7.5 -> 5.5 -> 4.0 m, projected 2026-11-02 and seen at (1760, 480) on SM-X115) down
+    # the incline and land a second finger halfway: the drag is cancelled and the box goes back to its start.
+    # (Answer Dugi's question first: the picture buttons cover the incline while he asks.)
+    "drag-cancel": [[(1760, 479), (1545, 576), (1387, 649)], [(500, 900), (500, 900), (500, 900)]],
 }
 # Fraction of the gesture after which each finger touches down (default: from the start).
 STARTS = {"drag-cancel": [0.0, 0.5]}

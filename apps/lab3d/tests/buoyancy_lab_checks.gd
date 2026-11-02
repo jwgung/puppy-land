@@ -1,11 +1,11 @@
 ## Headless checks of the buoyancy lab (Phase 1 Task 4d), run by run_tests.gd. Expected values are the
 ## TS-core vectors in tests/buoyancy_lab_vectors.json (tools/buoyancy-lab-vectors.test.ts: the web's
-## BuoyancyRegionLaw and UniformGravity on the 3D drum, 4 semi-implicit Euler substeps at 60 Hz, the
+## BuoyancyRegionLaw buoyancy, the lab's water drag and added mass, and UniformGravity on the 3D drum, 4 semi-implicit Euler substeps at 60 Hz, the
 ## web's floor rule). Physics first: the engine drum is checked step by step, not only the panel.
 ## 1. definition: valid, listed, texts and app tip; the start = the TS start case; tank and
 ##    drum sizes = the vectors.
 ## 2. model = TS (no engine): height, velocity, fraction, depth, forces at every sample step, floor
-##    hits and water entries, density ratio, floating depth and judgement, 7 cases (rel 1e-9).
+##    hits and water entries, density ratio, floating depth and judgement, 8 cases (rel 1e-9).
 ## 3. engine = TS: the lab through its own fixed steps; engine drum centre = TS at every sample step
 ##    (<= 1e-4 m), every step on the model state with its step velocity (<= 1e-4), panel = TS, also
 ##    the 60 s run past the history window.
@@ -218,7 +218,7 @@ func check_model_cases() -> void:
 		counts_ok = counts_ok and hits == int(c.floor_hits) and entries == int(c.entries) and model.judgement() == c.judgement
 		formula_worst = maxf(formula_worst, maxf(_err(model.density_ratio(), c.density_ratio), _err(model.floating_depth(), c.floating_depth)))
 		formula_worst = maxf(formula_worst, _err(PhysicsLaws.density(model.mass, float(c.volume)), c.density))
-	expect.call(worst <= tolerance and counts_ok, "buoyancy model: height, velocity, fraction, depth, forces at every sample step, floor hits and water entries = TS (7 cases)",
+	expect.call(worst <= tolerance and counts_ok, "buoyancy model: height, velocity, fraction, depth, forces at every sample step, floor hits and water entries = TS (8 cases)",
 		"max rel err %s" % String.num_scientific(worst))
 	expect.call(formula_worst <= tolerance, "buoyancy model: density, rho / rho_water, floating depth and judgement (floats / neutral / sinks) = TS",
 		"max rel err %s" % String.num_scientific(formula_worst))
@@ -252,7 +252,7 @@ func check_engine_cases() -> void:
 		worst_step_v = maxf(worst_step_v, lab.driver.worst_velocity)
 		if c.name == "long":
 			past_history = lab.driver.engine.size() == lab.driver.history_steps and lab.model.steps > lab.driver.history_steps * 5
-	expect.call(worst_y <= ENGINE_TOLERANCE, "buoyancy: engine drum centre = TS at every sample step (7 cases, 60 s run included, <= 1e-4 m)",
+	expect.call(worst_y <= ENGINE_TOLERANCE, "buoyancy: engine drum centre = TS at every sample step (8 cases, 60 s run included, <= 1e-4 m)",
 		"max |dy| %s m" % String.num_scientific(worst_y))
 	expect.call(worst_step_x <= ENGINE_TOLERANCE and worst_step_v <= ENGINE_TOLERANCE and past_history,
 		"buoyancy: every engine step lands on the formula state with the formula's step velocity, also past the history window (60 s)",

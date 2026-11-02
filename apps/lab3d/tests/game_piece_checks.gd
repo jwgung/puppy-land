@@ -188,6 +188,7 @@ func check_projectile_round() -> void:
 	var piece_start: Vector3 = game.piece.global_position
 	var throws := [[30.0, 8.0, 0], [10.0, 8.0, 1], [10.0, 8.0, 1], [45.0, 8.0, 2], [65.0, 8.0, 3]]
 	for throw in throws:
+		screen._cancel_next()   # each throw goes on as after 다음 미션 (the next stage is judged only then)
 		screen._set_control("angle", throw[0])
 		screen.experiment_action("release")
 		var tipped_at := -1.0
@@ -421,14 +422,15 @@ func check_incline() -> void:
 	var margins := []
 	var faces: Array = InclineGame.LANE_FACE
 	# [stage, material, angle, run, reaches the stage's row, stamped]
+	# One change a stage (2026-11-01): wood a little tilted, the same wood steeper, steel at that slope.
 	var cases := [
-		[0, "steel", 20.0, 7.5, true, true], [0, "steel", 30.0, 7.5, true, true], [0, "steel", 40.0, 7.5, true, true],
-		[0, "steel", 20.0, 6.0, false, false], [0, "steel", 40.0, 5.0, false, false],
-		[0, "wood", 30.0, 7.5, false, false], [0, "wood", 40.0, 7.5, true, false], [0, "rubber", 40.0, 7.5, false, false],
-		[1, "wood", 30.0, 7.5, true, true], [1, "wood", 40.0, 7.5, true, true], [1, "wood", 40.0, 5.0, false, false],
-		[1, "steel", 30.0, 7.5, true, false], [1, "rubber", 45.0, 7.5, false, false],
-		[2, "rubber", 40.0, 7.5, true, true], [2, "rubber", 45.0, 7.5, true, true], [2, "rubber", 45.0, 5.0, false, false],
-		[2, "wood", 40.0, 7.5, true, false], [2, "clay", 45.0, 7.5, false, false],
+		[0, "wood", 25.0, 7.5, true, true], [0, "wood", 24.5, 7.5, true, true],
+		[0, "wood", 22.5, 7.5, false, false], [0, "wood", 25.0, 4.0, false, false],
+		[0, "steel", 25.0, 7.5, true, false], [0, "rubber", 35.0, 7.5, false, false],
+		[1, "wood", 30.0, 7.5, true, true], [1, "wood", 45.0, 7.5, true, true], [1, "wood", 35.0, 4.0, false, false],
+		[1, "wood", 25.0, 7.5, false, false], [1, "steel", 25.0, 7.5, true, false],
+		[2, "steel", 30.0, 7.5, true, true], [2, "steel", 45.0, 7.5, true, true], [2, "steel", 35.0, 4.0, false, false],
+		[2, "wood", 40.0, 7.5, false, false], [2, "rubber", 45.0, 7.5, false, false],
 	]
 	for c: Array in cases:
 		var stage: int = c[0]
@@ -442,8 +444,8 @@ func check_incline() -> void:
 			problems.append("%s: reach %s, stamped %s" % [tag, reach, stamped])
 		var way: Dictionary = lab.arrival()
 		margins.append("%s %+.2f m" % [tag, float(faces[stage]) - (float(way.rest_x) - lab.BOX * 0.5)])
-	# Every picture-button pick from the top: the stage's fitting picks of its material reach its row
-	# (steel: the gentle and the middle slope), the other slopes of that material hold.
+	# Every picture-button pick from the top: the stage's fitting picks of its material reach its row,
+	# a gentler slope of that material falls short of it (a steeper one goes farther: past it).
 	for i in stages.size():
 		var want: Dictionary = stages[i].conditions
 		lab.set_run_length(7.5)
@@ -453,12 +455,15 @@ func check_incline() -> void:
 			lab.set_control("angle", float(angle))
 			if lab.observations()["reach_%d" % (i + 1)] < 0.5:
 				problems.append("stage %d: %s at %s° from the top does not reach its row" % [i + 1, want.material, angle])
-		for angle in goals.call("picked", definition, i, "angle", false) if want.has("angle") else []:
+		# (where the slope is the stage's change: the same material as the stage before)
+		var lowest: float = (fitting.map(func(a: Variant) -> float: return float(a)) as Array).min()
+		var slope_change := i == 0 or str(stages[i - 1].conditions.material) == str(want.material)
+		for angle in goals.call("picked", definition, i, "angle", false) if want.has("angle") and slope_change else []:
 			lab.set_control("angle", float(angle))
-			if lab.formula_acceleration() > 0.0:
-				problems.append("stage %d: the other slope %s° does not hold" % [i + 1, angle])
-	# The rows differ from stage to stage (the faster stage's row farther).
-	if not (faces[0] < faces[1] - 0.3 and faces[1] < faces[2] - 0.3):
+			if float(angle) < lowest and lab.observations()["reach_%d" % (i + 1)] > 0.5:
+				problems.append("stage %d: the gentler slope %s° reaches the row too" % [i + 1, angle])
+	# The rows differ from stage to stage (each change takes the box farther: the next row farther).
+	if not (faces[0] > faces[1] + 0.3 and faces[1] > faces[2] + 0.3):
 		problems.append("the rows stand at %s" % str(faces))
 	# From the top, steeper goes farther (every material, the picture buttons' slopes that slide): the
 	# lower end stays put, the box leaves it faster and comes to rest farther.
@@ -516,7 +521,7 @@ func check_incline() -> void:
 		problems.append("steel 25°: left after %.3f s (formula %.3f s)" % [steps / 60.0, t])
 	lab.queue_free()
 	expect.call(problems.is_empty(),
-		"piece game (slide): a stage is the formula's way (the drop from the fixed end, the floor's friction) meeting its fixed row at x %s with the stage's conditions: steel 20°/30°/40° from the top, wood 30°/40°, rubber 40°/45° reach; the slower material's picks and a low start fall short; the other slopes hold; from the top steeper goes farther (%s); the engine box rests at the formula's rest (%s); the box reaches the end at the formula's time — margins past the row's face: %s" % [str(InclineGame.LANE_FACE), "; ".join(farther), ", ".join(rests), ", ".join(margins)],
+		"piece game (slide): a stage is the formula's way (the drop from the fixed end, the floor's friction) meeting its fixed row at x %s with the stage's conditions: wood 24.5–25.5°, the same wood at 30–45°, steel at 30–45° from the top reach (one change a stage); a gentler slope, a slower surface and a low start fall short; from the top steeper goes farther (%s); the engine box rests at the formula's rest (%s); the box reaches the end at the formula's time — margins past the row's face: %s" % [str(InclineGame.LANE_FACE), "; ".join(farther), ", ".join(rests), ", ".join(margins)],
 		"; ".join(problems))
 
 
@@ -524,9 +529,10 @@ func check_incline() -> void:
 
 ## The push's path (2026-10-29 user "상자가 별을 막고 있어서, 이걸 치우면 별에 도달하는 길이 열리는 거로"):
 ## a stage is the box pushed off the path, the formula distance from the start past 1.5 m (shown).
-## With the hold (25 N/s up to 80 N) every stage's box gets there within 3 s on wood (and every
-## material's within 4 s), a tap (0.2 s) never moves it, and the shortest hold that passes is well
-## over a tap. Returns the shortest holds (s) per stage box on wood.
+## With the hold (25 N/s up to 80 N, staying at the push that started the box: 2026-11-01) every
+## stage's box gets there within 3 s on wood (and every material's within 4.5 s: the heavy box on
+## clay starts after 2.98 s and then slides at (mu_s - mu_k) g), a tap (0.2 s) never moves it, and
+## the shortest hold that passes is well over a tap. Returns the shortest holds (s) per stage box on wood.
 func push_hold_distance(lab: Experiment, seconds: float) -> float:
 	lab.reset_box()
 	lab.hold_started("box")
@@ -555,13 +561,13 @@ func check_push_path() -> void:
 				problems.append("%s %s: a tap moves it %.3f m" % [material, stages[i].conditions.mass, tap])
 			var found := -1.0
 			var hold := 0.3
-			while hold <= 4.0 + 1e-9:
+			while hold <= 4.5 + 1e-9:
 				var d: float = await push_hold_distance(lab, hold)
 				if _beats(definition, i, d):
 					found = hold
 					break
 				hold = snappedf(hold + 0.1, 0.1)
-			var limit := 3.0 if material == "wood" else 4.0
+			var limit := 3.0 if material == "wood" else 4.5
 			if found < 0.0 or found > limit or found <= 0.4:
 				problems.append("%s %s: off the path after a %.1f s hold (want 0.5..%.0f s)" % [material, stages[i].conditions.mass, found, limit])
 			if material == "wood":
@@ -607,7 +613,7 @@ func check_push_path() -> void:
 		problems.append("처음으로 does not give the cat back to the box")
 	lab.queue_free()
 	expect.call(problems.is_empty(),
-		"piece game (push): a stage is the box pushed off the path (formula distance past 1.5 m): on wood the light, normal and heavy box after a %s s hold (all materials within 4 s), never by a tap (0.2 s); each stamp opens a gate; after the last the cat waits for the box to rest, walks the path to the piece and the screen hands it over there" % str(shortest),
+		"piece game (push): a stage is the box pushed off the path (formula distance past 1.5 m): on wood the light, normal and heavy box after a %s s hold (all materials within 4.5 s), never by a tap (0.2 s); each stamp opens a gate; after the last the cat waits for the box to rest, walks the path to the piece and the screen hands it over there" % str(shortest),
 		"; ".join(problems))
 
 
@@ -646,11 +652,11 @@ func check_incline_dominoes() -> void:
 				problems.append("stage %d %s: first face %.3f" % [stage + 1, str(setting), first_face])
 	# [stage, material, angle, run, "left" (stamped at the end) / "touch" (the judging poll after) /
 	#  "free" (no stamp: the stage wants another setting) / "miss" (stops short) / "over" (flies over)]
-	var runs := [[0, "steel", 20.0, 7.5, "left"], [0, "steel", 40.0, 7.5, "touch"], [0, "steel", 20.0, 5.0, "miss"],
-		[0, "wood", 30.0, 7.5, "miss"], [0, "wood", 40.0, 7.5, "free"], [1, "wood", 30.0, 7.5, "left"],
-		[1, "wood", 40.0, 7.5, "touch"], [1, "wood", 40.0, 5.0, "miss"], [1, "steel", 30.0, 7.5, "free"],
-		[1, "rubber", 45.0, 7.5, "miss"], [2, "rubber", 40.0, 7.5, "left"], [2, "rubber", 45.0, 7.5, "touch"],
-		[2, "rubber", 45.0, 5.0, "miss"], [2, "wood", 40.0, 7.5, "free"], [2, "clay", 45.0, 7.5, "miss"]]
+	var runs := [[0, "wood", 25.0, 7.5, "left"], [0, "wood", 24.5, 7.5, "touch"], [0, "wood", 25.0, 4.0, "miss"],
+		[0, "rubber", 35.0, 7.5, "miss"], [0, "steel", 25.0, 7.5, "free"], [1, "wood", 35.0, 7.5, "left"],
+		[1, "wood", 45.0, 7.5, "touch"], [1, "wood", 35.0, 4.0, "miss"], [1, "steel", 25.0, 7.5, "free"],
+		[1, "wood", 25.0, 7.5, "miss"], [2, "steel", 35.0, 7.5, "left"], [2, "steel", 45.0, 7.5, "touch"],
+		[2, "steel", 35.0, 4.0, "miss"], [2, "wood", 40.0, 7.5, "miss"], [2, "rubber", 45.0, 7.5, "miss"]]
 	for run: Array in runs:
 		var stage: int = run[0]
 		var mode: String = run[4]
@@ -738,7 +744,7 @@ func check_incline_dominoes() -> void:
 		for stage in 3:
 			screen._show_stamps(stage)
 			await _frames(3)
-			for angle in [20.0, 30.0, 40.0]:
+			for angle in [20.0, 25.0, 35.0, 45.0]:
 				screen.experiment.set_control("angle", angle)
 				await _frames(1)
 				var row: Rect2 = screen._picks_row.get_rect() if screen.picks_shown() else Rect2()
@@ -759,9 +765,9 @@ func check_incline_dominoes() -> void:
 ## The first hit stays in sight (2026-10-29 user: Dugi's portrait of the prediction's reason, which
 ## opens right after the first result, hid the stage-1 row at the bottom left): on the tablet and the
 ## phone, for each stage's fitting pick from the top in the real screen flow (the reason still to be
-## told), the stage's row (its dominoes as they stand and fall) is clear of the picture buttons,
-## Dugi's box and portrait and Puppy's result bubble from the box's touch until the chain has fallen,
-## and the reason does open in that time.
+## told in the reason's stage), the stage's row (its dominoes as they stand and fall) is clear of the
+## picture buttons, Dugi's box and portrait and Puppy's result bubble from the box's touch until the
+## chain has fallen, and the reason does open in that time in its stage.
 func check_incline_hit_view() -> void:
 	var definition := ExperimentRegistry.find("incline-friction")
 	var predict := MissionRound.predict(definition)
@@ -774,11 +780,14 @@ func check_incline_hit_view() -> void:
 				ProgressStore.save({"incline-friction": stage})   # the earlier stages' stamps
 			var screen := await _open(definition, size)
 			screen.mission_round.end_question()
-			screen.mission_round.reason = str(predict.reason)   # answered: told after the first result
+			# The reason comes after the first result of its stage (predict.stage); in the other stages
+			# Dugi's own explanation of the run comes after the cast's delay (the chain has fallen).
+			var with_reason := stage == MissionRound.reason_stage(definition)
+			screen.mission_round.reason = str(predict.reason) if with_reason else ""
 			await _frames(3)
 			var lab: Experiment = screen.experiment
 			var game := lab.game as InclineGame
-			var pick: Array = [["steel", 20.0], ["wood", 30.0], ["rubber", 40.0]][stage]
+			var pick: Array = [["wood", 25.0], ["wood", 35.0], ["steel", 35.0]][stage]
 			lab.set_control("material", pick[0])
 			lab.set_control("angle", pick[1])
 			lab.set_run_length(7.5)
@@ -809,6 +818,8 @@ func check_incline_hit_view() -> void:
 				if screen.dialogue.active and screen.dialogue.visible:
 					covers.append_array(screen.dialogue.rects())
 					told = told or screen.dialogue.text == str(predict.reason)
+					if screen.dialogue.joined() != str(predict.reason) and screen.dialogue.typed():
+						screen.dialogue.advance()   # the child reads Dugi's explanation and taps on (the reason waits for it)
 				var bubble: ResultBubble = screen.result_bubble()
 				if bubble != null:
 					covers.append(bubble.get_rect())
@@ -817,9 +828,9 @@ func check_incline_hit_view() -> void:
 						problems.append("%s stage %d %s %s°: the row %s under %s, %d frames after the touch" % [size, stage + 1, pick[0], pick[1], row, c, k - touched_at])
 						break
 				clear_frames += 1
-				if told and game._t - game.chain_started(stage) > InclineGame.FALL_S + InclineGame.NEXT_S * 3.0 + 0.5:
+				if (told or not with_reason) and game._t - game.chain_started(stage) > InclineGame.FALL_S + InclineGame.NEXT_S * 3.0 + 0.5:
 					break
-			if touched_at < 0 or not told:
+			if touched_at < 0 or (with_reason and not told):
 				problems.append("%s stage %d: touched %s, the reason told %s" % [size, stage + 1, touched_at >= 0, told])
 			seen.append("%s stage %d %d frames" % [size, stage + 1, clear_frames])
 			await _free(screen)
@@ -833,8 +844,9 @@ func check_incline_hit_view() -> void:
 
 ## The spring's bell (2026-10-29 user "종 치기"): let go from a pull x₀ the ball's first swing turns at
 ## −x₀ (no damping; x₀ e^(−γT/2) with the web's damping), the same for every mass. Each stage's bell
-## (0.5, 1, 1.5 m) is reached from its pull on the 0.1 m grid and not from the pull 0.1 m shorter; the
-## last wants the heavy ball and reaches as far; the bell rings at the formula moment the ball's
+## (0.5, 1, then the same 1 m with the heavy ball: one change a stage, 2026-11-01) is reached from its
+## pull on the 0.1 m grid and not from the pull 0.1 m shorter; the last wants the heavy ball and
+## reaches as far; the bell rings at the formula moment the ball's
 ## extension gets to −d, never when the swing falls short.
 func check_spring() -> void:
 	var definition := ExperimentRegistry.find("spring")
@@ -846,7 +858,7 @@ func check_spring() -> void:
 		model.damping = b
 		model.reset(x0, 1.0, 0.0)
 		return -PhysicsLaws.spring_release_displacement(x0, model.omega0(), model.gamma(), model.period() * 0.5)
-	var bells := [0.5, 1.0, 1.5]
+	var bells := [0.5, 1.0, 1.0]
 	for i in stages.size():
 		var d: float = bells[i]
 		for m in [1.0, 3.0]:
@@ -893,7 +905,7 @@ func check_spring() -> void:
 			problems.append("%s kg: the knob is touched at %s" % [m, centre.x])
 	lab.queue_free()
 	expect.call(problems.is_empty(),
-		"piece game (spring): the first swing turns at −x₀ for every mass (x₀ e^(−γT/2) with damping); the bells at 0.5, 1, 1.5 m are reached from those pulls and not 0.1 m shorter, the last with the heavy ball; the bell rings when the formula ball gets there (not from 0.4 m), the knob is touched at −d",
+		"piece game (spring): the first swing turns at −x₀ for every mass (x₀ e^(−γT/2) with damping); the bells at 0.5, 1 and again 1 m are reached from those pulls and not 0.1 m shorter, the last with the heavy ball; the bell rings when the formula ball gets there (not from 0.4 m), the knob is touched at −d",
 		"; ".join(problems))
 
 
@@ -1016,43 +1028,43 @@ func check_pendulum_beat() -> void:
 		"; ".join(problems))
 
 
-## The drum: each stage's drum (with the chest, its mass the stage's) floats by the densities
-## (ρ = m / V < 1000 kg/m³); the stage's other picture buttons sink or stay; the chest hangs beside
-## the drum ROPE under its bottom and lies on the tank floor when the drum is low.
+## The barrel: each stage's barrel (its load the stage's) floats by the densities (ρ = m / V < 1000
+## kg/m³); the stage's other picture buttons sink or stay; the piece waits on the islet in the tank.
 func check_drum() -> void:
 	var definition := ExperimentRegistry.find("buoyancy")
 	var stages: Array = MissionRound.missions(definition).stages
 	var goals := _goals()
 	var lab: Experiment = await _lab("buoyancy")
 	var problems := []
-	# The loads are words now (2026-10-29: 가벼운 짐 45, 무거운 짐 80, 아주 무거운 짐 95 kg; no number on
-	# the kid screen): each stage floats with every pick that fits it, and the small drum's stage sinks
-	# with the picks that do not (the heavy loads), its lesson. The default 70 kg load floats in the
-	# big drum (stage 1 takes any load there).
+	# The loads are words (2026-11-02: 빈 통 45, 빵고양이 태우기 80 kg; no number on the kid screen), one
+	# change a stage: the small empty barrel floats, the same barrel sinks with the cat (that stage's
+	# goal, "sunk"), the big barrel floats with the cat. Each stage's fitting picks give its goal
+	# (float, or sink for stage 2), the other pick does not.
 	var picks: Array = definition.kid.picks.mass.map(func(p: Dictionary) -> float: return float(p.value))
 	var labels: Array = definition.kid.picks.mass.map(func(p: Dictionary) -> String: return str(p.label))
-	if labels != ["가벼운 짐", "무거운 짐", "아주 무거운 짐"]:
+	if labels != ["빈 통", "빵고양이 태우기"]:
 		problems.append("the load picks read %s" % str(labels))
+	var goals_per := ["floats", "sinks", "floats"]
 	for i in stages.size():
 		var want: Dictionary = stages[i].conditions
 		lab.set_control("volume", want.volume)
 		var fitting := 0
-		for m in picks + [70.0]:
+		for m in picks:
 			lab.set_control("mass", float(m))
 			var fits := MissionRound.conditions_met(want, lab)
-			var floats: bool = lab.model.judgement() == "floats"
+			var judged: String = lab.model.judgement()
 			if fits:
 				fitting += 1
-				if not floats:
-					problems.append("stage %d: %s kg in the %s drum fits but does not float" % [i + 1, m, want.volume])
-			elif want.volume == "small" and m in picks and floats:
-				problems.append("stage %d: %s kg (not a fitting pick) floats in the small drum" % [i + 1, m])
+				if judged != goals_per[i]:
+					problems.append("stage %d: %s kg in the %s drum fits but %s" % [i + 1, m, want.volume, judged])
 		if fitting == 0:
 			problems.append("stage %d: no load fits" % [i + 1])
-	# Stage 1 any load in the big drum, stage 2 the heavy picks only, stage 3 the light pick only.
+	var goal_of := [0, 1, 2].map(func(i: int) -> Array: return MissionRound.judge_on(definition, i))
+	if goal_of != [["floating"], ["sunk"], ["floating"]]:
+		problems.append("the stages' goals %s" % str(goal_of))
 	var fit_of := func(i: int) -> Array:
-		return picks.filter(func(m: float) -> bool: return MissionRound.condition_holds(stages[i].conditions.get("mass", {}), m) if stages[i].conditions.has("mass") else true)
-	if fit_of.call(0) != picks or fit_of.call(1) != [80.0, 95.0] or fit_of.call(2) != [45.0]:
+		return picks.filter(func(m: float) -> bool: return MissionRound.condition_holds(stages[i].conditions.get("mass", {}), m))
+	if fit_of.call(0) != [45.0] or fit_of.call(1) != [80.0] or fit_of.call(2) != [80.0]:
 		problems.append("fitting picks %s / %s / %s" % [fit_of.call(0), fit_of.call(1), fit_of.call(2)])
 	# No number over the drum on the kid screen: the kilograms are in 자세히 only.
 	if not lab.find_children("*", "Label3D", true, false).is_empty():
@@ -1060,22 +1072,19 @@ func check_drum() -> void:
 	for st: Dictionary in stages:
 		if str(st.text).contains("킬로그램") or RegEx.create_from_string("[0-9]").search(str(st.text)) != null:
 			problems.append("a number in the stage text %s" % st.text)
+	# The islet: inside the tank, clear of the barrel's way down (the big barrel's side), its top above
+	# the water and below the cat's crates; the piece waits on it.
 	var game := lab.game as BuoyancyGame
-	lab.set_control("volume", "big")
-	lab.set_control("mass", 80.0)
-	await tree.physics_frame
-	var bottom: float = lab.drum.global_position.y - lab.drum_height() * 0.5
-	var c := game.chest_centre()
-	var hung: bool = absf(c.y - (bottom - BuoyancyGame.ROPE - BuoyancyGame.CHEST.y * 0.5)) < 1e-6 and c.x > lab.drum.global_position.x + lab.drum_radius()
-	lab.manipulation_placed("drum", Transform3D(Basis(), Vector3(0.0, BuoyancyGame.FLOOR_Y + lab.drum_height() * 0.5, 0.0)))
-	lab.reset_run()
-	await tree.physics_frame
-	var floor_y := game.chest_centre().y
-	if not hung or absf(floor_y - (BuoyancyGame.FLOOR_Y + BuoyancyGame.CHEST.y * 0.5)) > 1e-6:
-		problems.append("the chest: hung %s, on the floor at %.3f" % [hung, floor_y])
+	var rock_x := BuoyancyGame.ROCK_AT.x
+	var inside: bool = rock_x + BuoyancyGame.ROCK_R * 1.25 <= BuoyancyProps.HALF_X and absf(BuoyancyGame.ROCK_AT.y) + BuoyancyGame.ROCK_R * 1.25 <= BuoyancyProps.HALF_Z
+	var clear: bool = rock_x - BuoyancyGame.ROCK_R * 1.25 > 0.26 + 0.05
+	var top_ok: bool = BuoyancyGame.ROCK_TOP > lab.WATERLINE + 0.1 and BuoyancyGame.ROCK_TOP < BuoyancyProps.CAT_TOP
+	var on_top: bool = game.piece.position.distance_to(Vector3(rock_x, BuoyancyGame.ROCK_TOP + game.piece_size, BuoyancyGame.ROCK_AT.y)) < 1e-6
+	if not (inside and clear and top_ok and on_top):
+		problems.append("the islet: inside %s, clear of the barrel %s, top %s, piece on it %s" % [inside, clear, top_ok, on_top])
 	lab.queue_free()
 	expect.call(problems.is_empty(),
-		"piece game (drum): the loads are words (가벼운·무거운·아주 무거운 짐), no number over the drum or in the stage texts; stage 1 floats the big drum with any load, stage 2 with the heavy loads (80, 95 kg in 100 L), stage 3 the small drum with the light load (45 kg in 50 L) and the heavy ones sink there (ρ = m / V against 1000 kg/m³); the chest hangs beside the drum under its bottom and lies on the tank floor when the drum is low",
+		"piece game (barrel): the loads are words (빈 통·빵고양이 태우기), no number over the barrel or in the stage texts; the small barrel floats empty (45 kg in 50 L), the same barrel sinks with the cat (80 kg: that stage's goal), the big barrel floats with it (80 kg in 100 L; ρ = m / V against 1000 kg/m³): one change a stage; the piece waits on the islet, inside the tank and clear of the barrel",
 		"; ".join(problems))
 
 
@@ -1184,7 +1193,7 @@ func check_pieces() -> void:
 		await _frames(160)
 		var floating: bool = id == "orbit"   # in space: freed where it floats, no fall
 		# The push's piece waits on its stump for the cat walking the opened path (2026-10-29).
-		var rest_y: float = game.piece_size + (FrictionGame.STUMP_H if id == "friction" else 0.0)
+		var rest_y: float = game.piece_size + (FrictionGame.STUMP_H if id == "friction" else BuoyancyGame.ROCK_TOP if id == "buoyancy" else 0.0)
 		if game.piece_state != "out" or (not floating and absf(game.piece.global_position.y - rest_y) > 0.06):
 			problems.append("%s: the piece is not on the ground after its fall (%s at %s)" % [id, game.piece_state, game.piece.global_position])
 		await _free(screen)
@@ -1305,9 +1314,9 @@ func check_clue_glow() -> void:
 ## beat), Puppy's clue at the object, and the spring's fitting stage says the beat does not change with the pull.
 func check_words() -> void:
 	var want := {"projectile": "상자", "collision": "얼음", "free-fall": "버튼", "friction": "상자", "incline-friction": "도미노", "spring": "종",
-		"rotation": "보물 상자", "pulley": "선반", "constraints": "거북이 박자", "buoyancy": "상자", "orbit": "조각"}
+		"rotation": "보물 상자", "pulley": "선반", "constraints": "거북이 박자", "buoyancy": "바위섬", "orbit": "조각"}
 	var clue := {"projectile": "상자", "collision": "얼음", "free-fall": "버튼", "friction": "길", "incline-friction": "도미노", "spring": "종",
-		"rotation": "보물 상자", "pulley": "선반", "constraints": "거북이 시계", "buoyancy": "보물 상자", "orbit": "우주"}
+		"rotation": "보물 상자", "pulley": "선반", "constraints": "거북이 시계", "buoyancy": "바위섬", "orbit": "우주"}
 	var problems := []
 	for id in want:
 		var definition := ExperimentRegistry.find(id)
@@ -1317,7 +1326,7 @@ func check_words() -> void:
 		if not Story.clue(definition).contains(clue[id]):
 			problems.append("%s: the clue does not point at %s" % [id, clue[id]])
 	var spring_says: Array = MissionRound.missions(ExperimentRegistry.find("spring")).stages.map(func(s: Dictionary) -> String: return str(s.say))
-	if not spring_says.any(func(s: String) -> bool: return s.contains("무거운 공도 같은 길이만큼 당기면 종에 닿아요")):
+	if not spring_says.any(func(s: String) -> bool: return s.contains("무거운 공도 같은 만큼 당기면 같은 종까지 가요")):
 		problems.append("spring: no say tells the heavy ball goes as far")
 	var push_texts: Array = MissionRound.missions(ExperimentRegistry.find("friction")).stages.map(func(s: Dictionary) -> String: return str(s.text))
 	if not push_texts.any(func(s: String) -> bool: return s.contains("길")):

@@ -21,6 +21,7 @@ const WATER := Color("7fb8e0")
 const STEEL := Color("9aa7b0")
 const BALL_BLUE := Color("2d7cf6")
 const CRATE := Color("5b4636")
+const CAT := Color("f2a64a")             # the bread cat riding the barrel (drum_floats / drum_sinks)
 
 
 ## Draws `kind` filling `canvas` (an unknown kind draws the ground only).
@@ -401,8 +402,8 @@ static func _lever_near(canvas: Control, r: Rect2, hard: bool) -> void:
 	_arrow(canvas, Vector2(at, top), Vector2(at, y - 6.0), STRONG, 7.0 if hard else 4.0)
 
 
-## The big drum with the chest hung under it: afloat with its top out of the water ("drum_floats") or
-## down on the bottom ("drum_sinks").
+## The barrel with the bread cat riding on it (2026-11-02, the raft): afloat with its top out of the
+## water ("drum_floats") or down on the bottom ("drum_sinks").
 static func _drum_one(canvas: Control, r: Rect2, floats: bool) -> void:
 	var water := r.position.y + r.size.y * 0.32
 	canvas.draw_rect(Rect2(r.position.x, water, r.size.x, r.end.y - water), WATER)
@@ -410,9 +411,11 @@ static func _drum_one(canvas: Control, r: Rect2, floats: bool) -> void:
 	var x := r.get_center().x - drum.x * 0.5
 	var top := water - drum.y * 0.45 if floats else r.end.y - drum.y - 26.0
 	canvas.draw_rect(Rect2(x, top, drum.x, drum.y), STRONG)
-	var chest_y := top + drum.y + 10.0
-	canvas.draw_line(Vector2(x + drum.x * 0.5, top + drum.y), Vector2(x + drum.x * 0.5, chest_y), GROUND, 2.0)
-	canvas.draw_rect(Rect2(x + drum.x * 0.5 - 10.0, chest_y, 20.0, 14.0), CRATE)
+	# The cat's head on the lid: a round face and two ears.
+	var face := Vector2(x + drum.x * 0.5, top - 10.0)
+	for side in [-1.0, 1.0]:
+		canvas.draw_colored_polygon(PackedVector2Array([face + Vector2(side * 9.0, -2.0), face + Vector2(side * 3.0, -8.0), face + Vector2(side * 10.0, -13.0)]), CAT)
+	canvas.draw_circle(face, 10.0, CAT)
 	canvas.draw_line(Vector2(r.position.x, water), Vector2(r.end.x, water), Color("4f86b3"), 2.0)
 
 

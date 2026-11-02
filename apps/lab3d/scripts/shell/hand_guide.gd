@@ -1,6 +1,6 @@
 ## The hand guide (2026-10-30 user request: young children need a guide to the controls): the bread cat's
 ## front paw (2026-10-31 user choice, instead of a hand) over the 3D view shows the gesture the child
-## should make on the real object, so no reading is needed. "Finger" below means the paw's pad.
+## should make on the real object, so no reading is needed. "Finger" below means the paw's tip.
 ## It is a picture only: it never presses, moves a body or changes a control.
 ##
 ## Gestures (play()):
@@ -20,8 +20,9 @@ const MOVE_S := 1.0
 const HOLD_S := 1.4
 const LIFT_S := 0.25
 const REST_S := 0.35
-## The picture: the bread cat's front paw with its beans (tools/render_guide_paw.gd makes it from the
-## cat's model), one image so its see-through is even. PAW_TIP is the touch point in it: the pad.
+## The picture: the bread cat's front paw (tools/render_guide_paw.gd makes it from the
+## cat's model), one image so its see-through is even. PAW_TIP is the touch point in it: the middle of the
+## paw's white tip.
 const PAW_TEXTURE: Texture2D = preload("res://assets/ui/guide_paw.png")
 const PAW_SIZE := Vector2(54.8, 70.0)       # UI units (the 188 x 240 px picture)
 const PAW_TIP := PAW_SIZE * Vector2(0.5, 0.355)
@@ -156,7 +157,7 @@ func _draw() -> void:
 	_hand(pose[0], lerpf(1.0, PRESS_SCALE, pressed))
 
 
-## The paw with its pad at `at` (the touch point), a little smaller while pressing.
+## The paw with its tip at `at` (the touch point), a little smaller while pressing.
 func _hand(at: Vector2, scale_k: float) -> void:
 	draw_texture_rect(PAW_TEXTURE, Rect2(at - PAW_TIP * scale_k, PAW_SIZE * scale_k), false, PAW_TINT)
 

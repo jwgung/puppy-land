@@ -47,8 +47,8 @@ func check_stamp_slam() -> void:
 	var flying: bool = slam != null and slam.get_parent() == screen.view and slam.mouse_filter == Control.MOUSE_FILTER_IGNORE \
 		and slam.get_rect().encloses(Rect2(Vector2.ZERO, screen.view.size))
 	expect.call(flying, "stamp: a cleared stage's stamp appears over the whole view and takes no touch", "")
-	expect.call((screen._stamp_labels[0] as Label).text == "○" and screen._mission_text.text == str(stages[1].text),
-		"stamp: while it flies its slot stays empty (the next stage's text already shows)", (screen._stamp_labels[0] as Label).text)
+	expect.call((screen._stamp_labels[0] as Label).text == "○" and screen._mission_text.text == "" and screen.mission_round.text() == str(stages[1].text),
+		"stamp: while it flies its slot stays empty (the next stage is current, its text waits for Dugi: 다음 미션)", (screen._stamp_labels[0] as Label).text)
 	expect.call(cat != null and cat.cheers == cheers + 1, "stamp: the bread cat hops", "cheers %d -> %d" % [cheers, cat.cheers if cat else -1])
 	# Its course: big in the middle at the landing (squashed), then into the slot.
 	slam.t = StampSlam.DROP_S + 0.02

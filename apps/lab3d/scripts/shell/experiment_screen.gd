@@ -16,31 +16,24 @@ const SIDEBAR_MAX_FRACTION := 0.42      # of the screen width (tablet 1152 units
 const SIDEBAR_SLIDE_S := 0.22
 const OVERLAY_MARGIN := 12.0
 const KEY_CARD_WIDTH := 200.0
-const TIP_SECONDS := 4.0       # the short gesture hint stays this long (or until the first gesture), then fades
 const TIP_FADE_S := 0.3
 const TIP_MAX_WIDTH := 340.0
-## A game lab's reset button: a short word on a small button (the lab's own label stays in the JSON).
-const RESET_SHORT := "다시"
 const TIP_MIN_WIDTH := 240.0   # narrower than this beside the actions: the tip goes above them
 const DEMO_RELEASE_DELAY_S := 0.4   # --auto-drag: the auto-release waits this long after the demo put its object down
 const CHOICE_SIZE := Vector2(210.0, 170.0)    # a prediction picture button (UI units)
 const QUESTION_DIM := Color(0.08, 0.12, 0.2, 0.38)   # the scrim behind Dugi's question
 const QUESTION_DIM_FADE := 0.2
+## Dugi's question unanswered this long: the picture buttons pop and the paw taps one (2026-10-31
+## user: a child did not know what to press). A tap beside them does the same at once.
+const NUDGE_S := 4.0
 const CHOICE_HOP := 7.0          # the picture buttons' hop while Dugi asks (UI units, upwards)
 const CHOICE_HOP_SPEED := 3.0    # rad/s of the hop's sine (a hop every ~1 s)
 ## The strip's words for a 7-year-old: all stages done, and the picked prediction before the run.
 ## (2026-10-28 user decision: no celebration words; a finished round shows its stamps only.)
 const DONE_TEXT := ""
-const PICK_PREFIX := "내 생각: "
 const PICK_SIZE := Vector2(132.0, 112.0)    # a condition picture button (UI units, at least)
 const PICK_GAP := 10.0                      # between the buttons of one condition
 const PICK_GROUP_GAP := 22.0                # between two conditions' buttons
-const MORE_CLOSED := "더 보기"              # the science note's collapsed rest (_build_sidebar)
-const MORE_OPEN := "접기"
-const ASK_TEXT := "AI에게 더 물어보기"
-## The science note's line when a run is shown faster than it is (definition.time_scale()).
-const TIME_SCALE_NOTE := "시간을 %s배 빠르게 보여 줘요. 숫자는 실제 시간 그대로예요."
-const ASK_CAPTION := "이 실험의 조건과 숫자로 질문을 만들어, 고른 AI 앱에 보내요."
 
 ## Set by App for the screen it opens from --experiment: then the launch args (--ctl-*, --camera,
 ## ...) apply to this screen only (a rebuilt screen with a saved state restores that state instead).
@@ -62,6 +55,7 @@ var show_cast := true
 ## The lab's sounds (SoundBoard): reads its status and impacts only, beside the lab like the cast.
 var sounds: LabSounds
 var _dialogue_started := false          # the dialogue of the current explanation was opened
+var _reason_waits := false               # the prediction's reason waits for Dugi's open box or the sidebar (_tell_reason)
 
 # 3D overlays (children of the view, placed by _fit_overlays).
 var _title_bar: PanelContainer
@@ -77,7 +71,10 @@ var _action_row: HBoxContainer
 var _action_buttons: Dictionary = {}    # action id -> Button
 var _extra_actions: Array[Button] = []  # a game lab's secondary actions, shown under the conditions in the sidebar
 var _tip: Label
-var _tip_left := TIP_SECONDS
+## The hint is still to be seen on this screen: it shows whenever nothing talks over it (Puppy's clue,
+## Dugi's question or box, the sidebar) until the child uses the lab (2026-10-31: no timer, and a box
+## opening only hides it for a while).
+var _tip_due := false
 var _tip_tween: Tween
 ## Experiments whose short gesture hint was already shown in this app run: it appears the first
 ## time an experiment opens only (re-entering, rebuilding the screen or changing a condition never
@@ -134,6 +131,7 @@ var _series_hidden := false           # the graph's hidden_series_until_end line
 var _question_shield: ColorRect         # while asking: dims and catches everything but the box and the buttons
 var _dialogue_index := -1               # the box's place among the overlays before the question lifted it
 var _choices: HBoxContainer = null    # the two picture buttons while asking
+var _nudge_pop: Tween = null          # their pop while nudged (nudge_choices)
 var _choices_popped := false          # the buttons' pop-in has run
 var _dialogue_right := NAN              # the open box's right end so far (_layout_dialogue)
 var _dialogue_right_for := Vector2.ZERO  # the view size it was found for
@@ -150,6 +148,12 @@ var _slam: StampSlam = null
 var _stamps_landed := 0
 var _confetti: Confetti = null
 var _done_card: RoundDoneCard = null
+var _next_due := false                # a stage was won and nothing was done since (its stamp may still fly)
+var _next_wait := -1.0                # >= 0: a stage was won, the next one comes once Dugi is done (_run_next_wait)
+var next_goes := 0                     # times the round went on to the next stage by itself (tests)
+var _mission_text_held := false        # the stage's text is off the strip until Dugi has told it
+var _retells := 0                     # times he started the missed mission line again (_retell_mission)
+var _mission_announced := false        # his telling of it is on its way (the bridge, the next mission's): the text shows once his box closes
 var _round_wait := -1.0               # >= 0: the round is done, the cheer waits for Dugi (_run_round_wait)
 var _piece_wait := -1.0                # s left waiting for the piece game's last step (< 0: not waiting)
 var _card_left := -1.0                 # s until the round-done card shows (after the confetti starts)
@@ -158,6 +162,8 @@ var _demo_left := -1.0                 # --demo-celebrate: s until the next demo
 var _demo_stamps := 0
 const CARD_DELAY_S := 0.8
 const ROUND_WAIT_MIN_S := 0.4          # after the last stamp, before the cheer (Dugi starts explaining)
+const NEXT_WAIT_MIN_S := 1.2           # after a stage's stamp, before the round goes on to the next stage (Dugi starts first)
+const RETELLS_MAX := 3     # times Dugi starts a mission line again before the strip shows it without him
 ## The story (2026-10-28 "별 조각 찾기"): when the round is completed, the star piece the bread cat
 ## lifts before the card comes (Puppy's clue on the first visit is the round's).
 var _piece: Node3D = null              # the found piece over the bread cat
@@ -171,10 +177,13 @@ const DEMO_STAMP_EVERY_S := 1.6
 ## Puppy's result line after an attempt (2026-10-29, ResultBubble, told by the round): the bubble shown
 ## now, the finger seen on an object last frame (a new press is an attempt), the lines shown (tests).
 var _result_bubble: ResultBubble = null
+var _bubble_side := -1                   # the bubble's chosen place (an index of _fit_result_bubble's tries)
+var _bubble_saw_box := false             # Dugi's box was open at the bubble's last choice of side
 var _was_touching := false
 var result_count := {"win": 0, "miss": 0}
 ## The strip's one pulse after the answer that shows where the mission is (strip_pulses counts them, tests).
 var strip_pulses := 0
+var nudges := 0                          # times the picture buttons were shown (tests)
 var _pulse_t := -1.0
 const PULSE_S := 0.9
 const PULSE_GROW := 0.14
@@ -182,6 +191,9 @@ const PULSE_TINT := Color(1.0, 0.93, 0.55)
 ## The hand guide (2026-10-30, HandGuide + GuideCoach): the gesture on the lab's own object, the first
 ## time a child is at this lab and again after a quiet while; a touch anywhere stops it. Pictures only.
 var hand_guide: HandGuide = null
+var _tap_catcher: TapCatcher = null       # a tap on the 3D view turns Dugi's or Puppy's page
+var _ask_age := 0.0                      # seconds the question has waited for a pick
+var _nudging := false                    # the paw shows a picture button (during the question)
 var _coach: GuideCoach = null
 var _guide_touched := false             # a finger or a control acted since the last step
 
@@ -268,6 +280,7 @@ func _ready() -> void:
 		_camera_home = view.rig.get_state()   # a measurement's --camera is the view it opens with
 	_refresh()
 	_setup_slingshot()   # after the state: a restored launch point is the pull's origin
+	_setup_tap_catcher() # before the question: it keeps the overlays' order (the question moves the box)
 	_setup_guide()       # after the slingshot (its pull is the gesture), before the question (overlay order)
 	_setup_game()        # after the state: the stamp count and the question belong to the saved run
 	Bench.reset(definition.bench_id())
@@ -327,10 +340,7 @@ func _process(delta: float) -> void:
 	if _refresh_left <= 0.0:
 		_refresh_left = 1.0 / UI_REFRESH_HZ
 		_poll()
-	if _tip != null and _tip.visible:
-		_tip_left -= delta
-		if _tip_left <= 0.0:
-			_hide_tip()
+	_sync_tip()
 	if _auto_release_every > 0.0:
 		_auto_release_left -= delta
 		if _auto_release_left <= 0.0:
@@ -343,6 +353,7 @@ func _process(delta: float) -> void:
 	_watch_touch()
 	_run_dialogue()
 	_run_round_wait(delta)
+	_run_next_wait(delta)
 	_run_celebration(delta)
 	_run_result_bubble(delta)
 	_run_strip_pulse(delta)
@@ -359,7 +370,8 @@ func _sync_clue_glow() -> void:
 
 ## Puppy's clue is in the box now (not yet read).
 func clue_telling() -> bool:
-	return mission_round != null and mission_round.clue_open() and dialogue != null and dialogue.active
+	return mission_round != null and mission_round.clue_open() and dialogue != null and dialogue.active \
+		and dialogue.speaker == "puppy"   # (Dugi's introduction after it is not the clue)
 
 
 ## Dugi's dialogue opens when he starts explaining and keeps him pointing until it closes (a tap
@@ -369,6 +381,8 @@ func clue_telling() -> bool:
 ## that starts then is pointing only. Dugi stopping (a user change, 처음으로) closes it at once.
 func _run_dialogue() -> void:
 	_fit_picks()   # follows the dialogue (opened, closed) and the question
+	_run_reason_wait()
+	_run_mission_reveal()
 	if dialogue == null or cast.dugi == null:
 		return
 	if _done_card != null:
@@ -387,9 +401,9 @@ func _run_dialogue() -> void:
 		return
 	if dugi.speaking() and dugi.state == "raise" and not _dialogue_started and not is_sidebar_open() and _layout_dialogue():
 		_dialogue_started = true
-		_hide_tip()
 		# The round's line comes first (MissionRound.take_line: the bridge from the answer to the mission,
-		# then the prediction's reason after the first attempt's result line, each told once). Dugi
+		# the next stage's mission (_go_next), then the prediction's reason after the first result line of predict.stage's
+		# stage, each told once). Dugi
 		# explains only after a throw has ended (cast explain_on).
 		var line: Array = mission_round.take_line() if mission_round != null else []
 		if not line.is_empty():
@@ -403,27 +417,26 @@ func _run_dialogue() -> void:
 		_dialogue_started = false
 
 
-## Dugi's question (Plan G4), after Puppy's clue on the spot's first visit (MissionRound): his box holds
+## Dugi's question (Plan G4), after Puppy's clue on the spot's first visit and Dugi's introduction of the
+## lab (2026-10-31, every visit with the story; MissionRound): his box holds
 ## the question with the picture buttons over it. It yields to the sidebar (hidden while it is open)
 ## and comes back when it closes.
 func _run_question() -> void:
 	var r := mission_round
-	if r.clue_open() and not dialogue.active:   # the clue was read: Dugi asks
+	if r.clue_open() and not dialogue.active:   # the clue (or Dugi's introduction) was read: the next line, or Dugi asks
 		dialogue.set_speaker("dugi")
-		dialogue.hold = true
 		r.clue_read()
 		if not r.asking():
-			return
+			return   # (no question after it: question_ended has let the box go)
+		dialogue.hold = r.clue_to_open().is_empty()   # the question holds; another line before it turns on a tap
 	elif not r.clue_to_open().is_empty() and not dialogue.active and not is_sidebar_open() and _layout_dialogue():
-		var clue := r.clue_to_open()
-		_hide_tip()
-		dialogue.set_speaker("puppy", clue[1])
-		dialogue.hold = false   # a tap or the read timer closes it
+		var clue := r.clue_to_open()   # [text, face, speaker]: Puppy's clue, then Dugi's introduction
+		dialogue.set_speaker(str(clue[2]), clue[1])
+		dialogue.hold = false   # a tap closes it
 		dialogue.open(clue[0])
-		r.clue_opened()   # told once
+		r.clue_opened()   # the clue is told once
 	var asking_now := r.phase() == MissionRound.Phase.ASKING
 	if asking_now and not dialogue.active and not is_sidebar_open() and _layout_dialogue():
-		_hide_tip()
 		dialogue.set_speaker("dugi")
 		var question := r.question_line()
 		dialogue.open(question[0], question[1])
@@ -433,6 +446,9 @@ func _run_question() -> void:
 		_choices.visible = shown and asking_now
 		if _choices.visible:
 			_fit_choices()
+			_ask_age += get_process_delta_time()
+			if _ask_age >= NUDGE_S and not _nudging:
+				nudge_choices()
 
 
 ## The round's clue or question is open (its shield takes every touch).
@@ -528,11 +544,11 @@ func _on_back_pressed() -> void:
 ## next time, like any unanswered visit).
 func handle_back() -> bool:
 	if _done_card != null:
-		_done_card.close()   # back closes the round-done card first (the lab stays, like 더 해 보기)
+		_done_card.close()   # back closes the round-done card first (the lab stays as it is)
 		_done_card = null
 		return true
-	if clue_telling():
-		dialogue.close(true)   # _run_question sees the clue read and lets Dugi ask
+	if mission_round != null and mission_round.clue_open() and dialogue != null and dialogue.active:
+		dialogue.close(true)   # _run_question sees the clue (or Dugi's introduction) read: the next line, or Dugi asks
 		_sync_clue_glow()
 		return true
 	if dialogue != null and dialogue.active and not _asking():
@@ -692,6 +708,10 @@ func _setup_game() -> void:
 	experiment.set_game_stage(mission_round.stage(), mission_round.stamps, false)   # the piece game (LabGame): the saved stamps
 	mission_round.open(dialogue != null)
 	if mission_round.asking():
+		# The first mission comes in his bridge after the answer, then on the strip (2026-11-01).
+		_mission_text_held = cast != null and cast.dugi != null
+		_mission_announced = _mission_text_held
+		_hold_mission_text()
 		_ask(mission_round.choices())
 
 
@@ -757,7 +777,7 @@ func _show_stamps(count: int) -> void:
 		(_stamp_labels[i] as StampSlot).set_filled(i < filled)
 	if _mission_text == null:
 		return
-	_mission_text.text = mission_round.stage_text(stage) if stage >= 0 else DONE_TEXT
+	_mission_text.text = "" if _mission_text_held else (mission_round.stage_text(stage) if stage >= 0 else DONE_TEXT)
 	var before := _key_ids
 	_build_key_cards(stage)
 	if _key_ids != before:
@@ -767,6 +787,29 @@ func _show_stamps(count: int) -> void:
 	_build_picks(stage)
 	mission_round.stage_shown()   # its automatic conditions are set once the lab is not mid-run
 	_apply_auto_conditions()
+
+
+## The strip without the stage's text (it waits for Dugi to tell it); the stamps, key cards and
+## picture buttons stay as _show_stamps set them.
+func _hold_mission_text() -> void:
+	if _mission_text != null:
+		_mission_text.text = ""
+		_fit_mission_strip()
+
+
+## The current stage's text on the strip (Dugi has told it), the strip pulsing once when he did. Only
+## the text: the stage's cards, buttons and conditions were set when its stamp came (_show_stamps).
+func _release_mission_text(pulse: bool) -> void:
+	_mission_text_held = false
+	_mission_announced = false
+	_retells = 0
+	if _mission_text == null:
+		return
+	var stage := mission_round.stage()
+	_mission_text.text = mission_round.stage_text(stage) if stage >= 0 else DONE_TEXT
+	_fit_mission_strip()
+	if pulse:
+		_pulse_strip()
 
 
 ## missions.auto_conditions (2026-10-29: the collision's ball weights): the conditions the round asks
@@ -796,6 +839,7 @@ func _ask(choices: Array) -> void:
 	_question_shield.color = QUESTION_DIM
 	_question_shield.mouse_filter = Control.MOUSE_FILTER_STOP
 	_question_shield.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_question_shield.gui_input.connect(_on_shield_input)
 	_question_shield.modulate.a = 0.0
 	view.add_child(_question_shield)
 	create_tween().tween_property(_question_shield, "modulate:a", 1.0, QUESTION_DIM_FADE)
@@ -808,6 +852,70 @@ func _ask(choices: Array) -> void:
 	for choice in choices:
 		_choices.add_child(_choice_button(choice))
 	_choices.visible = false   # _run_dialogue lays the box out, then shows both
+
+
+## A tap on the 3D view while Dugi's box (an explanation, the bridge, the reason) waits for a tap turns
+## its page, as a tap on the box does; a press on one of the lab's objects still takes the object
+## (the hand guide shows it while the bridge is open). Puppy's clue and the question have the shield.
+func _setup_tap_catcher() -> void:
+	if dialogue == null:
+		return
+	_tap_catcher = TapCatcher.new(func(point: Vector2) -> bool:
+		return dialogue.active and dialogue.visible and not dialogue.hold and not _asking() \
+			and not (manipulator != null and manipulator.claims(point)),
+		dialogue.advance)
+	view.add_child(_tap_catcher)
+	view.move_child(_tap_catcher, view.overlay_floor())   # over the 3D, under every overlay and button
+
+
+## A tap anywhere behind Puppy's clue or Dugi's question (2026-10-31 user: "대화창이 자꾸 못 넘어감"):
+## the clue's page turns as a tap on his box does; during the question the picture buttons are shown.
+func _on_shield_input(event: InputEvent) -> void:
+	if not TapCatcher.is_tap(event):
+		return
+	_question_shield.accept_event()
+	if dialogue.active and not dialogue.hold:
+		dialogue.advance()
+	elif _choices != null:
+		nudge_choices()
+
+
+## The picture buttons pop once and the paw taps the first one (the question still waits).
+func nudge_choices() -> void:
+	if _choices == null:
+		return
+	_ask_age = 0.0
+	nudges += 1
+	_choices.pivot_offset = _choices.size * 0.5
+	if _nudge_pop != null:
+		_nudge_pop.kill()   # taps in a row: one pop at a time
+	var pop := create_tween()
+	_nudge_pop = pop
+	pop.tween_property(_choices, "scale", Vector2.ONE * 1.12, 0.12).set_trans(Tween.TRANS_SINE)
+	pop.tween_property(_choices, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	if hand_guide == null or _choices.get_child_count() == 0:
+		return
+	view.move_child(hand_guide, -1)   # over the dim and the buttons while it shows them
+	_nudging = true
+	var first := _choices.get_child(0) as Control
+	hand_guide.play("tap", func() -> Vector2:
+		return _choices.position + first.position + first.size * 0.5 if _choices != null and is_instance_valid(first) else HandGuide.OFF_VIEW)
+
+
+## The paw back under the overlays it sat under after the question (and not showing the buttons).
+func _end_nudge() -> void:
+	if not _nudging:
+		return
+	_nudging = false
+	if hand_guide != null:
+		hand_guide.stop()
+		_put_guide_back()
+
+
+## The hand guide's own place: just over Dugi's box, under the strip, picks and later overlays.
+func _put_guide_back() -> void:
+	if hand_guide != null and dialogue != null:
+		view.move_child(hand_guide, dialogue.get_index() + 1)
 
 
 ## A big picture button: its drawing (PredictPictures) over its label.
@@ -830,6 +938,10 @@ func _choice_button(choice: Dictionary) -> Button:
 	caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	stack.add_child(caption)
+	# A longer answer (English, 2026-11-02 "They land together") widens the button, as the picks do.
+	var fit := func() -> void: button.custom_minimum_size.x = maxf(CHOICE_SIZE.x, caption.get_minimum_size().x + 24.0)
+	caption.minimum_size_changed.connect(fit)
+	caption.ready.connect(fit)
 	button.pressed.connect(_predict_pick_choice.bind(str(choice.get("id", ""))))
 	return button
 
@@ -853,26 +965,28 @@ func _fit_choices() -> void:
 		create_tween().tween_property(_choices, "scale", Vector2.ONE, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
-## A picture is tapped: the round keeps the pick (the strip shows it until the run ends) and the
+## A picture is tapped: the round keeps the pick (the strip shows it until the first mission text replaces it) and the
 ## question goes at once (nothing of it stays to catch the next touch).
 func _predict_pick_choice(choice_id: String) -> void:
 	if not _asking():
 		return
 	var picked := mission_round.answer(choice_id)
 	if _mission_text != null and picked != "":
-		_mission_text.text = PICK_PREFIX + picked
+		_mission_text.text = Locale.t("screen.pick_prefix") + picked
 		_fit_mission_strip()
 	_start_bridge()
 
 
 ## After the answer (2026-10-29 user: "예측 → 첫 미션 연결"): Dugi says the round's bridge line in his box
-## ("직접 던져 보면 알 수 있어요! 첫 번째 미션이에요.", pointing at the lab) and the mission strip pulses
-## once. A tap or the read timer closes the box; nothing waits for it.
+## (predict.bridge + "첫 번째 미션: <stage text>", pointing at the lab). A tap or the read timer closes the
+## box; the strip shows the stage's text then and pulses once (_run_mission_reveal). Without Dugi to
+## tell it the text is already there and the strip pulses now.
 func _start_bridge() -> void:
 	if mission_round.bridge_line() != "" and cast != null and cast.dugi != null:
 		_dialogue_started = false
 		cast.dugi.explain(experiment.explain_point)
-	_pulse_strip()
+	if not _mission_text_held:
+		_pulse_strip()   # (a held text pulses when it shows, after his box: _run_mission_reveal)
 
 
 ## The mission strip grows a little and glows warm once (PULSE_S), around the pill's centre.
@@ -936,6 +1050,8 @@ func _on_result_told(_stage: int, won: bool, text: String, face: String) -> void
 		_result_bubble.queue_free()
 	_result_bubble = ResultBubble.new(text, face, won)
 	view.add_child(_result_bubble)
+	_bubble_side = -1
+	_bubble_saw_box = dialogue != null and dialogue.active and dialogue.visible
 	_fit_result_bubble()
 
 
@@ -944,16 +1060,38 @@ func result_bubble() -> ResultBubble:
 	return _result_bubble if _result_bubble != null and is_instance_valid(_result_bubble) else null
 
 
-## The prediction's reason, after the first result line (MissionRound.reason_due): Dugi explains now
-## (an explanation of the run that already started gives way), with the reason in his box.
+## The prediction's reason, after the first result line of predict.stage's stage (MissionRound.reason_due): Dugi explains it,
+## with the reason in his box. A box he is in the middle of (the run's explanation, the bridge) is read
+## to its end first (2026-11-01 user: "설명 읽는데 넘어가는 장면"): the reason waits for it to close (and for an
+## open sidebar to close: he tells it in his box).
 func _tell_reason() -> void:
 	if cast == null or cast.dugi == null:
 		return   # (never today: the round asks nothing without Dugi, MissionRound.open)
-	_close_dialogue()
-	cast.dugi.stop(true)
 	cast.hold_explanation()   # the cast's own explanation of this run would only repeat him
+	_reason_waits = true
+	_run_reason_wait()
+
+
+## The reason told once Dugi's box and the sidebar are closed (at once when neither is open).
+func _run_reason_wait() -> void:
+	if not _reason_waits or cast == null or cast.dugi == null:
+		return
+	if (dialogue != null and dialogue.active) or is_sidebar_open():
+		return   # the child is still reading him (or reading the sidebar: the reason waits for his box)
+	_reason_waits = false
+	_dugi_tells_again()
+
+
+## Dugi starts over and points at the lab: his box opens with the round's next line (take_line).
+func _dugi_tells_again() -> void:
+	cast.dugi.stop(true)
 	_dialogue_started = false
 	cast.dugi.explain(experiment.explain_point)
+
+
+## The reason is waiting for Dugi's open box or the sidebar (tests).
+func reason_waits() -> bool:
+	return _reason_waits
 
 
 func _run_result_bubble(delta: float) -> void:
@@ -964,18 +1102,24 @@ func _run_result_bubble(delta: float) -> void:
 			_result_bubble.queue_free()
 		_result_bubble = null
 		return
-	_fit_result_bubble()
+	var box_up := dialogue != null and dialogue.active and dialogue.visible
+	_fit_result_bubble(box_up and not _bubble_saw_box)   # Dugi's box opened under it: a side clear of it, gliding
+	_bubble_saw_box = box_up
 
 
 ## Where Puppy's line goes: just above Puppy on the view (the cat without him, else the view's upper
 ## middle), its tail pointing at him; inside the view and clear of the other overlays (the title, the
 ## key cards, the strip, 다시, the picture buttons, the tip, Dugi's box) when it can be: above him,
-## else beside him, else below.
-func _fit_result_bubble() -> void:
+## else beside him, else below. The side is chosen when the bubble opens (`choose`, also when Dugi's
+## box opens after it; a win and a miss alike, the landing stamp is not avoided since 2026-11-02) and kept; it never jumps: once placed it moves at
+## most ResultBubble.MAX_STEP a frame, to a new side too, and else only follows Puppy (2026-10-31 user:
+## it jumped as Dugi's box opened and the camera moved).
+func _fit_result_bubble(choose := true) -> void:
 	if _result_bubble == null:
 		return
 	var bubble_size := _result_bubble.bubble_size()
 	var anchor := Vector2(view.size.x * 0.5, view.size.y * 0.35)
+	var body := Rect2(anchor, Vector2.ZERO)   # Puppy on the view (a point without him)
 	var who: Node3D = null
 	if cast != null and cast.puppy != null:
 		who = cast.puppy
@@ -984,45 +1128,61 @@ func _fit_result_bubble() -> void:
 	if who != null:
 		var r := view_rect_of(who.call("bounds"))
 		if r.size.x > 0.0:
+			body = r
 			anchor = Vector2(r.get_center().x, r.position.y)
 	var m := OVERLAY_MARGIN
 	var avoid := overlay_rects()
+	if body.size.x > 0.0:
+		avoid.append(body)   # the bubble never covers Puppy himself
 	if _mission_pill != null and _mission_pill.visible:
 		avoid.append(_mission_pill.get_rect().grow(4.0))
 	if dialogue != null and dialogue.active and dialogue.visible:
 		for r in dialogue.rects():
 			avoid.append((r as Rect2).grow(4.0))
-	# The stamp landing in the middle (StampSlam) for its first second: the bubble stays off its disc.
-	if _slam != null and is_instance_valid(_slam):
-		var reach := Vector2.ONE * StampSlam.RADIUS * 1.3
-		avoid.append(Rect2(_slam.start - reach, reach * 2.0))
 	var gap := ResultBubble.TAIL + 6.0
+	# Above his head, beside it (right, left: at his head's height, the tail at his side), below his feet;
+	# the tail points at the part of him it faces (2026-11-01 user: "말풍선 방향이 이상한 곳").
+	var head_y := body.position.y + minf(body.size.y * 0.3, 40.0)
+	var points := [
+		anchor,
+		Vector2(body.end.x, head_y),
+		Vector2(body.position.x, head_y),
+		Vector2(body.get_center().x, body.end.y),
+	]
 	var tries := [
 		Vector2(anchor.x - bubble_size.x * 0.5, anchor.y - gap - bubble_size.y),
-		Vector2(anchor.x + gap, anchor.y - bubble_size.y * 0.5),
-		Vector2(anchor.x - gap - bubble_size.x, anchor.y - bubble_size.y * 0.5),
-		Vector2(anchor.x - bubble_size.x * 0.5, anchor.y + gap * 2.0),
+		Vector2(body.end.x + gap, head_y - bubble_size.y * 0.5),
+		Vector2(body.position.x - gap - bubble_size.x, head_y - bubble_size.y * 0.5),
+		Vector2(body.get_center().x - bubble_size.x * 0.5, body.end.y + gap),
 	]
-	var best := Rect2()
-	var best_overlap := INF
-	for at: Vector2 in tries:
-		var rect := Rect2(Vector2(clampf(at.x, m, maxf(m, view.size.x - m - bubble_size.x)),
+	var fit := func(at: Vector2) -> Rect2:
+		return Rect2(Vector2(clampf(at.x, m, maxf(m, view.size.x - m - bubble_size.x)),
 			clampf(at.y, m, maxf(m, view.size.y - m - bubble_size.y))), bubble_size)
-		var overlap := 0.0
-		for r: Rect2 in avoid:
-			if r.intersects(rect):
-				overlap += r.intersection(rect).get_area()
-		if overlap < best_overlap:
-			best = rect
-			best_overlap = overlap
-		if overlap == 0.0:
-			break
-	_result_bubble.place(best, anchor)
+	var first := _bubble_side < 0
+	if choose or first:
+		var best_overlap := INF
+		for i in tries.size():
+			var rect: Rect2 = fit.call(tries[i])
+			var overlap := 0.0
+			for r: Rect2 in avoid:
+				if r.intersects(rect):
+					overlap += r.intersection(rect).get_area()
+			if overlap < best_overlap:
+				_bubble_side = i
+				best_overlap = overlap
+			if overlap == 0.0:
+				break
+	var goal: Rect2 = fit.call(tries[_bubble_side])
+	if not first:   # placed already: it glides there (a new side after a stamp too), never jumps
+		var from := _result_bubble.position
+		goal.position = from + (goal.position - from).limit_length(ResultBubble.MAX_STEP)
+	_result_bubble.place(goal, points[_bubble_side])
 
 
 ## The round's question ended (an answer, a pull, the run's result, the demo): the box closes, the
 ## buttons and the shield go.
 func _on_question_ended() -> void:
+	_ask_age = 0.0
 	dialogue.hold = false
 	dialogue.close(true)
 	dialogue.set_speaker("dugi")
@@ -1036,14 +1196,25 @@ func _on_question_ended() -> void:
 	if _dialogue_index >= 0:
 		view.move_child(dialogue, _dialogue_index)   # back under the overlays it sat under
 		_dialogue_index = -1
+		_put_guide_back()   # a nudge's paw ended over the lifted box: back over the box in its own place
+	_end_nudge()
 	_fit_picks()
+	if _mission_text_held and mission_round.pick == "":
+		_release_mission_text(false)   # unanswered (a pull on the ball): no bridge to tell it, the strip at once
 
 
-## A stamp was saved (MissionRound.stamp_earned, after Puppy's win line): the next stage's text appears at once;
+## A stamp was saved (MissionRound.stamp_earned, after Puppy's win line): the next stage's text waits for
+## the round to go on and Dugi's telling of it (at once without Dugi);
 ## the stamp drops in the middle of the view, lands with a thump and flies into its slot (StampSlam), which
 ## then fills; the bread cat hops. On the last one the whole round celebrates when it lands. A stamp
 ## still flying when the next one comes lands at once first.
 func _on_stamp_earned(stamps: int) -> void:
+	_next_due = stamps < mission_round.stage_count()
+	if _next_due:
+		mission_round.wait_next()   # the next stage is not judged before the round goes on (its mission untold)
+	_mission_text_held = _next_due and cast != null and cast.dugi != null   # Dugi tells it first (_go_next)
+	_mission_announced = false
+	_retells = 0
 	if _slam != null:
 		_slam.finish()
 	_show_stamps(stamps)
@@ -1056,7 +1227,8 @@ func _on_stamp_earned(stamps: int) -> void:
 	_slam.start = view.size * Vector2(0.5, 0.46)
 	_slam.landed.connect(_on_stamp_landed.bind(stamps))
 	view.add_child(_slam)
-	_fit_result_bubble()   # the bubble (shown just above) moves off the landing stamp
+	# (The win bubble keeps the place it got, as a miss bubble does (2026-11-02 user: "주황색 말풍선
+	# 잡듯이 똑같이"); before, it jumped to another side to leave the landing stamp alone.)
 	var cat := lab_cat()
 	if cat != null:
 		cat.cheer(cat.mode == "free")
@@ -1083,6 +1255,91 @@ func _on_stamp_landed(stamps: int) -> void:
 	_show_stamps(mission_round.stamps)
 	if stamps >= mission_round.stage_count():
 		_round_wait = ROUND_WAIT_MIN_S   # Dugi's last explanation first (2026-10-30 user), then the cheer
+	elif _next_due:
+		_next_wait = NEXT_WAIT_MIN_S   # then the next mission (2026-11-01 user: "천천히 가야돼")
+
+
+## A stage was won and its stamp is in: once Dugi's explanation is read (his box closed, his arm down),
+## NEXT_WAIT_MIN_S has passed and no finger holds the lab, the round goes on by itself (2026-11-02
+## user: "다음미션 버튼을 없애는게 나을듯. 그냥 미션 깨면 자연스럽게 다음 미션으로"; 2026-11-01 to
+## 11-02 a 다음 미션 button waited for the child): the lab is set up again for the next stage, as 다시
+## does (2026-10-31 user: "다음 실험할 수 있는 상태로"), and Dugi tells the next mission in his box before
+## the strip shows it. Until then the child may try the lab as it is (the next stage is not judged
+## yet: MissionRound.wait_next).
+func _run_next_wait(delta: float) -> void:
+	if _next_wait < 0.0 or (manipulator != null and manipulator.mode != ""):
+		return   # (a finger still on the lab, e.g. the push that won: wait until it lets go)
+	_next_wait = maxf(0.0, _next_wait - delta)
+	if _next_wait > 0.0:
+		return
+	var talking := cast != null and cast.dugi != null and (cast.dugi.speaking() or (dialogue != null and dialogue.active)
+		or cast.explanation_pending() or _reason_waits)
+	# Dugi first (also one still to come: the cast's delay_s); the sidebar closed (he tells the next
+	# mission in his box); a lab that settles is let settle (a run that keeps going, an orbit or a
+	# swing: once Dugi is done).
+	if talking or _slam != null or not experiment.settled() or is_sidebar_open():
+		return
+	_go_next()
+
+
+## Tests: the next stage at once for the stamp just earned (each scripted try is the child's own),
+## the strip shows the stage at once.
+func _cancel_next() -> void:
+	_next_due = false
+	_next_wait = -1.0
+	if mission_round != null:
+		mission_round.go_on()
+	if _mission_text_held:
+		_release_mission_text(false)
+
+
+## The round goes on to the stage: the lab is set up again, Dugi tells its mission in his box, and the
+## strip shows it once his box closes (the text waits for him: _run_mission_reveal).
+func _go_next() -> void:
+	_next_wait = -1.0   # (once: also when called directly)
+	_next_due = false
+	if experiment.status() != "ready":
+		experiment_action("reset")
+	mission_round.go_on()
+	next_goes += 1
+	if not _mission_text_held:   # (no Dugi to tell it: the strip at once)
+		_release_mission_text(false)
+		return
+	mission_round.announce()
+	_mission_announced = true
+	_close_dialogue()
+	_dugi_tells_again()
+
+
+## The told mission shows on the strip, pulsing once, when Dugi's box with it has closed (the bridge's
+## first mission, or the next one's): nothing of it is still to be told and no box is open; a line he did
+## not get to tell is told again (_retell_mission). (A question that ends unanswered shows it at once:
+## _on_question_ended.)
+func _run_mission_reveal() -> void:
+	if not _mission_text_held or not _mission_announced or mission_round.asking():
+		return
+	if mission_round.bridge_line() != "" or mission_round.announcing():
+		_retell_mission()
+		return
+	if dialogue != null and dialogue.active:
+		return
+	_release_mission_text(true)
+
+
+## The mission line missed his box (it opens only while his arm goes up: the sidebar was open, a
+## touch stopped him, the box had no room): once he is at rest, no box or sidebar is open and no
+## finger holds the lab, he starts over and tells it.
+func _retell_mission() -> void:
+	if cast == null or cast.dugi == null or cast.dugi.speaking() or _reason_waits:
+		return
+	if (dialogue != null and dialogue.active) or is_sidebar_open() or (manipulator != null and manipulator.mode != ""):
+		return
+	if _retells >= RETELLS_MAX:   # (his box finds no room: the strip shows it without him)
+		mission_round.take_line()
+		_release_mission_text(true)
+		return
+	_retells += 1
+	_dugi_tells_again()
 
 
 ## The last stamp is in: the celebration waits until Dugi's explanation of that stage is read (his
@@ -1093,7 +1350,8 @@ func _run_round_wait(delta: float) -> void:
 	_round_wait = maxf(0.0, _round_wait - delta)
 	if _round_wait > 0.0:
 		return
-	var talking := cast != null and cast.dugi != null and (cast.dugi.speaking() or (dialogue != null and dialogue.active))
+	var talking := cast != null and cast.dugi != null and (cast.dugi.speaking() or (dialogue != null and dialogue.active)
+		or _reason_waits)
 	if not talking:
 		_round_wait = -1.0
 		_celebrate_round()
@@ -1104,6 +1362,7 @@ func skip_round_wait() -> void:
 	if _round_wait < 0.0:
 		return
 	_close_dialogue()
+	_reason_waits = false   # (read too)
 	if cast != null and cast.dugi != null:
 		cast.dugi.stop(true)
 	_round_wait = 0.0
@@ -1217,7 +1476,10 @@ func _show_done_card() -> void:
 	_done_card.to_map.connect(func() -> void:
 		_done_card = null
 		back_requested.emit())
-	_done_card.stay.connect(func() -> void: _done_card = null)
+	_done_card.stay.connect(func() -> void:
+		_done_card = null
+		if experiment.status() != "ready":
+			experiment_action("reset"))   # 더 해 보기: the lab ready for another go
 	view.add_child(_done_card)
 
 
@@ -1294,6 +1556,10 @@ func _run_guide(delta: float) -> void:
 	var used := manipulator != null and manipulator.mode != ""
 	var touched := _guide_touched or used
 	_guide_touched = false
+	if _nudging:
+		if not hand_guide.playing():
+			_end_nudge()
+		return   # the paw shows the picture buttons now (nudge_choices)
 	if (touched or _guide_blocked()) and hand_guide.playing():
 		hand_guide.stop()
 	var was_seen := _coach.seen
@@ -1537,7 +1803,7 @@ func _build_view_overlays() -> void:
 	view.add_child(_title_bar)
 	var title_row := Ui.hbox(4)
 	_title_bar.add_child(title_row)
-	var back := Ui.button("← 지도", "FlatButton", 56)
+	var back := Ui.button(Locale.t("screen.back_to_map"), "FlatButton", 56)
 	back.pressed.connect(_on_back_pressed)
 	title_row.add_child(back)
 	_back_button = back
@@ -1555,7 +1821,7 @@ func _build_view_overlays() -> void:
 	view.add_child(_top_buttons)
 	# Settings live on the island map (Plan G2). The game's labs keep their sliders behind "자세히".
 	var game := not MissionRound.missions(definition.raw).is_empty()
-	_sidebar_button = Ui.button("자세히" if game else "설명·조건", "PrimaryButton", 56)
+	_sidebar_button = Ui.button(Locale.t("screen.sidebar_game") if game else Locale.t("screen.sidebar"), "PrimaryButton", 56)
 	_sidebar_button.pressed.connect(open_sidebar.bind(true))
 	_top_buttons.add_child(_sidebar_button)
 
@@ -1574,7 +1840,7 @@ func _build_view_overlays() -> void:
 		if game and action.id != "reset":
 			continue
 		var small: bool = game and action.id == "reset"
-		var button := Ui.button(RESET_SHORT if small else action.label, "PrimaryButton" if action.get("style") == "primary" and not small else "", 64)
+		var button := Ui.button(Locale.t("screen.reset_short") if small else action.label, "PrimaryButton" if action.get("style") == "primary" and not small else "", 64)
 		button.custom_minimum_size.x = 96 if small else 140
 		button.pressed.connect(experiment_action.bind(action.id))
 		_action_buttons[action.id] = button
@@ -1588,7 +1854,8 @@ func _build_view_overlays() -> void:
 	_tip = Ui.label(ExperimentRegistry.kid_text(definition.raw, "tip"), "HintLabel", true)
 	_tip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	view.add_child(_tip)
-	_tip.visible = _tip.text != "" and not _tips_shown.has(definition.id())   # recorded in _hide_tip(), once it was seen
+	_tip_due = _tip.text != "" and not _tips_shown.has(definition.id())   # recorded in _hide_tip(), once it was seen
+	_tip.visible = _tip_due
 	view.resized.connect(_fit_overlays)
 	# Wrapped card texts settle their height after the first layout pass (and change with status texts).
 	_key_row.minimum_size_changed.connect(_fit_overlays)
@@ -1751,7 +2018,7 @@ func _build_sidebar() -> void:
 	heading.add_child(Ui.label(definition.text("category"), "EyebrowLabel"))
 	heading.add_child(Ui.label(definition.text("question"), "MutedLabel", true))
 	header.add_child(heading)
-	close_button = Ui.button("닫기", "", 56)
+	close_button = Ui.button(Locale.t("common.close"), "", 56)
 	close_button.name = "CloseSheet"
 	close_button.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	close_button.pressed.connect(close_sidebar.bind(true))
@@ -1780,7 +2047,7 @@ func _build_sidebar() -> void:
 		column.add_child(_sections[id])
 
 	# 더 보기: a button and the collapsed rest.
-	_more_button = Ui.button(MORE_CLOSED, "", 56)
+	_more_button = Ui.button(Locale.t("screen.more"), "", 56)
 	_more_button.name = "MoreButton"
 	_more_button.pressed.connect(func() -> void: set_more_open(not _more.visible))
 	column.add_child(_more_button)
@@ -1802,8 +2069,11 @@ func _build_sidebar() -> void:
 		_more.add_child(graph)
 	_sections["more_explanation"] = _build_explanation()
 	_more.add_child(_sections.more_explanation)
-	# Last: the question for an AI app (or any app), never in a measurement.
-	if not measurement:
+	# Last: the question for an AI app (or any app), never in a measurement; off unless turned on
+	# (ScienceNote.enabled, or the button's own device check --ask=show; the Play build (feature "play")
+	# ignores the switch, so a launch intent cannot turn the button on for a child).
+	var ask_switch := not OS.has_feature("play") and Quality.cmdline_value("ask") == "show"
+	if not measurement and (ScienceNote.enabled or ask_switch):
 		_sections["ask"] = _build_ask()
 		_sections.ask.name = "Note_ask"
 		column.add_child(_sections.ask)
@@ -1813,18 +2083,18 @@ func _build_sidebar() -> void:
 ## the question was copied instead.
 func _build_ask() -> Control:
 	var box := Ui.vbox(6)
-	_ask_button = Ui.button(ASK_TEXT, "", 56)
+	_ask_button = Ui.button(Locale.t("screen.ask_ai"), "", 56)
 	_ask_button.name = "AskAi"
 	_ask_button.pressed.connect(ask_ai)
 	box.add_child(_ask_button)
-	box.add_child(Ui.label(ASK_CAPTION, "MutedLabel", true))
+	box.add_child(Ui.label(Locale.t("screen.ask_caption"), "MutedLabel", true))
 	# No AI app on the device (the chooser then has nothing): copy and open the web AI instead.
-	_web_button = Ui.button(ScienceNote.WEB_LINK, "", 48)
+	_web_button = Ui.button(Locale.t("note.web_link"), "", 48)
 	_web_button.name = "AskWeb"
 	_web_button.flat = true
 	_web_button.pressed.connect(ask_web)
 	box.add_child(_web_button)
-	_ask_status = Ui.label(ScienceNote.COPIED, "MutedLabel", true)
+	_ask_status = Ui.label(Locale.t("note.copied"), "MutedLabel", true)
 	_ask_status.name = "AskStatus"
 	_ask_status.visible = false
 	box.add_child(_ask_status)
@@ -1835,20 +2105,20 @@ func _build_ask() -> Control:
 ## apps' packages go to ask_handler once (on Android the system chooser with those apps only); a copy
 ## shows the line.
 func ask_ai() -> void:
-	if measurement or experiment == null:
+	if measurement or experiment == null or _ask_button == null:   # no button (off, or a measurement)
 		return
 	var packages := ScienceNote.ai_apps().map(func(app: Dictionary) -> String: return app.package)
 	var text := ScienceNote.question(definition, experiment, _hidden_answers(experiment.observations()))
-	_ask_status.text = ScienceNote.COPIED
+	_ask_status.text = Locale.t("note.copied")
 	_ask_status.visible = str(ask_handler.call(packages, text)) == "clipboard"
 
 
 ## The web link's tap: the same question, copied, and the web AI opened (a browser or its app).
 func ask_web() -> void:
-	if measurement or experiment == null:
+	if measurement or experiment == null or _ask_button == null:
 		return
 	web_handler.call(ScienceNote.question(definition, experiment, _hidden_answers(experiment.observations())))
-	_ask_status.text = ScienceNote.COPIED_WEB
+	_ask_status.text = Locale.t("note.copied_web")
 	_ask_status.visible = true
 
 
@@ -1857,7 +2127,7 @@ func set_more_open(open: bool) -> void:
 	if _more == null:
 		return
 	_more.visible = open
-	_more_button.text = MORE_OPEN if open else MORE_CLOSED
+	_more_button.text = Locale.t("screen.less") if open else Locale.t("screen.more")
 
 
 func is_more_open() -> bool:
@@ -1866,7 +2136,7 @@ func is_more_open() -> bool:
 
 ## 법칙: the lab's law in one plain sentence and its formula (note.law, note.formula).
 func _build_law(note: Dictionary) -> Control:
-	var parts := _section("법칙")
+	var parts := _section(Locale.t("screen.section_law"))
 	var body: VBoxContainer = parts[1]
 	body.add_child(Ui.label(str(note.get("law", "")), "", true))
 	var formula := Ui.label(str(note.get("formula", "")), "EquationLabel", true)
@@ -1875,7 +2145,7 @@ func _build_law(note: Dictionary) -> Control:
 	body.add_child(formula)
 	var pace := definition.time_scale()
 	if not is_equal_approx(pace, 1.0):
-		var paced := Ui.label(TIME_SCALE_NOTE % Ui.number(pace, 1), "MutedLabel", true)
+		var paced := Ui.label(Locale.t("screen.time_scale_note") % Ui.number(pace, 1), "MutedLabel", true)
 		paced.name = "TimeScaleNote"
 		body.add_child(paced)
 	return parts[0]
@@ -1884,7 +2154,7 @@ func _build_law(note: Dictionary) -> Control:
 ## 이번 실험 숫자: note.numbers, a caption and the value(s) of this run in their units (the panel's
 ## format_observation text); two ids read "before → after".
 func _build_numbers(note: Dictionary) -> Control:
-	var parts := _section("이번 실험 숫자")
+	var parts := _section(Locale.t("screen.section_numbers"))
 	var body: VBoxContainer = parts[1]
 	for row in note.get("numbers", []):
 		var tile := Ui.panel("Tile")
@@ -1914,7 +2184,7 @@ func _section(title: String) -> Array:
 
 
 func _build_conditions() -> Control:
-	var parts := _section("조건 바꾸기")
+	var parts := _section(Locale.t("screen.section_controls"))
 	var body: VBoxContainer = parts[1]
 	for control in definition.controls():
 		var row := Ui.hbox(8)
@@ -2057,7 +2327,7 @@ func _sync_control(id: String) -> void:
 
 ## The other numbers (in 더 보기): the observations the note does not list, two per row.
 func _build_observations(observations: Array) -> Control:
-	var parts := _section("다른 숫자")
+	var parts := _section(Locale.t("screen.section_other_numbers"))
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.add_theme_constant_override("h_separation", 10)
@@ -2078,7 +2348,7 @@ func _build_observations(observations: Array) -> Control:
 
 func _build_graph() -> Control:
 	var spec := definition.graph()
-	var parts := _section(spec.get("title", "그래프"))
+	var parts := _section(spec.get("title", Locale.t("screen.section_graph")))
 	_graph = GraphView.new()
 	_graph.spec = spec
 	parts[1].add_child(_graph)
@@ -2097,19 +2367,19 @@ func _build_graph() -> Control:
 		legend.add_child(item)
 	parts[1].add_child(legend)
 	var y_spec: Dictionary = spec.get("y", {})
-	parts[1].add_child(Ui.label("세로: %s (%s)" % [y_spec.get("label", ""), y_spec.get("unit", "")], "MutedLabel", true))
+	parts[1].add_child(Ui.label(Locale.t("screen.graph_y_axis") % [y_spec.get("label", ""), y_spec.get("unit", "")], "MutedLabel", true))
 	return parts[0]
 
 
 func _build_explanation() -> Control:
-	var parts := _section("설명")
+	var parts := _section(Locale.t("screen.section_about"))
 	var body: VBoxContainer = parts[1]
 	body.add_child(Ui.label(definition.text("title"), "HeadingLabel", true))
 	if definition.text("tip") != "":
 		var how := Ui.panel("SoftCard")
 		var how_body := Ui.vbox(6)
 		how.add_child(how_body)
-		how_body.add_child(Ui.label("조작 방법", "SectionLabel"))
+		how_body.add_child(Ui.label(Locale.t("screen.how_to"), "SectionLabel"))
 		how_body.add_child(Ui.label(definition.text("tip"), "MutedLabel", true))
 		body.add_child(how)
 	var steps := Ui.vbox(10)
@@ -2126,7 +2396,7 @@ func _build_explanation() -> Control:
 	var observe := Ui.panel("ObserveCard")
 	var observe_body := Ui.vbox(4)
 	observe.add_child(observe_body)
-	observe_body.add_child(Ui.label("관찰 포인트", "ObserveTitleLabel"))
+	observe_body.add_child(Ui.label(Locale.t("screen.observe"), "ObserveTitleLabel"))
 	observe_body.add_child(Ui.label(definition.text("observe"), "ObserveLabel", true))
 	body.add_child(observe)
 	var law := definition.law()
@@ -2191,13 +2461,13 @@ static func format_observation(observation: Dictionary, value: Variant) -> Strin
 	return ScienceNote.format_observation(observation, value)
 
 
-## A number in a child's words (ExperimentRegistry.KID_UNITS): one decimal at most and the unit
+## A number in a child's words (ui.json kid.units): one decimal at most and the unit
 ## spelled out, "1.3초", "12.5미터", "1초에 12.5미터", "45도", "2줄". A mission stage judges this
 ## rounded number (MissionRound.shown). `minus` (optional) reads a
 ## negative value as its size after that word ("눌려서 0.3미터"). Only the rounding and the words
 ## differ from format_observation: the value is the same formula value.
 static func kid_value(unit: String, value: float, digits: int, minus := "") -> String:
-	var words: Array = ExperimentRegistry.KID_UNITS.get(unit, ["", " " + unit])
+	var words: Array = Locale.map("kid.units").get(unit, ["", " " + unit])
 	var places := mini(digits, MissionRound.CARD_PLACES)
 	var text := Ui.number(absf(value), places)
 	var lead := ""
@@ -2213,7 +2483,7 @@ static func kid_value(unit: String, value: float, digits: int, minus := "") -> S
 static func card_text(definition: Dictionary, observation: Dictionary, value: Variant, hidden := false) -> String:
 	var unit := str(observation.get("unit", ""))
 	var bar := ExperimentRegistry.card_bar(definition, str(observation.get("id", ""))) > 0.0
-	var words: Array = ExperimentRegistry.KID_UNITS.get(unit, ["", " " + unit]) if not bar else ["", ""]
+	var words: Array = Locale.map("kid.units").get(unit, ["", " " + unit]) if not bar else ["", ""]
 	if hidden:
 		return (str(words[0]) + "? " + str(words[1])).strip_edges()
 	var kid: Dictionary = definition.get("kid", {}) if definition.get("kid") is Dictionary else {}
@@ -2271,13 +2541,27 @@ func _update_readouts(force_graph: bool) -> void:
 		_graph.set_data(series)
 
 
-## Fades the hint out on its own node (no screen-wide layer), then hides it. This is when the hint
-## counts as seen (the timer ran out or the first gesture closed it): a screen rebuilt before that
-## (a condition change redraws it from the saved state) shows the hint again.
-func _hide_tip() -> void:
-	if _tip == null or not _tip.visible or _tip_tween != null:
+## The hint shows while it is due and nothing talks over it; hidden (not used up) while something does.
+func _sync_tip() -> void:
+	if _tip == null or not _tip_due or _tip_tween != null:
 		return
+	var talking := _asking() or (dialogue != null and dialogue.active and dialogue.visible) or is_sidebar_open() \
+		or _done_card != null
+	_tip.visible = not talking
+	if manipulator != null and manipulator.mode != "":
+		_hide_tip()   # the child did it
+
+
+## Fades the hint out on its own node (no screen-wide layer), then hides it. This is when the hint
+## counts as seen (the child's first gesture or use of the lab): a screen rebuilt before that (a
+## condition change redraws it from the saved state) shows the hint again.
+func _hide_tip() -> void:
+	if _tip == null or not _tip_due or _tip_tween != null:
+		return
+	_tip_due = false
 	_tips_shown[definition.id()] = true
+	if not _tip.visible:
+		return
 	if not is_inside_tree():
 		_tip.visible = false
 		return

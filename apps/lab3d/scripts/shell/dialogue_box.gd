@@ -12,14 +12,16 @@
 ##
 ## The words are the lab's observe text exactly (or, for one open, other words of Dugi's: the
 ## mission's question or the prediction's reason — Plan G4), only split into pages of at most
-## LINES lines at the spaces (joined() is the text again). Each page types out at
+## LINES lines at the spaces, each sentence starting a line (joined() is the text
+## again). Each page types out at
 ## CHARS_PER_S; a tap shows the whole page, the next tap turns the page, and after the last page
 ## it closes. Pages never turn by themselves (2026-10-28 user: only a tap turns a page; before, an
 ## untouched page turned after READ_S + READ_PER_CHAR_S per character — `auto_turn` keeps that for
 ## anyone who sets it); a box that holds (`hold`: a question waiting for its answer) stays on its
 ## last page. UI only:
 ## no full-screen layer; it takes taps only on the box and the bust (_has_point), the rest of its
-## rect passes them to the 3D view.
+## rect passes them to the 3D view. A tap elsewhere on the view while a box waits turns its page
+## through the screen's TapCatcher (tap_catcher.gd, 2026-10-31).
 class_name DialogueBox
 extends Control
 
@@ -27,7 +29,7 @@ extends Control
 signal closed
 
 const LINES := 2
-const CHARS_PER_S := 28.0
+const CHARS_PER_S := 18.0     # 2026-10-31 user: slower for a child (28 before)
 const READ_S := 3.0
 const READ_PER_CHAR_S := 0.06
 ## Whether an untouched page turns after its read time (off: only a tap turns a page).
@@ -102,7 +104,7 @@ func _init(own_words: String) -> void:
 	name_tag = Ui.panel("DialogueNameTag")
 	name_tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(name_tag)
-	name_label = Ui.label("두기두기", "DialogueNameLabel")
+	name_label = Ui.label(Locale.t("speaker.dugi"), "DialogueNameLabel")
 	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	name_tag.add_child(name_label)
 
@@ -150,9 +152,29 @@ static func _glue_short(tokens: PackedStringArray) -> Array:
 	return out
 
 
-## Pages of at most LINES lines: [{"lines": [...], "seps": [separator after each line]}, ...].
+## The sentences of `words` (each ends in . ! or ? before a space; "…" goes on): a sentence starts
+## a new line in the box (2026-11-02 user: "애들거니까, 문장 좀 끊어서 해줘").
+static func sentences(words: String) -> PackedStringArray:
+	var out := PackedStringArray()
+	var start := 0
+	for i in words.length() - 1:
+		if words[i] in [".", "!", "?"] and words[i + 1] == " ":
+			out.append(words.substr(start, i + 1 - start))
+			start = i + 2
+	out.append(words.substr(start))
+	return out
+
+
+## Pages of at most LINES lines, each sentence on lines of its own: [{"lines": [...], "seps":
+## [separator after each line]}, ...].
 static func paginate(words: String, font: Font, size: int, width: float) -> Array:
-	var lines := wrap_lines(words, font, size, width)
+	var lines := []
+	var parts := sentences(words)
+	for i in parts.size():
+		var wrapped := wrap_lines(parts[i], font, size, width)
+		if i < parts.size() - 1 and not wrapped.is_empty():
+			wrapped[-1][1] = " "   # (joined() puts the space back)
+		lines.append_array(wrapped)
 	var out := []
 	for k in range(0, lines.size(), LINES):
 		var chunk: Array = lines.slice(k, k + LINES)
@@ -246,7 +268,7 @@ func set_speaker(who: String, new_face := "") -> void:
 		return
 	speaker = who
 	face = f
-	name_label.text = Story.SPEAKERS[who][0]
+	name_label.text = Locale.t(Story.SPEAKERS[who][0])
 	portrait.texture = portrait_texture(who, f)
 	name_tag.size = name_tag.get_combined_minimum_size()
 	swaps += 1

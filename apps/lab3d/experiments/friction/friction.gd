@@ -2,7 +2,7 @@
 ## a box on a level floor with friction, pushed towards +x by the bread cat. The child presses and
 ## holds the box itself (2026-10-28 user decision, no handle): while held the applied force grows
 ## from 0 at PUSH_RATE N/s up to PUSH_MAX (80 N, the old handle's +-80 N) - HoldRamp - and a gauge
-## beside the box fills; letting go sets it back to 0 at once and the box slides on until friction
+## beside the box fills, both stopping at the push that starts the box (2026-11-01); letting go sets it back to 0 at once and the box slides on until friction
 ## stops it (the web's handle let go). The box starts exactly when the ramped force passes
 ## mu_s m g (PushFrictionLaw). Conditions: material (the web's four, mu_s =
 ## friction + 0.18, mu_k = friction) and mass (the kid boxes 2 / 5 / 10 kg and the web's 8 kg start
@@ -22,8 +22,10 @@ const START_X := -3.0
 const LOOK_MASS := 8.0        # kg: the box that looks BOX big (the web's start box)
 ## Box centres beyond these x stop the box (the yellow track ends at +-TRACK_HALF, bumpers outside).
 const TRACK_HALF := 6.0
-## The held push (2026-10-28): 25 N/s, at most 80 N. The heaviest box the child can pick (10 kg on
-## clay: mu_s m g = 74.6 N) starts after 2.98 s; the 2 kg box on wood (7.85 N) after 0.31 s.
+## The held push (2026-10-28): 25 N/s, at most 80 N; it stops growing once the box starts (2026-11-01,
+## HoldRamp.hold_there: the push that broke it loose, then the box slides on with it). The heaviest
+## box the child can pick (10 kg on clay: mu_s m g = 74.6 N) starts after 2.98 s; the 2 kg box on
+## wood (7.85 N) after 0.31 s.
 const PUSH_RATE := 25.0       # N per second of holding
 const PUSH_MAX := 80.0        # N
 const GRAPH_EVERY_STEPS := 6  # 10 Hz graph samples
@@ -56,6 +58,9 @@ var _graph_revision := 0
 ## The push that started the box this run (N, the formula's mu_s m g at the moment it broke loose;
 ## -1 until it did): the mission's key card (2026-10-28). Read only: nothing reads it back.
 var start_force := -1.0
+## The law held the box after the last step (a press that breaks it loose stops growing there; a
+## press on a box still sliding stops once it passes mu_s m g).
+var _was_holding := true
 
 
 func _ready() -> void:
@@ -147,6 +152,7 @@ func reset_box() -> void:
 	run_start_x = START_X
 	corrector.reset(box.global_position)
 	model.reset()
+	_was_holding = true
 	start_force = -1.0
 	frames = 0
 	_clock_steps = 0
@@ -214,6 +220,10 @@ func _physics_process(_delta: float) -> void:
 	model.step(force, dt)
 	if start_force < 0.0 and not model.holding:
 		start_force = model.max_static()   # the box broke loose: the push it took (mu_s m g)
+	if push.held and not model.holding and (_was_holding or push.force() > model.max_static()):
+		push.hold_there()   # the press broke the box loose (or, on a box still sliding, got to the
+		# push that would have): it and its gauge stay at that force
+	_was_holding = model.holding
 	_clock_steps += 1
 	var x := formula_x()
 	var low := -TRACK_HALF + BOX * 0.5 + END_PADDING
@@ -259,11 +269,11 @@ func observations() -> Dictionary:
 	var state_text := ""
 	match status():
 		"end":
-			state_text = "바닥 끝에 닿았어요"
+			state_text = Locale.t("friction.status.end")
 		"holding":
-			state_text = "멈춰 있어요" if model.applied == 0.0 else "버티는 중 · 마찰이 막고 있어요"
+			state_text = Locale.t("friction.status.still") if model.applied == 0.0 else Locale.t("friction.status.holding")
 		"sliding":
-			state_text = "움직여요 · 주는 힘이 마찰을 이겼어요" if model.applied != 0.0 else "미끄러지다 멈추는 중"
+			state_text = Locale.t("friction.status.moving") if model.applied != 0.0 else Locale.t("friction.status.slowing")
 	return {
 		"state": state_text,
 		"applied": absf(model.applied),
@@ -274,7 +284,7 @@ func observations() -> Dictionary:
 		"heat": model.heat,
 		"distance": absf(model.displacement),
 		"measured": absf(engine_displacement()),
-		"start_force": start_force if start_force >= 0.0 else "밀어 보면 보여요",
+		"start_force": start_force if start_force >= 0.0 else Locale.t("friction.start_wait"),
 	}
 
 

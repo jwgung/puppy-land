@@ -621,6 +621,8 @@ func check_auto_conditions() -> void:
 	var problems := []
 	var cleared := [6.5, 8.0, 7.5]   # the slingshot speeds that beat each stage (6.72, 12.2, 18.4 N·s)
 	for stage in stages.size():
+		if stage > 0:
+			screen._cancel_next()   # the child goes on (다음 미션: the next stage is judged only then)
 		for i in 8:
 			await tree.process_frame
 		var look: Vector2 = MassLook.touching_radii(want[stage][0], want[stage][1], lab.RADIUS_A + lab.RADIUS_B)

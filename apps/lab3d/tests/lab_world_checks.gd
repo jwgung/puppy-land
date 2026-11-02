@@ -22,7 +22,7 @@ const UI_THEME := "res://scripts/app/ui_theme.gd"
 const TABLET := Vector2(1152, 720)
 const PHONE := Vector2(1560, 720)
 const VERTS_MAX := 30000
-## Each lab's zone theme (the map's ZONES), written out here.
+## Each lab's zone theme (the island's zones), written out here.
 const THEMES := {
 	"projectile": "meadow", "collision": "meadow", "free-fall": "meadow",
 	"incline-friction": "hill", "friction": "hill",

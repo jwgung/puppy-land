@@ -1,37 +1,8 @@
 {
   "id": "free-fall",
   "version": 1,
-  "title": "질량이 달라도 같이 떨어질까?",
-  "category": "움직임과 힘",
   "icon": "↓",
-  "question": "가벼운 공과 무거운 공은 바닥에 닿는 시간이 다를까요?",
-  "steps": [
-    "두 공의 높이를 맞춰요.",
-    "중력을 달이나 목성으로 바꿔요.",
-    "두 공이 바닥에 닿는 순간을 비교해요."
-  ],
-  "observe": "질량보다 중력 환경이 떨어지는 속도 변화에 어떤 영향을 주는지 보세요.",
-  "terms": [
-    {
-      "name": "질량",
-      "description": "물체가 움직임의 변화를 얼마나 버티는지를 나타내는 양이에요."
-    },
-    {
-      "name": "중력",
-      "description": "지구 같은 천체가 물체를 끌어당기는 힘이에요."
-    },
-    {
-      "name": "가속도",
-      "description": "속도가 시간에 따라 얼마나 빠르게 바뀌는지를 뜻해요."
-    }
-  ],
-  "law": {
-    "title": "중력과 가속도",
-    "description": "중력은 물체를 아래로 끌어 속도를 계속 바꿉니다.",
-    "equation": "F = mg"
-  },
-  "tip": "공을 한 손가락으로 위아래로 끌어 높이를 정하고(1 m 눈금) 손을 떼면 두 공이 함께 떨어져요. 다시 끌면 새로 시작해요. 두 손가락을 함께 끌면 시점이 돌아가요.",
-  "tip_short": "공을 끌었다 놓으면 두 공이 떨어져요",
+  "law": { "equation": "F = mg" },
   "scene": "res://experiments/free_fall/free_fall.gd",
   "bench_id": "FF",
   "camera": {
@@ -43,7 +14,12 @@
     "pan_radius": 5.0,
     "default_mode": "front",
     "views": {
-      "front": { "yaw_deg": 0.0, "pitch_deg": -4.0, "distance": 16.0, "target": [0.0, 4.6, 0.0] },
+      "front": {
+        "yaw_deg": 0.0,
+        "pitch_deg": -4.0,
+        "distance": 16.0,
+        "target": [0.0, 4.6, 0.0]
+      },
       "three_quarter": { "yaw_deg": 30.0, "pitch_deg": -14.0 },
       "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 9.0 },
       "side": { "yaw_deg": 90.0, "pitch_deg": -6.0, "distance": 13.0 },
@@ -52,42 +28,49 @@
   },
   "controls": [
     {
-      "id": "gravity", "type": "choice", "label": "중력", "default": "earth",
+      "id": "gravity",
+      "type": "choice",
+      "default": "earth",
       "options": [
-        { "id": "zero", "label": "무중력", "g": 0.0, "note": "무중력 · 0× · g = 0 m/s²" },
-        { "id": "moon", "label": "달", "g": 1.62, "note": "달 · 0.17× · g = 1.62 m/s²" },
-        { "id": "earth", "label": "지구", "g": 9.81, "note": "지구 · 1× · g = 9.81 m/s²" },
-        { "id": "jupiter", "label": "목성", "g": 24.79, "note": "목성 · 2.53× · g = 24.79 m/s²" }
+        { "id": "zero", "g": 0.0 },
+        { "id": "moon", "g": 1.62 },
+        { "id": "earth", "g": 9.81 },
+        { "id": "jupiter", "g": 24.79 }
       ]
     },
     {
-      "id": "height", "type": "slider", "label": "두 공의 출발 높이", "unit": "m",
-      "min": 1.0, "max": 8.0, "step": 1.0, "default": 5.0, "digits": 0
+      "id": "height",
+      "type": "slider",
+      "unit": "m",
+      "min": 1.0,
+      "max": 8.0,
+      "step": 1.0,
+      "default": 5.0,
+      "digits": 0
     },
     {
-      "id": "mass", "type": "choice", "label": "빨간 공 무게", "default": "heavy",
+      "id": "mass",
+      "type": "choice",
+      "default": "heavy",
       "options": [
-        { "id": "light", "label": "가벼움", "kg": 0.5, "note": "빨간 공 0.5 kg · 분홍 공 0.5 kg" },
-        { "id": "normal", "label": "보통", "kg": 1.0, "note": "빨간 공 1 kg · 분홍 공 0.5 kg" },
-        { "id": "heavy", "label": "무거움", "kg": 3.0, "note": "빨간 공 3 kg · 분홍 공 0.5 kg" }
+        { "id": "light", "kg": 0.5 },
+        { "id": "normal", "kg": 1.0 },
+        { "id": "heavy", "kg": 3.0 }
       ]
     }
   ],
   "actions": [
-    { "id": "release", "label": "공 놓기", "style": "primary" },
-    { "id": "reset", "label": "처음으로" }
+    { "id": "release", "style": "primary" },
+    { "id": "reset" }
   ],
   "key_observations": ["red_time", "fall_time", "speed"],
   "predict": {
-    "question": "무거운 공이 먼저 떨어질까?",
     "question_face": "thinking",
     "choices": [
-      { "id": "together", "label": "같이 닿아요", "picture": "fall_together" },
-      { "id": "heavy", "label": "무거운 공 먼저", "picture": "fall_heavy_first" }
+      { "id": "together", "picture": "fall_together" },
+      { "id": "heavy", "picture": "fall_heavy_first" }
     ],
     "answer": "together",
-    "reason": "무거운 공도 가벼운 공도 똑같이 빨라져요. 그래서 같은 높이에서 놓으면 같이 닿아요.",
-    "bridge": "직접 떨어뜨려 보면 알 수 있어요!",
     "bridge_face": "happy"
   },
   "missions": {
@@ -97,70 +80,100 @@
     "hidden_until_end": ["fall_time"],
     "hidden_series_until_end": ["yellow", "red"],
     "stages": [
-      { "observe": "together_time", "threshold": 0.1, "conditions": {"gravity": "earth", "mass": "heavy"}, "text": "빨간 공과 분홍 공을 같이 떨어뜨려 버튼 누르기!", "say": "무거운 빨간 공도 가벼운 분홍 공도 같은 높이에서 놓으면 같이 닿아요.", "say_face": "happy", "win": "딸깍! 두 버튼이 같이 눌렸어!", "win_face": "happy", "miss": "두 공이 따로 닿았어. 높이를 맞춰 봐!", "miss_face": "thinking" },
-      { "observe": "together_time", "threshold": 3.0, "conditions": {"gravity": "moon", "mass": "heavy"}, "text": "달에서 두 공을 맨 위에서 같이 떨어뜨리기!", "say": "달은 지구보다 살살 끌어당겨요. 그래서 공이 천천히 떨어져요. 맨 위에서 놓으면 3초도 넘게 걸려요.", "say_face": "explain", "win": "달에서도 같이 눌렸어! 불이 켜졌어!", "win_face": "happy", "miss": "분홍 공도 빨간 공처럼 맨 위로 올려 봐!", "miss_face": "thinking" },
-      { "observe": "together_time", "compare": "less", "threshold": 1.0, "conditions": {"gravity": "jupiter", "mass": "heavy"}, "text": "목성에서 두 공을 같이 1초 안에 떨어뜨리기!", "say": "목성은 지구보다 훨씬 세게 끌어당겨요. 그래서 공이 아주 빨리 떨어져요. 그래도 두 공은 같이 닿아요.", "say_face": "surprised", "win": "문이 열렸어! 조각이 보여!", "win_face": "surprised", "miss": "목성에서 두 공 높이를 맞춰 봐!", "miss_face": "thinking" }
+      {
+        "observe": "together_time",
+        "threshold": 0.1,
+        "conditions": { "gravity": "earth", "mass": "heavy" },
+        "say_face": "happy",
+        "win_face": "happy",
+        "miss_face": "thinking"
+      },
+      {
+        "observe": "together_time",
+        "threshold": 3.0,
+        "conditions": { "gravity": "moon", "mass": "heavy" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking"
+      },
+      {
+        "observe": "together_time",
+        "compare": "less",
+        "threshold": 1.0,
+        "conditions": { "gravity": "jupiter", "mass": "heavy" },
+        "say_face": "surprised",
+        "win_face": "surprised",
+        "miss_face": "thinking"
+      }
     ]
   },
-  "story": { "clue": "조각이 파란 집에 갇혔어! 버튼 두 개를 같이 누르면 문이 열릴 것 같아!", "clue_face": "surprised", "map_clue": "파란 탑 꼭대기에서 반짝했어!", "map_clue_face": "surprised" },
+  "story": { "clue_face": "surprised", "map_clue_face": "surprised" },
   "kid": {
+    "intro_face": "explain",
     "card": "red_time",
-    "title": "공을 높은 곳에서 떨어뜨려 보자!",
-    "place": "공 떨어뜨리기",
-    "say": "무거운 공도 가벼운 공도 같은 높이에서 놓으면 같이 닿아요. 달에서는 천천히, 목성에서는 빨리 떨어져요.",
     "say_face": "explain",
-    "tip": "공을 위로 끌었다가 놓으면 두 공이 같이 떨어져요!",
     "picks": {
       "gravity": [
-        {"value": "earth", "label": "지구", "picture": "earth"},
-        {"value": "moon", "label": "달", "picture": "moon"},
-        {"value": "jupiter", "label": "목성", "picture": "jupiter"}
+        { "value": "earth", "picture": "earth" },
+        { "value": "moon", "picture": "moon" },
+        { "value": "jupiter", "picture": "jupiter" }
       ],
       "mass": [
-        {"value": "light", "label": "가벼운 공", "picture": "ball_red", "size": 0.55},
-        {"value": "heavy", "label": "무거운 공", "picture": "ball_red", "size": 1.0}
+        { "value": "light", "picture": "ball_red", "size": 0.55 },
+        { "value": "heavy", "picture": "ball_red", "size": 1.0 }
       ]
-    },
-    "cards": {"red_time": "빨간 공이 떨어진 시간", "fall_time": "땅까지 걸리는 시간", "speed": "빨간 공 빠르기"}
+    }
   },
   "note": {
-    "law": "같은 높이에서 놓으면 무거운 공도 가벼운 공도 같이 떨어져요. 중력 g가 작을수록 오래 걸려요.",
     "formula": "t = √(2h/g)",
     "numbers": [
-      { "label": "중력 가속도 g", "ids": ["g"] },
-      { "label": "빨간 공이 바닥까지 걸리는 시간 √(2h/g)", "ids": ["fall_time"] },
-      { "label": "빨간 공이 지금까지 떨어진 시간 t", "ids": ["red_time"] },
-      { "label": "빨간 공 속력 v = gt", "ids": ["speed"] }
+      {
+        "ids": ["g"]
+      },
+      {
+        "ids": ["fall_time"]
+      },
+      {
+        "ids": ["red_time"]
+      },
+      {
+        "ids": ["speed"]
+      }
     ],
     "graph": true
   },
   "cast": {
-    "dugi": { "at": [2.75, 5.0], "explain_on": ["landed"], "delay_s": 0.6 },
-    "puppy": { "at": [4.75, -9.0] }
+    "dugi": {
+      "at": [2.75, 5.0],
+      "explain_on": ["landed"],
+      "delay_s": 0.6
+    },
+    "puppy": {
+      "at": [4.75, -9.0]
+    }
   },
   "observations": [
-    { "id": "g", "label": "중력 가속도 g", "unit": "m/s²", "digits": 2 },
-    { "id": "time", "label": "놓은 뒤 시간 t", "unit": "s", "digits": 2 },
-    { "id": "red_time", "label": "빨간 공이 떨어진 시간 t (바닥에 닿으면 멈춤)", "unit": "s", "digits": 2 },
-    { "id": "state", "label": "공 상태" },
-    { "id": "fall_time", "label": "빨간 공이 바닥까지 √(2h₀/g)", "unit": "s", "digits": 2 },
-    { "id": "height_red", "label": "빨간 공 높이 h", "unit": "m", "digits": 2 },
-    { "id": "height_yellow", "label": "분홍 공 높이", "unit": "m", "digits": 2 },
-    { "id": "speed", "label": "빨간 공 속력 v = gt", "unit": "m/s", "digits": 2 },
-    { "id": "momentum", "label": "빨간 공 운동량 p = mv", "unit": "kg·m/s", "digits": 2 },
-    { "id": "kinetic", "label": "빨간 공 운동 에너지 ½mv²", "unit": "J", "digits": 1 },
-    { "id": "potential", "label": "빨간 공 위치 에너지 mgh", "unit": "J", "digits": 1 },
-    { "id": "landing", "label": "바닥에 닿은 시각 (시뮬레이션)" },
-    { "id": "together_time", "label": "빨간 공과 분홍 공이 함께 닿은 시간 (공식, 1/60초 안)", "unit": "s", "digits": 2 }
+    { "id": "g", "unit": "m/s²", "digits": 2 },
+    { "id": "time", "unit": "s", "digits": 2 },
+    { "id": "red_time", "unit": "s", "digits": 2 },
+    { "id": "state" },
+    { "id": "fall_time", "unit": "s", "digits": 2 },
+    { "id": "height_red", "unit": "m", "digits": 2 },
+    { "id": "height_yellow", "unit": "m", "digits": 2 },
+    { "id": "speed", "unit": "m/s", "digits": 2 },
+    { "id": "momentum", "unit": "kg·m/s", "digits": 2 },
+    { "id": "kinetic", "unit": "J", "digits": 1 },
+    { "id": "potential", "unit": "J", "digits": 1 },
+    { "id": "landing" },
+    { "id": "together_time", "unit": "s", "digits": 2 }
   ],
   "graph": {
-    "title": "바닥까지 남은 높이",
-    "x": { "label": "시간 t", "unit": "s", "max": 3.0 },
-    "y": { "label": "높이 h", "unit": "m", "min_max": 1.0 },
+    "x": { "unit": "s", "max": 3.0 },
+    "y": { "unit": "m", "min_max": 1.0 },
     "series": [
-      { "id": "yellow", "label": "분홍 공", "color": "#ff4fa3", "style": "line" },
-      { "id": "red", "label": "빨간 공", "color": "#ff3b3b", "style": "line" },
-      { "id": "measured", "label": "시뮬레이션", "color": "#0f8b8d", "style": "points" }
+      { "id": "yellow", "color": "#ff4fa3", "style": "line" },
+      { "id": "red", "color": "#ff3b3b", "style": "line" },
+      { "id": "measured", "color": "#0f8b8d", "style": "points" }
     ]
   },
   "manipulation": {

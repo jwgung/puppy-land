@@ -18,7 +18,14 @@ signal settings_requested
 ## Headless test runs build App without a title unless a check turns it on (like Story.app_may_enable).
 static var app_may_show := true
 
-const LOGO := preload("res://assets/icon/splash.png")
+## The logo with the app's name in the language. The boot splash shows no picture (only the sky
+## colour): it comes before the language is known, and the faces alone read as a title with a hole
+## (2026-11-02 user: "타이틀에 또 빈칸생겼다").
+const LOGOS := {"ko": "res://assets/icon/splash.png", "en": "res://assets/icon/splash_en.png"}
+
+
+static func logo_texture() -> Texture2D:
+	return load(LOGOS.get(Locale.lang, LOGOS[Locale.DEFAULT]))
 ## The camera: a little lower than the map's (-55 deg) so the island fills the screen round the logo,
 ## turning once every TURN_S seconds (slow, a calm postcard).
 const PITCH_DEG := -36.0
@@ -59,10 +66,11 @@ func _ready() -> void:
 	view.set_world(world)
 	env = MapIsland.make_environment()
 	view.viewport.add_child(env)
-	map = MapIsland.new(MapIsland.ZONES, MapIsland.PATHS, Vector2(MapIsland.HOME[0], MapIsland.HOME[1]))
+	var island := Island.current()
+	map = MapIsland.new(island)
 	var spots := []
-	for zone in MapIsland.ZONES:
-		for spot in MapIsland.ZONES[zone].spots:
+	for zone in island.zones:
+		for spot in island.zones[zone].spots:
 			spots.append([spot[0], Vector2(spot[1][0], spot[1][1]), spot[2]])
 	map.build(world, spots)
 	MapIsland.material().set_shader_parameter("lit_mask", 0)   # day: no spot lit (the night map's)
@@ -78,7 +86,7 @@ func _ready() -> void:
 
 	logo = TextureRect.new()
 	logo.name = "TitleLogo"
-	logo.texture = LOGO
+	logo.texture = logo_texture()
 	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	logo.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -89,7 +97,7 @@ func _ready() -> void:
 	_buttons.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_buttons.alignment = BoxContainer.ALIGNMENT_CENTER
 	add_child(_buttons)
-	start_button = Ui.button("시작하기", "TitleStartButton", 92)
+	start_button = Ui.button(Locale.t("title.start"), "TitleStartButton", 92)
 	start_button.name = "StartButton"
 	start_button.custom_minimum_size.x = 300.0
 	start_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -99,11 +107,11 @@ func _ready() -> void:
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_buttons.add_child(row)
-	story_button = Ui.button("이야기 다시 보기", "TitleButton", 56)
+	story_button = Ui.button(Locale.t("common.replay_story"), "TitleButton", 56)
 	story_button.name = "StoryButton"
 	story_button.pressed.connect(story_requested.emit)
 	row.add_child(story_button)
-	settings_button = Ui.button("설정", "TitleButton", 56)
+	settings_button = Ui.button(Locale.t("common.settings"), "TitleButton", 56)
 	settings_button.name = "SettingsButton"
 	settings_button.custom_minimum_size.x = 110.0
 	settings_button.pressed.connect(settings_requested.emit)
@@ -117,7 +125,7 @@ func _ready() -> void:
 func _layout() -> void:
 	if logo == null or size.x < 1.0:
 		return
-	var aspect := float(LOGO.get_height()) / LOGO.get_width()
+	var aspect := float(logo.texture.get_height()) / logo.texture.get_width()
 	var buttons := _buttons.get_combined_minimum_size()
 	var width := clampf(size.x * LOGO_SHARE, LOGO_MIN, LOGO_MAX)
 	# A short screen: the logo gives way so the block fits (the buttons keep their size).

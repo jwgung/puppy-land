@@ -155,6 +155,8 @@ func _push_held() -> void:
 	state = "" if _ended else "passed"
 	_replaying = true
 	for e: InputEvent in events:
+		if not is_inside_tree():
+			break   # a replayed tap changed the screen (처음부터 다시 하기): the rest has no screen to go to
 		get_viewport().push_input(e, true)
 	_replaying = false
 

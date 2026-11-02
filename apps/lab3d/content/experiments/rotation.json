@@ -1,41 +1,8 @@
 {
   "id": "rotation",
   "version": 1,
-  "title": "지렛대로 무거운 짐을 들 수 있을까?",
-  "category": "회전과 연결",
   "icon": "⚖",
-  "question": "같은 짐도 받침점에서 멀리 누르면 더 쉽게 들 수 있을까요?",
-  "steps": [
-    "막대 위 세 힘점 중 하나를 골라요.",
-    "막대의 빨간 힘점을 꾹 누르고 있어요.",
-    "힘점을 바꾸어 필요한 힘을 그래프로 비교해요."
-  ],
-  "observe": "받침점에서 힘점까지의 거리가 길어질수록 필요한 힘이 줄어요. 힘점을 누르고 있는 동안 막대가 들린 순간, 시계·반시계 토크가 평형인지 보세요.",
-  "terms": [
-    {
-      "name": "지렛대",
-      "description": "막대를 받침점에 걸쳐 작은 힘으로 큰 힘을 내는 도구예요."
-    },
-    {
-      "name": "받침점",
-      "description": "지렛대가 회전할 때 중심이 되는 점이에요."
-    },
-    {
-      "name": "토크",
-      "description": "힘이 물체를 돌리려는 효과를 나타내는 양이에요."
-    },
-    {
-      "name": "회전 평형",
-      "description": "시계 방향 토크와 반시계 방향 토크의 합이 0인 상태예요."
-    }
-  ],
-  "law": {
-    "title": "지렛대와 회전 평형",
-    "description": "막대가 평형이면 받침점을 기준으로 양쪽 토크의 크기가 같고 방향은 반대입니다.",
-    "equation": "Στ = 0 · F₁r₁ = F₂r₂"
-  },
-  "tip": "힘점(가까이·중간·멀리)을 고르고 막대의 빨간 힘점을 한 손가락으로 꾹 누르고 있어요. 누르는 힘이 1초에 110 N씩 커져요(옆 막대가 차올라요, 최대 400 N). 손을 떼면 막대가 제자리로 내려와요.",
-  "tip_short": "막대의 빨간 힘점을 꾹 누르고 있어요",
+  "law": { "equation": "Στ = 0 · F₁r₁ = F₂r₂" },
   "scene": "res://experiments/rotation/rotation.gd",
   "bench_id": "RO",
   "camera": {
@@ -56,33 +23,37 @@
   },
   "controls": [
     {
-      "id": "mass", "type": "slider", "label": "짐 질량", "unit": " kg",
-      "min": 1.0, "max": 20.0, "step": 1.0, "default": 20.0, "digits": 0
+      "id": "mass",
+      "type": "slider",
+      "unit": " kg",
+      "min": 1.0,
+      "max": 20.0,
+      "step": 1.0,
+      "default": 20.0,
+      "digits": 0
     },
     {
-      "id": "effort", "type": "choice", "label": "힘점", "default": "mid",
-      "note": "받침점에서 막대 오른쪽 끝까지 거리의 몇 %에서 누를지 골라요.",
+      "id": "effort",
+      "type": "choice",
+      "default": "mid",
       "options": [
-        { "id": "near", "label": "가까이", "fraction": 0.35, "note": "받침점–오른쪽 끝의 35 %" },
-        { "id": "mid", "label": "중간", "fraction": 0.6, "note": "받침점–오른쪽 끝의 60 %" },
-        { "id": "far", "label": "멀리", "fraction": 0.9, "note": "받침점–오른쪽 끝의 90 %" }
+        { "id": "near", "fraction": 0.35 },
+        { "id": "mid", "fraction": 0.6 },
+        { "id": "far", "fraction": 0.9 }
       ]
     }
   ],
   "actions": [
-    { "id": "reset", "label": "처음으로", "style": "primary" }
+    { "id": "reset", "style": "primary" }
   ],
   "key_observations": ["effort_arm", "advantage", "state"],
   "predict": {
-    "question": "받침 가까이 누르면 상자가 쉽게 들릴까?",
     "question_face": "thinking",
     "choices": [
-      { "id": "hard", "label": "힘이 많이 들어요", "picture": "lever_near_hard" },
-      { "id": "easy", "label": "쉽게 들려요", "picture": "lever_near_easy" }
+      { "id": "hard", "picture": "lever_near_hard" },
+      { "id": "easy", "picture": "lever_near_easy" }
     ],
     "answer": "hard",
-    "reason": "받침 가까이 누르면 막대가 상자를 잘 못 들어 올려요. 그래서 아주 세게 눌러야 해요.",
-    "bridge": "직접 꾹 눌러 보면 알 수 있어요!",
     "bridge_face": "happy"
   },
   "missions": {
@@ -93,55 +64,81 @@
     "hidden_until_end": ["required", "advantage", "load_torque", "net_torque"],
     "hidden_series_until_end": ["required"],
     "stages": [
-      { "threshold": 350.0, "conditions": {"mass": 20.0, "effort": "near"}, "text": "막대를 가까이 눌러 보물 상자 들기!", "say": "받침 가까이 누르면 상자를 들기 힘들어요. 아주 세게 눌러야 해요.", "say_face": "worried", "win": "영차! 상자가 들렸어!", "win_face": "happy", "miss": "가까이를 꾹, 더 오래 눌러 봐!", "miss_face": "thinking" },
-      { "threshold": 200.0, "conditions": {"mass": 20.0, "effort": "mid"}, "text": "막대를 중간에 눌러 보물 상자 들기!", "say": "받침에서 조금 멀리 누르면 힘이 덜 들어요.", "say_face": "explain", "win": "들렸다! 조각이 올라와!", "win_face": "happy", "miss": "중간 자리를 꾹 눌러 봐!", "miss_face": "thinking" },
-      { "threshold": 130.0, "conditions": {"mass": 20.0, "effort": "far"}, "text": "막대를 멀리 눌러 보물 상자 살살 들기!", "say": "받침에서 멀리 누를수록 막대가 상자를 쉽게 들어 올려요. 살살 눌러도 돼요.", "say_face": "happy", "win": "살살 눌러도 들렸어!", "win_face": "surprised", "miss": "멀리 있는 자리를 눌러 봐!", "miss_face": "thinking" }
+      {
+        "threshold": 350.0,
+        "conditions": { "mass": 20.0, "effort": "near" },
+        "say_face": "worried",
+        "win_face": "happy",
+        "miss_face": "thinking"
+      },
+      {
+        "threshold": 200.0,
+        "conditions": { "mass": 20.0, "effort": "mid" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking"
+      },
+      {
+        "threshold": 130.0,
+        "conditions": { "mass": 20.0, "effort": "far" },
+        "say_face": "happy",
+        "win_face": "surprised",
+        "miss_face": "thinking"
+      }
     ]
   },
-  "story": { "clue": "무거운 보물 상자 밑에 조각이 끼어 있어! 막대를 눌러서 상자를 들어 보자.", "clue_face": "explain", "map_clue": "빨간 시소 밑에 뭔가 있어!", "map_clue_face": "surprised" },
+  "story": { "clue_face": "explain", "map_clue_face": "surprised" },
   "kid": {
+    "intro_face": "explain",
     "card": "state",
-    "title": "긴 막대로 무거운 짐을 들어 보자!",
-    "place": "시소 들기",
-    "say": "받침에서 멀리 누를수록 힘이 덜 들어요. 그래서 무거운 짐도 살살 들 수 있어요.",
     "say_face": "explain",
-    "tip": "막대의 빨간 힘점을 꾹 누르고 있어 봐요.",
     "picks": {
       "effort": [
-        {"value": "near", "label": "가까이", "picture": "lever", "size": 0.0},
-        {"value": "mid", "label": "중간", "picture": "lever", "size": 0.5},
-        {"value": "far", "label": "멀리", "picture": "lever", "size": 1.0}
+        { "value": "near", "picture": "lever", "size": 0.0 },
+        { "value": "mid", "picture": "lever", "size": 0.5 },
+        { "value": "far", "picture": "lever", "size": 1.0 }
       ]
-    },
-    "cards": {"effort_arm": "누르는 곳까지 거리", "advantage": "몇 배 덜 힘들까", "state": "막대는?"},
-    "states": {"힘점을 골라 막대의 빨간 힘점을 꾹 눌러 보세요": "꾹 눌러 봐요", "빨간 힘점을 꾹 누르고 있어요": "누르는 중", "누르는 중 · 아직 힘이 모자라요": "아직 힘이 모자라요", "들렸다! 힘이 충분해요": "들렸다!", "받침점·짐 위치를 옮기는 중": "옮기는 중"}
+    }
   },
   "note": {
-    "law": "받침점에서 멀리 누를수록 작은 힘으로 짐을 들 수 있어요. 양쪽의 힘 × 거리(돌림힘)가 같아지면 들려요.",
     "formula": "F₁ r₁ = F₂ r₂",
     "numbers": [
-      { "label": "짐 무게 F₂ = mg", "ids": ["weight"] },
-      { "label": "받침점–짐 거리 r₂", "ids": ["load_arm"] },
-      { "label": "받침점–힘점 거리 r₁", "ids": ["effort_arm"] },
-      { "label": "들어 올리는 데 필요한 힘 F₁", "ids": ["required"] }
+      {
+        "ids": ["weight"]
+      },
+      {
+        "ids": ["load_arm"]
+      },
+      {
+        "ids": ["effort_arm"]
+      },
+      {
+        "ids": ["required"]
+      }
     ],
     "graph": true
   },
   "cast": {
-    "dugi": { "at": [4.75, 1.25], "explain_on": ["lifted"], "delay_s": 0.6 },
-    "puppy": { "at": [-7.75, -6.0] }
+    "dugi": {
+      "at": [4.75, 1.25],
+      "explain_on": ["lifted"],
+      "delay_s": 0.6
+    },
+    "puppy": {
+      "at": [-7.75, -6.0]
+    }
   },
   "observations": [
-    { "id": "state", "label": "상태" },
-    { "id": "weight", "label": "짐 무게 F₂ = mg", "unit": "N", "digits": 1 },
-    { "id": "load_arm", "label": "받침점–짐 거리 r₂", "unit": "m", "digits": 2 },
-    { "id": "effort_arm", "label": "받침점–힘점 거리 r₁", "unit": "m", "digits": 2 },
-    { "id": "required", "label": "들어 올리는 데 필요한 힘 F₂r₂/r₁", "unit": "N", "digits": 1 },
-    { "id": "applied", "label": "내가 누르는 힘 F₁", "unit": "N", "digits": 1 },
-    { "id": "advantage", "label": "역학적 이득 r₁/r₂", "unit": "배", "digits": 2 },
-    { "id": "load_torque", "label": "짐 쪽 토크 F₂r₂ (반시계)", "unit": "N·m", "digits": 1 },
-    { "id": "effort_torque", "label": "내 쪽 토크 F₁r₁ (시계)", "unit": "N·m", "digits": 1 },
-    { "id": "net_torque", "label": "토크 합 F₂r₂ − F₁r₁ (들리면 0)", "unit": "N·m", "digits": 1 }
+    { "id": "state" },
+    { "id": "weight", "unit": "N", "digits": 1 },
+    { "id": "load_arm", "unit": "m", "digits": 2 },
+    { "id": "effort_arm", "unit": "m", "digits": 2 },
+    { "id": "required", "unit": "N", "digits": 1 },
+    { "id": "applied", "unit": "N", "digits": 1 },
+    { "id": "advantage", "digits": 2 },
+    { "id": "load_torque", "unit": "N·m", "digits": 1 },
+    { "id": "effort_torque", "unit": "N·m", "digits": 1 },
+    { "id": "net_torque", "unit": "N·m", "digits": 1 }
   ],
   "manipulation": {
     "grab_radius": 72.0,
@@ -152,12 +149,11 @@
     ]
   },
   "graph": {
-    "title": "지렛대에 필요한 힘",
-    "x": { "label": "누른 시간 t", "unit": "s", "max": 10.0 },
-    "y": { "label": "힘", "unit": "N", "min_max": 50.0 },
+    "x": { "unit": "s", "max": 10.0 },
+    "y": { "unit": "N", "min_max": 50.0 },
     "series": [
-      { "id": "applied", "label": "내가 누르는 힘", "color": "#ff3b3b", "style": "line" },
-      { "id": "required", "label": "들어 올리는 데 필요한 힘", "color": "#2d7cf6", "style": "line" }
+      { "id": "applied", "color": "#ff3b3b", "style": "line" },
+      { "id": "required", "color": "#2d7cf6", "style": "line" }
     ]
   }
 }

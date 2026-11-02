@@ -259,6 +259,13 @@ func placement_allowed(_id: String, _transform: Transform3D) -> bool:
 	return true
 
 
+## The allowed place nearest to `transform` for an object a rule refuses there (placement_allowed):
+## a limit is the most the object goes, the drag still works (2026-10-31 user). The shell puts the
+## object there (on its grid, in its region) when it is allowed. Default: no nearer place.
+func nearest_placement(_id: String, transform: Transform3D) -> Transform3D:
+	return transform
+
+
 ## The object was put down at `transform` (already snapped and checked). Also used to restore a
 ## saved placement (placements()) when the screen is rebuilt.
 func manipulation_placed(_id: String, _transform: Transform3D) -> void:

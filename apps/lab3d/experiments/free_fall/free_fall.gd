@@ -17,8 +17,8 @@ extends UniformFieldLab
 
 ## Left to right. mass: kg (the red one follows the "mass" control).
 const BALLS := {
-	"yellow": {"x": -1.5, "mass": 0.5, "color": ArtPalette.PINK, "name": "분홍"},
-	"red": {"x": 1.5, "mass": 3.0, "color": ArtPalette.RED, "name": "빨강"},
+	"yellow": {"x": -1.5, "mass": 0.5, "color": ArtPalette.PINK},
+	"red": {"x": 1.5, "mass": 3.0, "color": ArtPalette.RED},
 }
 const ORDER := ["yellow", "red"]
 const LINE_X := 3.0              # the balls move along the floor line x = -3..3 m (z = 0)
@@ -245,10 +245,10 @@ func observations() -> Dictionary:
 	var h_red := formula_height("red", t_red)
 	var fall: Variant = landing_time("red")
 	var state_text: String = {
-		"ready": "놓기 전",
-		"falling": "떨어지는 중",
-		"landed": "모두 바닥에 닿음",
-		"floating": "무중력: 떠 있어요",
+		"ready": Locale.t("free-fall.status.ready"),
+		"falling": Locale.t("free-fall.status.falling"),
+		"landed": Locale.t("free-fall.status.landed"),
+		"floating": Locale.t("free-fall.status.floating"),
 	}.get(status(), "")
 	return {
 		"g": g,
@@ -257,7 +257,7 @@ func observations() -> Dictionary:
 		"state": state_text,
 		"height_red": h_red,
 		"height_yellow": formula_height("yellow", ball_time("yellow") if released else 0.0),
-		"fall_time": fall if is_finite(fall) else "닿지 않아요",
+		"fall_time": fall if is_finite(fall) else Locale.t("free-fall.no_landing"),
 		"speed": speed,
 		"momentum": PhysicsLaws.momentum(m, speed),
 		"kinetic": PhysicsLaws.kinetic_energy(m, speed),
@@ -274,13 +274,18 @@ func together_time() -> Variant:
 	if not released:
 		return "—"
 	if g <= 0.0:
-		return "닿지 않아요"
+		return Locale.t("free-fall.no_landing")
 	if not (has_landed("red") and has_landed("yellow")):
-		return "떨어지는 중"
+		return Locale.t("free-fall.status.falling")
 	var t_red := landing_time("red")
 	if absf(t_red - landing_time("yellow")) > TOGETHER_S:
-		return "따로 닿았어요"
+		return Locale.t("free-fall.apart")
 	return t_red
+
+
+## A ball's colour word (the language's: free-fall.ball.<id>, "분홍" / "빨강").
+static func ball_name(id: String) -> String:
+	return Locale.t("free-fall.ball." + id)
 
 
 ## Engine landing times of the two balls (the "시뮬레이션" readout): "분홍 1.02 · 빨강 … s"; a
@@ -291,7 +296,7 @@ func measured_landings() -> String:
 	var parts := PackedStringArray()
 	for id in ORDER:
 		var step := measured_landing_step(corrector_of(id), landing_time(id), clock())
-		parts.append("%s %s" % [BALLS[id].name, "%.2f" % (step * step_dt()) if step >= 0 else "—"])
+		parts.append("%s %s" % [ball_name(id), "%.2f" % (step * step_dt()) if step >= 0 else "—"])
 	return " · ".join(parts) + " s"
 
 
@@ -378,19 +383,12 @@ func manipulation_juice(id: String) -> ArtJuice:
 
 ## Picked up (also a falling or landed ball): the run stops and every ball waits at its start, so
 ## the picked one is lifted from its start height (the handle keeps that height); the bread cat
-## stands by while the finger holds its ball.
+## stands where it stands (between the balls).
 func manipulation_started(id: String) -> void:
 	if released:
 		reset_run()
 	id = id.trim_prefix(DROP)
 	fall_props().juices[id].rearm()
-	fall_props().set_finger(id, starts)
-
-
-## A cancelled pick-up: the balls wait at their starts, the cat holds its ball again.
-func manipulation_cancelled(id: String) -> void:
-	fall_props().finger = ""
-	super(id)
 
 
 ## A ball's drop line is its own: no other ball straight above or below it (the two would collide
@@ -405,6 +403,18 @@ func placement_allowed(id: String, transform: Transform3D) -> bool:
 	return true
 
 
+## A ball moved onto the other one stops beside it (two radii apart, on the side it came from).
+func nearest_placement(id: String, transform: Transform3D) -> Transform3D:
+	var at := transform
+	if id.begins_with(DROP):
+		return at
+	for other in ORDER:
+		if other != id and absf(at.origin.x - starts[other].x) < BALL_RADIUS * 2.0 - 0.001:
+			var side := signf(starts[id].x - starts[other].x)
+			at.origin.x = starts[other].x + (side if side != 0.0 else 1.0) * BALL_RADIUS * 2.0
+	return at
+
+
 func manipulation_placed(id: String, transform: Transform3D) -> void:
 	if id.begins_with(DROP):
 		# A ball let go on its drop line starts at that height, the others stay (2026-10-29), and the
@@ -416,7 +426,6 @@ func manipulation_placed(id: String, transform: Transform3D) -> void:
 		var h := definition.clamp_value("height", snappedf(transform.origin.y - BALL_RADIUS, step))
 		if is_nan(h):
 			return
-		fall_props().finger = ""
 		manipulation_placed(ball_id, Transform3D(Basis(), Vector3(starts[ball_id].x, h + BALL_RADIUS, starts[ball_id].z)))
 		if _batch == 0:
 			release()
@@ -428,7 +437,6 @@ func manipulation_placed(id: String, transform: Transform3D) -> void:
 	hold_ball(ball, starts[id] + Vector3.UP * BALL_RADIUS)
 	apply_field(ball)
 	fall_props().place_pad(id, starts[id])
-	fall_props().set_finger("", starts)
 	if game != null:
 		(game as FreeFallGame).place_buttons(starts)
 	_graph_revision += 1

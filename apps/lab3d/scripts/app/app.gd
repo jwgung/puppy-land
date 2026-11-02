@@ -11,12 +11,14 @@
 ##                       never the child's progress
 ##   --demo-story=<part> screenshots of the story in the bench store only (never the child's progress):
 ##                       prologue | clue:<id> | found:<id> | flight:<id> | finale | map[:<n>] (Story, _demo_story)
+##   --progress=complete  writes the child's progress as all done, once (2026-11-02 user: "apk 다 깬걸로
+##                       해줘. 보기 어렵다"): every stamp, the story's prologue, clues and finale seen, every
+##                       piece flown and flag up, so every spot opens on a day map. For looking at the app.
 ## plus the experiment screen's --camera / --ctl-<id> / --sidebar / --scroll-to / --auto-release / --auto-drag.
 class_name App
 extends Control
 
-const RESUME_PATH := "user://resume.txt"   # written by settings right after Quality.set_tier() requested a renderer restart
-const SETTINGS_PATH := "user://settings.cfg"
+const RESUME_PATH := "user://resume.txt"   # written by settings before Quality.set_tier() (a restart can end the process at once), removed when it did not restart
 ## Screen change (art direction): the new screen slides in from SLIDE_UNITS to the right and fades
 ## in over SLIDE_S. Only the screen's own position/modulate are tweened (no overlay layer).
 const SLIDE_UNITS := 48.0
@@ -54,10 +56,11 @@ func _ready() -> void:
 	overlay.add_child(_fps_label)
 	Bench.report.connect(_on_bench_report)
 
-	var config := ConfigFile.new()
-	config.load(SETTINGS_PATH)
-	_set_fps(Quality.cmdline_value("fps") == "1" or bool(config.get_value("ui", "show_fps", false)))
+	_set_fps(Quality.cmdline_value("fps") == "1")   # measurements only (no setting since 2026-10-31)
+	Locale.start()   # the child's language (saved), else the device's, else English
 	_definitions = ExperimentRegistry.load_all()
+	if Quality.cmdline_value("progress") == "complete":
+		complete_progress()
 	if Quality.cmdline_value("progress") == "bench" or demo_title(Quality.all_args()):
 		ProgressStore.path = ProgressStore.BENCH_PATH   # a measured map never raises the child's flags
 	# The story plays in the child's app only: never in a measurement (bench store, auto runs, silent).
@@ -164,7 +167,6 @@ func show_experiment(definition: Dictionary, state := {}, launch_args := false) 
 func show_settings(from_title := false) -> void:
 	_settings_from_title = from_title
 	var screen := SettingsScreen.new()
-	screen.show_fps = _show_fps
 	# Settings opens from the map (Plan G2) or the title and goes back to where it opened.
 	screen.back_requested.connect(func() -> void:
 		if from_title:
@@ -172,6 +174,10 @@ func show_settings(from_title := false) -> void:
 		else:
 			show_list())
 	screen.story_requested.connect(func() -> void: show_list(true))   # 이야기 다시 보기
+	# A language picked: the words are read again and the settings built again in it.
+	screen.language_changed.connect(func() -> void:
+		_definitions = ExperimentRegistry.load_all()
+		show_settings(from_title))
 	# 처음부터 다시 하기 (confirmed, the store already empty): the start, as on a first launch — the
 	# title when it may show, else the map (which plays the prologue: it was never seen now).
 	screen.restart_requested.connect(func() -> void:
@@ -179,12 +185,6 @@ func show_settings(from_title := false) -> void:
 			show_title()
 		else:
 			show_list())
-	screen.fps_toggled.connect(func(on: bool) -> void:
-		_set_fps(on)
-		var config := ConfigFile.new()
-		config.load(SETTINGS_PATH)
-		config.set_value("ui", "show_fps", on)
-		config.save(SETTINGS_PATH))
 	_swap(screen, "settings")
 
 
@@ -224,6 +224,17 @@ func _slide_in(screen: Control) -> void:
 ##   finale        the map: the orbit spot just completed with the 10 others found: flag, flight, finale
 ##   map[:<n>]     the night map with the first n pieces of the order found (5 by default) and at the
 ##                 lookout, nothing but Puppy's riddle playing: fps measurements, screenshots
+## Every spot done (--progress=complete): full stamps, the story seen, the pieces at the lookout.
+static func complete_progress() -> void:
+	var store := {}
+	for spot in Story.spots():
+		store[spot] = MissionRound.missions(ExperimentRegistry.find(spot)).get("stages", []).size()
+		ProgressStore.set_mark(ProgressStore.CLUES, spot, true)
+	ProgressStore.save(store)
+	for part in ["prologue", "finale"]:
+		ProgressStore.set_mark(ProgressStore.STORY, part, true)
+
+
 func _demo_story(value: String) -> Dictionary:
 	if value == "":
 		return {}
@@ -253,7 +264,7 @@ func _demo_story(value: String) -> Dictionary:
 			for spot in Story.order().filter(func(s: String) -> bool: return s != id).slice(0, count):
 				store[spot] = full.call(spot)
 		"finale":
-			id = "orbit"
+			id = Island.current().lookout
 			for spot in Story.spots():
 				store[spot] = full.call(spot)
 	if kind in ["flight", "finale"] and ExperimentRegistry.find(id).size() > 0:

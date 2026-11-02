@@ -8,7 +8,8 @@
 ## control, runs an action or reads a body (the labs' physics, missions, controls and numbers are
 ## the same with or without it).
 ##
-## This is the story's data and saved state: the words (content/story.json, each lab's story.clue),
+## This is the story's data and saved state: the words (content/story.json with its words in
+## content/locale/<lang>/story.json, each lab's story.clue),
 ## the marks in the ProgressStore (prologue / finale played, clue told, piece flown) and whether the
 ## story runs at all (`enabled`: App turns it on for the child's app, never for a measurement or a
 ## test that does not ask for it). The map's StoryDirector and the lab screen play it.
@@ -16,10 +17,10 @@ class_name Story
 extends RefCounted
 
 const CONTENT_PATH := "res://content/story.json"
-## Who speaks: [name tag, portrait path pattern (%s = the face)] (DialogueBox.set_speaker).
+## Who speaks: [the name tag's Locale key, portrait path pattern (%s = the face)] (DialogueBox.set_speaker).
 const SPEAKERS := {
-	"dugi": ["두기두기", "res://assets/characters/portraits/dugi_%s.webp"],
-	"puppy": ["퍼피", "res://assets/characters/portraits/puppy_%s.webp"],
+	"dugi": ["speaker.dugi", "res://assets/characters/portraits/dugi_%s.webp"],
+	"puppy": ["speaker.puppy", "res://assets/characters/portraits/puppy_%s.webp"],
 }
 ## The portraits' expressions (2026-10-29 user request "대화시 표정을 좀 더 다양하게"), one picture per
 ## speaker and face (art_src/characters/*_portrait.py). Each line of the content may name its face
@@ -38,8 +39,12 @@ static func face_or_default(face: Variant) -> String:
 
 
 ## The portrait of `who` with `face` (an unknown face: the default).
+## Puppy's portraits show his flag's word: the English ones are in portraits/en (2026-11-02).
 static func portrait_path(who: String, face: String) -> String:
-	return str(SPEAKERS[who][1]) % face_or_default(face)
+	var path := str(SPEAKERS[who][1]) % face_or_default(face)
+	if who == "puppy" and Locale.lang == "en":
+		path = path.get_base_dir().path_join("en").path_join(path.get_file())
+	return path
 
 ## The story plays (App: the child's app; off for measurements, screenshots without --demo-story
 ## and tests that build screens directly).
@@ -55,9 +60,17 @@ static func pages(part: String) -> Array:
 	return _load().get(part, [])
 
 
+## The story is read again on the next use (Locale.set_language: its words changed).
+## (Not "reload": that is Script.reload, which recompiles the script and resets enabled and
+## app_may_enable: a language picked in the settings switched the story off, 2026-11-02.)
+static func forget_loaded() -> void:
+	_content = {}
+
+
 static func _load() -> Dictionary:
 	if _content.is_empty():
 		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(CONTENT_PATH))
+		parsed = Locale.overlay(parsed, Locale.words("story.json")) if parsed is Dictionary else null
 		_content = parsed if parsed is Dictionary else {}
 	return _content
 
@@ -93,16 +106,15 @@ static func _story_text(definition: Dictionary, key: String) -> String:
 
 
 # --- the night map's exploration (2026-10-28 user-approved: explore the night map in a fixed order) --
-# The spots are found one by one in a fixed order (content/story.json `order`). Only the next spot
+# The spots are found one by one in a fixed order (the island's `order`, Island). Only the next spot
 # (the first in the order whose piece is not found) and the found spots open; Puppy says the next
 # one's riddle on the map. Nothing new is saved: all of it follows from the found pieces (stamps), so
 # an old save (some spots complete, out of order) works: its found spots are open and lit, the next is
 # the first unfound one in the order.
 
-## The fixed order the spots are found in (all 11 spots, each once).
+## The fixed order the spots are found in (the island's `order`: every spot once).
 static func order() -> Array:
-	var raw: Variant = _load().get("order", [])
-	return raw.filter(func(id: Variant) -> bool: return id is String) if raw is Array else []
+	return Island.current().order
 
 
 ## The next spot to find: the first in the order whose piece is not found ("" when all are found).
@@ -128,11 +140,21 @@ static func wrong_face() -> String:
 	return face_or_default(_load().get("map_wrong_face"))
 
 
+## Dugi's line when the finale's star came back down (2026-11-01: pull harder).
+static func finale_retry_line() -> String:
+	return str(_load().get("finale_retry", ""))
+
+
+static func finale_retry_face() -> String:
+	return face_or_default(_load().get("finale_retry_face"))
+
+
 # --- who says what (2026-10-29 user: Puppy never explains science, that is Dugi's job) -----------
 ## Words that explain science (why / how fast / which force). Puppy's lines (clues, riddles, the
-## wrong-spot line, his story pages) never use them; Dugi's are exempt. A content test reads it.
-const SCIENCE_WORDS := ["천천히", "빨리", "빨라", "느리", "느려", "중력", "무거운 공은", "가벼운 공은", "힘이",
-	"때문", "그래서", "왜냐하면", "끌어당", "밀어 올", "밀어내", "마찰", "속도", "빠르기", "무게가", "떨어진대"]
+## wrong-spot line, his story pages) never use them; Dugi's are exempt. A content test reads them.
+## They are the language's (ui.json story.science_words).
+static func science_words() -> Array:
+	return Locale.list("story.science_words")
 
 
 ## Every line Puppy says: his story pages, every lab's clue and riddle, the wrong-spot line.
@@ -165,13 +187,9 @@ static func night_level(count: int, finale_done: bool) -> float:
 	return 2.0 * pow(left, NIGHT_CURVE)
 
 
-## The 11 spots, in the map's order (MapIsland.ZONES).
+## The island's spots, in the map's order (Island.spots).
 static func spots() -> Array:
-	var out := []
-	for zone in MapIsland.ZONES:
-		for spot in MapIsland.ZONES[zone].spots:
-			out.append(spot[0])
-	return out
+	return Island.current().spots()
 
 
 ## The spots whose piece is found: every stage stamped (an old save counts too).

@@ -1,0 +1,116 @@
+{
+  "title": "How does a spring give energy back?",
+  "category": "Motion and force",
+  "question": "If you pull the ball farther, how much faster does it come back?",
+  "steps": ["Hold the ball and pull it far from its rest place.", "Let go and watch the energy bars.", "Change the ball's weight and compare the swings."],
+  "observe": "See whether the work the restoring force does on the ball changes its kinetic energy, and whether the kinetic energy grows as the spring energy shrinks.",
+  "terms": [
+    { "name": "Restoring force", "description": "The force with which a stretched or squeezed thing tries to go back to its shape." },
+    { "name": "Elastic energy", "description": "The energy stored in a stretched or squeezed spring." },
+    { "name": "Kinetic energy", "description": "The energy a moving object has." },
+    { "name": "Work-energy theorem", "description": "The work of the net force on an object equals its change of kinetic energy." }
+  ],
+  "law": {
+    "title": "The spring and work-energy",
+    "description": "The work of the restoring force changes the kinetic energy, and with little friction the sum of kinetic and elastic energy is kept.",
+    "equation": "W_net = ΔK · E = ½mv² + ½kx²"
+  },
+  "tip": "Drag the orange ball along the bar with one finger to pull or push it, then let go: the ball swings back and forth (0.1 m steps). Tap the ball to let it go again from the same place. Compare the blue kinetic energy and the purple elastic energy on the bars at the right.",
+  "tip_short": "Drag the ball and let go",
+  "controls": [
+    { "label": "Ball mass" },
+    {
+      "label": "Damping",
+      "note": "The spring constant is k = 5 N/m. With damping, the energy shrinks little by little.",
+      "options": [
+        { "label": "None", "note": "No friction or air drag: K + U stays the same" },
+        { "label": "A little", "note": "Damping b = 0.45 N·s/m (as on the web)" }
+      ]
+    }
+  ],
+  "actions": [
+    { "label": "Let go" },
+    { "label": "Start again" }
+  ],
+  "predict": {
+    "question": "If you pull the ball and let go, how far will it go to the other side?",
+    "choices": [
+      { "label": "As far as I pulled" },
+      { "label": "Only a little" }
+    ],
+    "reason": "The spring pulls the ball back as much as you pulled it. So the ball goes as far to the other side as you pulled.",
+    "bridge": "Pull it, let go and see for yourself!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Pull the light ball and ring the near bell!",
+        "say": "A spring pulls the ball back as much as it is stretched. This force is called the elastic force. So the ball goes as far to the other side as you pulled, and rings the bell.",
+        "win": "Ding! The bell rang!",
+        "miss": "A bit short of the bell! Pull more!"
+      },
+      {
+        "text": "Pull the same ball farther and ring the far bell!",
+        "say": "The farther you pull, the bigger the elastic force. So the ball goes far to the other side too. To reach the far bell, pull that far.",
+        "win": "Ding-dong! The far bell rang too!",
+        "miss": "Pull it farther!"
+      },
+      {
+        "text": "Change to the heavy ball and ring the same far bell!",
+        "say": "Pulled just as far, the heavy ball reaches the same bell. But being heavy, it swings back and forth more slowly.",
+        "win": "Dong! The heavy ball reached the far bell too!",
+        "miss": "Pull the heavy ball as far as the far bell!"
+      }
+    ]
+  },
+  "story": { "clue": "The piece hangs inside the bell! Let's ring the bell with the ball!", "map_clue": "Inside the fence, by the bouncy spring!" },
+  "kid": {
+    "intro": "This is the spring lab. A stretched spring tries to go back to its length. So it pulls the ball back. This force is called the elastic force. The more you stretch it, the bigger the elastic force. Let's see how far the ball goes for how far you pull!",
+    "title": "Let's pull the spring and let go!",
+    "place": "Spring",
+    "say": "The spring pulls the ball back as much as you pulled. So the ball goes as far to the other side. A heavy ball swings more slowly but goes just as far.",
+    "tip": "Drag the ball and let go!",
+    "picks": {
+      "mass": [
+        { "label": "Light ball" },
+        { "label": "Heavy ball" }
+      ]
+    },
+    "cards": { "extension": "How much it stretched", "pull": "How far you pulled", "bell_reach": "How far it went back", "swing_period": "One swing there and back" },
+    "states": { "Shows after one swing there and back": "Shows when it swings" },
+    "minus": { "extension": "pressed in", "pull": "pressed in" }
+  },
+  "note": {
+    "law": "A spring pulls back as much as it is stretched. So the ball goes as far to the other side as you pulled. The heavier the ball, the slower it swings back and forth.",
+    "numbers": [
+      { "label": "Pull before letting go x₀" },
+      { "label": "Formula period T = 2π√(m/k)" },
+      { "label": "Time of one swing (measured)" },
+      { "label": "Distance to the other side x₀e^(−γT/2)" }
+    ]
+  },
+  "observations": [
+    { "label": "State" },
+    { "label": "Stretch x (+ stretched, − squeezed)" },
+    { "label": "Let-go place x₀ (pull stretch)" },
+    { "label": "Speed" },
+    { "label": "Restoring force F = −kx (right +)" },
+    { "label": "Acceleration a = F/m" },
+    { "label": "Kinetic energy K = ½mv²" },
+    { "label": "Elastic energy U = ½kx²" },
+    { "label": "Mechanical energy K + U" },
+    { "label": "Natural period T₀ = 2π√(m/k) (no damping)" },
+    { "label": "Actual period T = 2π/ω_d (T₀ without damping)" },
+    { "label": "Time of one swing T (formula, after it came back once)" },
+    { "label": "First reach on the other side x₀e^(−γT/2) (x₀ without damping)" }
+  ],
+  "graph": {
+    "title": "How the energy changes",
+    "x": { "label": "Time t" },
+    "y": { "label": "Share of the energy" },
+    "series": [
+      { "label": "Motion (kinetic energy)" },
+      { "label": "Spring (elastic energy)" }
+    ]
+  }
+}

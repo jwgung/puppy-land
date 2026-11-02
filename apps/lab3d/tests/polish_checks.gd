@@ -45,6 +45,7 @@ func run() -> void:
 	await check_restart_in_app()
 	check_walk_times()
 	await check_walk_group()
+	await check_walk_route()
 	await check_rest_spot()
 	await check_scale()
 	await check_story_places()
@@ -198,7 +199,10 @@ func check_check_boxes() -> void:
 	var switches := screen.find_children("*", "CheckButton", true, false)
 	if not switches.is_empty():
 		problems.append("%d switches left" % switches.size())
-	var checks: Array = [screen.sfx_switch, screen.music_switch, screen.fps_check]
+	# No 개발자 card and no fps check box in the child's app (2026-10-31 user); --fps=1 still shows it.
+	if screen.find_child("FpsCheck", true, false) != null or _has_text(screen, "개발자") or _has_text(screen, "성능 표시"):
+		problems.append("the fps setting is still there")
+	var checks: Array = [screen.sfx_switch, screen.music_switch]
 	for check: CheckBox in checks:
 		if check == null or not (check is CheckBox):
 			problems.append("not a check box")
@@ -207,10 +211,8 @@ func check_check_boxes() -> void:
 		if check.size.y < 48.0 or icon == null or icon.get_height() < 40 or check.size.x < 200.0:
 			problems.append("%s: row %s, box %d (want a 48+ unit row, a 40+ unit box)" % [check.text, str(check.size), icon.get_height() if icon else 0])
 	# A tap on 배경 음악 toggles it, it is kept in the settings file and the next screen shows it.
-	var fps_seen := []
-	screen.fps_toggled.connect(func(on: bool) -> void: fps_seen.append(on))
 	var scroll: ScrollContainer = screen.find_children("*", "ScrollContainer", true, false)[0]
-	for check: CheckBox in [screen.music_switch, screen.fps_check]:
+	for check: CheckBox in [screen.music_switch]:
 		scroll.scroll_vertical += int(check.global_position.y - scroll.global_position.y - scroll.size.y * 0.4)
 		await tree.process_frame
 		await _tap(check.get_global_rect().get_center())
@@ -218,8 +220,6 @@ func check_check_boxes() -> void:
 	config.load(SoundBoard.path)
 	if config.get_value("sound", "music", true) != false:
 		problems.append("배경 음악 off not kept")
-	if fps_seen != [true]:
-		problems.append("fps check box emitted %s" % str(fps_seen))
 	host.queue_free()
 	await tree.process_frame
 	host = _host(TABLET)
@@ -231,7 +231,7 @@ func check_check_boxes() -> void:
 	screen.music_switch.button_pressed = true
 	host.queue_free()
 	await tree.process_frame
-	expect.call(problems.is_empty(), "settings: 효과음 / 배경 음악 / fps are big check boxes (no switch), a tap toggles, kept and read back", "; ".join(problems))
+	expect.call(problems.is_empty(), "settings: 효과음 / 배경 음악 are big check boxes (no switch, no fps setting), a tap toggles, kept and read back", "; ".join(problems))
 
 
 # --- 2. 처음부터 다시 하기 ------------------------------------------------------------------------------
@@ -268,11 +268,12 @@ func check_restart() -> void:
 	var problems := []
 	await _tap(screen.restart_button.get_global_rect().get_center())
 	await tree.process_frame
+	await tree.process_frame   # the page brings the question in
 	var asking: bool = screen.restart_confirm.visible and not screen.restart_button.visible
 	if not asking or _store_text() != full or restarts[0] != 0:
 		problems.append("first tap: confirm %s, store kept %s, restarts %d" % [asking, _store_text() == full, restarts[0]])
 	var question: Label = screen.restart_confirm.find_children("*", "Label", true, false)[0]
-	if question.text != screen.RESTART_QUESTION:
+	if question.text != Locale.t("settings.restart_question"):
 		problems.append("question '%s'" % question.text)
 	await _tap(screen.restart_no.get_global_rect().get_center())
 	if screen.restart_confirm.visible or not screen.restart_button.visible or _store_text() != full or restarts[0] != 0:
@@ -281,6 +282,7 @@ func check_restart() -> void:
 	if _store_text() != full or restarts[0] != 0:
 		problems.append("restart() without the question erased")
 	await _tap(screen.restart_button.get_global_rect().get_center())
+	await tree.process_frame
 	await tree.process_frame
 	await _tap(screen.restart_yes.get_global_rect().get_center())
 	var empty: bool = ProgressStore.load().is_empty() and not FileAccess.file_exists(ProgressStore.path) \
@@ -418,6 +420,70 @@ func check_walk_group() -> void:
 	await _free(screen)
 
 
+## The way between any two places (the square and every spot's stand, 2026-11-01 user: "지도에서 세마리
+## 이동 경로가 좀 어색함"): never over a stage, on the drawn paths except the steps on and off them
+## (ROUTE_OFF m at each end), never doubling back (no turn sharper than MAX_TURN over half a metre),
+## the walk at an even pace in the middle.
+const ROUTE_OFF := 1.6
+const MAX_TURN := 120.0
+
+
+func check_walk_route() -> void:
+	var screen := await _home(TABLET)
+	var problems := []
+	var ends := [["the square", screen.island.home]]
+	for spot in screen._spots:
+		ends.append([spot.id, Vector2(spot.stand.x, spot.stand.z)])
+	var drawn: PackedVector2Array = screen.map.path_points
+	var worst_turn := 0.0
+	var worst_off := 0.0
+	for from: Array in ends:
+		for to: Array in ends:
+			if from[0] == to[0]:
+				continue
+			var way: PackedVector2Array = MapIsland.resample(screen.route(from[1], to[1]), 0.25)
+			var what := "%s -> %s" % [from[0], to[0]]
+			for spot in screen._spots:
+				var r := float(spot.radius)
+				var c := Vector2(spot.at.x, spot.at.z)
+				if r <= 0.0:
+					continue
+				for p in way:
+					if p.distance_to(c) < r:
+						problems.append("%s: over the %s stage" % [what, spot.id])
+						break
+			for i in way.size():
+				if i * 0.25 < ROUTE_OFF or (way.size() - 1 - i) * 0.25 < ROUTE_OFF:
+					continue
+				var off := INF
+				for q in drawn:
+					off = minf(off, way[i].distance_to(q))
+				worst_off = maxf(worst_off, off)
+				if off > MapIsland.PATH_WIDTH * 0.5 + 0.2:
+					problems.append("%s: %.2f m off the paths at %s" % [what, off, str(way[i])])
+					break
+			for i in range(2, way.size() - 2):
+				var a: Vector2 = way[i] - way[i - 2]
+				var b: Vector2 = way[i + 2] - way[i]
+				if a.length() > 1e-4 and b.length() > 1e-4:
+					var turn := rad_to_deg(absf(a.angle_to(b)))
+					worst_turn = maxf(worst_turn, turn)
+					if turn > MAX_TURN:
+						problems.append("%s: turns %.0f deg at %s" % [what, turn, str(way[i])])
+						break
+	# The pace: even in the middle (the old smoothstep was half again as fast there), slow at the ends.
+	var script: GDScript = load(HOME_SCREEN)
+	var total := 5.0
+	var mid: float = (script.walk_share(2.6, total) - script.walk_share(2.4, total)) / 0.2
+	var avg := 1.0 / total
+	var start: float = script.walk_share(0.1, total) / 0.1
+	if absf(mid - avg) > avg * 0.15 or start > avg * 0.5 or not is_equal_approx(script.walk_share(total, total), 1.0):
+		problems.append("pace: middle %.3f, start %.3f a second (average %.3f)" % [mid, start, avg])
+	expect.call(problems.is_empty(), "map walk: every way between two places stays off the stages, on the paths (worst %.2f m off), never doubles back (sharpest turn %.0f deg), at an even pace" % [worst_off, worst_turn],
+		"; ".join(problems.slice(0, 8)))
+	await _free(screen)
+
+
 ## Every spot's group places: on the grass (no water, inside the beach), clear of every stage, the
 ## three MIN_APART apart.
 func check_rest_spot() -> void:
@@ -428,7 +494,7 @@ func check_rest_spot() -> void:
 		var group: Dictionary = screen.group_at(spot)
 		var places: Array = [group[screen.cat], group[screen.puppy], group[screen.dugi]]
 		for p: Vector3 in places:
-			if screen.map.water_at(p.x, p.z) or MapIsland.coast_fraction(p.x, p.z) > MapIsland.grass_edge():
+			if screen.map.water_at(p.x, p.z) or screen.map.coast_fraction(p.x, p.z) > MapIsland.grass_edge():
 				problems.append("%s: %s off the grass" % [spot.id, str(p)])
 			for other in screen._spots:
 				if float(other.radius) > 0.0 and _flat(p).distance_to(_flat(other.at)) < float(other.radius) + 0.2:
@@ -478,7 +544,7 @@ func check_rest_spot() -> void:
 	ProgressStore.set_last_spot("no-such-spot")
 	screen = await _home(TABLET)
 	if screen.rest_spot != -1 or screen.cat.position.distance_to(screen.trio_spot(screen.cat)) > 0.01 \
-			or _flat(screen.cat.position).distance_to(Vector2(MapIsland.HOME[0], MapIsland.HOME[1])) > 0.01:
+			or _flat(screen.cat.position).distance_to(Island.current().home) > 0.01:
 		problems.append("an unknown saved spot: not on the square")
 	await _free(screen)
 	DirAccess.remove_absolute(ProgressStore.path)
@@ -525,7 +591,7 @@ func check_story_places() -> void:
 	ProgressStore.set_last_spot("pulley")
 	var home := await _home(TABLET, true)
 	var story: StoryDirector = home.story
-	if home.rest_spot != -1 or ProgressStore.last_spot() != "" or _flat(home.cat.position).distance_to(Vector2(MapIsland.HOME[0], MapIsland.HOME[1])) > 0.01:
+	if home.rest_spot != -1 or ProgressStore.last_spot() != "" or _flat(home.cat.position).distance_to(Island.current().home) > 0.01:
 		problems.append("prologue: the three are not on the square")
 	var cat_seen := false
 	for p in Story.pages("prologue").size():
@@ -574,12 +640,17 @@ func check_story_places() -> void:
 	home = await _home(TABLET, false)
 	story = home.story
 	var lift_gap := []
+	var waited := 0
 	for i in 600:
 		story.advance(0.05)
 		if story._lift and story._star != null:
 			lift_gap.append(story._star.position.y - home.cat.position.y)   # the last: where it rides
 		if story.dialogue != null and story.dialogue.active:
 			story.dialogue.advance()
+		elif story.launch_waits:
+			waited += 1
+			if waited > 40:   # the child looks a moment, then pulls the whole way (it reaches the sky)
+				story.launch_star(StoryDirector.LAUNCH_V_MAX)
 		if not story.busy() and i > 100:
 			break
 	var group: Dictionary = home.group_at(home._spots[home._spot_index("orbit")])
@@ -685,3 +756,13 @@ func _drag(from: Vector2, to: Vector2) -> void:
 	for i in 8:
 		await tree.process_frame
 	await _finger(to, "up")
+
+
+func _has_text(node: Node, text: String) -> bool:
+	for label in node.find_children("*", "Label", true, false):
+		if (label as Label).text.contains(text):
+			return true
+	for button in node.find_children("*", "Button", true, false):
+		if (button as Button).text.contains(text):
+			return true
+	return false

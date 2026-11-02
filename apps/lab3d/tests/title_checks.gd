@@ -159,7 +159,10 @@ func check_back_press(quality_script: GDScript) -> void:
 	trail.append(where.call())   # Puppy's clue
 	var glow_on: bool = app._screen is ExperimentScreen and (app._screen as ExperimentScreen).experiment.game.highlighting()
 	await press.call()
-	trail.append(where.call())   # the clue closed: Dugi asks
+	await settle.call(2)
+	trail.append(where.call())   # the clue closed: Dugi's introduction of the lab (2026-10-31)
+	await press.call()
+	trail.append(where.call())   # the introduction closed: Dugi asks
 	if app._screen is ExperimentScreen:   # (a wrong step left the lab: the trail shows it)
 		(app._screen as ExperimentScreen).open_sidebar(false)
 	await tree.process_frame
@@ -203,9 +206,9 @@ func check_back_press(quality_script: GDScript) -> void:
 	await press.call()
 	await _free(app)
 	DirAccess.remove_absolute(ProgressStore.TEST_PATH)
-	var want := ["lab+clue", "lab+question", "lab+sidebar", "lab+question", "map+riddle", "map", "lab+dugi", "lab", "map+riddle", "map+riddle", "title", "title"]
+	var want := ["lab+clue", "lab+question", "lab+question", "lab+sidebar", "lab+question", "map+riddle", "map", "lab+dugi", "lab", "map+riddle", "map+riddle", "title", "title"]
 	expect.call(trail == want and glow_on and quits_before == 0 and quits[0] == 1,
-		"back: one press (two go-back notifications in a frame) is one step: Puppy's clue -> Dugi's question, sidebar, the unanswered question -> the map, Puppy's riddle, Dugi's explanation, lab -> map, settings -> back, map -> title, title quits once",
+		"back: one press (two go-back notifications in a frame) is one step: Puppy's clue -> Dugi's introduction -> his question, sidebar, the unanswered question -> the map, Puppy's riddle, Dugi's explanation, lab -> map, settings -> back, map -> title, title quits once",
 		"%s (want %s) glow %s quits %d/%d" % [str(trail), str(want), glow_on, quits_before, quits[0]])
 
 
