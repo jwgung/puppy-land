@@ -671,7 +671,8 @@ func check_free_fall_middle() -> void:
 	lab.run_action("release")
 	for i in 60:
 		await tree.physics_frame
-	if absf(lab.props.cat.position.x - 0.0) > 1e-6:
+	var after: Array = lab.starts.values().map(func(p: Vector3) -> float: return p.x)
+	if absf(lab.props.cat.position.x - (after.min() + after.max()) * 0.5) > 1e-6:
 		problems.append("after the drop: cat at %s" % lab.props.cat.position)
 	await _free(lab)
 	expect.call(problems.is_empty(), "bread cat (free fall): it stands exactly halfway between the two balls, behind them, on the floor", "; ".join(problems))
@@ -992,7 +993,8 @@ func check_role(run_id: String) -> void:
 		var cheered := cat.cheers > cheers0
 		if setup[2] == "phone":
 			expect.call(cats == 1 and (holds > 10 or id in STANDS_BY) and worst_gap <= 2e-3 and worst_stretch <= STRETCH_MAX and cheered,
-				"bread cat (%s): one cat; its paws on what it holds while it holds (%d frames), it cheers at the result" % [run_id, holds],
+				("bread cat (%s): one cat, holding nothing (it stands by), it cheers at the result" % run_id) if id in STANDS_BY
+					else "bread cat (%s): one cat; its paws on what it holds while it holds (%d frames), it cheers at the result" % [run_id, holds],
 				"gap %s m (step %d), stretch %.2f, cheered %s, cats %d" % [String.num_scientific(worst_gap), gap_step, worst_stretch, cheered, cats])
 		expect.call(problems.is_empty(),
 			"bread cat (%s, %s): never in a body (all of it once it let go), clear of the apparatus; in the front view clear of the overlays, Dugi and Puppy, hiding no body or key point" % [run_id, setup[2]],

@@ -15,7 +15,6 @@ class_name FreeFallProps
 extends PadProps
 
 const RULER_AT := Vector3(-3.6, 0.0, -1.4)
-const CRATE_MAX := 20             # a ball up to 8 m: crates no taller than about 0.4 m
 ## The cat's place behind the balls' drop line (z 0): far enough back that its bag hides no ball,
 ## pad or button in the front view.
 const CAT_BEHIND := 0.9
@@ -25,10 +24,6 @@ const PAD_SIZE := Vector3(0.56, 0.06, 0.56)
 var juices: Dictionary = {}    # ball id -> ArtJuice
 var pads: Dictionary = {}      # ball id -> MeshInstance3D (the pad hinge node is the instance itself)
 var cat: CatActor
-var cat_stand: CatCrates
-## The ball a finger holds ("" = none).
-var finger := ""
-var _ball_nodes: Dictionary = {}   # ball id -> body
 var _radius := 0.25                # the bodies' radius
 ## Ball id -> the radius its look has (set_look).
 var look_radii: Dictionary = {}
@@ -81,12 +76,9 @@ func dress(experiment: Node3D, balls: Dictionary, ball_size: float) -> void:
 		juice.round_body = true   # a ball (it may turn, Task 4f)
 		juice.setup(ball, balls[id][1], ball_size, 0.0, ball.collision_mask)   # the shadow lands where the ball can
 		juices[id] = juice
-		_ball_nodes[id] = ball
 		look_radii[id] = ball_size * 0.5
 	_radius = ball_size * 0.5
 	cat = CatActor.new(BreadCat.new())
-	cat_stand = CatCrates.new(cat.look.footprint, CRATE_MAX)
-	experiment.add_child(cat_stand)
 	experiment.add_child(cat)
 
 
@@ -108,13 +100,6 @@ func place_cat(starts: Dictionary) -> void:
 		hi = maxf(hi, starts[id].x)
 	cat.look_target = null
 	cat.stand(Vector3((lo + hi) * 0.5, 0.0, -CAT_BEHIND))
-	cat_stand.fit(cat, 0.0)   # (on the floor: no crates)
-
-
-## A finger picked up (`id`) or put down ("") a ball (the cat stands where it stands).
-func set_finger(id: String, starts: Dictionary) -> void:
-	finger = id
-	place_cat(starts)
 
 
 ## Puts the pad of a waiting ball under it (`bottom` = the ball's lowest point), as wide as the ball

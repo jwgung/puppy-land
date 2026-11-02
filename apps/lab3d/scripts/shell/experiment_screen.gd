@@ -1118,8 +1118,8 @@ func _run_result_bubble(delta: float) -> void:
 ## Where Puppy's line goes: just above Puppy on the view (the cat without him, else the view's upper
 ## middle), its tail pointing at him; inside the view and clear of the other overlays (the title, the
 ## key cards, the strip, 다시, the picture buttons, the tip, Dugi's box) when it can be: above him,
-## else beside him, else below. The side is chosen when the bubble opens (`choose`, also when a stamp
-## lands where it is or Dugi's box opens after it) and kept; it never jumps: once placed it moves at
+## else beside him, else below. The side is chosen when the bubble opens (`choose`, also when Dugi's
+## box opens after it; a win and a miss alike, the landing stamp is not avoided since 2026-11-02) and kept; it never jumps: once placed it moves at
 ## most ResultBubble.MAX_STEP a frame, to a new side too, and else only follows Puppy (2026-10-31 user:
 ## it jumped as Dugi's box opened and the camera moved).
 func _fit_result_bubble(choose := true) -> void:

@@ -409,9 +409,6 @@ func pull(grip: Vector3, dir: Vector3, floor_y: float, effort := 0.0, ball := 0.
 	mode = "pull"
 
 
-## Walking (2026-10-29, the push's opened path): the actor stands at `at` (its base, on the floor)
-## facing `yaw` rad about +y (from +z), the bag lifted `hop` m (the lab steps it along its path each
-## frame); paws at rest. Poses in _process.
 ## Stands free at `at` (its feet), paws down, facing the camera (+z): it watches and cheers
 ## (2026-11-02: the free fall's cat between the two balls).
 func stand(at: Vector3) -> void:
@@ -431,6 +428,9 @@ func stand(at: Vector3) -> void:
 	_pose()
 
 
+## Walking (2026-10-29, the push's opened path): the actor stands at `at` (its base, on the floor)
+## facing `yaw` rad about +y (from +z), the bag lifted `hop` m (the lab steps it along its path each
+## frame); paws at rest. Poses in _process.
 func walk(at: Vector3, yaw: float, hop := 0.0) -> void:
 	position = at
 	_yaw = yaw
