@@ -44,7 +44,8 @@ static func load_all() -> Array[Dictionary]:
 
 
 ## The definitions are read again on the next load_all (Locale.set_language: their words changed).
-static func reload() -> void:
+## (Not "reload": that is Script.reload, which recompiles the script and resets its static vars.)
+static func forget_loaded() -> void:
 	_cache = []
 	_hidden = []
 	_loaded = false

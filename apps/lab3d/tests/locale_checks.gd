@@ -24,6 +24,7 @@ func run() -> void:
 	# The checks switch languages (the content is read again): the other checks' loaded definitions
 	# and story stay the very objects they were (some checks hold or adjust them).
 	var kept := [Locale.lang, ExperimentRegistry._cache, ExperimentRegistry._hidden, ExperimentRegistry._loaded, Story._content]
+	check_switch_keeps_state()
 	check_keys()
 	check_no_words_in_code()
 	check_no_words_in_data()
@@ -287,6 +288,24 @@ func check_puppy_words_each_language() -> void:
 	Locale.set_language(was)
 	expect.call(problems.is_empty(), "locale: Puppy's lines avoid the science words in every language",
 		"; ".join(problems.slice(0, 6)))
+
+
+## Switching the language reads the words again and keeps the rest of the app's state: the story's
+## switches (2026-11-02: a "reload" named like Script.reload recompiled Story and switched the story
+## off), the progress file, the island.
+func check_switch_keeps_state() -> void:
+	var was := [Story.enabled, Story.app_may_enable, ProgressStore.path, Locale.lang]
+	Story.enabled = true
+	Story.app_may_enable = true
+	var island := Island.current()
+	Locale.set_language("en")
+	Locale.set_language("ko")
+	var kept: bool = Story.enabled and Story.app_may_enable and ProgressStore.path == was[2] and Island.current() == island \
+		and ExperimentRegistry.find("spring").get("title", "") == "용수철은 에너지를 어떻게 돌려줄까?"
+	Story.enabled = was[0]
+	Story.app_may_enable = was[1]
+	Locale.set_language(was[3])
+	expect.call(kept, "locale: switching the language reads the words again and keeps the story's switches, the progress file and the island", "")
 
 
 ## The app's language: the saved choice, else the device's when it is one of LANGUAGES, else English;

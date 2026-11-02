@@ -61,8 +61,8 @@ static func choose(code: String) -> void:
 ## `lang` = `code` and the content read in it again (ExperimentRegistry, Story).
 static func set_language(code: String) -> void:
 	lang = code
-	ExperimentRegistry.reload()
-	Story.reload()
+	ExperimentRegistry.forget_loaded()
+	Story.forget_loaded()
 
 
 ## Text `key` in language `code` itself (the settings name each language in its own words).
