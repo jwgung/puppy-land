@@ -7,3 +7,6 @@ exports/
 *.pck
 *.wasm
 export_credentials.cfg
+
+# The Android Gradle build template (installed by an export: build.sh play)
+/android/

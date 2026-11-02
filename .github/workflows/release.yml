@@ -1,0 +1,101 @@
+# A v* tag builds the Play Store bundle (AAB, signed with the upload key) and attaches it to a GitHub
+# Release; the bundle is then uploaded to the Play Console by hand (docs/release/README.md).
+# The version comes from apps/lab3d/tools/build.sh play: versionCode = commits up to the tag,
+# versionName = the tag (v0.1.1 -> 0.1.1). A manual run (workflow_dispatch) uploads an artifact only.
+# Secrets: UPLOAD_KEYSTORE_BASE64, UPLOAD_STORE_PASSWORD (the key's password is the same), alias "upload".
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+# The build job only reads; the publish job alone may write (the Release).
+permissions:
+  contents: read
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GODOT_DIR: ${{ github.workspace }}/.godot-bin
+      TPZ_DIR: ${{ github.workspace }}/.godot-templates
+    outputs:
+      stem: ${{ steps.bundle.outputs.stem }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the commit count and the tags give the version
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Android SDK parts
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" "platform-tools" > /dev/null
+      # Only the official release files are cached; the install scripts re-verify their pinned SHA-512
+      # on every run, so a cache entry cannot change what is used.
+      - name: Cache Godot release files
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.GODOT_DIR }}/Godot_v4.7.2-stable_linux.x86_64.zip
+            ${{ env.TPZ_DIR }}/Godot_v4.7.2-stable_export_templates.tpz
+          key: godot-4.7.2-stable-release-${{ hashFiles('.github/scripts/install-godot.sh', '.github/scripts/install-godot-templates.sh') }}
+      - name: Install Godot 4.7.2 and its Android templates (official release, SHA-512 checked)
+        run: |
+          echo "GODOT=$(.github/scripts/install-godot.sh "$GODOT_DIR")" >> "$GITHUB_ENV"
+          .github/scripts/install-godot-templates.sh "$TPZ_DIR"
+          mkdir -p ~/.config/godot
+          printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/android_sdk_path = "%s"\nexport/android/java_sdk_path = "%s"\n' \
+            "$ANDROID_HOME" "$JAVA_HOME" > ~/.config/godot/editor_settings-4.7.tres
+      - name: Upload key
+        env:
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          [ -n "$UPLOAD_KEYSTORE_BASE64" ] || { echo "::error::Secret UPLOAD_KEYSTORE_BASE64 is missing: a bundle without the upload key cannot go to the Play Store."; exit 1; }
+          printf '%s' "$UPLOAD_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+      - name: Tests (a bundle is never built from a commit that fails them)
+        run: apps/lab3d/tools/build.sh test
+      - name: Play bundle
+        id: bundle
+        env:
+          VERSION_NAME: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          GODOT_ANDROID_KEYSTORE_RELEASE_PATH: ${{ runner.temp }}/upload.jks
+          GODOT_ANDROID_KEYSTORE_RELEASE_USER: upload
+          GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD: ${{ secrets.UPLOAD_STORE_PASSWORD }}
+        run: |
+          apps/lab3d/tools/build.sh play | tee "$RUNNER_TEMP/play.log"
+          read -r _ name code < <(grep '^play: ' "$RUNNER_TEMP/play.log" | tail -1)
+          [ -n "$name" ] && [ -n "$code" ] || { echo "::error::no version in the build output"; exit 1; }
+          stem="puppy-land-${name}-v${code}"
+          mkdir -p out
+          cp "apps/lab3d/exports/android/${stem}.aab" out/
+          echo "stem=$stem" >> "$GITHUB_OUTPUT"
+          ls -l out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.bundle.outputs.stem }}
+          path: out/*
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    if: github.ref_type == 'tag'
+    needs: [bundle]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STEM: ${{ needs.bundle.outputs.stem }}
+        run: gh release create "$GITHUB_REF_NAME" out/* --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME ($STEM)" --generate-notes

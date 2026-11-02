@@ -9,8 +9,14 @@
 ## Why an intent: the AI apps have no official deep link that fills in a prompt, and an AI API called
 ## from the app is not allowed for apps likely used by people under 18 (e.g. the Gemini API terms,
 ## https://ai.google.dev/gemini-api/terms).
+## Off in the app (2026-10-31 user decision for the Play Store: the app's audience includes children,
+## and this button sends a child to outside AI apps and a web page, which Google Play's Families
+## policy does not allow without a parent's check). The code and its tests stay for a later parent
+## gate; tests and the button's own device check (--ask=show) turn it on.
 class_name ScienceNote
 extends RefCounted
+
+static var enabled := false
 
 ## The chooser's own target: a package no app has, so only the AI apps (EXTRA_INITIAL_INTENTS) show.
 const NO_APP := "invalid.open_physics.no_app"
