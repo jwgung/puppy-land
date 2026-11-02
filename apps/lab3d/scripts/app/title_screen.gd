@@ -18,8 +18,9 @@ signal settings_requested
 ## Headless test runs build App without a title unless a check turns it on (like Story.app_may_enable).
 static var app_may_show := true
 
-## The logo with the app's name in the language (the boot splash before it has only the faces: it
-## shows before the language is known, project.godot boot_splash/image).
+## The logo with the app's name in the language. The boot splash shows no picture (only the sky
+## colour): it comes before the language is known, and the faces alone read as a title with a hole
+## (2026-11-02 user: "타이틀에 또 빈칸생겼다").
 const LOGOS := {"ko": "res://assets/icon/splash.png", "en": "res://assets/icon/splash_en.png"}
 
 
