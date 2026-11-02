@@ -647,10 +647,35 @@ const STRETCH_MAX := 2.75
 
 
 func run_roles() -> void:
+	await check_free_fall_middle()
 	for id in ROLE_RUNS:
 		await check_role_unchanged(id)
 		await check_role(id)
 	await check_role_budget()
+
+
+## The free fall's cat stands exactly halfway between the two balls (2026-11-02 user: "정확히 가운데
+## 세워줘"), behind their drop line, on the floor, for any heights and after a drop.
+func check_free_fall_middle() -> void:
+	var lab: Experiment = await _lab("free-fall")
+	var problems := []
+	for heights in [[], [8.0], [1.0]]:
+		if not heights.is_empty():
+			lab.set_height(heights[0])
+			await tree.physics_frame
+		var xs: Array = lab.starts.values().map(func(p: Vector3) -> float: return p.x)
+		var mid: float = (xs.min() + xs.max()) * 0.5
+		var cat: CatActor = lab.props.cat
+		if absf(cat.position.x - mid) > 1e-6 or cat.position.y != 0.0 or cat.position.z >= 0.0 or cat.mode != "free":
+			problems.append("heights %s: cat at %s (mid x %.2f), %s" % [str(heights), cat.position, mid, cat.mode])
+	lab.run_action("release")
+	for i in 60:
+		await tree.physics_frame
+	var after: Array = lab.starts.values().map(func(p: Vector3) -> float: return p.x)
+	if absf(lab.props.cat.position.x - (after.min() + after.max()) * 0.5) > 1e-6:
+		problems.append("after the drop: cat at %s" % lab.props.cat.position)
+	await _free(lab)
+	expect.call(problems.is_empty(), "bread cat (free fall): it stands exactly halfway between the two balls, behind them, on the floor", "; ".join(problems))
 
 
 ## Applies the ops of `run` due before step `k` on `lab`; `held` keeps the picked bodies' start.
@@ -779,11 +804,9 @@ static func _inside(mi: MeshInstance3D, points: PackedVector3Array) -> Vector3:
 static func _contact_gap(id: String, lab: Experiment, cat: CatActor) -> float:
 	var gap := 0.0
 	match id:
-		"free-fall", "constraints", "orbit":
+		"constraints", "orbit":
 			# (the pendulum's model: its bob body is posed on the next step after a condition change)
-			var at: Vector3 = lab.props._ball_nodes[lab.props.cat_ball].global_position if id == "free-fall" else (lab.models[0].position() if id == "constraints" else lab.planet.global_position)
-			if id == "free-fall":   # the ball as it looks (2026-10-28): its centre its look radius above its bottom
-				at += Vector3.UP * (lab.look_radius(lab.props.cat_ball) - lab.BALL_RADIUS)
+			var at: Vector3 = lab.models[0].position() if id == "constraints" else lab.planet.global_position
 			gap = cat.held_point().distance_to(at)
 		"collision", "spring":
 			# The ball as it looks (2026-10-28: its size follows its mass).
@@ -825,6 +848,11 @@ static func _role_holds(id: String, lab: Experiment, cat: CatActor) -> bool:
 		"spring":
 			return not lab.released or lab.holding != ""
 	return cat.attached() and not lab.released
+
+
+## Labs whose cat holds nothing: it stands by and cheers (2026-11-02: the free fall's cat stands
+## exactly between the two balls).
+const STANDS_BY := ["free-fall"]
 
 
 ## Static points the cat must not hide in the front view (besides the bodies' motion).
@@ -964,8 +992,9 @@ func check_role(run_id: String) -> void:
 				break
 		var cheered := cat.cheers > cheers0
 		if setup[2] == "phone":
-			expect.call(cats == 1 and holds > 10 and worst_gap <= 2e-3 and worst_stretch <= STRETCH_MAX and cheered,
-				"bread cat (%s): one cat; its paws on what it holds while it holds (%d frames), it cheers at the result" % [run_id, holds],
+			expect.call(cats == 1 and (holds > 10 or id in STANDS_BY) and worst_gap <= 2e-3 and worst_stretch <= STRETCH_MAX and cheered,
+				("bread cat (%s): one cat, holding nothing (it stands by), it cheers at the result" % run_id) if id in STANDS_BY
+					else "bread cat (%s): one cat; its paws on what it holds while it holds (%d frames), it cheers at the result" % [run_id, holds],
 				"gap %s m (step %d), stretch %.2f, cheered %s, cats %d" % [String.num_scientific(worst_gap), gap_step, worst_stretch, cheered, cats])
 		expect.call(problems.is_empty(),
 			"bread cat (%s, %s): never in a body (all of it once it let go), clear of the apparatus; in the front view clear of the overlays, Dugi and Puppy, hiding no body or key point" % [run_id, setup[2]],

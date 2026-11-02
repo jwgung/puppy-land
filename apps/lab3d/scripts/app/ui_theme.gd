@@ -165,19 +165,10 @@ static func build() -> Theme:
 
 	# The title screen (2026-10-29): 시작하기 is the logo's red ribbon (cream bold letters, the brown
 	# outline and lip), 이야기 다시 보기 / 설정 the dialogue's cream paper like Dugi's choices.
-	theme.set_type_variation("TitleStartButton", "Button")
-	theme.set_font_size("font_size", "TitleStartButton", 36)
-	theme.set_font("font", "TitleStartButton", bold)
-	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color"]:
-		theme.set_color(state, "TitleStartButton", DIALOGUE_PAPER)
-	var start_down := _box(TITLE_RED.darkened(0.08), DIALOGUE_LINE, 22, 40, 12, Color.TRANSPARENT, CHOICE_LINE, CHOICE_LINE)
-	start_down.content_margin_top += CHOICE_LIP - CHOICE_LINE
-	start_down.expand_margin_top = -(CHOICE_LIP - CHOICE_LINE)
-	theme.set_stylebox("normal", "TitleStartButton", _box(TITLE_RED, DIALOGUE_LINE, 22, 40, 12, Color.TRANSPARENT, CHOICE_LINE, CHOICE_LIP))
-	theme.set_stylebox("hover", "TitleStartButton", _box(TITLE_RED.lightened(0.06), DIALOGUE_LINE, 22, 40, 12, Color.TRANSPARENT, CHOICE_LINE, CHOICE_LIP))
-	theme.set_stylebox("pressed", "TitleStartButton", start_down)
-	theme.set_stylebox("hover_pressed", "TitleStartButton", start_down)
-	theme.set_stylebox("focus", "TitleStartButton", StyleBoxEmpty.new())
+	_ribbon_button(theme, "TitleStartButton", bold, 36, 22, 40, 12)
+	# 다음 미션 (2026-11-02 user: the blue one was "겁나 구려"): the same red ribbon as 시작하기, a little
+	# smaller: storybook like the dialogue, Dugi's choices and the stamps, not the panels' blue.
+	_ribbon_button(theme, "NextMissionButton", bold, 28, 20, 32, 10)
 	theme.set_type_variation("TitleButton", "Button")
 	theme.set_font_size("font_size", "TitleButton", 20)
 	theme.set_font("font", "TitleButton", bold)
@@ -280,6 +271,24 @@ static func check_texture(side: int, on: bool, disabled := false) -> ImageTextur
 
 static func _segment_distance(p: Vector2, a: Vector2, b: Vector2) -> float:
 	return p.distance_to(Geometry2D.get_closest_point_to_segment(p, a, b))
+
+
+## The logo's red ribbon button `name` (cream bold letters `size`, the brown outline and lip;
+## pressed: the face sinks by the lip it gives up).
+static func _ribbon_button(theme: Theme, name: String, font: Font, size: int, radius: int, pad_x: float, pad_y: float) -> void:
+	theme.set_type_variation(name, "Button")
+	theme.set_font_size("font_size", name, size)
+	theme.set_font("font", name, font)
+	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color"]:
+		theme.set_color(state, name, DIALOGUE_PAPER)
+	var down := _box(TITLE_RED.darkened(0.08), DIALOGUE_LINE, radius, pad_x, pad_y, Color.TRANSPARENT, CHOICE_LINE, CHOICE_LINE)
+	down.content_margin_top += CHOICE_LIP - CHOICE_LINE
+	down.expand_margin_top = -(CHOICE_LIP - CHOICE_LINE)
+	theme.set_stylebox("normal", name, _box(TITLE_RED, DIALOGUE_LINE, radius, pad_x, pad_y, Color.TRANSPARENT, CHOICE_LINE, CHOICE_LIP))
+	theme.set_stylebox("hover", name, _box(TITLE_RED.lightened(0.06), DIALOGUE_LINE, radius, pad_x, pad_y, Color.TRANSPARENT, CHOICE_LINE, CHOICE_LIP))
+	theme.set_stylebox("pressed", name, down)
+	theme.set_stylebox("hover_pressed", name, down)
+	theme.set_stylebox("focus", name, StyleBoxEmpty.new())
 
 
 ## normal / hover / pressed / hover_pressed of a lipped button (border = lip colour). Pressed: the

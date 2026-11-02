@@ -409,6 +409,25 @@ func pull(grip: Vector3, dir: Vector3, floor_y: float, effort := 0.0, ball := 0.
 	mode = "pull"
 
 
+## Stands free at `at` (its feet), paws down, facing the camera (+z): it watches and cheers
+## (2026-11-02: the free fall's cat between the two balls).
+func stand(at: Vector3) -> void:
+	_on_release = Callable()
+	_cheer = -1.0
+	_cheers_queued = 0
+	position = at
+	stand_height = 0.0
+	rig.transform = Transform3D.IDENTITY
+	_yaw = 0.0
+	_lean = 0.0
+	_squash = 1.0
+	_hold_stretch = 1.0
+	mode = "free"
+	for i in 2:
+		_arm_dirs[i] = _rest_dir(i)
+	_pose()
+
+
 ## Walking (2026-10-29, the push's opened path): the actor stands at `at` (its base, on the floor)
 ## facing `yaw` rad about +y (from +z), the bag lifted `hop` m (the lab steps it along its path each
 ## frame); paws at rest. Poses in _process.

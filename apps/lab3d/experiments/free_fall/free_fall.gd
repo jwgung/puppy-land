@@ -378,19 +378,12 @@ func manipulation_juice(id: String) -> ArtJuice:
 
 ## Picked up (also a falling or landed ball): the run stops and every ball waits at its start, so
 ## the picked one is lifted from its start height (the handle keeps that height); the bread cat
-## stands by while the finger holds its ball.
+## stands where it stands (between the balls).
 func manipulation_started(id: String) -> void:
 	if released:
 		reset_run()
 	id = id.trim_prefix(DROP)
 	fall_props().juices[id].rearm()
-	fall_props().set_finger(id, starts)
-
-
-## A cancelled pick-up: the balls wait at their starts, the cat holds its ball again.
-func manipulation_cancelled(id: String) -> void:
-	fall_props().finger = ""
-	super(id)
 
 
 ## A ball's drop line is its own: no other ball straight above or below it (the two would collide
@@ -428,7 +421,6 @@ func manipulation_placed(id: String, transform: Transform3D) -> void:
 		var h := definition.clamp_value("height", snappedf(transform.origin.y - BALL_RADIUS, step))
 		if is_nan(h):
 			return
-		fall_props().finger = ""
 		manipulation_placed(ball_id, Transform3D(Basis(), Vector3(starts[ball_id].x, h + BALL_RADIUS, starts[ball_id].z)))
 		if _batch == 0:
 			release()
@@ -440,7 +432,6 @@ func manipulation_placed(id: String, transform: Transform3D) -> void:
 	hold_ball(ball, starts[id] + Vector3.UP * BALL_RADIUS)
 	apply_field(ball)
 	fall_props().place_pad(id, starts[id])
-	fall_props().set_finger("", starts)
 	if game != null:
 		(game as FreeFallGame).place_buttons(starts)
 	_graph_revision += 1

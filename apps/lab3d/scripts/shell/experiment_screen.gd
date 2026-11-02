@@ -1118,8 +1118,8 @@ func _run_result_bubble(delta: float) -> void:
 ## Where Puppy's line goes: just above Puppy on the view (the cat without him, else the view's upper
 ## middle), its tail pointing at him; inside the view and clear of the other overlays (the title, the
 ## key cards, the strip, 다시, the picture buttons, the tip, Dugi's box) when it can be: above him,
-## else beside him, else below. The side is chosen when the bubble opens (`choose`, also when a stamp
-## lands where it is or Dugi's box opens after it) and kept; it never jumps: once placed it moves at
+## else beside him, else below. The side is chosen when the bubble opens (`choose`, also when Dugi's
+## box opens after it; a win and a miss alike, the landing stamp is not avoided since 2026-11-02) and kept; it never jumps: once placed it moves at
 ## most ResultBubble.MAX_STEP a frame, to a new side too, and else only follows Puppy (2026-10-31 user:
 ## it jumped as Dugi's box opened and the camera moved).
 func _fit_result_bubble(choose := true) -> void:
@@ -1147,10 +1147,6 @@ func _fit_result_bubble(choose := true) -> void:
 	if dialogue != null and dialogue.active and dialogue.visible:
 		for r in dialogue.rects():
 			avoid.append((r as Rect2).grow(4.0))
-	# The stamp landing in the middle (StampSlam) for its first second: the bubble stays off its disc.
-	if _slam != null and is_instance_valid(_slam):
-		var reach := Vector2.ONE * StampSlam.RADIUS * 1.3
-		avoid.append(Rect2(_slam.start - reach, reach * 2.0))
 	var gap := ResultBubble.TAIL + 6.0
 	# Above his head, beside it (right, left: at his head's height, the tail at his side), below his feet;
 	# the tail points at the part of him it faces (2026-11-01 user: "말풍선 방향이 이상한 곳").
@@ -1240,7 +1236,8 @@ func _on_stamp_earned(stamps: int) -> void:
 	_slam.start = view.size * Vector2(0.5, 0.46)
 	_slam.landed.connect(_on_stamp_landed.bind(stamps))
 	view.add_child(_slam)
-	_fit_result_bubble()   # the bubble (shown just above) moves off the landing stamp
+	# (The win bubble keeps the place it got, as a miss bubble does (2026-11-02 user: "주황색 말풍선
+	# 잡듯이 똑같이"); before, it jumped to another side to leave the landing stamp alone.)
 	var cat := lab_cat()
 	if cat != null:
 		cat.cheer(cat.mode == "free")
@@ -1310,7 +1307,7 @@ func _cancel_next() -> void:
 ## 다음 미션 shows (bottom middle, over the picture buttons).
 func _show_next_button() -> void:
 	if _next_button == null:
-		_next_button = Ui.button(NEXT_TEXT, "PrimaryButton", 64)
+		_next_button = Ui.button(NEXT_TEXT, "NextMissionButton", 64)   # the title's red ribbon (2026-11-02)
 		_next_button.name = "NextMission"
 		_next_button.pressed.connect(next_mission)
 		view.add_child(_next_button)
