@@ -3,8 +3,9 @@
 - feature-graphic-ko.png: 1024 x 500, a capture of the throw lab (scene-throw.png,
   apps/lab3d/tools/capture_store_shots.gd; the lab's own cards and dialogue box still show in it)
   with the app's name on a paper card in the app's font.
-- feature-graphic-en.png: the same from scene-throw-en.png, a tablet capture of the English throw lab
-  with its top-left readouts painted over with sky (screenshots/en-*.png are tablet captures too).
+- feature-graphic-en.png: the same from scene-throw-en.png. That input and screenshots/en-*.png were
+  captured by hand on a tablet running the English build (adb screencap); for scene-throw-en.png the
+  lab's top-left title and readouts were then painted over with a strip of the sky beside them.
 Run from the repository root: python3 docs/release/store/make_store_art.py
 """
 from pathlib import Path
@@ -31,14 +32,11 @@ def icon() -> None:
     bg.resize((512, 512), Image.LANCZOS).save(STORE / "icon-512.png")
 
 
-def fit(text: str, max_width: int, size: int) -> ImageFont.FreeTypeFont:
-    """The app's font at `size`, or smaller until `text` is at most `max_width` wide."""
-    while size > 12:
-        font = ImageFont.truetype(str(FONT), size)
-        if font.getlength(text) <= max_width:
-            return font
+def fit(text: str, max_width: int, size: int) -> int:
+    """`size`, or smaller until `text` in the app's font is at most `max_width` wide (never below 12)."""
+    while size > 12 and ImageFont.truetype(str(FONT), size).getlength(text) > max_width:
         size -= 2
-    return ImageFont.truetype(str(FONT), size)
+    return size
 
 
 def feature_graphic(lang: str = "ko") -> None:
@@ -61,11 +59,11 @@ def feature_graphic(lang: str = "ko") -> None:
         # The English name is longer: two lines, the card a little taller.
         draw.rounded_rectangle((40, 110, 520, 390), radius=28, fill=PAPER, outline=OUTLINE, width=5)
         width = 480 - 60
-        size = min(fit(text, width, 72).size for text in TITLE_EN)
+        size = min(fit(text, width, 72) for text in TITLE_EN)
         title = ImageFont.truetype(str(FONT), size)
         draw.text((280, 175), TITLE_EN[0], font=title, fill=INK, anchor="mm")
         draw.text((280, 175 + round(size * 1.15)), TITLE_EN[1], font=title, fill=INK, anchor="mm")
-        draw.text((280, 345), LINE_EN, font=fit(LINE_EN, width, 34), fill=OUTLINE, anchor="mm")
+        draw.text((280, 345), LINE_EN, font=ImageFont.truetype(str(FONT), fit(LINE_EN, width, 34)), fill=OUTLINE, anchor="mm")
     art.alpha_composite(card)
     art.convert("RGB").save(STORE / f"feature-graphic-{lang}.png")
 
