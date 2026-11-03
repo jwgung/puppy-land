@@ -16,7 +16,7 @@ INK = (27, 42, 74)            # UiTheme INK
 PAPER = (255, 246, 230, 240)  # UiTheme.DIALOGUE_PAPER
 OUTLINE = (110, 70, 48)       # ArtPalette.OUTLINE
 TITLE = "빵고양이 과학섬"
-LINE = "직접 해 보는 물리 실험"
+LINE = "직접 해 보는 과학 실험"
 
 
 def icon() -> None:
