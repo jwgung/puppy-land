@@ -67,6 +67,9 @@
 ## 20. easy controls (tests/easy_controls_checks.gd, 2026-10-27): per lab the stage's condition picture
 ##    buttons (exactly its conditions, a tap = the sidebar's change, clear of the other overlays on
 ##    phone and tablet), one drag gesture per lab and its grab radius, the removed handles gone.
+## 20e. first entry (tests/first_entry_checks.gd, 2026-11-03 playtest): every lab with missions opens
+##    on its first stage's conditions (or the saved stage's), its buttons lit, the rest as before; a
+##    rebuilt screen keeps its own; the free fall's hand lifts the pink ball at every stage.
 ## 20a. object controls (tests/object_controls_checks.gd, 2026-10-28): no handle in the collision,
 ##    orbit, friction, lever and pulley labs; the slingshot of ball A and the planet, the press and hold
 ##    of the box, the effort end and the rope end (rates per stage, the heaviest within ~3 s); the same
@@ -361,6 +364,11 @@ func _run() -> void:
 	_expect(easy != null and easy.can_instantiate(), "easy controls checks compile", "")
 	if easy != null and easy.can_instantiate():
 		await easy.new(self, _expect).run()
+	print("== first entry (2026-11-03): each lab opens as its first mission says, the free fall's pink ball ==")
+	var first_entry: GDScript = load("res://tests/first_entry_checks.gd")
+	_expect(first_entry != null and first_entry.can_instantiate(), "first entry checks compile", "")
+	if first_entry != null and first_entry.can_instantiate():
+		await first_entry.new(self, _expect).run()
 	print("== object controls (2026-10-28): no handles, slingshot pulls, press-and-hold rates, physics unchanged ==")
 	var objects: GDScript = load("res://tests/object_controls_checks.gd")
 	_expect(objects != null and objects.can_instantiate(), "object controls checks compile", "")

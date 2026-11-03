@@ -15,6 +15,7 @@ extends RefCounted
 
 const UI_THEME := "res://scripts/app/ui_theme.gd"
 const EXPERIMENT_SCREEN := "res://scripts/shell/experiment_screen.gd"
+const FIRST_ENTRY := preload("res://tests/first_entry_checks.gd")   # start_case: the definition's start on a screen
 const TABLET := Vector2(1152, 720)
 const STEP_HZ := 60
 const LABS := ["collision", "orbit", "friction", "rotation", "pulley"]
@@ -54,6 +55,7 @@ func _open(id: String) -> Control:
 	var screen: Control = load(EXPERIMENT_SCREEN).new()
 	screen.setup(ExperimentRegistry.find(id))
 	host.add_child(screen)
+	FIRST_ENTRY.start_case(screen)   # (it opens on stage 1's conditions)
 	for i in 3:
 		await tree.process_frame
 	screen.mission_round.end_question()
