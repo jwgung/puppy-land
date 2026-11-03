@@ -44,9 +44,15 @@ jobs:
           # Release titles end in "(puppy-land-<name>-v<code>)". The newest 200 releases are read;
           # widen --limit if there are ever more. The count is the same one build.sh uses.
           last=$(printf '%s\n' "$titles" | sed -n 's/.*-v\([0-9][0-9]*\))$/\1/p' | sort -n | tail -n 1)
+          # Releases exist but none carries a code: the title format changed, so the check would be blind.
+          if [ -n "$titles" ] && [ -z "$last" ]; then
+            echo "::error::no earlier release title ends in -v<code>); fix this check or the title in the publish job."
+            exit 1
+          fi
           last=${last:-0}
           [ "$code" -gt "$last" ] || { echo "::error::versionCode $code is not above the last release's $last, and Play rejects it. Build from a newer commit."; exit 1; }
           echo "versionCode $code (last release: $last)"
+          echo "GUARD_CODE=$code" >> "$GITHUB_ENV" # the bundle step checks the built code against this
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin
@@ -91,6 +97,7 @@ jobs:
           apps/lab3d/tools/build.sh play | tee "$RUNNER_TEMP/play.log"
           read -r _ name code < <(grep '^play: ' "$RUNNER_TEMP/play.log" | tail -1)
           [ -n "$name" ] && [ -n "$code" ] || { echo "::error::no version in the build output"; exit 1; }
+          [ "$code" = "$GUARD_CODE" ] || { echo "::error::built versionCode $code differs from the checked $GUARD_CODE (build.sh and the check disagree)"; exit 1; }
           stem="puppy-land-${name}-v${code}"
           mkdir -p out
           cp "apps/lab3d/exports/android/${stem}.aab" out/
