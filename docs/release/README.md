@@ -76,7 +76,7 @@ apps/lab3d/tools/build.sh play
 
 1. 앱 만들기: 이름·기본 언어 한국어·앱(게임 아님/교육용인지 정책에 맞게 선택)·무료.
 2. 앱 콘텐츠: 개인정보처리방침 URL `https://jwgung.github.io/puppy-land/privacy/`(`site/privacy`. **main에 머지돼 Pages 배포가 끝난 뒤에야 열리므로** 그 뒤에 입력한다), 광고 없음, 대상 연령(아동 포함 → Families 정책), 콘텐츠 등급(IARC), 데이터 보안(수집·공유 없음), 앱 액세스(로그인 없음).
-3. 스토어 등록정보: `docs/release/store/` 의 그림·스크린샷. 한국어(기본)는 `feature-graphic-ko.png`·`screenshots/ko-*.png`, 영어(en-US)는 `feature-graphic-en.png`·`screenshots/en-*.png`를 쓴다. 그래픽은 `python3 docs/release/store/make_store_art.py`로 만든다(영어는 `scene-throw-en.png`가 있을 때). ko 그림은 `capture_store_shots.gd`가 만들고, 영어 그림은 영어 빌드를 태블릿에서 손으로 찍은 것이다.
+3. 스토어 등록정보: `docs/release/store/` 의 그림·스크린샷. 한국어(기본)는 `feature-graphic-ko.png`·`screenshots/ko-*.png`, 영어(en-US)는 `feature-graphic-en.png`·`screenshots/en-*.png`를 쓴다. 그래픽은 Pillow가 필요하다(`pip install pillow`). `python3 docs/release/store/make_store_art.py`로 만든다(영어는 `scene-throw-en.png`가 있을 때). ko 그림은 `capture_store_shots.gd`가 만들고, 영어 그림은 영어 빌드를 태블릿에서 손으로 찍은 것이다.
 4. **비공개 테스트** 트랙에 AAB 업로드 → 테스터 12명 이상이 **14일 연속** 참여해야 프로덕션을 신청할 수 있다(2023-11 이후 만든 개인 계정). 테스트를 가장 먼저 시작한다.
 5. 프로덕션 신청 → 심사.
 
