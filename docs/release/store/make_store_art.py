@@ -1,7 +1,8 @@
 """Makes the Play Store pictures from the app's own art (pip install pillow):
 - icon-512.png: the launcher icon (assets/icon/icon_bg_432.png + icon_fg_432.png) at 512 x 512,
-- feature-graphic-ko.png: 1024 x 500, the throw lab's 3D scene alone (scene-throw.png,
-  apps/lab3d/tools/capture_store_shots.gd) with the app's name on a paper card in the app's font.
+- feature-graphic-ko.png: 1024 x 500, a capture of the throw lab (scene-throw.png,
+  apps/lab3d/tools/capture_store_shots.gd; the lab's own cards and dialogue box still show in it)
+  with the app's name on a paper card in the app's font.
 Run from the repository root: python3 docs/release/store/make_store_art.py
 """
 from pathlib import Path
