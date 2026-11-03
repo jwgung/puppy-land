@@ -53,7 +53,7 @@
     "stages": [
       {
         "text": "On the Earth, match the turtle's beat with the medium rope!",
-        "say": "A ball on a rope swinging back and forth is called a pendulum. Gravity pulls the ball down, so the pendulum swings. Remember this beat!",
+        "say": "A ball on a rope swinging back and forth is called a **pendulum**. Gravity pulls the ball down, so the pendulum swings. Remember this beat!",
         "win": "Tick-tock! You matched the turtle's beat!",
         "miss": "The beat is off. Try the medium rope!"
       },
@@ -73,7 +73,7 @@
   },
   "story": { "clue": "The piece is inside the turtle clock! Let's swing the ball just like the clock's pendulum!", "map_clue": "It's where a big yellow ball hangs from a post!" },
   "kid": {
-    "intro": "This is the swing lab. A weight on a rope swinging back and forth is called a pendulum. Gravity pulls the ball down. The ball comes down and goes up on the other side. Let's see how slowly it swings for each rope length!",
+    "intro": "This is the swing lab. A weight on a rope swinging back and forth is called a **pendulum**. Gravity pulls the ball down. The ball comes down and goes up on the other side. Let's see how slowly it swings for each rope length!",
     "title": "Let's swing a ball on a rope!",
     "place": "Swing",
     "say": "The rope keeps its length, so the ball swings in a circle. With a longer rope, and on the Moon, it swings more slowly.",

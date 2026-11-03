@@ -60,7 +60,7 @@
   },
   "story": { "clue": "One piece is floating far away in space! Let's shoot the planet and bring it back!", "map_clue": "The last one is at the island's highest lookout!" },
   "kid": {
-    "intro": "This is the star orbit lab. The star pulls the planet towards it. This force is gravity too. The planet runs sideways while the star pulls it in. Running just right, it goes round and round. Let's see how fast to shoot it so it goes around!",
+    "intro": "This is the star orbit lab. The star pulls the planet towards it. This force is **gravity** too. The planet runs sideways while the star pulls it in. Running just right, it goes round and round. Let's see how fast to shoot it so it goes around!",
     "title": "Let's go round and round the star!",
     "place": "Star orbit",
     "say": "The star pulls the planet and makes it go round and round. Close by, it goes around faster, and too fast, it leaves the star.",

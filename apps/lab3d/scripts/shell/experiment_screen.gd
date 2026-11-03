@@ -1590,8 +1590,8 @@ func show_guide() -> bool:
 		"drag", "pull":
 			var to: Vector3 = spec.to
 			hand_guide.play(str(spec.kind), at, func() -> Vector2: return _guide_view_point(to))
-		"hold":
-			hand_guide.play("hold", at)
+		"hold", "tap":
+			hand_guide.play(str(spec.kind), at)
 	return hand_guide.playing()
 
 

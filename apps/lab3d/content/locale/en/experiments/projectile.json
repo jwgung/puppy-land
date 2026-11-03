@@ -62,7 +62,7 @@
   },
   "story": { "clue": "If we hit the boxes one by one, I think the piece will come out!", "map_clue": "Something fell on the grass near the target!" },
   "kid": {
-    "intro": "This is the ball throw lab. A thrown ball flies forward. All the while, the ground pulls the ball down. This pull is called gravity. Let's see where the ball lands for each throw angle!",
+    "intro": "This is the ball throw lab. A thrown ball flies forward. All the while, the ground pulls the ball down. This pull is called **gravity**. Let's see where the ball lands for each throw angle!",
     "title": "Let's throw the ball far!",
     "place": "Ball throw",
     "say": "The ball falls down while it goes forward. So it flies in a curve.",

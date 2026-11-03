@@ -11,10 +11,16 @@ const UI_THEME := "res://scripts/app/ui_theme.gd"
 const EXPERIMENT_SCREEN := "res://scripts/shell/experiment_screen.gd"
 const HOME_SCREEN := "res://scripts/app/island_home_screen.gd"
 const TABLET := Vector2(1152, 720)
-## The gesture each lab's guide shows (its slingshot, its hold, else a drag).
+## The gesture each lab's guide shows: what its object really takes (its slingshot, its hold, a tap
+## where a touch is the whole action, else a drag). 2026-11-03 playtest: the slide's box goes with a
+## touch (a tap, not a drag), the spring's ball is pulled away from the bell.
 const GESTURES := {"projectile": "pull", "collision": "pull", "orbit": "pull", "friction": "hold",
 	"rotation": "hold", "pulley": "hold", "free-fall": "drag", "spring": "drag", "constraints": "drag",
-	"buoyancy": "drag", "incline-friction": "drag"}
+	"buoyancy": "drag", "incline-friction": "tap"}
+## The world direction a lab's drag guide carries its object (the rule's guide_to): the spring's ball
+## out, away from the bell on the pressed side; a falling ball up (the tip, "맨 위에서"); the drum down
+## into the water.
+const TOWARD := {"spring": Vector3.RIGHT, "free-fall": Vector3.UP, "buoyancy": Vector3.DOWN}
 
 
 func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:
@@ -188,6 +194,8 @@ func check_lab(id: String) -> void:
 		problems.append("no guide after the question")
 	elif guide.kind != GESTURES[id] or spec.get("kind") != GESTURES[id]:
 		problems.append("gesture %s, want %s" % [guide.kind, GESTURES[id]])
+	if TOWARD.has(id) and not (spec.get("to") is Vector3 and (spec.to - spec.from).dot(TOWARD[id]) > 0.1):
+		problems.append("the drag goes %s, want along %s" % [str(spec.get("to", Vector3.ZERO) - spec.get("from", Vector3.ZERO)), str(TOWARD[id])])
 	var pick: Vector2 = screen.view_point(spec.get("from", Vector3.ZERO))
 	var view_rect := Rect2(Vector2.ZERO, screen.view.size)
 	if not view_rect.has_point(pick):

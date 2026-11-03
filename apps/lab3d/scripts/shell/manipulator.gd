@@ -855,11 +855,14 @@ func _process(delta: float) -> void:
 const GUIDE_REACH := 0.6
 
 ## The gesture the hand guide (HandGuide) shows for this lab, read only (nothing is pressed or moved):
-## {"kind": "pull" | "hold" | "drag", "id", "from": world point the finger presses now (guide_point),
+## {"kind": "pull" | "hold" | "tap" | "drag", "id", "from": world point the finger presses now (guide_point),
 ## "to": world point the drag or the pull ends at}, or {} when the lab has no object a finger takes now.
 ## The object is the slingshot's, else the first one a finger may pick up. A pull ends where the demo's
 ## pull (slingshot_demo) lands on the slingshot's surface, so it stays the throw's direction when the
-## camera turns.
+## camera turns. The rule says what the lab really takes (2026-11-03 playtest: the hand showed a drag
+## where a touch lets the box go, and the spring's pull the wrong way): `"guide": "tap"` shows a tap
+## (a press and lift there is the lab's whole action); a drag goes GUIDE_REACH of the way towards the
+## rule's `guide_to` end of its region ("min" / "max": region_min / region_max), else its farther end.
 func guide() -> Dictionary:
 	var id := slingshot_id if slingshot_id != "" and rules.has(slingshot_id) else ""
 	if id == "":
@@ -875,12 +878,19 @@ func guide() -> Dictionary:
 		return {"kind": "pull", "id": id, "from": from, "to": to} if to is Vector3 else {}
 	if rules[id].hold:
 		return {"kind": "hold", "id": id, "from": from}
+	if rules[id].get("guide", "") == "tap":
+		return {"kind": "tap", "id": id, "from": from}
 	var surface := _surface_for(id)
 	if surface == null:
 		return {}
 	var at := surface.to_plane(from)
 	var ends := [surface.nearest_inside(surface.region_min), surface.nearest_inside(surface.region_max)]
 	var far: Vector2 = ends[0] if at.distance_to(ends[0]) > at.distance_to(ends[1]) else ends[1]
+	match str(rules[id].get("guide_to", "")):
+		"min":
+			far = ends[0]
+		"max":
+			far = ends[1]
 	var goal := at.lerp(far, GUIDE_REACH)
 	return {"kind": "drag", "id": id, "from": from, "to": surface.pose(goal, surface.height_of(from)).origin}
 
