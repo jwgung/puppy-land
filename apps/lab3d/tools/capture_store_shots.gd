@@ -78,7 +78,7 @@ func _lab(out: String, file: String, id: String, after: float) -> void:
 	await _wait(0.3)
 
 
-## The 3D scene alone (no title, cards or Dugi's box): the feature graphic's background (make_store_art.py).
+## The throw lab's scene (the lab's own cards and Dugi's box still show in it): the feature graphic's background (make_store_art.py).
 func _scene(out: String, file: String, id: String) -> void:
 	DirAccess.remove_absolute(ProgressStore.path)
 	var host := _host()
