@@ -22,6 +22,7 @@ extends RefCounted
 
 const VECTORS_PATH := "res://tests/friction_lab_vectors.json"
 const EXPERIMENT_SCREEN := "res://scripts/shell/experiment_screen.gd"
+const FIRST_ENTRY := preload("res://tests/first_entry_checks.gd")   # start_case: the definition's start on a screen
 const UI_THEME := "res://scripts/app/ui_theme.gd"
 const STEP_HZ := 60
 ## The kid boxes (2026-10-28 user decision "너무 쉽게 밀려"): heavier than the web's 0.5 / 1 / 3 kg.
@@ -92,6 +93,7 @@ func _open() -> Control:
 	var screen: Control = load(EXPERIMENT_SCREEN).new()
 	screen.setup(ExperimentRegistry.find("friction"))
 	host.add_child(screen)
+	FIRST_ENTRY.start_case(screen)   # (it opens on stage 1's conditions)
 	await tree.process_frame
 	await tree.physics_frame
 	await tree.physics_frame

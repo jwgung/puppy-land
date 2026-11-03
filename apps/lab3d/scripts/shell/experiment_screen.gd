@@ -274,10 +274,12 @@ func _ready() -> void:
 	_camera_home = view.rig.get_state()   # the definition's view (before a restored, user-turned one)
 	if not _state.is_empty():
 		_camera_home = _state.get("camera_home", _camera_home)
-		_restore_state()
-	elif apply_launch_args:
-		_apply_launch_args()
-		_camera_home = view.rig.get_state()   # a measurement's --camera is the view it opens with
+		_restore_state()   # (a rebuilt screen keeps its own conditions, not the opening stage's)
+	else:
+		_apply_entry_conditions()
+		if apply_launch_args:
+			_apply_launch_args()   # (after: a measurement's --ctl-* wins)
+			_camera_home = view.rig.get_state()   # a measurement's --camera is the view it opens with
 	_refresh()
 	_setup_slingshot()   # after the state: a restored launch point is the pull's origin
 	_setup_tap_catcher() # before the question: it keeps the overlays' order (the question moves the box)
@@ -810,6 +812,19 @@ func _release_mission_text(pulse: bool) -> void:
 	_fit_mission_strip()
 	if pulse:
 		_pulse_strip()
+
+
+## The lab as the stage it opens at says (MissionRound.entry_conditions, 2026-11-03 playtest: the first
+## mission and the lab must agree): set once, through _set_control like a tap, before the child can
+## touch anything; the hand guide still waits for the child.
+func _apply_entry_conditions() -> void:
+	if mission_round == null:
+		return
+	var values := mission_round.entry_conditions()
+	var touched := _guide_touched
+	for id in values:
+		_set_control(id, values[id])
+	_guide_touched = touched
 
 
 ## missions.auto_conditions (2026-10-29: the collision's ball weights): the conditions the round asks

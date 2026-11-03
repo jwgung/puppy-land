@@ -15,6 +15,7 @@
 extends RefCounted
 
 const EXPERIMENT_SCREEN := "res://scripts/shell/experiment_screen.gd"
+const FIRST_ENTRY := preload("res://tests/first_entry_checks.gd")   # start_case: the definition's start on a screen
 const UI_THEME := "res://scripts/app/ui_theme.gd"
 const POSE_TOL := 1e-4
 const CHECK_FRAMES := 10
@@ -159,6 +160,7 @@ func _open(definition: Dictionary) -> Control:
 	var screen: Control = load(EXPERIMENT_SCREEN).new()
 	screen.setup(definition)
 	host.add_child(screen)
+	FIRST_ENTRY.start_case(screen)   # (it opens on stage 1's conditions)
 	for i in 5:
 		await tree.process_frame
 	await tree.physics_frame
@@ -349,6 +351,7 @@ func _case(definition: Dictionary, wait: int, sidebar: bool, hold_box: bool) -> 
 	var screen: Control = load(EXPERIMENT_SCREEN).new()
 	screen.setup(definition)
 	host.add_child(screen)
+	FIRST_ENTRY.start_case(screen)   # (it opens on stage 1's conditions)
 	for i in 5:
 		await tree.process_frame
 	await tree.physics_frame

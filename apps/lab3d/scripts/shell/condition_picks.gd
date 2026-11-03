@@ -38,13 +38,21 @@ static func auto(definition: Dictionary) -> bool:
 	return MissionRound.missions(definition).get("auto_conditions", false) == true
 
 
-## What an auto_conditions lab sets for stage `stage` ({} for none or past the last): per condition the
-## exact value or option id; for a {min, max} range the first kid.picks value of the control that
-## fits it, else the range's own bound (min, else max).
+## What an auto_conditions lab sets for stage `stage` ({} for none, past the last, or a lab with
+## picture buttons): stage_values.
 static func auto_values(definition: Dictionary, stage: int) -> Dictionary:
+	return stage_values(definition, stage) if auto(definition) else {}
+
+
+## The settings that make stage `stage`'s conditions hold ({} for none or past the last): per condition
+## the exact value or option id; for a {min, max} range the first kid.picks value of the control that
+## fits it, else the range's own bound (min, else max). An auto_conditions lab sets them at every stage;
+## every lab gets them for the stage it opens at (2026-11-03 playtest: the first mission said "the
+## light box" or "press near" while the lab stood on its own start, MissionRound.entry_conditions).
+static func stage_values(definition: Dictionary, stage: int) -> Dictionary:
 	var stages: Array = MissionRound.missions(definition).get("stages", [])
 	var out := {}
-	if not auto(definition) or stage < 0 or stage >= stages.size():
+	if stage < 0 or stage >= stages.size():
 		return out
 	var conditions: Dictionary = stages[stage].get("conditions", {})
 	for id in conditions:
@@ -122,8 +130,8 @@ static func selected(preset: Dictionary, have: Variant) -> bool:
 
 
 ## kid.picks: every stage condition a child must change has buttons, each value is a real setting of
-## its control, each picture is known, and every stage's buttons hold one value that satisfies it
-## and one that does not.
+## its control, each picture is known, every stage's buttons hold one value that satisfies it
+## and one that does not, and every stage's conditions have a setting that fits (stage_values).
 static func validate(definition: Dictionary) -> PackedStringArray:
 	var problems := PackedStringArray()
 	var kid: Variant = definition.get("kid")
@@ -150,6 +158,12 @@ static func validate(definition: Dictionary) -> PackedStringArray:
 				break
 	var stages: Array = MissionRound.missions(definition).get("stages", [])
 	var fixed := fixed_controls(definition)
+	for i in stages.size():   # the settings the lab takes for a stage (it opens there) are real and fit it
+		var values := stage_values(definition, i)
+		for id in values:
+			if not controls.has(id) or not _real_value(controls[id], values[id]) \
+					or not MissionRound.condition_holds(stages[i].get("conditions", {})[id], values[id]):
+				problems.append("missions.stages[%d]: no setting of %s fits its condition (add a kid.picks value)" % [i, id])
 	if auto(definition):   # no buttons: every stage must name what the lab sets
 		for i in stages.size():
 			if auto_values(definition, i).is_empty():

@@ -179,8 +179,8 @@
   "manipulation": {
     "grab_radius": 72.0,
     "objects": [
-      { "id": "drop_red", "surface": "drop_red", "snap": 1.0, "height": false, "guide_to": "max" },
       { "id": "drop_yellow", "surface": "drop_yellow", "snap": 1.0, "height": false, "guide_to": "max" },
+      { "id": "drop_red", "surface": "drop_red", "snap": 1.0, "height": false, "guide_to": "max" },
       { "id": "red", "surface": "line", "snap": 0.5, "height": false, "drag": false },
       { "id": "yellow", "surface": "line", "snap": 0.5, "height": false, "drag": false }
     ]
