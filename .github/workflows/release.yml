@@ -1,8 +1,12 @@
 # A v* tag builds the Play Store bundle (AAB, signed with the upload key) and attaches it to a GitHub
 # Release; the bundle is then uploaded to the Play Console by hand (docs/release/README.md).
 # The version comes from apps/lab3d/tools/build.sh play: versionCode = commits up to the tag,
-# versionName = the tag (v0.1.1 -> 0.1.1). A manual run (workflow_dispatch) uploads an artifact only.
-# Secrets: UPLOAD_KEYSTORE_BASE64, UPLOAD_STORE_PASSWORD (the key's password is the same), alias "upload".
+# versionName = the tag (v0.1.1 -> 0.1.1). A manual run (workflow_dispatch) uploads an artifact only,
+# and only when started on a v* tag (on any other ref the environment's deployment rule stops the job).
+# The build must beat the versionCode of every earlier GitHub Release (Play rejects a lower one).
+# Secrets live in the "play-release" Environment, not in the repository: UPLOAD_KEYSTORE_BASE64,
+# UPLOAD_STORE_PASSWORD (the key's password is the same), alias "upload". Its deployment rule allows
+# v* tags only (docs/release/README.md, section 2). Third-party actions are pinned to commit SHAs.
 name: Release
 
 on:
@@ -18,17 +22,32 @@ jobs:
   bundle:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    environment: play-release
     env:
       GODOT_DIR: ${{ github.workspace }}/.godot-bin
       TPZ_DIR: ${{ github.workspace }}/.godot-templates
     outputs:
       stem: ${{ steps.bundle.outputs.stem }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0 # the commit count and the tags give the version
           persist-credentials: false
-      - uses: actions/setup-java@v4
+      - name: versionCode must beat every earlier release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          code=$(git rev-list --count HEAD)
+          # Read the list first: a failed gh call must stop the build, not look like "no release yet".
+          titles=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 200 --json name -q '.[].name') \
+            || { echo "::error::could not list the earlier releases"; exit 1; }
+          # Release titles end in "(puppy-land-<name>-v<code>)". The newest 200 releases are read;
+          # widen --limit if there are ever more. The count is the same one build.sh uses.
+          last=$(printf '%s\n' "$titles" | sed -n 's/.*-v\([0-9][0-9]*\))$/\1/p' | sort -n | tail -n 1)
+          last=${last:-0}
+          [ "$code" -gt "$last" ] || { echo "::error::versionCode $code is not above the last release's $last, and Play rejects it. Build from a newer commit."; exit 1; }
+          echo "versionCode $code (last release: $last)"
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin
           java-version: 17
@@ -39,7 +58,7 @@ jobs:
       # Only the official release files are cached; the install scripts re-verify their pinned SHA-512
       # on every run, so a cache entry cannot change what is used.
       - name: Cache Godot release files
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: |
             ${{ env.GODOT_DIR }}/Godot_v4.7.2-stable_linux.x86_64.zip
@@ -52,14 +71,15 @@ jobs:
           mkdir -p ~/.config/godot
           printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/android_sdk_path = "%s"\nexport/android/java_sdk_path = "%s"\n' \
             "$ANDROID_HOME" "$JAVA_HOME" > ~/.config/godot/editor_settings-4.7.tres
+      - name: Tests (a bundle is never built from a commit that fails them)
+        run: apps/lab3d/tools/build.sh test
+      # Decoded right before the build, so the tests above (which run repository scripts) never see the key.
       - name: Upload key
         env:
           UPLOAD_KEYSTORE_BASE64: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
         run: |
           [ -n "$UPLOAD_KEYSTORE_BASE64" ] || { echo "::error::Secret UPLOAD_KEYSTORE_BASE64 is missing: a bundle without the upload key cannot go to the Play Store."; exit 1; }
           printf '%s' "$UPLOAD_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
-      - name: Tests (a bundle is never built from a commit that fails them)
-        run: apps/lab3d/tools/build.sh test
       - name: Play bundle
         id: bundle
         env:
@@ -76,7 +96,10 @@ jobs:
           cp "apps/lab3d/exports/android/${stem}.aab" out/
           echo "stem=$stem" >> "$GITHUB_OUTPUT"
           ls -l out
-      - uses: actions/upload-artifact@v4
+      - name: Remove the upload key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: ${{ steps.bundle.outputs.stem }}
           path: out/*
@@ -84,13 +107,14 @@ jobs:
           retention-days: 7
 
   publish:
-    if: github.ref_type == 'tag'
+    # Only a tag push makes a Release; a manual run (also on a tag) stops at the artifact.
+    if: github.event_name == 'push' && github.ref_type == 'tag'
     needs: [bundle]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           path: out
           merge-multiple: true

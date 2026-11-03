@@ -15,18 +15,34 @@ keytool -genkeypair -v -keystore upload.jks -alias upload \
 - `upload.jks`는 **저장소에 넣지 않는다**. 비밀번호 관리자 등 두 곳 이상에 백업한다.
 - 이 파일을 repo 안에 두더라도 `.gitignore`가 `*.jks`·`*.keystore`를 막는지 먼저 확인한다.
 
-## 2. GitHub 시크릿
+## 2. GitHub 시크릿 (Environment `play-release`)
 
-저장소 Settings → Secrets and variables → Actions:
+서명 시크릿은 저장소 전체 시크릿이 아니라 **Environment `play-release`** 에 둔다. 저장소에 쓰기 권한이 있는 사람이나 다른 브랜치의 워크플로가 읽지 못하게 하려는 것이다. 저장소 Settings → Environments → `play-release`:
 
 | 이름 | 값 |
 |---|---|
 | `UPLOAD_KEYSTORE_BASE64` | `base64 -w0 upload.jks` 출력 |
 | `UPLOAD_STORE_PASSWORD` | 키스토어(=키) 비밀번호 |
 
+- Deployment branches and tags: **Selected branches and tags** → 태그 규칙 `v*` 하나만. 브랜치(`main` 포함)에서 돈 워크플로는 시크릿을 읽지 못한다.
+- 저장소 수준 시크릿에 같은 이름이 남아 있으면 지운다(Environment가 있어도 저장소 시크릿은 모든 워크플로가 읽는다).
+- **Required reviewers**에 본인을 넣는다. 쓰기 권한이 있는 사람이 워크플로를 고쳐 `v*` 태그로 실행하면 `v*` 규칙만으로는 시크릿을 읽을 수 있다. 승인 한 번을 거치게 해 그 경로를 막는다. 혼자 쓰는 저장소라면 "Prevent self-review"는 끈다(켜면 본인이 승인하지 못해 릴리스가 멈춘다). 태그를 만들 수 있는 사람을 제한하려면 Settings → Rules → Rulesets에서 `v*` 태그 규칙을 추가한다.
+- 명령으로 만들 때:
+
+```bash
+gh api -X PUT repos/<owner>/<repo>/environments/play-release \
+  --input - <<< '{"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true}}'
+gh api -X POST repos/<owner>/<repo>/environments/play-release/deployment-branch-policies \
+  -f name='v*' -f type=tag
+base64 -w0 upload.jks | gh secret set UPLOAD_KEYSTORE_BASE64 --env play-release
+gh secret set UPLOAD_STORE_PASSWORD --env play-release < upload.password
+```
+
 ## 3. 빌드
 
-**CI(권장)**: `git tag v0.1.1 && git push origin v0.1.1` → `.github/workflows/release.yml`이 서명된 AAB를 만들어 GitHub Release에 붙인다. 수동 실행(workflow_dispatch)은 아티팩트만 올린다.
+**CI(권장)**: `git tag v0.1.1 && git push origin v0.1.1` → `.github/workflows/release.yml`이 서명된 AAB를 만들어 GitHub Release에 붙인다. 수동 실행(workflow_dispatch)도 **태그를 골라서** 실행해야 한다(브랜치에서 실행하면 Environment(`play-release`)의 배포 규칙에 막혀 job이 시작되지 않는다). 수동 실행은 아티팩트만 올리고, GitHub Release는 태그 push로만 만들어진다. CI는 Godot 편집기 설정(SDK·Java 경로)을 워크플로가 직접 기록한다.
+
+CI는 빌드 전에 versionCode가 이전 GitHub Release 제목 끝의 `-v<코드>`보다 큰지 검사한다. 같거나 작으면 Play가 거부하므로 거기서 실패한다(히스토리를 줄이는 정리 뒤에도 안전망이 된다).
 
 **로컬**:
 
