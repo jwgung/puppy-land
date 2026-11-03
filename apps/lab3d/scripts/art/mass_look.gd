@@ -3,7 +3,7 @@
 ## the drawn size follows the cube root of the mass: twice the size is 8 times the mass, and equal
 ## masses look equal. Visual only: the labs keep their bodies, collision shapes and formula models
 ## (the mesh grows from the body's contact point, ArtJuice.look_scale). No lab needs a clamp: their
-## mass ranges stay within a size ratio of 2.8 (0.5-10 kg collision, 2-10 kg friction, 1-20 kg
+## mass ranges stay within a size ratio of 2.8 (0.5-10 kg collision, 2-16 kg friction, 1-20 kg
 ## lever and pulley), so every order and equality is the cube root's own.
 ## The buoyancy drum is not here: its size is its volume (큰 통 / 작은 통); its mass is the weight on
 ## its lid (BuoyancyProps).
@@ -16,10 +16,15 @@ static func factor(mass: float, reference: float) -> float:
 	return pow(mass / reference, 1.0 / 3.0)
 
 
-## Radii (a, b) of two balls of one stuff resting on one floor that touch exactly when their centres
-## are `reach` apart along it (the collision lab's model contact, radius_a + radius_b). Resting on the
-## floor, balls of radii a and b touch at a horizontal distance 2 sqrt(a b); with a / b the cube root
-## of the mass ratio that gives a = reach / 2 (m_a / m_b)^(1/6). Equal masses: reach / 2 each.
-static func touching_radii(mass_a: float, mass_b: float, reach: float) -> Vector2:
-	var q := pow(mass_a / mass_b, 1.0 / 6.0)
-	return Vector2(0.5 * reach * q, 0.5 * reach / q)
+## Radius of a ball of `mass` (kg) of the stuff whose 1 kg ball has radius `radius_1kg`: it follows
+## its own mass only (another ball's mass never changes it; 2026-11-03 playtest).
+static func radius(mass: float, radius_1kg: float) -> float:
+	return radius_1kg * factor(mass, 1.0)
+
+
+## How far two balls of radii `a` and `b` resting on one floor must each be drawn along it away from
+## each other (negative: towards each other) so that they touch exactly when their centres are `reach`
+## apart (the collision lab's model contact, radius_a + radius_b). Resting on the floor, balls of radii
+## a and b touch at a horizontal distance 2 sqrt(a b).
+static func touching_shift(a: float, b: float, reach: float) -> float:
+	return 0.5 * (2.0 * sqrt(a * b) - reach)

@@ -26,7 +26,7 @@ const FIRST_ENTRY := preload("res://tests/first_entry_checks.gd")   # start_case
 const UI_THEME := "res://scripts/app/ui_theme.gd"
 const STEP_HZ := 60
 ## The kid boxes (2026-10-28 user decision "너무 쉽게 밀려"): heavier than the web's 0.5 / 1 / 3 kg.
-const KID_MASSES := {"light": 2.0, "normal": 5.0, "heavy": 10.0}
+const KID_MASSES := {"light": 2.0, "normal": 6.0, "heavy": 16.0}   # 2026-11-03 (before 2 / 5 / 10 kg)
 
 var tree: SceneTree
 var expect: Callable   # (ok: bool, label: String, detail: String)
@@ -151,7 +151,7 @@ func check_definition() -> void:
 				# (2026-10-28 user decision "너무 쉽게 밀려"): the law's parity runs on the web's masses
 				# (set_box_mass), not on these presets.
 				ok = ok and float(option.kg) == float(KID_MASSES.get(option.id, masses.get(option.id, NAN)))
-	expect.call(ok and materials.size() == 4 and masses.size() == 4, "friction: material options = the TS vectors (web MATERIALS); the start box = the web's 8 kg, the kid boxes 2 / 5 / 10 kg (not the web's 0.5 / 1 / 3 kg buttons)", str(materials))
+	expect.call(ok and materials.size() == 4 and masses.size() == 4, "friction: material options = the TS vectors (web MATERIALS); the start box = the web's 8 kg, the kid boxes 2 / 6 / 16 kg (not the web's 0.5 / 1 / 3 kg buttons)", str(materials))
 
 
 # --- 2. force schedules -----------------------------------------------------------------------
@@ -261,11 +261,11 @@ func check_conditions() -> void:
 	lab.set_control("mass", "nope")
 	lab.set_control("material", "glass")
 	var want_material := PhysicsLaws.push_max_static_force(0.76, 8.0, 9.81)
-	var want_mass := PhysicsLaws.push_max_static_force(0.76, 10.0, 9.81)
+	var want_mass := PhysicsLaws.push_max_static_force(0.76, 16.0, 9.81)
 	expect.call(back and float(after_material.max_static) == want_material and float(after_material.heat) == 0.0 and float(after_mass.max_static) == want_mass
-		and lab.box.mass == 10.0 and lab.mass_id == "heavy" and lab.material_id == "clay" and lab.graph_series().applied.is_empty(),
+		and lab.box.mass == 16.0 and lab.mass_id == "heavy" and lab.material_id == "clay" and lab.graph_series().applied.is_empty(),
 		"friction: material and mass change the limit and the box mass, put the box back and clear the run; unknown ids are ignored",
-		"clay 8 kg %.3f N, clay 10 kg %.3f N" % [float(after_material.max_static), float(after_mass.max_static)])
+		"clay 8 kg %.3f N, clay 16 kg %.3f N" % [float(after_material.max_static), float(after_mass.max_static)])
 	await _free(lab)
 
 

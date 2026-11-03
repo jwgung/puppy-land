@@ -8,12 +8,16 @@
 ##   until then each with a white band)
 ##   that shows it rolling, its ArtJuice (shadow, dust, squash),
 ## - the balls' look follows their masses (set_sizes, 2026-10-28 user request: two 1 kg balls looked
-##   different): one stuff, radii in the cube root of the mass ratio, chosen so that the two balls
-##   resting on the floor touch exactly at the model's contact (centres radius_a + radius_b apart
-##   along the rail, MassLook.touching_radii); each grows from its body's bottom (ArtJuice.look_scale).
-##   The model, its radii and the bodies stay as they are. Ball A only ever meets the left bumper and
-##   B the right one (A starts left of B and the model never lets them pass), so each bumper's face is
-##   put where its ball's look reaches at the model's wall bounce.
+##   different): one stuff, each radius from its own mass only, LOOK_1KG (m / 1 kg)^(1/3)
+##   (MassLook.radius; 2026-11-03 playtest "주황 공을 키우면 파랑 공이 줄어드는지": until then both radii
+##   came from the mass ratio with a fixed sum, so a heavier orange ball made the blue one smaller).
+##   Each grows from its body's bottom (ArtJuice.look_scale). So that the two looks resting on the
+##   floor still touch exactly at the model's contact (centres radius_a + radius_b apart along the
+##   rail), each look is moved `shift` along the rail away from the other (ArtJuice.set_carry; it
+##   touches at 2 sqrt(a b) apart, MassLook.touching_shift). The model, its radii and the bodies stay
+##   as they are. Ball A only ever meets the left bumper and B the right one (A starts left of B and
+##   the model never lets them pass), so each bumper's face is put where its ball's look reaches at
+##   the model's wall bounce.
 ## - one arrow per ball above it: the purple velocity arrow while waiting (the web's purple arrow;
 ##   while ball A is pulled, the pull's velocity), the momentum arrow p = mv in the ball's colour
 ##   while it moves (the web's momentum arrows; length 0.25 m per kg m/s),
@@ -46,7 +50,10 @@ const CAT_OFF_LEAN := 15.0       # deg: the most it leans over the rail
 const CAT_HALF := 0.42           # m: the cat's half width with a margin (it stays off the bumpers)
 const CAT_SPREAD := 0.55         # rad: the paws either side of the ball's side facing the cat
 const CAT_PAW_LIFT := 0.12       # m above the ball's centre
-const BUMPER_RUN := 0.5          # m of lane drawn under a bumper (it may move out by up to 0.34 m)
+const BUMPER_RUN := 2.4          # m of lane drawn under a bumper, centred on its face (it moves -0.14..+1.09 m)
+## Look radius of a 1 kg ball (m): two 1 kg balls (the first stage) touch at the model's contact
+## without any shift, as they looked before 2026-11-03.
+const LOOK_1KG := 0.45
 
 var juice_a: ArtJuice
 var juice_b: ArtJuice
@@ -60,6 +67,9 @@ var _radius_a := 0.4             # the model's (and the bodies') radii
 var _radius_b := 0.5
 ## The balls' look radii now (set_sizes): x = A, y = B.
 var look := Vector2(0.4, 0.5)
+## How far each look is moved along the rail away from the other ball (m, negative: towards it), so
+## that the looks touch at the model's contact (set_sizes).
+var shift := 0.0
 var bumper_left: MeshInstance3D
 var bumper_right: MeshInstance3D
 var _force_tween: Tween
@@ -89,10 +99,10 @@ static func bumper_mesh(side: float) -> Mesh:
 	var b := ArtKit.builder()
 	b.ao_min = 0.9
 	# 1 mm under the rail's own lane and guide rails where they overlap (no z-fighting).
-	b.add_rounded_box(Transform3D(Basis(), Vector3(side * BUMPER_RUN * 0.5, -0.029, 0.0)), Vector3(BUMPER_RUN, 0.06, LANE_WIDTH), 0.02, 1, ArtPalette.YELLOW, ArtPalette.YELLOW_TOP)
+	b.add_rounded_box(Transform3D(Basis(), Vector3(0.0, -0.029, 0.0)), Vector3(BUMPER_RUN, 0.06, LANE_WIDTH), 0.02, 1, ArtPalette.YELLOW, ArtPalette.YELLOW_TOP)
 	b.ao_min = 1.0
 	for z in [-1.0, 1.0]:
-		b.add_rounded_box(Transform3D(Basis(), Vector3(side * BUMPER_RUN * 0.5, 0.029, z * (LANE_WIDTH * 0.5 - 0.04))), Vector3(BUMPER_RUN, 0.06, 0.08), 0.0, 1, ArtPalette.WHITE)
+		b.add_rounded_box(Transform3D(Basis(), Vector3(0.0, 0.029, z * (LANE_WIDTH * 0.5 - 0.04))), Vector3(BUMPER_RUN, 0.06, 0.08), 0.0, 1, ArtPalette.WHITE)
 	b.ao_min = 0.85
 	b.ao_height = 0.4
 	b.add_rounded_box(Transform3D(Basis(), Vector3(side * 0.15, 0.3, 0.0)), Vector3(0.3, 0.6, LANE_WIDTH + 0.2), 0.05, 1, ArtPalette.BLUE, ArtPalette.BLUE_DARK)
@@ -147,20 +157,25 @@ func dress(experiment: Node3D, ball_a: RigidBody3D, radius_a: float, ball_b: Rig
 	set_sizes(1.0, 1.0)
 
 
-## The balls' look for masses `mass_a` / `mass_b` (kg): look radii, the juices' look scale and the
-## bumper faces (visual only; nothing is rebuilt).
+## The balls' look for masses `mass_a` / `mass_b` (kg): each look radius from its own mass, the
+## juices' look scale, the shift that makes the looks touch at the model's contact and the bumper
+## faces (visual only; nothing is rebuilt).
 func set_sizes(mass_a: float, mass_b: float) -> void:
-	look = MassLook.touching_radii(mass_a, mass_b, _radius_a + _radius_b)
+	look = Vector2(MassLook.radius(mass_a, LOOK_1KG), MassLook.radius(mass_b, LOOK_1KG))
+	shift = MassLook.touching_shift(look.x, look.y, _radius_a + _radius_b)
 	juice_a.set_look_scale(look.x / _radius_a)
 	juice_b.set_look_scale(look.y / _radius_b)
-	# The model's wall bounce puts a centre radius from the wall: the look reaches look - radius further.
-	bumper_left.position = Vector3(-(_wall + look.x - _radius_a), 0.0, 0.0)
-	bumper_right.position = Vector3(_wall + look.y - _radius_b, 0.0, 0.0)
+	juice_a.set_carry(Vector3(-shift, 0.0, 0.0))
+	juice_b.set_carry(Vector3(shift, 0.0, 0.0))
+	# The model's wall bounce puts a centre radius from the wall: the look reaches look - radius + shift further.
+	bumper_left.position = Vector3(-(_wall + look.x - _radius_a + shift), 0.0, 0.0)
+	bumper_right.position = Vector3(_wall + look.y - _radius_b + shift, 0.0, 0.0)
 
 
-## Centre of a ball's look: above its body's centre by look - radius (the look stands on the body's bottom).
+## Centre of a ball's look: above its body's centre by look - radius (the look stands on the body's
+## bottom), `shift` along the rail away from the other ball.
 func look_centre(ball: Node3D, a: bool) -> Vector3:
-	return ball.global_position + Vector3.UP * ((look.x - _radius_a) if a else (look.y - _radius_b))
+	return ball.global_position + Vector3(-shift if a else shift, (look.x - _radius_a) if a else (look.y - _radius_b), 0.0)
 
 
 ## Where the cat stands for ball A at `at` that will start with `velocity` (m/s) on a rail with its
@@ -174,11 +189,16 @@ static func cat_root(at: Vector3, velocity: float, wall: float) -> Vector3:
 	return Vector3(x, 0.0, 0.0)
 
 
-## Waiting (not released): the cat's paws on ball A at `at` (radius `radius`, start `velocity`).
-func update_cat(at: Vector3, radius: float, velocity: float, released_now: bool) -> void:
+## Waiting (not released): the cat's paws on ball A's look at `at` (radius `radius`, start
+## `velocity`). It stands behind the look or behind the body, whichever is farther back: a look drawn
+## towards B (shift < 0) never draws the cat into the body.
+func update_cat(at: Vector3, radius: float, velocity: float, released_now: bool, body_x := NAN) -> void:
 	if cat == null or released_now:
 		return
-	var root := cat_root(at, velocity, _wall)
+	var stand := at
+	if not is_nan(body_x):
+		stand.x = minf(at.x, body_x) if velocity >= 0.0 else maxf(at.x, body_x)
+	var root := cat_root(stand, velocity, _wall)
 	# Behind the rail it reaches over it, its head kept off the ball (the arms reach the rest).
 	cat.grab(root, CatActor.facing(root, at), CatActor.ball_grip(at, radius, root, CAT_SPREAD, CAT_PAW_LIFT), 0.0,
 		CatActor.GRAB_LEAN_FWD_DEG if root.z == 0.0 else CAT_OFF_LEAN)

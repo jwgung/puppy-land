@@ -387,6 +387,10 @@ func check_orbit() -> void:
 		while model.outcome == "" and model.steps < 60 * 120:
 			model.step(dt)
 		return model.outcome
+	# And the planet must take the far piece on its way (2026-11-03: "fetched", the formula path).
+	var also: Array = stages[2].get("also", [])
+	if also.size() != 1 or also[0].observe != "fetched" or float(also[0].threshold) != 0.5:
+		problems.append("stage 3: also %s (want the far piece fetched)" % str(also))
 	if rule.observe != "launch_speed" or rule.judge_on != ["far"] or reach.call(3.7) != "far" or reach.call(3.6) != "far" or absf(escape - 3.674) > 1e-3:
 		problems.append("stage 3: rule %s, 3.7 m/s %s, 3.6 m/s %s, escape %.3f" % [str(rule), reach.call(3.7), reach.call(3.6), escape])
 	expect.call(problems.is_empty(),
@@ -430,15 +434,19 @@ func check_push() -> void:
 	lab.set_control("material", "wood")
 	if not (cards == ["", "", ""] and bars[0] < bars[1] and bars[1] < bars[2] and bars[2] < 1.0
 			and absf(ExperimentRegistry.card_bar(definition, "start_force") - full) < 1e-3):
-		problems.append("the bar: cards %s, lengths %s, full %.3f N vs clay 10 kg %.3f N" % [str(cards), str(bars), ExperimentRegistry.card_bar(definition, "start_force"), full])
+		problems.append("the bar: cards %s, lengths %s, full %.3f N vs clay 16 kg %.3f N" % [str(cards), str(bars), ExperimentRegistry.card_bar(definition, "start_force"), full])
+	# 2026-11-03 playtest "상자 별로 미는 힘 차이가 잘 안 느껴짐. 좀 더 차이를 두자": the normal box takes at
+	# least 3 times the light box's push and the heavy one at least 8 times (before 2.5 and 5 times).
+	if not (shown[1] >= 3.0 * shown[0] - 1e-9 and shown[2] >= 8.0 * shown[0] - 1e-9 and bars[2] - bars[0] > 0.45):
+		problems.append("too alike: pushes %s, bars %s" % [str(shown), str(bars)])
 	expect.call(problems.is_empty() and shown[0] < shown[1] and shown[1] < shown[2]
 		and ExperimentRegistry.shown_cards(definition) == ["start_force"],
-		"goal (push): the key card shows the push that started the box as a bar (μs·m·g: 7.8 -> 19.6 -> 39.2 N light -> normal -> heavy, longer each, full at clay 10 kg 74.6 N; no text), from the moment it moves, kept after it stops, cleared by a new box",
+		"goal (push): the key card shows the push that started the box as a bar (μs·m·g: 7.8 -> 23.5 -> 62.8 N light -> normal -> heavy, 1 : 3 : 8, longer each, full at clay 16 kg 119.3 N; no text), from the moment it moves, kept after it stops, cleared by a new box",
 		"%s %s; %s" % [str(shown), str(bars), "; ".join(problems)])
-	# Heavier kid boxes (2026-10-28 "너무 쉽게 밀려"); since the press and hold (2026-10-28) wood takes
-	# 0.31 / 0.78 / 1.57 s of holding, and every material moves every box within the hold's cap (the
-	# heaviest, clay 10 kg, within 3 s); pushed for 1 s and let go, the box slides and friction stops
-	# it on the track.
+	# Heavier kid boxes (2026-10-28 "너무 쉽게 밀려", 2026-11-03 more apart); since the press and hold
+	# (2026-10-28) wood takes 0.31 / 0.94 / 2.51 s of holding, and every material moves every box within
+	# the hold's cap (the heaviest, the sidebar's clay 16 kg, within 5 s); pushed for 1 s and let go,
+	# the box slides and friction stops it on the track.
 	problems = []
 	var travel := []
 	var reach: float = lab.PUSH_MAX
@@ -467,8 +475,12 @@ func check_push() -> void:
 			if not moving or lab.status() != "holding" or lab.model.displacement <= 0.0:
 				problems.append("%s %s: %.0f N moving %s, then %s at %.2f m" % [material, mass, push, moving, lab.status(), lab.model.displacement])
 	lab.queue_free()
-	expect.call(problems.is_empty() and travel == [0.31, 0.78, 1.57] and slowest <= 3.0,
-		"goal (push): the kid boxes 2 / 5 / 10 kg start after 0.31 / 0.78 / 1.57 s of holding on wood; every material moves every box within the cap (clay 10 kg 74.6 < 80 N, after %.2f s), slides and stops on the track" % slowest,
+	var want_travel := [0.31, 0.94, 2.51]
+	var travel_ok := travel.size() == 3
+	for i in mini(travel.size(), 3):
+		travel_ok = travel_ok and absf(float(travel[i]) - want_travel[i]) < 1e-6
+	expect.call(problems.is_empty() and travel_ok and slowest <= 5.0,
+		"goal (push): the kid boxes 2 / 6 / 16 kg start after 0.31 / 0.94 / 2.51 s of holding on wood; every material moves every box within the cap (clay 16 kg 119.3 < 125 N, after %.2f s), slides and stops on the track" % slowest,
 		"wood %s s; %s" % [str(travel), "; ".join(problems)])
 
 

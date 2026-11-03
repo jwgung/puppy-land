@@ -73,11 +73,3 @@ static func add_arrow(b: ArtMeshBuilder, xf: Transform3D, length: float, arrow_c
 	var along := xf.basis * Basis(Vector3.BACK, -PI * 0.5)
 	b.add_cylinder(Transform3D(along, xf.origin), RADIUS, RADIUS, shaft, 6, arrow_color, true, arrow_top)
 	b.add_cylinder(Transform3D(along, xf * Vector3(shaft, 0.0, 0.0)), RADIUS * 2.6, 0.0, HEAD_LENGTH, 6, arrow_color, true, arrow_top)
-
-
-## The yellow knob at an arrow tip that a finger drags (a bevelled cube of `size`).
-static func knob_mesh(size: float) -> Mesh:
-	var b := ArtKit.builder()
-	b.ao_min = 0.9
-	b.add_rounded_box(Transform3D.IDENTITY, Vector3.ONE * size, 0.05, 1, ArtPalette.YELLOW, ArtPalette.YELLOW_TOP)
-	return b.commit()

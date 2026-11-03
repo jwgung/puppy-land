@@ -5,10 +5,11 @@
 ## beside the box fills, both stopping at the push that starts the box (2026-11-01); letting go sets it back to 0 at once and the box slides on until friction
 ## stops it (the web's handle let go). The box starts exactly when the ramped force passes
 ## mu_s m g (PushFrictionLaw). Conditions: material (the web's four, mu_s =
-## friction + 0.18, mu_k = friction) and mass (the kid boxes 2 / 5 / 10 kg and the web's 8 kg start
+## friction + 0.18, mu_k = friction) and mass (the kid boxes 2 / 6 / 16 kg and the web's 8 kg start
 ## box; 2026-10-28 user decision "너무 쉽게 밀려": the web's 0.5 / 1 / 3 kg buttons broke loose with
-## 10-60 cm of handle on wood, now about 0.4 / 1 / 2 m. The law is the web's: its vectors drive the
-## lab with the web's masses through set_box_mass).
+## 10-60 cm of handle on wood, then 2 / 5 / 10 kg; 2026-11-03 playtest (the push differences between the boxes
+## were hard to feel): 2 / 6 / 16 kg, a push of 1 : 3 : 8 instead of 1 : 2.5 : 5. The law is the web's: its
+## vectors drive the lab with the web's masses through set_box_mass).
 ## Motion: Jolt + ContactFrictionCorrector (method "contact_force", law "push": PushFrictionLaw
 ## injected along the floor, engine friction 0). Displayed numbers, the state ("버팀" / "움직임" /
 ## track end) and the graph come from PushFrictionModel (the same law stepped in 64 bit); the engine
@@ -19,15 +20,15 @@ extends Experiment
 
 const BOX := 0.7
 const START_X := -3.0
-const LOOK_MASS := 8.0        # kg: the box that looks BOX big (the web's start box)
+const LOOK_MASS := 4.0        # kg: the box that looks BOX big (2026-11-03, the 8 kg start box until then: the light box was so small the cat stood over it)
 ## Box centres beyond these x stop the box (the yellow track ends at +-TRACK_HALF, bumpers outside).
 const TRACK_HALF := 6.0
-## The held push (2026-10-28): 25 N/s, at most 80 N; it stops growing once the box starts (2026-11-01,
-## HoldRamp.hold_there: the push that broke it loose, then the box slides on with it). The heaviest
-## box the child can pick (10 kg on clay: mu_s m g = 74.6 N) starts after 2.98 s; the 2 kg box on
-## wood (7.85 N) after 0.31 s.
+## The held push (2026-10-28): 25 N/s, at most 125 N (80 N until 2026-11-03); it stops growing once
+## the box starts (2026-11-01, HoldRamp.hold_there: the push that broke it loose, then the box slides
+## on with it). On wood (the missions' floor) the kid boxes start after 0.31 / 0.94 / 2.51 s (7.8 /
+## 23.5 / 62.8 N); the heaviest box on the sidebar's clay (16 kg: mu_s m g = 119.3 N) after 4.77 s.
 const PUSH_RATE := 25.0       # N per second of holding
-const PUSH_MAX := 80.0        # N
+const PUSH_MAX := 125.0       # N
 const GRAPH_EVERY_STEPS := 6  # 10 Hz graph samples
 const END_PADDING := 0.02     # m between a stopped box and the track end
 ## No close-up on the push (2026-10-28 user: the zoom on picking up the handle felt awkward, as the

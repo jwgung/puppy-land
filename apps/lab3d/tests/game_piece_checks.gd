@@ -561,13 +561,13 @@ func check_push_path() -> void:
 				problems.append("%s %s: a tap moves it %.3f m" % [material, stages[i].conditions.mass, tap])
 			var found := -1.0
 			var hold := 0.3
-			while hold <= 4.5 + 1e-9:
+			while hold <= 6.5 + 1e-9:
 				var d: float = await push_hold_distance(lab, hold)
 				if _beats(definition, i, d):
 					found = hold
 					break
 				hold = snappedf(hold + 0.1, 0.1)
-			var limit := 3.0 if material == "wood" else 4.5
+			var limit := 4.0 if material == "wood" else 6.5   # (2026-11-03: the 16 kg heavy box, before 3.0 / 4.5 s)
 			if found < 0.0 or found > limit or found <= 0.4:
 				problems.append("%s %s: off the path after a %.1f s hold (want 0.5..%.0f s)" % [material, stages[i].conditions.mass, found, limit])
 			if material == "wood":
@@ -1088,24 +1088,31 @@ func check_drum() -> void:
 		"; ".join(problems))
 
 
-## The orbit: the piece floats on the side a hard tangent shot from 4 m leaves to: the formula planet
-## of every escape speed 3.7–6 m/s along the circle (90°) passes within ATTACH of it; a circular lap
-## at 4 m pops all the sparkles of stage 1.
+## The orbit: the piece floats far out (2026-11-03 playtest "별이 너무 가까이 있어. 좀 더 멀리 있게 해서
+## 맞추게 해줘": 9 m from the star, until then 5 m where every escape along the circle passed it): from
+## 4 m an aimed shot a little outwards (60° at 4–6 m/s, 55° and 65° at 5 m/s) passes within ATTACH of
+## it, a shot along the circle (90°, 3.7–6 m/s) or 50° / 70° / 75° at 5 m/s passes it by; a circular
+## lap at 4 m pops all the sparkles of stage 1.
 func check_orbit_piece() -> void:
 	var problems := []
 	var closest := []
 	var home := Vector3(OrbitGame.HOME_R * cos(deg_to_rad(OrbitGame.HOME_DEG)), 0.0, -OrbitGame.HOME_R * sin(deg_to_rad(OrbitGame.HOME_DEG)))
-	for speed in [3.7, 4.0, 4.5, 5.0, 6.0]:
+	if OrbitGame.HOME_R < 8.0 or OrbitGame.HOME_R + 1.0 > OrbitModel.DEFAULT_FAR_RADIUS:
+		problems.append("the piece %.1f m from the star (want far out, inside the 12 m edge)" % OrbitGame.HOME_R)
+	var shots := [[60.0, 4.0, true], [60.0, 5.0, true], [60.0, 6.0, true], [55.0, 5.0, true], [65.0, 5.0, true],
+		[90.0, 3.7, false], [90.0, 4.5, false], [90.0, 6.0, false], [50.0, 5.0, false], [70.0, 5.0, false], [75.0, 5.0, false]]
+	for shot in shots:
 		var model := OrbitModel.new()
 		model.plane_y = 0.0
-		model.reset(4.0, 0.0, -speed)
+		var v: PackedFloat64Array = load("res://experiments/orbit/orbit.gd").launch_velocity(shot[0], shot[1])
+		model.reset(4.0, v[0], v[1])
 		var best := INF
 		while model.outcome == "" and model.steps < 60 * 60:
 			model.step(1.0 / 60.0)
 			best = minf(best, Vector3(model.x, 0.0, model.z).distance_to(home))
 		closest.append(snappedf(best, 0.01))
-		if best > OrbitGame.ATTACH:
-			problems.append("%s m/s passes %.2f m from the piece" % [speed, best])
+		if (best <= OrbitGame.ATTACH) != shot[2]:
+			problems.append("%s° %s m/s passes %.2f m from the piece (want %s)" % [shot[0], shot[1], best, "a hit" if shot[2] else "a miss"])
 	# A bound lap at 4 m never comes near it (the piece is only taken by a leaving planet anyway).
 	var lap := OrbitModel.new()
 	lap.reset(4.0, 0.0, -sqrt(lap.mu / 4.0))
@@ -1141,6 +1148,19 @@ func check_orbit_piece() -> void:
 	var game := lab.game as OrbitGame
 	screen._set_control("radius", 4.0)
 	screen._set_control("direction", 90.0)
+	# A hard shot along the circle (6 m/s) leaves the star past the piece: no stamp, the piece stays.
+	screen._set_control("speed", 6.0)
+	screen.experiment_action("launch")
+	for k in 400:
+		await tree.physics_frame
+		await tree.process_frame
+		if lab.status() == "far":
+			break
+	await _frames(10)
+	if lab.status() != "far" or lab.fetched or game.attached or screen.mission_round.stamps != 2 or game.piece_state != "held":
+		problems.append("stage 3, 6 m/s: %s, fetched %s, stamps %d, piece %s" % [lab.status(), lab.fetched, screen.mission_round.stamps, game.piece_state])
+	screen.experiment_action("rearm")
+	screen._set_control("direction", 60.0)
 	screen._set_control("speed", 4.5)
 	screen.experiment_action("launch")
 	var rode := false
@@ -1156,7 +1176,7 @@ func check_orbit_piece() -> void:
 	await _free(screen)
 	DirAccess.remove_absolute(ProgressStore.path)
 	expect.call(problems.is_empty(),
-		"piece game (orbit): the piece floats where a hard tangent shot from 4 m leaves (3.7–6 m/s pass it within %.1f m: %s), the 4 m circle does not; one lap at 4 m pops every sparkle; the leaving planet takes the piece along and the stamp frees it" % [OrbitGame.ATTACH, str(closest)],
+		"piece game (orbit): the piece floats 9 m out, where only an aimed shot from 4 m reaches it (60° at 4–6 m/s and 55° / 65° at 5 m/s pass it within %.1f m, along the circle or 50° / 70° / 75° do not: %s), the 4 m circle does not; one lap at 4 m pops every sparkle; a shot past it gets no stamp; the leaving planet takes the piece along and the stamp frees it" % [OrbitGame.ATTACH, str(closest)],
 		"; ".join(problems))
 
 

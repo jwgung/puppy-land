@@ -198,7 +198,7 @@
       { "id": "ball_b", "surface": "lane_b", "snap": 0.5, "height": false, "drag": false }
     ],
     "demo_action": "release",
-    "slingshot": { "object": "ball_a" }
+    "slingshot": { "object": "ball_a", "min": 0.0 }
   },
   "graph": {
     "x": { "unit": "s", "max": 10.0 },

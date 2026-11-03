@@ -1,19 +1,21 @@
 ## The orbit's piece game (2026-10-29 "조각 꺼내기", batch B): the star piece floats far out in space,
-## at HOME_R from the star on the side where a planet shot hard from 4 m along its circle leaves
-## (a tangent launch past the escape speed √(2GM/r) = 3.67 m/s crosses HOME_R between about 41° and
-## 53° round from its start). Stages 1 and 2 are laps (MissionRound: the formula's laps at 4 m, then
+## at HOME_R from the star, HOME_DEG round from the planet's start (2026-11-03 playtest "마지막 미션에서
+## 별이 너무 가까이 있어. 좀 더 멀리 있게 해서 맞추게 해줘": 9 m at 42° instead of 5 m at 47°, where every
+## escaping tangent shot from 4 m passed it). Now a shot along the circle (90°) passes it by at every
+## speed: the child aims a little outwards (55–65°, 3.8–6 m/s at 60°); the pull's dotted way ahead
+## shows whether a shot goes through it. Stages 1 and 2 are laps (MissionRound: the formula's laps at 4 m, then
 ## two at 2 m): little sparkles sit on the stage's circle and pop when the formula planet passes them
 ## (a picture of the way round; the stamp is the laps'). Stage 3 asks for the planet to leave the star
-## from 4 m (the state "far" on a launch past 3.67 m/s): when the leaving planet's formula position
-## comes within ATTACH of the piece it takes the piece along, and the stamp lets it float there
-## (released; the screen then flies it to the bread cat). A planet that leaves elsewhere leaves the
-## piece where it floats and the stamp frees it there. Visual only: no body; the planet and every
+## from 4 m and take the piece (the state "far" on a launch past 3.67 m/s, and the lab's "fetched":
+## the leaving formula planet came within ATTACH of the piece). Then the planet takes the piece along,
+## and the stamp lets it float there (released; the screen then flies it to the bread cat). A planet
+## that leaves elsewhere leaves the piece where it floats and gets no stamp. Visual only: no body; the planet and every
 ## number are OrbitModel's as before.
 class_name OrbitGame
 extends LabGame
 
-const HOME_R := 5.0
-const HOME_DEG := 47.0                   # counter-clockwise from the planet's start (+x), seen from above
+const HOME_R := 9.0
+const HOME_DEG := 42.0                   # counter-clockwise from the planet's start (+x), seen from above
 const ATTACH := 0.8                      # m: the leaving planet takes the piece within this
 const RIDE_UP := 0.5                     # m: the taken piece rides this far over the planet
 const SPARKLES := 8
@@ -50,8 +52,14 @@ func build() -> void:
 
 ## Where the piece floats (the lab's own axes, the star at the origin): HOME_R from the star at HOME_DEG, in the orbit plane.
 func home() -> Vector3:
+	var at := home_xz()
+	return Vector3(at.x, plane_y, at.y)
+
+
+## The piece's place in the orbit plane (x, z; the star at the origin): what the lab's "fetched" reads.
+static func home_xz() -> Vector2:
 	var a := deg_to_rad(HOME_DEG)
-	return Vector3(HOME_R * cos(a), plane_y, -HOME_R * sin(a))
+	return Vector2(HOME_R * cos(a), -HOME_R * sin(a))
 
 
 ## The sparkles on the lap stage's circle (radius 0: none), all back in place.
@@ -105,14 +113,14 @@ func _jump(stamps: int) -> void:
 
 
 ## The leaving planet takes the piece: the last stage's run, launched from its circle (the stage's
-## conditions), the formula planet unbound and within ATTACH of the piece.
+## conditions), the formula planet unbound and within ATTACH of the piece (the lab's `fetched`).
 func _try_attach(orbit_lab: Variant) -> void:
 	if attached or stage != stages - 1 or piece_state != "held" or orbit_lab.status() != "leaving":
 		return
 	var stages_list: Array = MissionRound.missions(lab.definition.raw).get("stages", [])
 	if stage < stages_list.size() and not MissionRound.conditions_met(stages_list[stage].get("conditions", {}), lab):
 		return
-	if orbit_lab.planet.global_position.distance_to(piece.global_position) <= ATTACH:
+	if orbit_lab.fetched:
 		attached = true
 		SoundBoard.play(&"glint")
 

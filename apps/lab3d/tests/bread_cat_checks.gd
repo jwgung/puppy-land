@@ -65,6 +65,7 @@ func run() -> void:
 	await check_storybook()
 	await check_layout("projectile")
 	await check_layout("friction")
+	await check_layout("friction", true)   # 2026-11-03: it opens on the light box (stage 1)
 	await run_roles()
 
 
@@ -352,7 +353,8 @@ func _contact(lab: Experiment) -> Dictionary:
 	for i in 2:
 		var p := cat.hand_point(i)
 		gap = maxf(gap, absf(p.x - face))
-		inside = inside and p.y > 0.05 and p.y < lab.BOX - 0.05 and absf(p.z - lab.box.global_position.z) < lab.BOX * 0.5 - cat.look.paw_radius
+		var side: float = lab.BOX * lab.look_factor()   # the box look's side (2026-11-03: 4 kg looks BOX big)
+		inside = inside and p.y > 0.05 and p.y < side - 0.05 and absf(p.z - lab.box.global_position.z) < side * 0.5 - cat.look.paw_radius
 	return {"gap": gap, "inside": inside, "body_gap": absf(face - (lab.box.global_position.x - lab.BOX * 0.5))}
 
 
@@ -382,7 +384,8 @@ func check_push() -> void:
 		"max gap %s m, states %s" % [String.num_scientific(worst), states.keys()])
 	expect.call(lean_push > 0.1 and lean_pull < -0.1,
 		"bread cat: it leans into a push and back on a pull", "up.x %.2f / %.2f" % [lean_push, lean_pull])
-	# Box reactions off: the mesh face is the body's face.
+	# Box reactions off and the look at the body's size: the mesh face is the body's face.
+	lab.props.set_look(1.0)
 	lab.props.juice.process_mode = Node.PROCESS_MODE_DISABLED
 	lab.props.juice.mesh.transform = Transform3D.IDENTITY
 	lab.run_action("reset")
@@ -574,9 +577,9 @@ func _screen_rect(screen: Control, box: AABB) -> Rect2:
 	return r
 
 
-func check_layout(id: String) -> void:
+func check_layout(id: String, entry := false) -> void:
 	for setup in [[PHONE, false, "phone"], [TABLET, false, "tablet"], [TABLET, true, "tablet, sidebar open"]]:
-		var screen: Control = await _open(id, setup[0], setup[1])
+		var screen: Control = await _open(id, setup[0], setup[1], entry)
 		var lab: Experiment = screen.experiment
 		var cat: CatActor = lab.props.cat
 		cat.advance(0.0)
@@ -604,7 +607,7 @@ func check_layout(id: String) -> void:
 				hidden += 1
 		var on_screen := view_rect.encloses(rect) and rect.size.x > 12.0
 		expect.call(on_screen and clear and hidden == 0,
-			"bread cat (%s, %s): in the front view, clear of the title, key cards, buttons and actions, hides none of %d points (ball / path / box)" % [id, setup[2], targets.size()],
+			"bread cat (%s%s, %s): in the front view, clear of the title, key cards, buttons and actions, hides none of %d points (ball / path / box)" % [id, " stage-1 entry" if entry else "", setup[2], targets.size()],
 			"cat %s in view %s%s, hidden %d" % [rect, view_rect.size, hit, hidden])
 		screen.get_parent().queue_free()
 		await tree.process_frame

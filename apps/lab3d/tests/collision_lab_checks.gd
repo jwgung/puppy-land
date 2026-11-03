@@ -473,6 +473,25 @@ func check_input_path() -> void:
 	await tree.process_frame
 	expect.call(again and not lab.released and lab.velocity_a == 5.0 and m.mode == "",
 		"collision: 출발 launches with the last pulled speed; a tap on ball A launches nothing", "again %s, released %s" % [again, lab.released])
+	# 2026-11-03 playtest "공을 반대 방향으로는 못 보내게": a pull towards B (that would send A away from
+	# it) gives 0 m/s, never a leftward launch (manipulation.slingshot.min = 0); the readout never
+	# says "왼쪽으로". The "자세히" slider still reaches -9 m/s.
+	var setup: Dictionary = lab.slingshot_setup()
+	var wrong_way: float = setup.value.call(Vector2(3.0 * lab.PULL_SCALE, 0.0)).x
+	var far_wrong: float = setup.value.call(Vector2(30.0, 0.0)).x
+	at = _at(screen, ball.global_position)
+	var push_to := _at(screen, Vector3(start + 3.0 * lab.PULL_SCALE, lab.RADIUS_A, 0.0))
+	_swipe(screen, at, push_to)
+	await tree.process_frame
+	var hud_text: String = screen._slingshot_hud.text
+	_touch(screen, push_to, false)
+	for i in 30:
+		await tree.physics_frame
+	var never_left: bool = lab.velocity_a >= 0.0 and lab.model.va >= 0.0 and lab.ball_a.global_position.x >= start - 1e-6
+	expect.call(wrong_way == 0.0 and far_wrong == 0.0 and never_left and not hud_text.contains(Locale.t("collision.leftwards"))
+		and screen.definition.slingshot().get("min") == 0.0 and screen._control_widgets.velocity_a.slider.min_value == -9.0,
+		"collision: the slingshot never sends ball A away from B (a pull towards B gives 0 m/s, no leftward launch)",
+		"pull value %s / %s m/s, after the release v %.1f (model %.2f), x %.3f, readout '%s'" % [wrong_way, far_wrong, lab.velocity_a, lab.model.va, lab.ball_a.global_position.x, hud_text])
 	await _close(screen)
 
 
@@ -596,14 +615,15 @@ func check_review() -> void:
 	arrow.point(Vector3.ZERO, 0.0, 1.0)
 	expect.call(kept and arrow.mesh != built, "arrow: the mesh cache keeps the mesh for the same length and colours and rebuilds it when only the top colour changes", "")
 	arrow.free()
-	# The knob factory (the projectile's arrow knob): a pickable body with the knob mesh, on its layer, hit by nothing.
+	# The knob factory (the projectile's arrow tip): a pickable body on its layer, hit by nothing, that
+	# draws nothing (2026-11-03 playtest: no yellow box at the end of the purple arrow).
 	var proj: Experiment = ExperimentRegistry.instantiate(ExperimentRegistry.find("projectile"))
 	tree.root.add_child(proj)
 	await tree.process_frame
 	var knob: StaticBody3D = proj.knob
-	var ok: bool = knob.collision_layer == (1 << (proj.KNOB_LAYER - 1)) and knob.collision_mask == 0 and knob.get_node("Visual") is MeshInstance3D \
-		and knob.get_children().any(func(n): return n is CollisionShape3D)
-	expect.call(ok, "the projectile builds its yellow arrow knob with the shared factory (layer, mask 0, shape, mesh)", "")
+	var ok: bool = knob.collision_layer == (1 << (proj.KNOB_LAYER - 1)) and knob.collision_mask == 0 and not knob.has_node("Visual") \
+		and knob.find_children("*", "GeometryInstance3D", true, false).is_empty() and knob.get_children().any(func(n): return n is CollisionShape3D)
+	expect.call(ok, "the projectile builds its arrow tip with the shared factory (layer, mask 0, shape) and draws no yellow box there", "")
 	await _free(proj)
 	await _free(lab)
 
@@ -625,7 +645,7 @@ func check_auto_conditions() -> void:
 			screen._cancel_next()   # the child goes on (다음 미션: the next stage is judged only then)
 		for i in 8:
 			await tree.process_frame
-		var look: Vector2 = MassLook.touching_radii(want[stage][0], want[stage][1], lab.RADIUS_A + lab.RADIUS_B)
+		var look := Vector2(MassLook.radius(want[stage][0], CollisionProps.LOOK_1KG), MassLook.radius(want[stage][1], CollisionProps.LOOK_1KG))
 		if not (screen.mission_round.stage() == stage and lab.mass_a == want[stage][0] and lab.mass_b == want[stage][1]
 				and lab.model.mass_a == want[stage][0] and lab.model.mass_b == want[stage][1]
 				and lab.props.look.is_equal_approx(look)
