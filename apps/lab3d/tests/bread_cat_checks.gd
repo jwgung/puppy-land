@@ -916,8 +916,10 @@ static func _role_keep(id: String, lab: Experiment) -> PackedVector3Array:
 func check_role(run_id: String) -> void:
 	var id := run_id.get_slice("/", 0)
 	for setup in [[PHONE, false, "phone"], [TABLET, false, "tablet"], [TABLET, true, "tablet, sidebar open"]]:
-		if ROLE_RUNS[run_id].has("entry"):
-			DirAccess.remove_absolute(ProgressStore.path)   # (each screen opens on stage 1, not on the last run's stage)
+		# Every screen opens on stage 1: no stamps left by an earlier run (2026-11-04: the riding run's phone
+		# screen opened on stage 3 after the runs before it had won stages 1 and 2, floated, won the round and
+		# the cat crossed to the islet; whether it did hung on what earlier checks of the same process left).
+		DirAccess.remove_absolute(ProgressStore.path)
 		var screen: Control = await _open(id, setup[0], setup[1], ROLE_RUNS[run_id].has("entry"))
 		var lab: Experiment = screen.experiment
 		var cat: CatActor = lab.props.cat

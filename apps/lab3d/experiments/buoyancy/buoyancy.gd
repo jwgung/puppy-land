@@ -20,7 +20,7 @@ const START_ABOVE := 0.3          # m: the drum's bottom above the water at the 
 const WATER_DENSITY := 1000.0     # kg/m^3
 const DRUM_LAYER := 3             # pickable; the drum touches nothing in the engine (mask 0)
 const SETTLED_SPEED := 0.002      # m/s: slower than this = at rest (sunk on the tank floor, staying under water)
-## Floating (2026-11-03 playtest "물에 뜨는 판정 조건이 너무 빡빡해"): a drum the densities say floats counts as
+## Floating (2026-11-03 playtest: the floating judgement was too strict for the kids): a drum the densities say floats counts as
 ## floating once its bob about the formula's floating depth is FLOAT_BOB or less (bob(): the depth error and
 ## the speed taken as one swing) while it is in the water with its top out of it, and stays floating for the
 ## rest of the run (no flicker as it bobs on). Before: slower than 0.002 m/s and within 0.002 m of the
