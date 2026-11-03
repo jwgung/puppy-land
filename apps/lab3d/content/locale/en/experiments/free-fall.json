@@ -49,7 +49,7 @@
     "stages": [
       {
         "text": "Drop the red and pink balls together to press the buttons!",
-        "say": "The pull of the ground is called gravity. Gravity makes heavy and light balls speed up at the same rate. So dropped from the same height, they land together.",
+        "say": "The pull of the ground is called **gravity**. Gravity makes heavy and light balls speed up at the same rate. So dropped from the same height, they land together.",
         "win": "Click! Both buttons went down together!",
         "miss": "The balls landed apart. Make them the same height!"
       },
@@ -69,7 +69,7 @@
   },
   "story": { "clue": "The piece is locked in the blue house! I think the door opens if we press both buttons together!", "map_clue": "Something twinkled on top of the blue tower!" },
   "kid": {
-    "intro": "This is the ball drop lab. The ground pulls everything down. This pull is called gravity. Let's see how a heavy ball and a light ball fall!",
+    "intro": "This is the ball drop lab. The ground pulls everything down. This pull is called **gravity**. Let's see how a heavy ball and a light ball fall!",
     "title": "Let's drop balls from up high!",
     "place": "Ball drop",
     "say": "A heavy ball and a light ball fall the same way. Dropped from the same height, they land together. They fall slowly on the Moon and fast on Jupiter.",

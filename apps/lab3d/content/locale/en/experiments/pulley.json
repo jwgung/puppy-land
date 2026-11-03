@@ -44,7 +44,7 @@
     "stages": [
       {
         "text": "Lift the treasure chest to the shelf with 1 rope!",
-        "say": "There is a tool that lifts loads with a rope over a wheel. It is called a pulley. With one rope, your hand holds the chest's whole weight. So it takes a lot of force.",
+        "say": "There is a tool that lifts loads with a rope over a wheel. It is called a **pulley**. With one rope, your hand holds the chest's whole weight. So it takes a lot of force.",
         "win": "Heave-ho! It's up on the shelf!",
         "miss": "The chest won't budge. Press it longer!"
       },
@@ -64,7 +64,7 @@
   },
   "story": { "clue": "The piece is behind the bars of the treasure chest! Let's pull the rope and lift the chest to the high shelf!", "map_clue": "It's where a red chest hangs at the end of a rope!" },
   "kid": {
-    "intro": "This is the pulley lab. There is a tool that lifts loads with a rope over a wheel. It is called a pulley. The more ropes hold the load, the less force it takes. Let's see how the force changes with the number of ropes!",
+    "intro": "This is the pulley lab. There is a tool that lifts loads with a rope over a wheel. It is called a **pulley**. The more ropes hold the load, the less force it takes. Let's see how the force changes with the number of ropes!",
     "title": "Do more ropes make it easier?",
     "place": "Rope lift",
     "say": "The more ropes, the less force it takes. But you have to pull the rope longer.",

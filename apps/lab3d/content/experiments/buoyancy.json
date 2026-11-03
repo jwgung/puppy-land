@@ -152,7 +152,7 @@
   "manipulation": {
     "grab_radius": 72.0,
     "objects": [
-      { "id": "drum", "surface": "tank", "snap": 0.05, "height": false }
+      { "id": "drum", "surface": "tank", "snap": 0.05, "height": false, "guide_to": "min" }
     ]
   },
   "graph": {

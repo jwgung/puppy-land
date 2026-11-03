@@ -45,7 +45,7 @@
     "stages": [
       {
         "text": "Pull the light ball and ring the near bell!",
-        "say": "A spring pulls the ball back as much as it is stretched. This force is called the elastic force. So the ball goes as far to the other side as you pulled, and rings the bell.",
+        "say": "A spring pulls the ball back as much as it is stretched. This force is called the **elastic force**. So the ball goes as far to the other side as you pulled, and rings the bell.",
         "win": "Ding! The bell rang!",
         "miss": "A bit short of the bell! Pull more!"
       },
@@ -58,14 +58,14 @@
       {
         "text": "Change to the heavy ball and ring the same far bell!",
         "say": "Pulled just as far, the heavy ball reaches the same bell. But being heavy, it swings back and forth more slowly.",
-        "win": "Dong! The heavy ball reached the far bell too!",
+        "win": "Ding-ding! The heavy ball reached the far bell too!",
         "miss": "Pull the heavy ball as far as the far bell!"
       }
     ]
   },
   "story": { "clue": "The piece hangs inside the bell! Let's ring the bell with the ball!", "map_clue": "Inside the fence, by the bouncy spring!" },
   "kid": {
-    "intro": "This is the spring lab. A stretched spring tries to go back to its length. So it pulls the ball back. This force is called the elastic force. The more you stretch it, the bigger the elastic force. Let's see how far the ball goes for how far you pull!",
+    "intro": "This is the spring lab. A stretched spring tries to go back to its length. So it pulls the ball back. This force is called the **elastic force**. The more you stretch it, the bigger the elastic force. Let's see how far the ball goes for how far you pull!",
     "title": "Let's pull the spring and let go!",
     "place": "Spring",
     "say": "The spring pulls the ball back as much as you pulled. So the ball goes as far to the other side. A heavy ball swings more slowly but goes just as far.",

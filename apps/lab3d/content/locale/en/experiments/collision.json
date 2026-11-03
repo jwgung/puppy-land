@@ -55,7 +55,7 @@
     "stages": [
       {
         "text": "Bump two balls of the same weight hard to crack the ice!",
-        "say": "When two balls bump, they push each other with the same force. This is called action and reaction. The faster the blue ball, the harder the bump. So the orange ball gets pushed a lot.",
+        "say": "When two balls bump, they push each other with the same force. This is called **action and reaction**. The faster the blue ball, the harder the bump. So the orange ball gets pushed a lot.",
         "win": "Crack! The ice cracked!",
         "miss": "Pull a little harder!"
       },
@@ -75,7 +75,7 @@
   },
   "story": { "clue": "The piece is stuck in the ice! Let's bump the balls and break that ice!", "map_clue": "It's by the long rail with two balls on it!" },
   "kid": {
-    "intro": "This is the ball bump lab. When two balls bump, they push each other with the same force. This is called action and reaction. The heavier and faster a ball is, the harder it pushes the other ball. Let's see how the balls move after the bump!",
+    "intro": "This is the ball bump lab. When two balls bump, they push each other with the same force. This is called **action and reaction**. The heavier and faster a ball is, the harder it pushes the other ball. Let's see how the balls move after the bump!",
     "title": "What happens when balls bump?",
     "place": "Ball bump",
     "say": "In a bump, the two balls push each other. The blue ball's motion passes to the orange ball.",

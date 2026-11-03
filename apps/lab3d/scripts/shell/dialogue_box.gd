@@ -13,8 +13,9 @@
 ## The words are the lab's observe text exactly (or, for one open, other words of Dugi's: the
 ## mission's question or the prediction's reason — Plan G4), only split into pages of at most
 ## LINES lines at the spaces, each sentence starting a line (joined() is the text
-## again). Each page types out at
-## CHARS_PER_S; a tap shows the whole page, the next tap turns the page, and after the last page
+## again). A term Dugi introduces (TermMarks, "**마찰력**") is drawn bold on a yellow highlight; the
+## pages are measured with that bold face, so the lines and pages are the ones it is shown in. Each
+## page types out at CHARS_PER_S; a tap shows the whole page, the next tap turns the page, and after the last page
 ## it closes. Pages never turn by themselves (2026-10-28 user: only a tap turns a page; before, an
 ## untouched page turned after READ_S + READ_PER_CHAR_S per character — `auto_turn` keeps that for
 ## anyone who sets it); a box that holds (`hold`: a question waiting for its answer) stays on its
@@ -47,6 +48,8 @@ const MORE_ROOM := 30.0                     # right of the text: the ▼
 const SWAP_S := 0.16
 const SWAP_SCALE := 0.94
 const SWAP_ALPHA := 0.55
+## The highlight under a term when the theme has none (DialogueLabel's term_highlight).
+const TERM_HIGHLIGHT := Color("ffe066")
 static var _textures := {}
 
 var text := ""
@@ -65,7 +68,7 @@ var hold := false
 var box: PanelContainer
 var name_tag: PanelContainer
 var name_label: Label
-var label: Label
+var label: RichTextLabel
 var more: Label
 var portrait: TextureRect
 var active := false
@@ -87,7 +90,11 @@ func _init(own_words: String) -> void:
 	box = Ui.panel("DialogueBox")
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(box)
-	label = Ui.label("", "DialogueLabel")
+	label = RichTextLabel.new()
+	label.theme_type_variation = "DialogueLabel"
+	label.bbcode_enabled = true
+	label.scroll_active = false
+	label.clip_contents = false
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	add_child(label)
@@ -112,27 +119,41 @@ func _init(own_words: String) -> void:
 # --- pages ----------------------------------------------------------------------------------------
 
 ## The lines of `words` at most `width` wide in `font` / `size`, broken at spaces (a word wider than
-## the line is broken between characters): [[line, separator after it], ...].
-static func wrap_lines(words: String, font: Font, size: int, width: float) -> Array:
+## the line is broken between characters): [[line, separator after it], ...]. Terms (TermMarks) are
+## measured in `bold` (null: `font`); a line keeps the marks as written (a term may run over a break).
+static func wrap_lines(words: String, font: Font, size: int, width: float, bold: Font = null) -> Array:
 	var out := []
 	var line := ""
+	var open := false   # the line starts inside a term
 	for t: String in _glue_short(words.split(" ")):
 		var candidate := t if line == "" else line + " " + t
-		if line != "" and font.get_string_size(candidate, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x > width:
+		if line != "" and measure(candidate, font, bold, size, open) > width:
 			out.append([line, " "])
+			open = TermMarks.ends_open(line, open)
 			line = t
 		else:
 			line = candidate
-		# A single word wider than the line: break it between characters.
-		while font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x > width and line.length() > 1:
+		# A single word wider than the line: break it between characters (never inside a mark).
+		while measure(line, font, bold, size, open) > width and TermMarks.plain(line).length() > 1:
 			var cut := line.length() - 1
-			while cut > 1 and font.get_string_size(line.substr(0, cut), HORIZONTAL_ALIGNMENT_LEFT, -1, size).x > width:
+			while cut > 1 and measure(line.substr(0, cut), font, bold, size, open) > width:
 				cut -= 1
+			if line.substr(cut - 1, 2) == TermMarks.MARK:
+				cut += -1 if cut > 1 else 1
 			out.append([line.substr(0, cut), ""])
+			open = TermMarks.ends_open(line.substr(0, cut), open)
 			line = line.substr(cut)
 	if line != "":
 		out.append([line, ""])
 	return out
+
+
+## The width of `line` (marked) as drawn: its terms in `bold` (null: `font`). `open`: it starts inside a term.
+static func measure(line: String, font: Font, bold: Font, size: int, open := false) -> float:
+	var width := 0.0
+	for s in TermMarks.spans(line, open):
+		width += (bold if s[1] and bold != null else font).get_string_size(s[0], HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	return width
 
 
 ## One-syllable words ("첫", "한", "두", "더"...) stay with the word after them, so a line never ends in
@@ -166,19 +187,21 @@ static func sentences(words: String) -> PackedStringArray:
 
 
 ## Pages of at most LINES lines, each sentence on lines of its own: [{"lines": [...], "seps":
-## [separator after each line]}, ...].
-static func paginate(words: String, font: Font, size: int, width: float) -> Array:
+## [separator after each line], "shown": [each line with its own pairs of term marks]}, ...].
+static func paginate(words: String, font: Font, size: int, width: float, bold: Font = null) -> Array:
 	var lines := []
 	var parts := sentences(words)
 	for i in parts.size():
-		var wrapped := wrap_lines(parts[i], font, size, width)
+		var wrapped := wrap_lines(parts[i], font, size, width, bold)
 		if i < parts.size() - 1 and not wrapped.is_empty():
 			wrapped[-1][1] = " "   # (joined() puts the space back)
 		lines.append_array(wrapped)
+	var shown := TermMarks.balance(lines.map(func(l: Array) -> String: return l[0]))
 	var out := []
 	for k in range(0, lines.size(), LINES):
 		var chunk: Array = lines.slice(k, k + LINES)
-		out.append({"lines": chunk.map(func(l: Array) -> String: return l[0]), "seps": chunk.map(func(l: Array) -> String: return l[1])})
+		out.append({"lines": chunk.map(func(l: Array) -> String: return l[0]), "seps": chunk.map(func(l: Array) -> String: return l[1]),
+			"shown": shown.slice(k, k + LINES)})
 	return out
 
 
@@ -187,9 +210,31 @@ func pages() -> Array:
 	return _pages
 
 
-## A page as shown (its lines one under the other).
+## A page as shown (its lines one under the other, each with its own pairs of term marks).
 func page_text(k: int) -> String:
-	return "\n".join(PackedStringArray(_pages[k].lines))
+	return "\n".join(PackedStringArray(_pages[k].shown))
+
+
+## Characters of a page the typewriter shows (its words without the term marks, line breaks included).
+func page_length(k: int) -> int:
+	return TermMarks.plain(page_text(k)).length()
+
+
+## The width of a shown line in the box's faces (tests: every line fits the label).
+func line_width(line: String) -> float:
+	return measure(line, _font(), _bold(), _font_size())
+
+
+func _font() -> Font:
+	return label.get_theme_font("normal_font")
+
+
+func _bold() -> Font:
+	return label.get_theme_font("bold_font")
+
+
+func _font_size() -> int:
+	return label.get_theme_font_size("normal_font_size")
 
 
 ## The pages joined back with the separators they were split at (tests: == text).
@@ -209,9 +254,9 @@ func joined() -> String:
 ## over a whole run in every experiment), not by moving the box. Returns false when the room is too
 ## narrow (then it hides).
 func layout(view: Rect2, right: float, margin: float) -> bool:
-	var font := label.get_theme_font("font")
-	var size_px := label.get_theme_font_size("font_size")
-	var line_h := font.get_height(size_px) + label.get_theme_constant("line_spacing")
+	var font := _font()
+	var size_px := _font_size()
+	var line_h := font.get_height(size_px) + label.get_theme_constant("line_separation")
 	var box_style := box.get_theme_stylebox("panel")
 	var height := BOX_PAD.y * 2.0 + line_h * LINES + box_style.get_minimum_size().y
 	var left := view.position.x + margin
@@ -236,7 +281,7 @@ func layout(view: Rect2, right: float, margin: float) -> bool:
 	name_tag.size = name_tag.get_combined_minimum_size()
 	if not is_equal_approx(text_width, _text_width):
 		_text_width = text_width
-		_pages = paginate(text, font, size_px, text_width)
+		_pages = paginate(text, font, size_px, text_width, _bold())
 		page = mini(page, maxi(0, _pages.size() - 1))
 		_show_page(false)
 	return true
@@ -302,8 +347,7 @@ func _set_text(new_text: String) -> void:
 	if new_text == text and not _pages.is_empty():
 		return
 	text = new_text
-	_pages = paginate(text, label.get_theme_font("font"), label.get_theme_font_size("font_size"),
-		_text_width if _text_width > 0.0 else MIN_TEXT_WIDTH)
+	_pages = paginate(text, _font(), _font_size(), _text_width if _text_width > 0.0 else MIN_TEXT_WIDTH, _bold())
 	page = 0
 
 
@@ -321,7 +365,7 @@ func close(quiet := false) -> void:
 
 ## The page is fully shown (the ▼ blinks).
 func typed() -> bool:
-	return _pages.is_empty() or _shown >= page_text(page).length()
+	return _pages.is_empty() or _shown >= page_length(page)
 
 
 ## A tap: the whole page, else the next page, else close.
@@ -329,7 +373,7 @@ func advance() -> void:
 	if not active:
 		return
 	if not typed():
-		_shown = page_text(page).length()
+		_shown = page_length(page)
 		_read_left = _read_time()
 	elif page < _pages.size() - 1:
 		page += 1
@@ -347,14 +391,17 @@ func _show_page(restart: bool) -> void:
 
 
 func _read_time() -> float:
-	return READ_S + READ_PER_CHAR_S * (page_text(page).length() if not _pages.is_empty() else 0)
+	return READ_S + READ_PER_CHAR_S * (page_length(page) if not _pages.is_empty() else 0)
 
 
 func _refresh() -> void:
 	if _pages.is_empty():
 		return
-	label.text = page_text(page)
-	label.visible_characters = int(_shown) if not typed() else -1
+	# While it types, only the shown characters are in the label (a term's highlight grows with them).
+	var shown := int(_shown) if not typed() else -1
+	var highlight := label.get_theme_color("term_highlight") if label.has_theme_color("term_highlight") else TERM_HIGHLIGHT
+	label.text = TermMarks.bbcode(page_text(page), highlight, shown)
+	label.visible_characters = shown
 	# A held question's last page waits for an answer, not a tap: no ▼ there.
 	var waits := hold and page == _pages.size() - 1
 	more.visible = typed() and not waits and fmod(_clock * BLINK_HZ, 1.0) < 0.6

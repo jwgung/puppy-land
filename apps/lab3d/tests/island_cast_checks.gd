@@ -408,8 +408,8 @@ func check_projectile_explains() -> void:
 		"cast (projectile): after the throw lands Dugi points at the formula landing point (the end of the formula path)",
 		"status %s, %d explanations, point %s vs %s, aim %.3f deg" % [status, cast.explain_count, lab.explain_point(), landing, aim])
 	expect.call(box.visible and box.active and box.joined() == str(screen.explain_say()[0]) and box.name_label.text == "두기두기"
-		and box.label.text == box.page_text(0),
-		"cast (projectile): the dialogue opens with Dugi's say for the stage exactly (only split into pages)", box.label.text)
+		and box.label.get_parsed_text() != "" and TermMarks.plain(box.page_text(0)).begins_with(box.label.get_parsed_text()),   # (typing: the shown part)
+		"cast (projectile): the dialogue opens with Dugi's say for the stage exactly (only split into pages)", box.label.get_parsed_text())
 	screen.experiment_action("reset")
 	await tree.process_frame
 	expect.call(cast.dugi.state == "rest" and not box.visible and not box.active and not cast.dugi.pointer.visible,
@@ -716,20 +716,18 @@ func check_dialogue() -> void:
 ## line within the label, the ▼ clear of the words.
 static func _page_problems(box: DialogueBox, id: String, text: String) -> Array:
 	var problems := []
-	var font := box.label.get_theme_font("font")
-	var fs := box.label.get_theme_font_size("font_size")
 	if box.joined() != text:
 		problems.append("%s: pages != %s" % [id, text.left(12)])
 	for pg in box.pages():
 		if pg.lines.size() > DialogueBox.LINES:
 			problems.append("%s: %d lines" % [id, pg.lines.size()])
 		for k in pg.lines.size():
-			var line: String = pg.lines[k]
+			var line: String = TermMarks.plain(pg.lines[k])
 			# A line never ends in a one-syllable word ("첫 / 번째") unless it is the last of the text.
 			var last_word: String = line.split(" ")[-1]
 			if k < pg.lines.size() - 1 and last_word.length() == 1 and last_word.unicode_at(0) >= 0xAC00 and last_word.unicode_at(0) <= 0xD7A3 and line.contains(" "):
 				problems.append("%s: a line ends in the lone word '%s'" % [id, last_word])
-			if font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > box.label.size.x + 0.5:
+			if box.line_width(pg.shown[k]) > box.label.size.x + 0.5:   # (terms in bold)
 				problems.append("%s: line too wide" % id)
 	if box.more.position.x < box.label.position.x + box.label.size.x or box.more.position.x + box.more.get_minimum_size().x > box.box.size.x:
 		problems.append("%s: the ▼ overlaps the words or leaves the box" % id)

@@ -54,7 +54,7 @@
     "stages": [
       {
         "text": "Push the light box to open the way!",
-        "say": "The force with which the floor holds on to the box is called friction. Push harder than friction and the box slides. So it moves out of the way.",
+        "say": "The force with which the floor holds on to the box is called **friction**. Push harder than friction and the box slides. So it moves out of the way.",
         "win": "The box moved out of the way!",
         "miss": "The box won't budge. Press it longer!"
       },
@@ -74,7 +74,7 @@
   },
   "story": { "clue": "Boxes are blocking the way! If we clear them, we can get to the piece!", "map_clue": "It's where the red arrow pushes a box!" },
   "kid": {
-    "intro": "This is the box push lab. The floor holds on to the box tightly so it does not slide. This force is called friction. You have to push harder than friction to move the box. Let's see how hard you must push for each box weight!",
+    "intro": "This is the box push lab. The floor holds on to the box tightly so it does not slide. This force is called **friction**. You have to push harder than friction to move the box. Let's see how hard you must push for each box weight!",
     "place": "Box push",
     "say": "The floor holds on to the box. The heavier the box, the tighter the floor holds it. You have to push harder to move it.",
     "tip": "Press and hold the box to push it!",

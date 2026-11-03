@@ -148,7 +148,7 @@
   "manipulation": {
     "grab_radius": 72.0,
     "objects": [
-      { "id": "ball", "surface": "rod", "snap": 0.1, "height": false }
+      { "id": "ball", "surface": "rod", "snap": 0.1, "height": false, "guide_to": "max" }
     ]
   },
   "graph": {
