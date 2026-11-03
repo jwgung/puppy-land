@@ -527,7 +527,9 @@ func check_storybook() -> void:
 
 # --- 4. layout --------------------------------------------------------------------------------
 
-func _open(id: String, size: Vector2, sidebar: bool) -> Control:
+## `entry`: the screen as it opens (stage 1's conditions, ExperimentScreen._apply_entry_conditions), not
+## the definition's start case.
+func _open(id: String, size: Vector2, sidebar: bool, entry := false) -> Control:
 	var host := Control.new()
 	host.theme = load(UI_THEME).build()
 	host.size = size
@@ -535,7 +537,8 @@ func _open(id: String, size: Vector2, sidebar: bool) -> Control:
 	var screen: Control = load(EXPERIMENT_SCREEN).new()
 	screen.setup(ExperimentRegistry.find(id))
 	host.add_child(screen)
-	FIRST_ENTRY.start_case(screen)   # (it opens on stage 1's conditions)
+	if not entry:
+		FIRST_ENTRY.start_case(screen)   # (it opens on stage 1's conditions)
 	await tree.process_frame
 	await tree.physics_frame
 	if sidebar:
@@ -635,6 +638,14 @@ const ROLE_RUNS := {
 	"rotation/far": {"steps": 160, "ops": [[0, "call", "set_control", "effort", "far"], [1, "call", "set_layout", -1.5, -2.5], [2, "hold", "effort"], [120, "letgo", "effort"]]},
 	"rotation/near": {"steps": 240, "ops": [[0, "call", "set_control", "effort", "near"], [2, "hold", "effort"], [200, "letgo", "effort"]]},
 	"constraints/left": {"steps": 420, "ops": [[0, "call", "set_control", "length", 3.5], [20, "pick", "rope"], [40, "move", "rope", Vector3(-2.0, 1.2, 0.0)], [41, "place", "rope"]]},
+	# The buoyancy as it opens (2026-11-03: stage 1's small empty drum, 45 kg; `entry`: the screen's own
+	# first state, no start case; the screen must open on these conditions; the run without a screen sets them).
+	"buoyancy/entry": {"steps": 600, "entry": {"volume": "small", "mass": 45.0}, "ops": [[30, "act", "release"]]},
+	# The riding load (2026-11-03 playtest: the cat really rides): it hops onto the waiting drum's lid and
+	# rides it down; the small drum sinks and the cat hops back to its crates as the lid goes under, the big
+	# one floats with it.
+	"buoyancy/ride-sink": {"steps": 420, "ops": [[0, "call", "set_control", "volume", "small"], [1, "call", "set_control", "mass", 80.0], [60, "act", "release"]]},
+	"buoyancy/ride-float": {"steps": 600, "ops": [[1, "call", "set_control", "mass", 80.0], [60, "act", "release"]]},
 	"buoyancy/small": {"steps": 600, "ops": [[0, "call", "set_control", "volume", "small"], [1, "call", "set_control", "mass", 60.0], [30, "act", "release"]]},
 	"orbit/far": {"steps": 300, "ops": [[0, "call", "manipulation_placed", "planet", Transform3D(Basis(), Vector3(5.0, 2.0, 0.0))], [1, "call", "set_control", "speed", 4.0], [30, "act", "launch"]]},
 }
@@ -719,8 +730,11 @@ func _role_record(id: String, with_cat: bool) -> Array:
 	if not with_cat:
 		lab.props.cat.queue_free()
 		lab.props.cat = null
-	await tree.process_frame   # both runs start in the same frame phase
 	var run: Dictionary = ROLE_RUNS[id]
+	var entry: Dictionary = run.get("entry", {})
+	for c in entry:
+		lab.set_control(c, entry[c])
+	await tree.process_frame   # both runs start in the same frame phase
 	var held := {}
 	var out := []
 	for k in run.steps:
@@ -817,6 +831,8 @@ static func _contact_gap(id: String, lab: Experiment, cat: CatActor) -> float:
 			for i in 2:
 				gap = maxf(gap, absf(cat.hand_point(i).distance_to(centre) - r))
 		"buoyancy":
+			if lab.props.get("ride") == "aboard":   # riding: its base on the lid
+				return cat.position.distance_to(lab.props.lid_stand(lab.drum.global_position))
 			for i in 2:
 				var p: Vector3 = cat.hand_point(i) - lab.drum.global_position
 				var h: float = lab.drum_height() * 0.5
@@ -849,6 +865,8 @@ static func _role_holds(id: String, lab: Experiment, cat: CatActor) -> bool:
 			return true
 		"spring":
 			return not lab.released or lab.holding != ""
+		"buoyancy":
+			return lab.props.get("ride") == "aboard" or (cat.attached() and not lab.released)
 	return cat.attached() and not lab.released
 
 
@@ -898,13 +916,19 @@ static func _role_keep(id: String, lab: Experiment) -> PackedVector3Array:
 func check_role(run_id: String) -> void:
 	var id := run_id.get_slice("/", 0)
 	for setup in [[PHONE, false, "phone"], [TABLET, false, "tablet"], [TABLET, true, "tablet, sidebar open"]]:
-		var screen: Control = await _open(id, setup[0], setup[1])
+		if ROLE_RUNS[run_id].has("entry"):
+			DirAccess.remove_absolute(ProgressStore.path)   # (each screen opens on stage 1, not on the last run's stage)
+		var screen: Control = await _open(id, setup[0], setup[1], ROLE_RUNS[run_id].has("entry"))
 		var lab: Experiment = screen.experiment
 		var cat: CatActor = lab.props.cat
 		var cats := lab.find_children("*", "CatActor", true, false).size()
 		var run: Dictionary = ROLE_RUNS[run_id]
 		var held := {}
 		var problems := []
+		var entry: Dictionary = run.get("entry", {})
+		for c in entry:
+			if str(lab.control_value(c)) != str(entry[c]):
+				problems.append("opened with %s = %s, not the entry's %s" % [c, lab.control_value(c), entry[c]])
 		var worst_gap := 0.0
 		var gap_step := -1
 		var worst_stretch := 0.0
@@ -1006,13 +1030,15 @@ func check_role(run_id: String) -> void:
 
 
 ## Points of the lab's static apparatus meshes in 0.5 m cells (every static mesh but the island,
-## shadows, the cast, the cat and its stand).
+## shadows, the cast, the cat and its stand, and the velocity / force arrows: they are drawn on a
+## moving body's state, 2026-11-03: the buoyancy's weight arrow beside the waiting drum was kept as
+## apparatus where the drum had long left).
 static func _apparatus(lab: Experiment, cat: CatActor, stand: Node3D) -> Dictionary:
 	var apparatus := {}   # 0.5 m cell -> points
 	for m in lab.find_children("*", "MeshInstance3D", true, false):
 		var mi := m as MeshInstance3D
 		if mi.name in ["Island", "IslandShadows"] or String(mi.name).contains("Shadow") or cat.is_ancestor_of(mi) or mi == stand \
-				or (stand != null and stand.is_ancestor_of(mi)) or not mi.is_visible_in_tree():
+				or (stand != null and stand.is_ancestor_of(mi)) or not mi.is_visible_in_tree() or mi is VelocityArrow:
 			continue
 		var moving := false
 		var n: Node = mi

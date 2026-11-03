@@ -1124,7 +1124,8 @@ func _run_result_bubble(delta: float) -> void:
 
 ## Where Puppy's line goes: just above Puppy on the view (the cat without him, else the view's upper
 ## middle), its tail pointing at him; inside the view and clear of the other overlays (the title, the
-## key cards, the strip, 다시, the picture buttons, the tip, Dugi's box) when it can be: above him,
+## key cards, the strip, 다시, the picture buttons, the tip, Dugi's box) and of what the lab keeps in
+## sight (Experiment.keep_in_sight) when it can be: above him,
 ## else beside him, else below. The side is chosen when the bubble opens (`choose`, also when Dugi's
 ## box opens after it; a win and a miss alike, the landing stamp is not avoided since 2026-11-02) and kept; it never jumps: once placed it moves at
 ## most ResultBubble.MAX_STEP a frame, to a new side too, and else only follows Puppy (2026-10-31 user:
@@ -1149,6 +1150,10 @@ func _fit_result_bubble(choose := true) -> void:
 	var avoid := overlay_rects()
 	if body.size.x > 0.0:
 		avoid.append(body)   # the bubble never covers Puppy himself
+	for box in experiment.keep_in_sight():   # what the lab keeps in sight (the buoyancy's cat on its way)
+		var r := view_rect_of(box)
+		if r.size.x > 0.0:
+			avoid.append(r.grow(4.0))
 	if _mission_pill != null and _mission_pill.visible:
 		avoid.append(_mission_pill.get_rect().grow(4.0))
 	if dialogue != null and dialogue.active and dialogue.visible:
