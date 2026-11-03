@@ -5,7 +5,8 @@
   with the app's name on a paper card in the app's font.
 - feature-graphic-en.png: the same from scene-throw-en.png. That input and screenshots/en-*.png were
   captured by hand on a tablet running the English build (adb screencap); for scene-throw-en.png the
-  lab's top-left title and readouts were then painted over with a strip of the sky beside them.
+  lab's top-left title bar (x 0-960, y 0-140) and readouts (x 0-660, y 140-395) were then painted over
+  with strips of the sky beside them; nothing else in that image is retouched.
 Run from the repository root: python3 docs/release/store/make_store_art.py
 """
 from pathlib import Path
