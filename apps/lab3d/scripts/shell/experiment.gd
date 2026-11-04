@@ -222,6 +222,13 @@ func follow_point() -> Vector3:
 	return global_position
 
 
+## World boxes the screen keeps Puppy's result bubble clear of (ExperimentScreen._fit_result_bubble):
+## what must stay in sight while it shows, such as a character's way across the lab (2026-11-03: the
+## buoyancy's bread cat riding the drum). Default: none. Read only (visual).
+func keep_in_sight() -> Array[AABB]:
+	return []
+
+
 ## World point Dugi points at when he explains the run (IslandCast, Task 4h): what the lab's
 ## observation is about. Default: the body the camera follows. Read only (visual).
 func explain_point() -> Vector3:

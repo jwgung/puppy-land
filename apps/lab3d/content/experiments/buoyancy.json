@@ -14,7 +14,7 @@
     "pan_radius": 5.0,
     "default_mode": "front",
     "views": {
-      "front": { "yaw_deg": 0.0, "pitch_deg": -6.0, "distance": 7.5 },
+      "front": { "yaw_deg": 0.0, "pitch_deg": -6.0, "distance": 8.0 },
       "three_quarter": { "yaw_deg": 24.0, "pitch_deg": -20.0 },
       "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 9.0 },
       "side": { "yaw_deg": 90.0, "pitch_deg": -10.0, "distance": 8.0 },

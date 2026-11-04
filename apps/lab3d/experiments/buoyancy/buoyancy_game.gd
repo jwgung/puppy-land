@@ -63,7 +63,7 @@ func barrel_stand() -> Vector3:
 		return Vector3(0.0, 1.6, 0.0)
 	var at: Vector3 = l.drum.global_position
 	var top: float = at.y + l.drum_height() * 0.5
-	return Vector3(at.x, top, at.z - 0.05)
+	return Vector3(at.x, top, at.z - BuoyancyProps.LID_BACK)
 
 
 func _cat() -> CatActor:
@@ -113,7 +113,8 @@ func _process(delta: float) -> void:
 				_arrive()
 			elif _t >= _walk_after:
 				_from = cat.position
-				_hop_t = 0.0
+				# Riding the barrel already (2026-11-03): only the hop on to the islet.
+				_hop_t = HOP_S if _from.distance_to(barrel_stand()) < 0.05 else 0.0
 				walk_state = "hopping"
 		"hopping":
 			_hop_t += delta
@@ -121,7 +122,8 @@ func _process(delta: float) -> void:
 
 
 ## The cat at _hop_t along its two hops: crates -> the barrel's lid -> the islet (each an arc over
-## the higher end), facing where it goes; then it stands on the islet facing the camera.
+## the higher end; a cat riding the barrel makes only the second), facing where it goes; then it stands
+## on the islet facing the camera.
 func _step_cat() -> void:
 	var cat := _cat()
 	if cat == null:

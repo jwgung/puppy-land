@@ -21,6 +21,18 @@
 ## 8. the real input path: dragging the drum down into the water (0.05 m grid, upright while held) and
 ##    letting go releases it from rest there; the run = formula.
 ## 9. the measurement demo (--auto-drag) drags the drum and releases it.
+## 10. floating is judged forgivingly (2026-11-03 playtest "물에 뜨는 판정 조건이 너무 빡빡해"): each stage's
+##    floating drum counts as floating within FLOAT_WITHIN_S of its release from every height of its
+##    grid, bobbing BuoyancyLab.FLOAT_BOB or less with its top out of the water, and stays floating for
+##    the rest of the run; a drum that sinks or stays never counts as floating (the densities).
+## 11. the bread cat rides (2026-11-03 playtest "빵고양이 태우기가 실제로 안 타"): with the riding load it
+##    hops onto the waiting drum's lid (no jump), rides it (where a finger moves it, and down after the
+##    release); the small drum sinks and the cat hops back to its crates as the lid goes under (never
+##    under the water, never a jump); the big drum floats with it on the lid; without the load it stays
+##    on its crates; the run is the same with and without the cat.
+## 12. Puppy's bubble (2026-11-03 playtest "퍼피의 말풍선에 빵고양이가 이동하는 모습이 가려짐"): on the phone,
+##    the tablet and the tablet with the sidebar, at each stage's conditions, the result bubble covers
+##    the bread cat on no frame it shows, and opens clear of the cat's whole way (keep_in_sight).
 extends RefCounted
 
 const VECTORS_PATH := "res://tests/buoyancy_lab_vectors.json"
@@ -29,6 +41,11 @@ const FIRST_ENTRY := preload("res://tests/first_entry_checks.gd")   # start_case
 const UI_THEME := "res://scripts/app/ui_theme.gd"
 const STEP_HZ := 60
 const ENGINE_TOLERANCE := 1e-4
+const FLOAT_WITHIN_S := 6.0     # s from the release to "floating" (before 2026-11-03: 8-10 s, 26 s for 5 kg)
+const FLOAT_HEAVY_S := 7.5      # s for 95 kg in the big drum (before: 10 s)
+const CAT_STEP_MAX := 0.15      # m the cat moves in one frame at most (a hop: a jump to a new place is 0.3 m and more)
+const PHONE := Vector2(1560, 720)
+const TABLET := Vector2(1152, 720)
 
 var tree: SceneTree
 var expect: Callable
@@ -53,6 +70,9 @@ func run() -> void:
 	await check_first_release_screen()
 	await check_input_path()
 	await check_demo()
+	await check_float_judging()
+	await check_cat_rides()
+	await check_bubble_clear()
 
 
 # --- helpers ----------------------------------------------------------------------------------
@@ -459,3 +479,260 @@ func check_demo() -> void:
 	screen.manipulator.start_demo(0.0)
 	expect.call(runs >= 2 and bottoms.size() >= 2, "buoyancy: the measurement demo (--auto-drag) drags the drum to new heights and lets it go", "%d runs, bottoms %s" % [runs, str(bottoms.keys())])
 	await _close(screen)
+
+
+# --- 10. floating, judged forgivingly ---------------------------------------------------------
+
+## Steps from the release until the status is `want` (-1: not within `steps`), and the status changes
+## after it.
+func _status_run(lab: Experiment, mass: float, volume: String, bottom: float, want: String, steps: int) -> Array:
+	lab.begin_batch()
+	lab.set_control("mass", mass)
+	lab.set_control("volume", volume)
+	lab.start_bottom = bottom
+	lab.end_batch()
+	lab.reset_run()
+	lab.release()
+	var first := -1
+	var flips := 0
+	var bob := INF
+	var top_dry := false
+	var floated := false
+	var last := ""
+	var start: int = lab.model.steps
+	for k in steps:
+		await tree.physics_frame
+		var now: String = lab.status()
+		floated = floated or now == "floating"
+		if first < 0 and now == want:
+			first = lab.model.steps - start
+			bob = lab.bob() if lab.has_method("bob") else 0.0
+			top_dry = lab.model.fraction() < 1.0
+		elif first >= 0 and now != last:
+			flips += 1
+		last = now
+	return [first, flips, bob, top_dry, floated]
+
+
+func check_float_judging() -> void:
+	var lab: Experiment = await _lab()
+	var problems := []
+	var slowest := 0.0
+	# The stages' floating drums (the picks: 빈 통 45 kg in the small drum, 빵고양이 80 kg in the big one) and
+	# the lightest, from the top of the grid, the start, the waterline and the tank floor.
+	# (95 kg in the big drum, the heaviest that floats, rides 2.5 cm out of the water and bobs longest:
+	# FLOAT_HEAVY_S; before: 10 s.)
+	for c in [[45.0, "small"], [80.0, "big"], [5.0, "small"], [5.0, "big"], [95.0, "big"]]:
+		for bottom in [lab.WATERLINE + lab.HOLD_ABOVE, lab.WATERLINE + lab.START_ABOVE, lab.WATERLINE, lab.FLOOR_Y]:
+			var r: Array = await _status_run(lab, c[0], c[1], bottom, "floating", roundi(20.0 * STEP_HZ))
+			var within := FLOAT_HEAVY_S if c[0] == 95.0 else FLOAT_WITHIN_S
+			slowest = maxf(slowest, r[0] / float(STEP_HZ))
+			if r[0] < 0 or r[0] > within * STEP_HZ or r[1] != 0 or not r[3] or r[2] > 0.03 + 1e-9:
+				problems.append("%s kg %s from %.2f m: floating after %s steps, %d changes after, bob %.3f m, top out %s" % [c[0], c[1], bottom, r[0], r[1], r[2], r[3]])
+	# Never floating: the stage 2 drum (80 kg in the small drum) and the neutral ones.
+	for c in [[80.0, "small"], [150.0, "big"], [50.0, "small"], [100.0, "big"]]:
+		for bottom in [lab.WATERLINE + lab.START_ABOVE, lab.FLOOR_Y]:
+			var r: Array = await _status_run(lab, c[0], c[1], bottom, "floating", roundi(12.0 * STEP_HZ))
+			if r[4]:
+				problems.append("%s kg %s from %.2f m counts as floating" % [c[0], c[1], bottom])
+	await _free(lab)
+	expect.call(problems.is_empty(),
+		"buoyancy: a floating drum counts as floating within %.0f s of its release (each stage's drum and the lightest, from every height), bobbing 3 cm or less with its top out of the water, and stays so; 80 kg in the small drum and a drum as dense as water never float" % FLOAT_WITHIN_S,
+		"slowest %.2f s; %s" % [slowest, "; ".join(problems)])
+
+
+# --- 11. the bread cat rides --------------------------------------------------------------------
+
+## The cat's base on the drum's lid (where it sits on it: its middle, a little behind).
+func _lid(lab: Experiment) -> Vector3:
+	var at: Vector3 = lab.drum.global_position
+	return Vector3(at.x, at.y + lab.drum_height() * 0.5, at.z - 0.05)
+
+
+func _home() -> Vector3:
+	return Vector3(BuoyancyProps.CAT_AT.x, BuoyancyProps.CAT_TOP, BuoyancyProps.CAT_AT.y)
+
+
+## A frame, then the lab poses the cat on the drum as it stands after this frame's physics (the
+## frame's _process ran before it).
+func _frame(lab: Experiment) -> void:
+	await tree.process_frame
+	lab._process(0.0)
+
+
+## A condition changed as the screen changes it (between two fixed steps, ExperimentScreen._set_control).
+func _ctl(lab: Experiment, id: String, value: Variant) -> void:
+	lab.change_from_input(func() -> void: lab.set_control(id, value))
+
+
+func check_cat_rides() -> void:
+	var problems := []
+	var lab: Experiment = await _lab()
+	var cat: CatActor = lab.props.cat
+	# Stage 2 (the small drum, the cat on it): it hops onto the waiting drum within a second, no jump.
+	_ctl(lab, "volume", "small")
+	_ctl(lab, "mass", 80.0)
+	var step := 0.0
+	var step_at := ""
+	var phase := "boarding the small drum"
+	var last := cat.position
+	for i in STEP_HZ:
+		await _frame(lab)
+		if cat.position.distance_to(last) > step:
+			step = cat.position.distance_to(last)
+			step_at = "%s (%s)" % [phase, lab.props.ride]
+		last = cat.position
+	if cat.position.distance_to(_lid(lab)) > 1e-6 or lab.props.weight.visible:
+		problems.append("small drum, waiting: the cat at %s, not on the lid %s (weight shown %s)" % [cat.position, _lid(lab), lab.props.weight.visible])
+	# It rides the drum where a finger moves it (up, above the water).
+	lab.change_from_input(func() -> void:
+		lab.manipulation_started("drum")
+		lab.drum.global_position += Vector3(0.0, 0.3, 0.0))
+	await _frame(lab)
+	last = cat.position   # (the finger moved it 0.3 m at once)
+	if cat.position.distance_to(_lid(lab)) > 1e-6:
+		problems.append("held: the cat at %s, not on the lid %s" % [cat.position, _lid(lab)])
+	lab.change_from_input(func() -> void: lab.manipulation_placed("drum", lab.drum.global_transform))
+	phase = "riding the small drum down"
+	# Let go: it rides down; the lid goes under (the drum sinks) and it hops back to its crates.
+	var rode := 0
+	var lowest := INF
+	var back := -1
+	for k in 3 * STEP_HZ:
+		await _frame(lab)
+		if cat.position.distance_to(last) > step:
+			step = cat.position.distance_to(last)
+			step_at = "%s (%s)" % [phase, lab.props.ride]
+		last = cat.position
+		lowest = minf(lowest, cat.position.y)
+		if cat.position.distance_to(_lid(lab)) < 1e-6:
+			rode += 1
+		if back < 0 and cat.position.distance_to(_home()) < 1e-6:
+			back = k
+	if rode < 5 or back < 0 or lab.status() != "sunk" or lowest < lab.WATERLINE - 0.1 or cat.mode != "free":
+		problems.append("small drum: rode %d frames, back on its crates at frame %d (%s, %s), lowest %.2f m" % [rode, back, lab.status(), cat.mode, lowest])
+	# Stage 3 (the big drum): it floats with the cat on the lid.
+	_ctl(lab, "volume", "big")
+	phase = "boarding the big drum"
+	for i in STEP_HZ:
+		await _frame(lab)
+		if cat.position.distance_to(last) > step:
+			step = cat.position.distance_to(last)
+			step_at = "%s (%s)" % [phase, lab.props.ride]
+		last = cat.position
+	lab.release()
+	phase = "riding the big drum"
+	for k in 8 * STEP_HZ:
+		await _frame(lab)
+		if cat.position.distance_to(last) > step:
+			step = cat.position.distance_to(last)
+			step_at = "%s (%s)" % [phase, lab.props.ride]
+		last = cat.position
+	if lab.status() != "floating" or cat.position.distance_to(_lid(lab)) > 1e-6:
+		problems.append("big drum: %s, the cat at %s, lid %s" % [lab.status(), cat.position, _lid(lab)])
+	# The empty drum (45 kg): the cat hops back and holds it from its crates, as before.
+	_ctl(lab, "mass", 45.0)
+	phase = "back to the crates"
+	for i in STEP_HZ:
+		await _frame(lab)
+		if cat.position.distance_to(last) > step:
+			step = cat.position.distance_to(last)
+			step_at = "%s (%s)" % [phase, lab.props.ride]
+		last = cat.position
+	if cat.position.distance_to(_home()) > 1e-6 or not lab.props.weight.visible:
+		problems.append("45 kg: the cat at %s, weight shown %s" % [cat.position, lab.props.weight.visible])
+	if step > CAT_STEP_MAX:
+		problems.append("the cat moved %.2f m in one frame, %s" % [step, step_at])
+	await _free(lab)
+	# The run is the same without the cat (every step of the riding run).
+	var runs := []
+	for with_cat in [true, false]:
+		var l: Experiment = await _lab()
+		if not with_cat:
+			l.props.cat.queue_free()
+			l.props.cat = null
+		l.set_control("volume", "small")
+		l.set_control("mass", 80.0)
+		for i in 40:
+			await tree.process_frame
+		l.release()
+		var track := []
+		for i in 2 * STEP_HZ:
+			await tree.physics_frame
+			track.append([l.drum.global_position, str(l.observations())])
+		runs.append(track)
+		await _free(l)
+	if runs[0] != runs[1]:
+		problems.append("the run differs without the cat")
+	expect.call(problems.is_empty(),
+		"buoyancy: with the cat's load the bread cat hops onto the waiting drum and rides it (held, then down); the small drum sinks and it hops back to its crates as the lid goes under, the big one floats with it on the lid; the empty drum leaves it on its crates; no jump (%.1f m a frame at most); the run is the same without it" % CAT_STEP_MAX,
+		"; ".join(problems))
+
+
+# --- 12. Puppy's bubble ---------------------------------------------------------------------------
+
+func _open_at(size: Vector2, sidebar: bool) -> Control:
+	var host := Control.new()
+	host.theme = load(UI_THEME).build()
+	host.size = size
+	tree.root.add_child(host)
+	var screen: Control = load(EXPERIMENT_SCREEN).new()
+	screen.setup(ExperimentRegistry.find("buoyancy"))
+	host.add_child(screen)
+	await tree.process_frame
+	await tree.physics_frame
+	if sidebar:
+		screen.open_sidebar(false)
+	for i in 3:
+		await tree.process_frame
+	return screen
+
+
+func check_bubble_clear() -> void:
+	var problems := []
+	var shown := 0
+	var stages: Array = MissionRound.missions(ExperimentRegistry.find("buoyancy")).stages
+	for setup in [[PHONE, false, "phone"], [TABLET, false, "tablet"], [TABLET, true, "tablet, sidebar open"]]:
+		for i in stages.size():
+			DirAccess.remove_absolute(ProgressStore.path)
+			var screen: Control = await _open_at(setup[0], setup[1])
+			screen.mission_round.end_question()
+			var lab: Experiment = screen.experiment
+			var want: Dictionary = stages[i].conditions
+			screen._set_control("volume", want.volume)
+			screen._set_control("mass", want.mass.get("max", want.mass.get("min", 0.0)))
+			for k in 40:
+				await tree.process_frame
+			screen.experiment_action("release")
+			var frames := 0
+			var first := true
+			for k in 12 * STEP_HZ:
+				await tree.process_frame
+				var bubble: ResultBubble = screen.result_bubble()
+				if bubble == null:
+					if frames > 0:
+						break
+					continue
+				frames += 1
+				var rect := bubble.bubble_rect()
+				var cat_rect: Rect2 = screen.view_rect_of(lab.props.cat.bounds())
+				if rect.intersects(cat_rect):
+					problems.append("%s, stage %d conditions, frame %d: the bubble %s over the cat %s" % [setup[2], i + 1, frames, rect, cat_rect])
+					break
+				if first and frames > 1:
+					first = false
+					var way: Array = lab.keep_in_sight() if lab.has_method("keep_in_sight") else []
+					for box: AABB in way:
+						if rect.intersects(screen.view_rect_of(box)):
+							problems.append("%s, stage %d conditions: the bubble %s over the cat's way %s" % [setup[2], i + 1, rect, screen.view_rect_of(box)])
+					if way.is_empty():
+						problems.append("%s: no way of the cat to keep in sight" % setup[2])
+			if frames == 0:
+				problems.append("%s, stage %d conditions: no result bubble" % [setup[2], i + 1])
+			shown += frames
+			screen.get_parent().queue_free()
+			await tree.process_frame
+	DirAccess.remove_absolute(ProgressStore.path)
+	expect.call(problems.is_empty(),
+		"buoyancy: Puppy's result bubble covers the bread cat on no frame (phone, tablet, tablet with the sidebar; each stage's conditions) and opens clear of the cat's whole way",
+		"%d frames; %s" % [shown, "; ".join(problems.slice(0, 6))])
