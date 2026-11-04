@@ -63,7 +63,7 @@ static func question(definition: ExperimentDefinition, experiment: Experiment, h
 	if not numbers.is_empty():
 		lines.append(Locale.t("note.ask_numbers"))
 		lines.append_array(numbers)
-	var say := ExperimentRegistry.kid_text(definition.raw, "say")
+	var say := TermMarks.plain(ExperimentRegistry.kid_text(definition.raw, "say"))   # the words, not the box's marks
 	if say != "":
 		lines.append(Locale.t("note.ask_dugi") % say)
 	lines.append("")

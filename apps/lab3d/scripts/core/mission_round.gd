@@ -959,6 +959,19 @@ func take_conditions() -> Dictionary:
 	return out
 
 
+## The conditions of the stage the round opens at that the lab does not have yet {control id: value}
+## (ConditionPicks.stage_values): the screen sets them once when it opens, before anything else, so the
+## lab stands as its first mission says (2026-11-03 playtest: "가벼운 상자를 밀어서" on the 8 kg start
+## box, "막대를 가까이 눌러" on the middle point). The picture buttons stay for the next stages.
+func entry_conditions() -> Dictionary:
+	var out := {}
+	var values := ConditionPicks.stage_values(definition, stage())
+	for id in values:
+		if not condition_holds(values[id], lab.control_value(id)):
+			out[id] = values[id]
+	return out
+
+
 ## The run has its result (the formula's answers may show): `values` are the observations shown now.
 func answer_shown(values: Dictionary) -> bool:
 	return result_in(definition, lab.status(), values)

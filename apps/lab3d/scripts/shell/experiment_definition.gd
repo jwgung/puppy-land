@@ -189,7 +189,8 @@ func manipulation() -> Dictionary:
 
 
 ## The manipulation rules: object id -> {"surface", "snap", "height_max", "height_step", "drag",
-## "hold"} (the one reading of manipulation.objects: the Manipulator and the lab's grid both use it).
+## "hold", "guide", "guide_to"} (the one reading of manipulation.objects: the Manipulator and the lab's
+## grid both use it). `guide` / `guide_to`: the hand guide's gesture and drag end ("" = the default).
 func manipulation_rules() -> Dictionary:
 	var result := {}
 	for object in manipulation().get("objects", []):
@@ -202,6 +203,8 @@ func manipulation_rules() -> Dictionary:
 			"height_step": float(height_rule.get("step", 0.0)),
 			"drag": object.get("drag", true) != false,
 			"hold": object.get("hold", false) == true,
+			"guide": str(object.get("guide", "")),
+			"guide_to": str(object.get("guide_to", "")),
 		}
 	return result
 

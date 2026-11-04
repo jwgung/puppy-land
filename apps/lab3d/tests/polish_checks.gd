@@ -24,6 +24,7 @@ const HOME_SCREEN := "res://scripts/app/island_home_screen.gd"
 const APP := "res://scripts/app/app.gd"
 const PHONE := Vector2(1560, 720)
 const TABLET := Vector2(1152, 720)
+const UiScale := preload("res://tests/ui_scale_checks.gd")   # PHONE_ZOOMED (화면 크기)
 const MIN_APART := 0.5   # m between two of the three (their bodies are about 0.35-0.6 m wide)
 
 
@@ -36,7 +37,7 @@ func run() -> void:
 	var sound_path := SoundBoard.path
 	SoundBoard.path = SoundBoard.TEST_PATH
 	DirAccess.remove_absolute(SoundBoard.path)
-	for setup in [[PHONE, "phone"], [TABLET, "tablet"]]:
+	for setup in [[PHONE, "phone"], [TABLET, "tablet"], [UiScale.PHONE_ZOOMED, "phone zoomed"]]:
 		await check_sheet_header(setup[0], setup[1])
 		await check_settings_drag(setup[0], setup[1])
 	await check_sheet_drag()

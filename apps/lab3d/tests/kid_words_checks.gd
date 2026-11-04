@@ -7,7 +7,11 @@
 ## - a content lint over every kid text: no "뉴턴", no "초속", no decimals in the stage texts and the
 ##   picture buttons, 강철 (not 금속), the approved wordings,
 ## - the science note of every lab: 법칙 (one sentence, one formula), 이번 실험 숫자 (3-4 numbers),
-##   조건 바꾸기, 그래프 only where the note keeps it, and a collapsed 더 보기 with everything else.
+##   조건 바꾸기, 그래프 only where the note keeps it, and a collapsed 더 보기 with everything else,
+## - term marks (TermMarks, 2026-11-03 playtest): in both languages every lab's kid.intro marks the
+##   one word Dugi introduces (and only intro / stage says carry marks), the same keys in ko and en;
+##   Dugi's box draws it bold on the highlight, typed with the words, measured in bold, plain for the
+##   science note's question.
 ## Read only: nothing here changes a lab's physics.
 extends RefCounted
 
@@ -28,6 +32,8 @@ func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:
 func run() -> void:
 	check_shown_number()
 	check_content_lint()
+	check_term_content()
+	await check_term_box()
 	await check_free_fall_card()
 	await check_spring_card()
 	await check_push_bar()
@@ -118,6 +124,119 @@ static func stage_and_pick_texts(definition: Dictionary) -> Array:
 	return texts
 
 
+## Every string of `value` with its key path (the content's words).
+static func _strings(value: Variant, path: String, out: Dictionary) -> void:
+	if value is String:
+		out[path] = value
+	elif value is Dictionary:
+		for k in value:
+			_strings(value[k], "%s.%s" % [path, k], out)
+	elif value is Array:
+		for i in value.size():
+			_strings(value[i], "%s[%d]" % [path, i], out)
+
+
+func check_term_content() -> void:
+	var problems := []
+	var keys := {}   # language -> {lab.path: marks}
+	var intros := 0
+	for language in ["ko", "en"]:
+		Locale.set_language(language)
+		keys[language] = {}
+		for definition in ExperimentRegistry.load_all():
+			var all := {}
+			_strings(definition, "", all)
+			for path: String in all:
+				var text: String = all[path]
+				if not TermMarks.marked(text):
+					continue
+				keys[language]["%s%s" % [definition.id, path]] = text.count(TermMarks.MARK)
+				var allowed := path == ".kid.intro" or (path.begins_with(".missions.stages[") and path.ends_with("].say"))
+				if not allowed or text.count(TermMarks.MARK) != 2:
+					problems.append("%s %s%s: %d marks" % [language, definition.id, path, text.count(TermMarks.MARK)])
+				var term: String = TermMarks.spans(text).filter(func(p: Array) -> bool: return p[1]).map(func(p: Array) -> String: return p[0]).front()
+				if term.strip_edges() != term or term.split(" ").size() > 3 or TermMarks.plain(text).contains(TermMarks.MARK):
+					problems.append("%s %s%s: term '%s'" % [language, definition.id, path, term])
+			if definition.has("missions"):
+				intros += 1
+				if not TermMarks.marked(str(definition.get("kid", {}).get("intro", ""))):
+					problems.append("%s %s: kid.intro marks no term" % [language, definition.id])
+	Locale.set_language("ko")
+	if keys.ko != keys.en:
+		problems.append("ko / en marks differ: %s vs %s" % [str(keys.ko), str(keys.en)])
+	expect.call(problems.is_empty() and intros == 22,
+		"term marks: every lab's intro (ko and en) marks the word Dugi introduces, only intros and stage says carry one pair, the same places in both languages",
+		"%d intros; %s" % [intros, "; ".join(problems)])
+
+
+func check_term_box() -> void:
+	var host := Control.new()
+	host.theme = load(UI_THEME).build()
+	host.size = TABLET
+	tree.root.add_child(host)
+	var problems := []
+	# A term that runs over a line break (narrow box), then the slide lab's own introduction.
+	var text := "This is called **action and reaction** in a box. The end."
+	var box := DialogueBox.new(text)
+	host.add_child(box)
+	box.layout(Rect2(Vector2.ZERO, TABLET), DialogueBox.MIN_TEXT_WIDTH + 300.0, 16.0)
+	box._pages = DialogueBox.paginate(text, box._font(), box._font_size(), 120.0, box._bold())
+	if box.joined() != text:
+		problems.append("joined %s" % box.joined())
+	var shown := []
+	for pg in box.pages():
+		shown.append_array(pg.shown)
+	if shown.any(func(l: String) -> bool: return l.count(TermMarks.MARK) % 2 == 1) or shown.filter(func(l: String) -> bool: return TermMarks.marked(l)).size() < 2:
+		problems.append("a term over a break is not closed and opened again: %s" % str(shown))
+	box.queue_free()
+	var intro: String = MissionRound.intro(ExperimentRegistry.find("incline-friction"))[0]
+	box = DialogueBox.new(intro)
+	host.add_child(box)
+	box.layout(Rect2(Vector2.ZERO, TABLET), TABLET.x - 200.0, 16.0)
+	box.open()
+	var k: int = range(box.pages().size()).filter(func(i: int) -> bool: return TermMarks.marked(box.page_text(i))).front()
+	for i in k:
+		box.advance()
+		box.advance()
+	var term_at := TermMarks.plain(box.page_text(k)).find("마찰력")
+	var before_term := true
+	while not box.typed():
+		box.step(0.05)
+		var vis := box.label.visible_characters if not box.typed() else box.page_length(k)
+		var parsed := box.label.get_parsed_text()
+		if parsed != TermMarks.plain(box.page_text(k)).left(vis):
+			problems.append("typing shows '%s' at %d" % [parsed, vis])
+			break
+		if vis <= term_at and box.label.text.contains("[bgcolor"):
+			before_term = false
+	if not before_term:
+		problems.append("the highlight shows before its word")
+	var full: String = box.label.text
+	if not (full.contains("[b][bgcolor=#%s]마찰력[/bgcolor][/b]" % (load(UI_THEME).DIALOGUE_TERM as Color).to_html()) and box.label.get_parsed_text() == TermMarks.plain(box.page_text(k))):
+		problems.append("the page: %s" % full)
+	for pg in box.pages():
+		for line: String in pg.shown:
+			if box.line_width(line) > box.label.size.x + 0.5:
+				problems.append("a line wider than the box: %s" % line)
+	if not is_equal_approx(box.line_width("a **friction**"), box._font().get_string_size("a ", HORIZONTAL_ALIGNMENT_LEFT, -1, box._font_size()).x
+			+ box._bold().get_string_size("friction", HORIZONTAL_ALIGNMENT_LEFT, -1, box._font_size()).x) or box.line_width("**friction**") <= box.line_width("friction"):
+		problems.append("a term is not measured in bold")
+	box.queue_free()
+	# The science note's AI question takes the words without the marks.
+	var marked := ExperimentRegistry.find("incline-friction").duplicate(true)   # (find shares its cached definition)
+	marked.kid.say = "바닥이 붙잡는 힘을 **마찰력**이라고 해요."
+	var lab := ExperimentRegistry.instantiate(marked)
+	host.add_child(lab)
+	await tree.process_frame
+	var question := ScienceNote.question(ExperimentDefinition.new(marked), lab)
+	if question.contains(TermMarks.MARK) or not question.contains("힘을 마찰력이라고"):
+		problems.append("the note's question keeps the marks")
+	host.queue_free()
+	await tree.process_frame
+	expect.call(problems.is_empty(), "term marks: Dugi's box draws the term bold on the highlight, typed with the words, lines measured in bold, a term over a break closed per line, plain in the note's question",
+		"; ".join(problems))
+
+
 func check_content_lint() -> void:
 	var decimal := RegEx.create_from_string("\\d[.,]\\d")
 	var found := []
@@ -143,7 +262,8 @@ func check_content_lint() -> void:
 	var readout := ExperimentScreen.kid_value("m/s", 8.5, 1)
 	if readout != "1초에 8.5미터":
 		found.append("slingshot speed '%s'" % readout)
-	# The approved wordings (2026-10-28; the swing, slide, spring and drum stages 2026-11-01: one change a stage).
+	# The approved wordings (2026-10-28; the swing, slide, spring and drum stages 2026-11-01: one change a stage;
+	# the slide, swing and pulley stages reworded 2026-11-04: natural words, the pulley names the change).
 	var want := {
 		"pulley": [ExperimentRegistry.kid_text(ExperimentRegistry.find("pulley"), "title"), "줄이 많으면 힘이 덜 들까?"],
 		"buoyancy": [MissionRound.missions(ExperimentRegistry.find("buoyancy")).stages[0].text, "작은 빈 통을 물에 띄우기!"],
@@ -159,11 +279,11 @@ func check_content_lint() -> void:
 		"projectile": [MissionRound.missions(ExperimentRegistry.find("projectile")).stages.map(func(s: Dictionary) -> String: return s.text),
 			["낮게 던져서 가까운 상자 맞히기!", "얼마나 기울여 던질까? 먼 상자 맞히기!", "높이 던져서 나무 위 상자 맞히기!"]],
 		"constraints_stages": [MissionRound.missions(ExperimentRegistry.find("constraints")).stages.map(func(s: Dictionary) -> String: return s.text),
-			["지구에서 보통 줄로 거북이 박자 맞추기!", "지구에서 줄만 길게 해서 느린 박자 맞추기!", "같은 긴 줄로 달에서 아주 느린 박자 맞추기!"]],
+			["지구에서 보통 줄로 거북이 시계 박자 맞추기!", "이번에는 줄만 길게 바꿔서 느린 박자 맞추기!", "긴 줄 그대로 달에 가서 아주 느린 박자 맞추기!"]],
 		"pulley_stages": [MissionRound.missions(ExperimentRegistry.find("pulley")).stages.map(func(s: Dictionary) -> String: return s.text),
-			["1줄로 보물 상자를 선반까지 올리기!", "2줄로 보물 상자를 선반까지 올리기!", "4줄로 가볍게 선반까지 올리기!"]],
+			["1줄로 보물 상자를 선반까지 올리기!", "2줄로 바꿔서 보물 상자를 선반까지 올리기!", "4줄로 바꿔서 보물 상자를 선반까지 올리기!"]],
 		"incline-friction": [MissionRound.missions(ExperimentRegistry.find("incline-friction")).stages.map(func(s: Dictionary) -> String: return s.text),
-			["나무 미끄럼틀을 조금 기울여 노란 도미노 넘어뜨리기!", "같은 나무로 더 많이 기울여 파란 도미노 넘어뜨리기!", "같은 기울기로 강철로 바꿔 빨간 기둥 넘어뜨리기!"]],
+			["나무 미끄럼틀을 살짝 기울여 노란 도미노 쓰러뜨리기!", "나무 그대로 더 많이 기울여 파란 도미노 쓰러뜨리기!", "기울기 그대로 강철로 바꿔서 빨간 기둥 쓰러뜨리기!"]],
 	}
 	for id in want:
 		if want[id][0] != want[id][1]:

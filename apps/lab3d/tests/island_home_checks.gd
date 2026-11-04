@@ -9,6 +9,7 @@ var expect: Callable
 const UI_THEME := "res://scripts/app/ui_theme.gd"
 const PHONE := Vector2(1560, 720)
 const TABLET := Vector2(1152, 720)
+const UiScale := preload("res://tests/ui_scale_checks.gd")   # PHONE_ZOOMED (화면 크기)
 
 
 func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:
@@ -185,7 +186,7 @@ func check_map_layout() -> void:
 ## The spot names at the default camera (phone and tablet): none overlap, each sits right above its
 ## own landmark (the declutter moved none of them), and a tap on each landmark picks that spot.
 func check_labels_and_taps() -> void:
-	for setup in [[PHONE, "phone"], [TABLET, "tablet"]]:
+	for setup in [[PHONE, "phone"], [TABLET, "tablet"], [UiScale.PHONE_ZOOMED, "phone zoomed"]]:
 		var screen := await _home(setup[0])
 		await tree.process_frame
 		await tree.process_frame
@@ -195,9 +196,11 @@ func check_labels_and_taps() -> void:
 			var la: Control = screen._labels[ids[a]]
 			if not la.visible:
 				problems.append("%s label hidden" % ids[a])
+			if la.scale.x > name_keep(screen) + 1e-4:   # zoomed: the name keeps the map's scale
+				problems.append("%s label at scale %.3f (want at most %.3f)" % [ids[a], la.scale.x, name_keep(screen)])
 			for b in range(a + 1, ids.size()):
 				var lb: Control = screen._labels[ids[b]]
-				if Rect2(la.position, la.size).intersects(Rect2(lb.position, lb.size)):
+				if _unscaled(screen, la).intersects(_unscaled(screen, lb)):
 					problems.append("%s and %s overlap" % [ids[a], ids[b]])
 		for i in screen._spots.size():
 			var spot: Dictionary = screen._spots[i]
@@ -504,7 +507,7 @@ func check_stamp_display() -> void:
 
 ## The settings button is on the map and reachable (phone and tablet); there is no list button.
 func check_buttons_and_layout() -> void:
-	for setup in [[PHONE, "phone"], [TABLET, "tablet"]]:
+	for setup in [[PHONE, "phone"], [TABLET, "tablet"], [UiScale.PHONE_ZOOMED, "phone zoomed"]]:
 		var screen := await _home(setup[0])
 		await tree.process_frame
 		await tree.process_frame
@@ -583,3 +586,14 @@ func _free(screen: Control) -> void:
 	screen.get_parent().queue_free()
 	for i in 3:
 		await tree.process_frame
+
+
+## How much smaller a spot name is drawn on a zoomed screen (화면 크기): 720 / its short side, 1.0 at x1.0.
+static func name_keep(screen: Control) -> float:
+	return minf(1.0, minf(screen.size.x, screen.size.y) / 720.0)
+
+
+## A spot name's rect before its distance shrink (only the zoom's keep): the strict test.
+static func _unscaled(screen: Control, label: Control) -> Rect2:
+	var k := name_keep(screen)
+	return Rect2(label.position + Vector2(label.size.x * 0.5, label.size.y) * (1.0 - k), label.size * k)

@@ -75,6 +75,7 @@ const REGION_EPS := 0.001        # m, "inside the drag region" tolerance
 const MARKER_MARGIN := 0.06      # m, footprint ring beyond the object's extent on every side
 const MARKER_THICKNESS := 0.02   # m
 const PULL_DEAD_ZONE := 16.0     # UI units a slingshot press may move and still be a tap (no throw)
+const DEMO_SHORT_UNITS := 720.0   # the screen's short side the demo pulls are measured for
 const DEMO_PULLS := [Vector2(-110.0, 110.0), Vector2(-150.0, 120.0)]   # the demo's slingshot pulls (UI units)
 const DEMO_HOLDS := [2.0, 3.5]   # s the demo holds a hold object (alternating; with the 0.4 s action, inside bench_device.sh's 4 s)
 
@@ -175,10 +176,16 @@ func draggable_ids() -> Array:
 ## FINGER_MM on the glass (DisplayServer's dpi; an unknown dpi leaves the units).
 func pick_radius() -> float:
 	var dpi := float(DisplayServer.screen_get_dpi()) if DisplayServer.get_name() != "headless" else 0.0
-	var per_unit := _pixels_per_unit().y
+	return maxf(grab_radius, finger_units(dpi, _pixels_per_unit().y))
+
+
+## FINGER_MM in UI units for a screen of `dpi` and a view of `per_unit` pixels per unit (0 when
+## either is unknown). 2026-11-04: the screen size's zoom is in per_unit (Quality: the root's final
+## transform), so the radius stays FINGER_MM on the glass at every 화면 크기.
+static func finger_units(dpi: float, per_unit: float) -> float:
 	if dpi <= 0.0 or per_unit <= 0.0:
-		return grab_radius
-	return maxf(grab_radius, FINGER_MM / 25.4 * dpi / per_unit)
+		return 0.0
+	return FINGER_MM / 25.4 * dpi / per_unit
 
 
 ## The slingshot is on (Plan G3): a press on `id` (or, after a run, near the launch point) starts
@@ -855,11 +862,14 @@ func _process(delta: float) -> void:
 const GUIDE_REACH := 0.6
 
 ## The gesture the hand guide (HandGuide) shows for this lab, read only (nothing is pressed or moved):
-## {"kind": "pull" | "hold" | "drag", "id", "from": world point the finger presses now (guide_point),
+## {"kind": "pull" | "hold" | "tap" | "drag", "id", "from": world point the finger presses now (guide_point),
 ## "to": world point the drag or the pull ends at}, or {} when the lab has no object a finger takes now.
 ## The object is the slingshot's, else the first one a finger may pick up. A pull ends where the demo's
 ## pull (slingshot_demo) lands on the slingshot's surface, so it stays the throw's direction when the
-## camera turns.
+## camera turns. The rule says what the lab really takes (2026-11-03 playtest: the hand showed a drag
+## where a touch lets the box go, and the spring's pull the wrong way): `"guide": "tap"` shows a tap
+## (a press and lift there is the lab's whole action); a drag goes GUIDE_REACH of the way towards the
+## rule's `guide_to` end of its region ("min" / "max": region_min / region_max), else its farther end.
 func guide() -> Dictionary:
 	var id := slingshot_id if slingshot_id != "" and rules.has(slingshot_id) else ""
 	if id == "":
@@ -875,12 +885,19 @@ func guide() -> Dictionary:
 		return {"kind": "pull", "id": id, "from": from, "to": to} if to is Vector3 else {}
 	if rules[id].hold:
 		return {"kind": "hold", "id": id, "from": from}
+	if rules[id].get("guide", "") == "tap":
+		return {"kind": "tap", "id": id, "from": from}
 	var surface := _surface_for(id)
 	if surface == null:
 		return {}
 	var at := surface.to_plane(from)
 	var ends := [surface.nearest_inside(surface.region_min), surface.nearest_inside(surface.region_max)]
 	var far: Vector2 = ends[0] if at.distance_to(ends[0]) > at.distance_to(ends[1]) else ends[1]
+	match str(rules[id].get("guide_to", "")):
+		"min":
+			far = ends[0]
+		"max":
+			far = ends[1]
 	var goal := at.lerp(far, GUIDE_REACH)
 	return {"kind": "drag", "id": id, "from": from, "to": surface.pose(goal, surface.height_of(from)).origin}
 
@@ -899,7 +916,7 @@ func _pull_end(from: Vector3) -> Variant:
 	if slingshot_surface == null or view.rig.is_position_behind(from):
 		return null
 	var start := view.rig.unproject_position(from) / _pixels_per_unit()
-	var ray := _finger_ray(start + slingshot_demo[0])
+	var ray := _finger_ray(start + slingshot_demo[0] * demo_scale())
 	var at: Variant = slingshot_surface.project_ray(ray[0], ray[1], 0.0)
 	return slingshot_surface.pose(at, 0.0).origin if at is Vector2 else null
 
@@ -969,8 +986,16 @@ func _demo_tick(delta: float) -> void:
 		_demo_t = 0.0
 	elif mode == "slingshot":
 		# The slingshot lab's demo pulls the ball back and lets go (a throw, the finger's own path).
-		_demo_pull = [at, at + slingshot_demo[1 if _demo_flip else 0]]
+		_demo_pull = [at, at + slingshot_demo[1 if _demo_flip else 0] * demo_scale()]
 		_demo_t = 0.0
+
+
+## The demo's pulls are UI units of a 720-unit short side: on a zoomed screen (화면 크기, 2026-11-04)
+## they shrink with it, so the pull on the glass and in the world stays the same.
+func demo_scale() -> float:
+	var visible := get_tree().root.get_visible_rect().size if is_inside_tree() else Vector2.ZERO   # the root: this node is in the 3D SubViewport
+	var short := minf(visible.x, visible.y)
+	return short / DEMO_SHORT_UNITS if short > 0.0 else 1.0
 
 
 ## The demo's press on object `id` (its pick point on the view).

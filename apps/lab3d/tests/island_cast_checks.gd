@@ -25,15 +25,22 @@
 ##    Dialogue: pages split at spaces, at most 2 lines that fit, joining back to the observe text in
 ##    every experiment; typewriter, tap = whole page / next / close (Dugi lowers), the read timer,
 ##    the sidebar closes it.
+## 5-6 again at the stage-1 entry (2026-11-03): the labs that open on other conditions than their
+##    start case (ENTRY_LABS: the friction's light box, the lever's near point, the orbit's 4 m) are
+##    placed and laid out as the child first sees them. A yard lab's Puppy stands inside the yard's
+##    picket fence, seen from the front camera without the fence in between (2026-11-03 playtest
+##    "퍼피가 울타리 밖에 있어서 잘 안 보임").
 ## 7. physics unchanged, every listed experiment: engine bodies (every step) and panel texts are the
 ##    same with and without the cast while Dugi explains (from its own trigger, or made to explain
 ##    at step 120 when the run reaches no result status in 420 steps).
 extends RefCounted
 
 const EXPERIMENT_SCREEN := "res://scripts/shell/experiment_screen.gd"
+const FIRST_ENTRY := preload("res://tests/first_entry_checks.gd")   # start_case: the definition's start on a screen
 const UI_THEME := "res://scripts/app/ui_theme.gd"
 const PHONE := Vector2(1560, 720)
 const TABLET := Vector2(1152, 720)
+const UiScale := preload("res://tests/ui_scale_checks.gd")   # PHONE_ZOOMED (화면 크기)
 const POINT_TOL_DEG := 1.0
 const DUGI_VERTS_MAX := 3300        # 3,050 model vertices + the shadow
 const PUPPY_VERTS_MAX := 3450       # 3,199 + the shadow
@@ -43,6 +50,11 @@ const CLEARANCE := 0.2              # m: cast bounds grown by this must touch no
 const MOTION_CLEARANCE := 0.5       # m: horizontal distance to any sampled body position
 const POINTING_CLEARANCE := 0.05    # m: each mesh of the pointing pose (arm, stick) from the apparatus
 const RUN_STEPS := 600
+## Labs whose stage 1 sets other conditions than the start case: checked again as they open
+## (first_entry_checks). The buoyancy lab (its drum and mass) is not listed: its cast is laid out
+## with its own floating rework.
+const ENTRY_LABS := ["friction", "rotation", "orbit"]
+const FENCE_MARGIN := 0.8           # m: Puppy's feet this far inside the yard fence
 
 var tree: SceneTree
 var expect: Callable
@@ -65,6 +77,9 @@ func run() -> void:
 	for definition in ExperimentRegistry.load_all():
 		await check_placement(definition.id)
 		await check_layout(definition.id)
+	for id in ENTRY_LABS:
+		await check_placement(id, true)
+		await check_layout(id, true)
 	await check_dialogue()
 	check_sentence_lines()
 	await check_physics_unchanged()
@@ -72,7 +87,8 @@ func run() -> void:
 
 # --- helpers ----------------------------------------------------------------------------------
 
-func _open(id: String, size: Vector2, sidebar := false, with_cast := true) -> Control:
+## `entry`: as the lab opens (stage 1's conditions); otherwise the definition's start case.
+func _open(id: String, size: Vector2, sidebar := false, with_cast := true, entry := false) -> Control:
 	var host := Control.new()
 	host.theme = load(UI_THEME).build()
 	host.size = size
@@ -81,6 +97,8 @@ func _open(id: String, size: Vector2, sidebar := false, with_cast := true) -> Co
 	screen.show_cast = with_cast
 	screen.setup(ExperimentRegistry.find(id))
 	host.add_child(screen)
+	if not entry:
+		FIRST_ENTRY.start_case(screen)   # (it opens on stage 1's conditions)
 	await tree.process_frame
 	await tree.physics_frame
 	if sidebar:
@@ -408,8 +426,8 @@ func check_projectile_explains() -> void:
 		"cast (projectile): after the throw lands Dugi points at the formula landing point (the end of the formula path)",
 		"status %s, %d explanations, point %s vs %s, aim %.3f deg" % [status, cast.explain_count, lab.explain_point(), landing, aim])
 	expect.call(box.visible and box.active and box.joined() == str(screen.explain_say()[0]) and box.name_label.text == "두기두기"
-		and box.label.text == box.page_text(0),
-		"cast (projectile): the dialogue opens with Dugi's say for the stage exactly (only split into pages)", box.label.text)
+		and box.label.get_parsed_text() != "" and TermMarks.plain(box.page_text(0)).begins_with(box.label.get_parsed_text()),   # (typing: the shown part)
+		"cast (projectile): the dialogue opens with Dugi's say for the stage exactly (only split into pages)", box.label.get_parsed_text())
 	screen.experiment_action("reset")
 	await tree.process_frame
 	expect.call(cast.dugi.state == "rest" and not box.visible and not box.active and not cast.dugi.pointer.visible,
@@ -419,12 +437,13 @@ func check_projectile_explains() -> void:
 
 # --- 5. placement -----------------------------------------------------------------------------
 
-func check_placement(id: String) -> void:
-	var screen := await _open(id, TABLET)
+func check_placement(id: String, entry := false) -> void:
+	var screen := await _open(id, TABLET, false, true, entry)
+	var key := id + (" stage-1 entry" if entry else "")
 	var lab: Experiment = screen.experiment
 	var cast: IslandCast = screen.cast
 	if cast == null:
-		expect.call(false, "cast (%s): the definition places Dugi and Puppy" % id, "")
+		expect.call(false, "cast (%s): the definition places Dugi and Puppy" % key, "")
 		await _close(screen)
 		return
 	var cells := apparatus_cells(lab)
@@ -483,13 +502,30 @@ func check_placement(id: String) -> void:
 		apparatus_back = minf(apparatus_back, k.z * CELL)
 	if cast.puppy.bounds().end.z >= apparatus_back:
 		problems.append("Puppy not behind the apparatus (front z %.2f, apparatus back %.2f)" % [cast.puppy.bounds().end.z, apparatus_back])
-	_scene[id] = {"cells": cells, "motion": motion, "cat": cat_box, "explained": _explained.duplicate()}
+	_scene[key] = {"cells": cells, "motion": motion, "cat": cat_box, "explained": _explained.duplicate()}
+	# A yard lab: Puppy inside the yard's picket fence, FENCE_MARGIN from it, and no fence between the
+	# front camera and Puppy (2026-11-03 playtest "퍼피가 울타리 밖에 있어서 잘 안 보임").
+	var world := LabWorld.new(id, center)
+	if world.theme == "yard":
+		var fence: PackedVector2Array = world._fence
+		var feet := Vector2(cast.puppy.global_position.x, cast.puppy.global_position.z)
+		var eye_2d := Vector2(eye.x, eye.z)
+		var nearest := INF
+		var crossed := false
+		for i in fence.size():
+			var a := fence[i]
+			var b := fence[(i + 1) % fence.size()]
+			nearest = minf(nearest, feet.distance_to(Geometry2D.get_closest_point_to_segment(feet, a, b)))
+			if Geometry2D.segment_intersects_segment(eye_2d, feet, a, b) != null:
+				crossed = true
+		if not Geometry2D.is_point_in_polygon(feet, fence) or nearest < FENCE_MARGIN or crossed:
+			problems.append("Puppy not inside the yard fence (at %s, %.2f m from it, fence in the line of sight %s)" % [feet, nearest, crossed])
 	if id == "orbit":
 		var top := maxf(boxes["Dugi"].end.y, maxf(boxes["Dugi pointing"].end.y, boxes["Puppy"].end.y))
 		var consts: Dictionary = (lab.get_script() as GDScript).get_script_constant_map()
 		if top + 0.012 >= consts.ORBIT_Y - consts.PLANET_RADIUS:
 			problems.append("the cast reaches the planet's plane")
-	expect.call(problems.is_empty(), "cast (%s): Dugi (also pointing) and Puppy on the island, clear of trees, rocks, every apparatus mesh, the bread cat and the bodies' motion (%d samples)" % [id, motion.size()],
+	expect.call(problems.is_empty(), "cast (%s): Dugi (also pointing) and Puppy on the island, clear of trees, rocks, every apparatus mesh, the bread cat and the bodies' motion (%d samples); a yard lab's Puppy inside its fence" % [key, motion.size()],
 		"; ".join(problems))
 	await _close(screen)
 
@@ -512,17 +548,19 @@ func _keep(screen: Control, scene: Dictionary) -> Array:
 	return out
 
 
-func check_layout(id: String) -> void:
-	if not _scene.has(id):
+func check_layout(id: String, entry := false) -> void:
+	var key := id + (" stage-1 entry" if entry else "")
+	if not _scene.has(key):
 		return
-	for setup in [[PHONE, false, "phone"], [TABLET, false, "tablet"], [TABLET, true, "tablet, sidebar open"]]:
-		var screen := await _open(id, setup[0], setup[1])
+	for setup in [[PHONE, false, "phone"], [TABLET, false, "tablet"], [TABLET, true, "tablet, sidebar open"],
+			[UiScale.PHONE_ZOOMED, false, "phone zoomed"], [UiScale.PHONE_ZOOMED, true, "phone zoomed, sidebar open"]]:
+		var screen := await _open(id, setup[0], setup[1], true, entry)
 		var cast: IslandCast = screen.cast
 		var lab: Experiment = screen.experiment
 		var view_rect := Rect2(Vector2.ZERO, screen.view.size)
 		var problems := []
 		var overlays: Array[Rect2] = screen.overlay_rects()
-		var keep := _keep(screen, _scene[id])
+		var keep := _keep(screen, _scene[key])
 		var eye: Vector3 = screen.view.rig.global_position
 		var dugi_r: Rect2 = screen.view_rect_of(cast.dugi.bounds())
 		var puppy_r: Rect2 = screen.view_rect_of(cast.puppy.bounds())
@@ -574,13 +612,13 @@ func check_layout(id: String) -> void:
 				# its portrait is Dugi.
 				if r.grow(4.0).has_point(screen.view_point(lab.explain_point())):
 					problems.append("dialogue covers what Dugi points at")
-				for p: Vector3 in _scene[id].explained:   # the target over a whole run (moving bodies too)
+				for p: Vector3 in _scene[key].explained:   # the target over a whole run (moving bodies too)
 					if r.grow(4.0).has_point(screen.view_point(p)):
 						problems.append("dialogue covers what Dugi points at during the run (%s)" % p)
 						break
 			if box.portrait.position.x > box.size.x * 0.5:
 				problems.append("portrait not on the left")
-		expect.call(problems.is_empty(), "cast (%s, %s): Dugi and Puppy in the front view clear of the overlays; Dugi hides no apparatus, motion or cat; Puppy over none of them nor Dugi; the dialogue clear of the controls, cards and what Dugi points at (none beside the open sidebar)" % [id, setup[2]],
+		expect.call(problems.is_empty(), "cast (%s, %s): Dugi and Puppy in the front view clear of the overlays; Dugi hides no apparatus, motion or cat; Puppy over none of them nor Dugi; the dialogue clear of the controls, cards and what Dugi points at (none beside the open sidebar)" % [key, setup[2]],
 			"; ".join(problems))
 		await _close(screen)
 
@@ -592,7 +630,7 @@ func check_dialogue() -> void:
 	var split_problems := []
 	var max_pages := 0
 	for definition in ExperimentRegistry.load_all():
-		for size in [PHONE, TABLET]:
+		for size in [PHONE, TABLET, UiScale.PHONE_ZOOMED]:
 			var screen := await _open(definition.id, size)
 			var box: DialogueBox = screen.dialogue
 			if not screen._layout_dialogue():
@@ -613,7 +651,7 @@ func check_dialogue() -> void:
 					split_problems.append_array(_page_problems(box, definition.id, text))
 					max_pages = maxi(max_pages, box.pages().size())
 			await _close(screen)
-	expect.call(split_problems.is_empty(), "dialogue: every kid say text (and prediction question and reason) splits at its spaces into pages of at most %d lines that fit (phone, tablet), and joins back exactly" % DialogueBox.LINES,
+	expect.call(split_problems.is_empty(), "dialogue: every kid say text (and prediction question and reason) splits at its spaces into pages of at most %d lines that fit (phone, tablet, phone zoomed), and joins back exactly" % DialogueBox.LINES,
 		"; ".join(split_problems) if not split_problems.is_empty() else "up to %d pages" % max_pages)
 
 	var screen := await _open("collision", TABLET)
@@ -716,20 +754,18 @@ func check_dialogue() -> void:
 ## line within the label, the ▼ clear of the words.
 static func _page_problems(box: DialogueBox, id: String, text: String) -> Array:
 	var problems := []
-	var font := box.label.get_theme_font("font")
-	var fs := box.label.get_theme_font_size("font_size")
 	if box.joined() != text:
 		problems.append("%s: pages != %s" % [id, text.left(12)])
 	for pg in box.pages():
 		if pg.lines.size() > DialogueBox.LINES:
 			problems.append("%s: %d lines" % [id, pg.lines.size()])
 		for k in pg.lines.size():
-			var line: String = pg.lines[k]
+			var line: String = TermMarks.plain(pg.lines[k])
 			# A line never ends in a one-syllable word ("첫 / 번째") unless it is the last of the text.
 			var last_word: String = line.split(" ")[-1]
 			if k < pg.lines.size() - 1 and last_word.length() == 1 and last_word.unicode_at(0) >= 0xAC00 and last_word.unicode_at(0) <= 0xD7A3 and line.contains(" "):
 				problems.append("%s: a line ends in the lone word '%s'" % [id, last_word])
-			if font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > box.label.size.x + 0.5:
+			if box.line_width(pg.shown[k]) > box.label.size.x + 0.5:   # (terms in bold)
 				problems.append("%s: line too wide" % id)
 	if box.more.position.x < box.label.position.x + box.label.size.x or box.more.position.x + box.more.get_minimum_size().x > box.box.size.x:
 		problems.append("%s: the ▼ overlaps the words or leaves the box" % id)

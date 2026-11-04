@@ -2,7 +2,7 @@
   "title": "At what angle does a throw go farthest?",
   "category": "Motion and force",
   "question": "At the same speed, in which direction does a throw go the farthest?",
-  "steps": ["Drag the purple arrow to set the direction.", "Let the ball go and watch its path.", "Start again and compare with another angle."],
+  "steps": ["Pull the ball back to set the direction.", "Let the ball go and watch its path.", "Start again and compare with another angle."],
   "observe": "See the curve made by the sideways speed and the downward acceleration together.",
   "terms": [
     { "name": "Velocity", "description": "Which way and how fast a thing moves." },
@@ -10,7 +10,7 @@
     { "name": "Projectile motion", "description": "The curved path a thrown thing makes while gravity acts on it." }
   ],
   "law": { "title": "Motion of a thrown object", "description": "While it moves sideways, gravity adds downward speed, so it moves in a curve." },
-  "tip": "Press the ball, pull it back and let go: it flies the other way. The pull's direction is the angle and its length is the speed. Tap the ball once to change its height with the yellow handle beside it. You can also drag the yellow handle at the arrow's tip to set the direction and speed.",
+  "tip": "Press the ball, pull it back and let go: it flies the other way. The pull's direction is the throw angle. The ball always flies at the same speed. Set the throw height under Change the conditions.",
   "tip_short": "Pull the ball back and let go to throw",
   "controls": [
     {
@@ -62,7 +62,7 @@
   },
   "story": { "clue": "If we hit the boxes one by one, I think the piece will come out!", "map_clue": "Something fell on the grass near the target!" },
   "kid": {
-    "intro": "This is the ball throw lab. A thrown ball flies forward. All the while, the ground pulls the ball down. This pull is called gravity. Let's see where the ball lands for each throw angle!",
+    "intro": "This is the ball throw lab. A thrown ball flies forward. All the while, the ground pulls the ball down. This pull is called **gravity**. Let's see where the ball lands for each throw angle!",
     "title": "Let's throw the ball far!",
     "place": "Ball throw",
     "say": "The ball falls down while it goes forward. So it flies in a curve.",

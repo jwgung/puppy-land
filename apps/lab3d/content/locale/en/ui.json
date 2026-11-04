@@ -79,7 +79,7 @@
   "note.copied": "The question is copied. Paste it into an AI app.",
   "note.copied_web": "The question is copied. Paste it into the web page.",
   "note.ending": "Here is what I want to know about this experiment:",
-  "note.role": "I am doing a physics experiment in the app 'Bread Cat Science Island'. Please explain simply, so a primary school child understands.",
+  "note.role": "I am doing a science experiment in the app 'Bread Cat Science Island'. Please explain simply, so a primary school child understands.",
   "note.web_link": "No AI app? Open it on the web",
   "orbit.outcome.crash": "Crash",
   "orbit.outcome.escape": "Escape",
@@ -152,6 +152,9 @@
     "high": "Draws the 3D view at full resolution. Edge smoothing is MSAA 2x as in Medium. For fast devices."
   },
   "settings.tiers": { "low": "Low", "medium": "Medium", "high": "High" },
+  "settings.ui_size": "Screen size",
+  "settings.ui_size_note": "The size of words and buttons. Auto makes them bigger on a small screen.",
+  "settings.ui_sizes": { "auto": "Auto", "normal": "Normal", "large": "Large", "extra_large": "Extra large" },
   "speaker.dugi": "Dugidugi",
   "speaker.puppy": "Puppy",
   "spring.reach_wait": "Shows when it swings",

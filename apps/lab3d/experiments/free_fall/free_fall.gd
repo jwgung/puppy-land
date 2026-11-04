@@ -57,7 +57,8 @@ func _init() -> void:
 
 ## The balls start at different heights (2026-10-29 user: the first drop must not press both buttons
 ## at once): after the controls' defaults (the "height" slider sets both), each ball gets its
-## own START_HEIGHTS; the child lifts the red and the yellow ball to the same height.
+## own START_HEIGHTS; the child lifts the yellow (pink) ball to the red one (the hand guide shows that
+## ball: drop_yellow is the definition's first object, 2026-11-03 playtest).
 func _ready() -> void:
 	super()
 	for id in ORDER:

@@ -401,7 +401,8 @@ static func _validate_key_observations(keys: Variant, observations: Array) -> Pa
 
 ## Optional `manipulation` (Task 2b): {"objects": [{"id", "surface", "snap" (m, optional),
 ## "height": false | {"max" (m, > 0, a multiple of step), "step" (m, optional)}} or a hold object
-## {"id", "hold": true} (2026-10-28: press and hold, no surface)],
+## {"id", "hold": true} (2026-10-28: press and hold, no surface); optional "guide": "drag" | "tap" and
+## "guide_to": "min" | "max" (the hand guide's gesture and drag end, Manipulator.guide)],
 ## "demo_action" (optional, an action id: what the --auto-drag demo does after putting an object down)}.
 static func _validate_manipulation(manipulation: Variant, actions: Array = []) -> PackedStringArray:
 	var problems := PackedStringArray()
@@ -439,6 +440,10 @@ static func _validate_manipulation(manipulation: Variant, actions: Array = []) -
 			problems.append("manipulation %s.height must be false or {max, step}" % object.id)
 		if not object.get("drag", true) is bool:
 			problems.append("manipulation %s.drag must be true or false" % object.id)
+		if not object.get("guide", "drag") in ["drag", "tap"]:
+			problems.append("manipulation %s.guide must be \"drag\" or \"tap\"" % object.id)
+		if not object.get("guide_to", "min") in ["min", "max"]:
+			problems.append("manipulation %s.guide_to must be \"min\" or \"max\"" % object.id)
 	var grab: Variant = manipulation.get("grab_radius", 1.0)   # (Manipulator.PICK_RADIUS when absent)
 	if not (grab is float or grab is int) or grab <= 0.0:
 		problems.append("manipulation.grab_radius must be a number > 0 (UI units)")
@@ -453,6 +458,10 @@ static func _validate_manipulation(manipulation: Variant, actions: Array = []) -
 		var angle_step: Variant = slingshot.get("angle_step", 15.0)
 		if not (angle_step is float or angle_step is int) or angle_step <= 0.0:
 			problems.append("manipulation.slingshot.angle_step must be a number > 0")
+		# The lowest launch speed the pull reaches (collision: 0 = never away from the other ball).
+		var lowest: Variant = slingshot.get("min", 0.0)
+		if not (lowest is float or lowest is int):
+			problems.append("manipulation.slingshot.min must be a number")
 	return problems
 
 

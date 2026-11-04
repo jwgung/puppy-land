@@ -135,18 +135,15 @@ func _status_changed(_previous: String, _current: String) -> void:
 	pass
 
 
-## A pickable handle: a StaticBody3D on `layer` (never hit: mask 0) with a box shape and the yellow
-## knob mesh as its "Visual" child, added to this experiment (the velocity arrows' knobs of the
-## projectile and collision labs).
+## A pickable handle: a StaticBody3D on `layer` (never hit: mask 0) with a box shape, added to this
+## experiment (the projectile's velocity arrow tip). It draws nothing: the arrow's head marks the tip
+## (2026-11-03 playtest "보라색 화살표 끝에 노란 상자는 없어도 될 것 같음": the yellow box is gone).
 func _make_knob(knob_name: String, layer: int, size: float) -> StaticBody3D:
 	var knob := StaticBody3D.new()
 	knob.name = knob_name
 	knob.collision_layer = 1 << (layer - 1)
 	knob.collision_mask = 0
 	_add_box_shape(knob, Vector3.ONE * size)
-	var visual := ArtKit.instance(VelocityArrow.knob_mesh(size))
-	visual.name = "Visual"
-	knob.add_child(visual)
 	add_child(knob)
 	return knob
 
@@ -220,6 +217,13 @@ func graph_revision() -> int:
 ## World position the "따라가기" camera mode follows.
 func follow_point() -> Vector3:
 	return global_position
+
+
+## World boxes the screen keeps Puppy's result bubble clear of (ExperimentScreen._fit_result_bubble):
+## what must stay in sight while it shows, such as a character's way across the lab (2026-11-03: the
+## buoyancy's bread cat riding the drum). Default: none. Read only (visual).
+func keep_in_sight() -> Array[AABB]:
+	return []
 
 
 ## World point Dugi points at when he explains the run (IslandCast, Task 4h): what the lab's

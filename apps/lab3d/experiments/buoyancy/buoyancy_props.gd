@@ -19,7 +19,9 @@
 ##   standing in the tank's back left corner (clear of the drum's way down and of the depth ticks):
 ##   while the drum waits above the water it holds it with both paws on its side, leaning over to it;
 ##   "놓기" lets go (the paws follow down); a finger holding the drum, or a drum put under the water:
-##   it only watches. It cheers when the drum floats, stays or sinks. Only meshes: the drum moves as
+##   it only watches. It cheers when the drum floats, stays or sinks. With the riding load (2026-11-03,
+##   BuoyancyLab.CAT_RIDE_MASS) it hops onto the lid and rides the drum instead, and hops back to its
+##   crates when a drum that will not float takes it under (update_cat). Only meshes: the drum moves as
 ##   the formula model says.
 class_name BuoyancyProps
 extends RefCounted
@@ -37,6 +39,13 @@ const CAT_SPREAD := 0.45
 const WEIGHT_MASS := 150.0       # kg: the weight that is WEIGHT_WIDTH wide (the mass slider's top)
 const WEIGHT_WIDTH := 0.34       # m (fits on the small drum's 0.4 m lid)
 const WEIGHT_TALL := 0.85       # the weight mesh's height per metre of its width
+## The cat riding the drum: its hop on and off (s, and m over the higher end: a step up, so it stays
+## under the title on the tablet), how far
+## behind the lid's middle it sits, and the least height of the lid above the water to hop on or stay.
+const RIDE_HOP_S := 0.7
+const RIDE_HOP_UP := 0.06
+const LID_BACK := 0.05
+const LID_DRY := 0.0
 
 var juice: ArtJuice
 var drum_visual: Node3D
@@ -164,18 +173,100 @@ func dress(experiment: Node3D, drum: RigidBody3D, radius: float, height: float, 
 	cat_stand.fit(cat, floor_y)
 
 
-## The drum (centre `at`) waits for the release (`waiting`): the cat holds it while it is above the
-## water; otherwise a cat still holding it lets go.
-func update_cat(at: Vector3, waiting: bool) -> void:
+## The cat on the drum (2026-11-03 playtest "빵고양이 태우기가 실제로 안 타"): "" on its crates, "boarding"
+## (hopping onto the lid), "aboard" (riding it), "leaving" (hopping back to its crates).
+var ride := ""
+var _hop_t := 0.0
+var _hop_from := Vector3.ZERO
+
+
+## Where the cat stands on its crates (its base).
+static func cat_home() -> Vector3:
+	return Vector3(CAT_AT.x, CAT_TOP, CAT_AT.y)
+
+
+## Where the cat sits on the drum's lid (centre `at`): BuoyancyGame.barrel_stand's point.
+func lid_stand(at: Vector3) -> Vector3:
+	return Vector3(at.x, at.y + _height * 0.5, at.z - LID_BACK)
+
+
+## The cat with the drum (centre `at`; `released`: let go and running, `held`: a finger has it). With
+## the riding load (`rides`, BuoyancyLab.CAT_RIDE_MASS) the cat hops onto the lid while the drum waits or
+## is held above the water and rides it (where a finger moves it, down into the water); when the lid goes
+## under the water of a drum that will not float (`sinks`: the densities) or that a finger holds under, or
+## the load is no longer the cat, it hops back to its crates. Without the riding load it holds the
+## drum with both paws while it waits above the water, and lets go otherwise. `delta`: the frame (s).
+func update_cat(at: Vector3, released: bool, held: bool, rides: bool, sinks: bool, delta: float) -> void:
 	if cat == null:
 		return
+	var lid := lid_stand(at)
+	var dry := lid.y >= _waterline + LID_DRY
+	match ride:
+		"":
+			if rides and not released and dry:
+				_hop(cat.position, "boarding")
+		"boarding", "aboard":
+			if not rides or (not dry and (sinks or not released)):
+				_hop(cat.position, "leaving")
+		"leaving":
+			if rides and not released and dry:
+				_hop(cat.position, "boarding")
+	match ride:
+		"boarding":
+			_hop_t += delta
+			if _hop_t >= RIDE_HOP_S:
+				ride = "aboard"
+			else:
+				_hop_pose(_hop_from, lid, _hop_t / RIDE_HOP_S)
+		"leaving":
+			_hop_t += delta
+			if _hop_t >= RIDE_HOP_S:
+				ride = ""
+				cat.walk(cat_home(), 0.0, 0.0)
+				cat.mode = "free"
+			else:
+				_hop_pose(_hop_from, cat_home(), _hop_t / RIDE_HOP_S)
+	if ride == "aboard":
+		cat.walk(lid, 0.0, 0.0)   # facing the camera, its base on the lid (it moves with the drum)
+	weight.visible = ride != "aboard"   # riding, the cat is the load on the lid
+	if ride != "":
+		return
 	var bottom := at.y - _height * 0.5
-	if waiting and bottom >= _waterline - 1e-6:
-		var root := Vector3(CAT_AT.x, CAT_TOP, CAT_AT.y)
+	if not released and not held and bottom >= _waterline - 1e-6:
+		var root := cat_home()
 		var y := clampf(root.y + cat.look.shoulders[0].y - 0.1, bottom + 0.06, bottom + _height - 0.04)
 		cat.grab(root, CatActor.facing(root, at), CatActor.ball_grip(Vector3(at.x, y, at.z), _radius, root, CAT_SPREAD))
 	elif cat.mode == "grab":
 		cat.let_go(Vector3.DOWN)
+
+
+## The cat on the drum now (boarding, aboard or leaving it).
+func cat_riding() -> bool:
+	return ride != ""
+
+
+func _hop(from: Vector3, next: String) -> void:
+	ride = next
+	_hop_t = 0.0
+	_hop_from = from
+
+
+## The cat at `k` (0..1) of a hop from `a` to `e` (its base), facing where it goes: up to RIDE_HOP_UP over
+## the higher end first, across, then down (the crates stand right beside the drum: its bread bag clears
+## the lid's rim only from above).
+func _hop_pose(a: Vector3, e: Vector3, k: float) -> void:
+	var f := clampf(k, 0.0, 1.0)
+	var peak := maxf(a.y, e.y) + RIDE_HOP_UP
+	var y := peak
+	if f < 0.35:
+		y = lerpf(a.y, peak, sin(PI * 0.5 * f / 0.35))
+	elif f > 0.65:
+		y = lerpf(peak, e.y, 1.0 - cos(PI * 0.5 * (f - 0.65) / 0.35))
+	var s := clampf((f - 0.2) / 0.6, 0.0, 1.0)
+	var at := a.lerp(e, s * s * (3.0 - 2.0 * s))
+	at.y = y
+	var yaw := CatActor.facing(a, e) if Vector2(e.x - a.x, e.z - a.z).length() > 0.05 else 0.0
+	cat.walk(at, yaw, 0.0)
 
 
 ## The drum's size (a new volume): its mesh, the juice's size, the ring and the weight on its lid.

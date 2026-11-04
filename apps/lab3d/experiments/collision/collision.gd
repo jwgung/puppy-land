@@ -13,8 +13,8 @@
 ## balls on it every step (method "kinematic_model"), so the panel has no engine measurement: the
 ## balls stand where the formula puts them. See docs/formula-correction.md (Task 4c).
 ## The balls look as heavy as they are (2026-10-28, CollisionProps.set_sizes): their meshes,
-## arrows and the cat follow the look radii; the model, its radii RADIUS_A / RADIUS_B and the bodies
-## do not change with the masses.
+## arrows and the cat follow the look radii, each from its own mass only (2026-11-03); the model, its
+## radii RADIUS_A / RADIUS_B and the bodies do not change with the masses.
 extends ModelDrivenLab
 
 const RADIUS_A := 0.4
@@ -197,7 +197,8 @@ func _hit() -> void:
 	var strength := clampf(closing / HIT_CLOSING_MAX, HIT_STRENGTH_MIN, 1.0)
 	# The looks touch where the line between their centres meets A's surface (A is left of B).
 	var look: Vector2 = props.look
-	props.hit(model.xa + (model.xb - model.xa) * look.x / (look.x + look.y), strength)
+	var ca: float = model.xa - props.shift
+	props.hit(ca + (model.xb + props.shift - ca) * look.x / (look.x + look.y), strength)
 	impact.emit(strength)
 
 
@@ -276,10 +277,10 @@ func follow_point() -> Vector3:
 
 ## Launch velocity (m/s) of a slingshot pull `pull` m along the rail (+ = towards B): the reversed
 ## pull, PULL_SCALE m per m/s, on the ARROW_STEP grid (counted in whole grid steps, 64-bit), within
-## +-SPEED_MAX. Pulling A back (away from B) launches it towards B.
-static func pull_velocity(pull: float) -> float:
+## `lowest`..SPEED_MAX (default -SPEED_MAX). Pulling A back (away from B) launches it towards B.
+static func pull_velocity(pull: float, lowest := -SPEED_MAX) -> float:
 	var cells := roundi(-pull / (ARROW_STEP * PULL_SCALE))
-	return clampf(cells * ARROW_STEP, -SPEED_MAX, SPEED_MAX)
+	return clampf(cells * ARROW_STEP, maxf(lowest, -SPEED_MAX), SPEED_MAX)
 
 
 func _process(_delta: float) -> void:
@@ -288,9 +289,9 @@ func _process(_delta: float) -> void:
 	props.spin(ball_a.global_position.x - start_a, ball_b.global_position.x - start_b)
 	var look: Vector2 = props.look
 	var start_velocity := velocity_a if _slingshot_preview == Vector2.INF else _slingshot_preview.x
-	props.update_cat(props.look_centre(ball_a, true), look.x, start_velocity, released)
+	props.update_cat(props.look_centre(ball_a, true), look.x, start_velocity, released, ball_a.global_position.x)
 	if released:
-		props.show_momentum(ball_a.global_position, look.x, model.momentum_a(), ball_b.global_position, look.y, model.momentum_b())
+		props.show_momentum(props.look_centre(ball_a, true), look.x, model.momentum_a(), props.look_centre(ball_b, false), look.y, model.momentum_b())
 		return
 	_show_arrows()
 
@@ -305,7 +306,7 @@ func _show_arrows() -> void:
 	if key == _shown:
 		return
 	var look: Vector2 = props.look
-	props.show_velocity(ball_a.global_position, look.x, _arrow_length(va), ball_b.global_position, look.y, _arrow_length(vb))
+	props.show_velocity(props.look_centre(ball_a, true), look.x, _arrow_length(va), props.look_centre(ball_b, false), look.y, _arrow_length(vb))
 	var centre: Vector3 = props.look_centre(ball_a, true)
 	props.show_pull(centre, centre - Vector3(va * PULL_SCALE, 0.0, 0.0) if pulling else Vector3.INF)
 	_shown = key
@@ -387,13 +388,16 @@ func manipulation_juice(id: String) -> ArtJuice:
 
 ## The slingshot (2026-10-28): ball A is pulled back along the rail; the pull's value is
 ## (pull_velocity, 0) and a release sets "velocity_a" and runs "release" ("출발"). The readout says the
-## speed in a child's words.
+## speed in a child's words. The definition's manipulation.slingshot.min (m/s) is the lowest launch a
+## pull gives: 0 keeps ball A from being sent away from B (2026-11-03 playtest "공을 반대 방향으로는
+## 못 보내게"; a pull towards B gives 0 m/s, the "자세히" slider still reaches -9 m/s).
 func slingshot_setup() -> Dictionary:
 	var spec: Dictionary = definition.slingshot()
 	if spec.is_empty() or manipulation_body(str(spec.get("object", ""))) == null:
 		return {}
+	var lowest := float(spec.get("min", -SPEED_MAX))
 	return {"object": str(spec.object), "surface": manipulation_surface("pull_a"), "launch": launch_point,
-		"controls": ["velocity_a"], "value": func(pull: Vector2) -> Vector2: return Vector2(pull_velocity(pull.x), 0.0),
+		"controls": ["velocity_a"], "value": func(pull: Vector2) -> Vector2: return Vector2(pull_velocity(pull.x, lowest), 0.0),
 		"readout": func(value: Vector2) -> String: return ExperimentScreen.kid_value("m/s", value.x, 1, Locale.t("collision.leftwards")),
 		"demo": [Vector2(-80.0, 0.0), Vector2(-130.0, 0.0)]}
 

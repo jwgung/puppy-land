@@ -15,6 +15,7 @@ extends RefCounted
 
 const UI_THEME := "res://scripts/app/ui_theme.gd"
 const EXPERIMENT_SCREEN := "res://scripts/shell/experiment_screen.gd"
+const FIRST_ENTRY := preload("res://tests/first_entry_checks.gd")   # start_case: the definition's start on a screen
 const TABLET := Vector2(1152, 720)
 const STEP_HZ := 60
 const LABS := ["collision", "orbit", "friction", "rotation", "pulley"]
@@ -54,6 +55,7 @@ func _open(id: String) -> Control:
 	var screen: Control = load(EXPERIMENT_SCREEN).new()
 	screen.setup(ExperimentRegistry.find(id))
 	host.add_child(screen)
+	FIRST_ENTRY.start_case(screen)   # (it opens on stage 1's conditions)
 	for i in 3:
 		await tree.process_frame
 	screen.mission_round.end_question()
@@ -154,9 +156,9 @@ func check_hold_rates() -> void:
 	# [lab, label, controls, hold id, F (N), rate (N/s), reached]
 	var cases := [
 		["friction", "light 2 kg wood", {"mass": "light"}, "box", 0.4 * 2.0 * g, 25.0],
-		["friction", "normal 5 kg wood", {"mass": "normal"}, "box", 0.4 * 5.0 * g, 25.0],
-		["friction", "heavy 10 kg wood", {"mass": "heavy"}, "box", 0.4 * 10.0 * g, 25.0],
-		["friction", "heaviest: 10 kg clay", {"mass": "heavy", "material": "clay"}, "box", 0.76 * 10.0 * g, 25.0],
+		["friction", "normal 6 kg wood", {"mass": "normal"}, "box", 0.4 * 6.0 * g, 25.0],
+		["friction", "heavy 16 kg wood", {"mass": "heavy"}, "box", 0.4 * 16.0 * g, 25.0],
+		["friction", "heaviest: 16 kg on the sidebar's clay", {"mass": "heavy", "material": "clay"}, "box", 0.76 * 16.0 * g, 25.0],
 		["rotation", "20 kg far", {"effort": "far"}, "effort", 20.0 * g * 2.0 / 3.15, 110.0],
 		["rotation", "20 kg mid", {"effort": "mid"}, "effort", 20.0 * g * 2.0 / 2.1, 110.0],
 		["rotation", "heaviest: 20 kg near", {"effort": "near"}, "effort", 20.0 * g * 2.0 / 1.225, 110.0],
@@ -184,12 +186,15 @@ func check_hold_rates() -> void:
 		times.append("%s %s %.2f s" % [c[0], c[1], seconds])
 		heaviest[c[0]] = maxf(heaviest.get(c[0], 0.0), seconds)
 		lightest[c[0]] = minf(lightest.get(c[0], INF), seconds)
+	# The heaviest within ~3 s; the push lab's boxes are 1 : 3 : 8 apart since 2026-11-03 (its missions'
+	# wood heavy box 2.51 s; only the sidebar's clay takes longer, 4.77 s).
+	var slowest_allowed := {"friction": 4.8}
 	for id in heaviest:
-		if heaviest[id] > 3.05:
+		if heaviest[id] > slowest_allowed.get(id, 3.05):
 			problems.append("%s heaviest %.2f s" % [id, heaviest[id]])
 		if lightest[id] < 0.3:
 			problems.append("%s lightest stage %.2f s (instant)" % [id, lightest[id]])
-	expect.call(problems.is_empty(), "hold rates: the force reaches each stage's formula force on step ceil(F / rate x 60); the heaviest within ~3 s, no stage instant (%s)" % "; ".join(times),
+	expect.call(problems.is_empty(), "hold rates: the force reaches each stage's formula force on step ceil(F / rate x 60); the heaviest within ~3 s (the push lab's clay 16 kg 4.8 s), no stage instant (%s)" % "; ".join(times),
 		"; ".join(problems))
 
 

@@ -27,6 +27,8 @@ const CODE_TEXT := ArtPalette.BLUE_DARK
 ## the SM-P200 in landscape.
 const DIALOGUE_PAPER := Color("fff6e6")
 const DIALOGUE_LINE := ArtPalette.OUTLINE
+## A term Dugi introduces (TermMarks): a highlighter yellow under the ink, clear on the cream paper.
+const DIALOGUE_TERM := Color("ffe066")
 ## The logo ribbon's red (assets/icon/splash.png, splash_banner.py RED) for the title's start button.
 const TITLE_RED := Color("e2483c")
 const SIZE_DIALOGUE := 24
@@ -99,8 +101,15 @@ static func build() -> Theme:
 	theme.set_type_variation("SpotPanel", "PanelContainer")
 	theme.set_stylebox("panel", "SpotPanel", _box(Color(1, 1, 1, 0.92), LINE, 12, 10, 4, Color.TRANSPARENT, 2, CARD_LIP))
 	# Dugi's dialogue box (Task 4h): cream paper, brown storybook outline, a brown name tag.
-	_label_variation(theme, "DialogueLabel", regular, SIZE_DIALOGUE, INK)
-	theme.set_constant("line_spacing", "DialogueLabel", 6)
+	# The words are a RichTextLabel: a term Dugi introduces is bold on a highlight (TermMarks).
+	theme.set_type_variation("DialogueLabel", "RichTextLabel")
+	theme.set_font("normal_font", "DialogueLabel", regular)
+	theme.set_font("bold_font", "DialogueLabel", bold)
+	theme.set_font_size("normal_font_size", "DialogueLabel", SIZE_DIALOGUE)
+	theme.set_font_size("bold_font_size", "DialogueLabel", SIZE_DIALOGUE)
+	theme.set_color("default_color", "DialogueLabel", INK)
+	theme.set_constant("line_separation", "DialogueLabel", 6)
+	theme.set_color("term_highlight", "DialogueLabel", DIALOGUE_TERM)
 	_label_variation(theme, "DialogueNameLabel", bold, 20, DIALOGUE_PAPER)
 	_label_variation(theme, "DialogueMoreLabel", bold, 20, DIALOGUE_LINE)
 

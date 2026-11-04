@@ -67,16 +67,16 @@ const ROUNDS := {
 		# (2026-11-01: the push stays at the force that started the box, so it slides at about
 		# (mu_s - mu_k) g while held: about 1 s more after the start to get off the path on wood.
 		# The times follow PUSH_RATE 25 N/s and the materials table: re-derive them if those change.)
-		["the 8 kg start box held 2.6 s (it moves far): not the light box", [["hold", 2.6]], 150, 0],
+		["the 8 kg start box held 2.6 s (it moves far): not the light box", [["ctl", "mass", "start"], ["hold", 2.6]], 150, 0],
 		["the light box held 2.8 s: pushed to the track's end, off the path", [["ctl", "mass", "light"], ["hold", 2.8]], 150, 1],
 		["the light box again: nothing", [["ctl", "mass", "light"], ["hold", 1.0]], 150, 1],
 		["the normal box held 1.2 s: still on the path", [["ctl", "mass", "normal"], ["hold", 1.2]], 150, 1],
 		["the normal box held 2.2 s: off the path", [["ctl", "mass", "normal"], ["hold", 2.2]], 150, 2],
-		["the heavy box held 2 s: still on the path", [["ctl", "mass", "heavy"], ["hold", 2.0]], 150, 2],
-		["the heavy box held 3 s: off the path", [["ctl", "mass", "heavy"], ["hold", 3.0]], 150, 3],
+		["the heavy box held 3 s: still on the path (16 kg since 2026-11-03: it starts after 2.5 s)", [["ctl", "mass", "heavy"], ["hold", 3.0]], 150, 2],
+		["the heavy box held 4 s: off the path", [["ctl", "mass", "heavy"], ["hold", 4.0]], 150, 3],
 	],
 	"rotation": [
-		["the middle point lifts with 186.9 N: not the near point", [["hand", 400.0]], 20, 0],
+		["the middle point lifts with 186.9 N: not the near point", [["ctl", "effort", "mid"], ["hand", 400.0]], 20, 0],
 		["the near point: 320.3 N", [["hand", 0.0], ["ctl", "effort", "near"], ["hand", 400.0]], 20, 1],
 		["the near point again: nothing", [["hand", 0.0], ["ctl", "effort", "near"], ["hand", 400.0]], 20, 1],
 		["the middle point, a 1 kg load: not the 20 kg load", [["hand", 0.0], ["ctl", "effort", "mid"], ["ctl", "mass", 1.0], ["hand", 400.0]], 20, 1],
@@ -84,17 +84,18 @@ const ROUNDS := {
 		["the far point: 124.6 N", [["hand", 0.0], ["ctl", "effort", "far"], ["hand", 400.0]], 20, 3],
 	],
 	"orbit": [
-		["the start (3 m): a circle, not from 4 m", [["act", "launch"]], 300, 0],
+		["the start (3 m): a circle, not from 4 m", [["ctl", "radius", 3.0], ["act", "launch"]], 300, 0],
 		["from 4 m at the circular speed: one lap (9.7 s)", [["ctl", "radius", 4.0], ["act", "circular"], ["act", "launch"]], 700, 1],
 		["from 4 m again: nothing", [["act", "launch"]], 700, 1],
 		["from 2 m at 3 m/s: it hits the star", [["ctl", "radius", 2.0], ["ctl", "speed", 3.0], ["act", "launch"]], 300, 1],
 		["from 2 m at the circular speed: two laps", [["act", "circular"], ["act", "launch"]], 600, 2],
 		["from 2 m at 6 m/s: it leaves, but not from 4 m", [["ctl", "speed", 6.0], ["act", "launch"]], 400, 2],
 		["from 4 m at 3.6 m/s: far away but still bound (under 3.67)", [["ctl", "radius", 4.0], ["ctl", "speed", 3.6], ["act", "launch"]], 900, 2],
-		["from 4 m at 5 m/s: it leaves the star", [["ctl", "speed", 5.0], ["act", "launch"]], 600, 3],
+		["from 4 m at 6 m/s: it leaves the star but flies past the far piece (2026-11-03: the piece is 9 m out)", [["ctl", "speed", 6.0], ["act", "launch"]], 600, 2],
+		["from 4 m at 5 m/s aimed outwards (60°): it leaves the star through the far piece", [["ctl", "direction", 60.0], ["ctl", "speed", 5.0], ["act", "launch"]], 600, 3],
 	],
 	"buoyancy": [
-		["the start: the 70 kg load in the big drum floats, but the first stage wants the small drum", [["act", "release"]], 1200, 0],
+		["the start: the 70 kg load in the big drum floats, but the first stage wants the small drum", [["ctl", "volume", "big"], ["ctl", "mass", 70.0], ["act", "release"]], 1200, 0],
 		["the small drum with the 70 kg load sinks: not yet the treasure chest's stage", [["ctl", "volume", "small"], ["act", "release"]], 900, 0],
 		["the small drum with the empty chest (45 kg) floats", [["ctl", "mass", 45.0], ["act", "release"]], 1200, 1],
 		["the same again: the next stage wants the treasure chest", [["act", "release"]], 1200, 1],
@@ -365,9 +366,11 @@ func _record(id: String, missions: bool) -> Array:
 		definition.erase("predict")
 	var screen := await _open(definition)
 	var lab: Experiment = screen.experiment
-	if not missions:   # a screen with auto_conditions sets the first stage's conditions itself: the plain one gets the same
-		for control_id in ConditionPicks.auto_values(ExperimentRegistry.find(id), 0):
-			screen._set_control(control_id, ConditionPicks.auto_values(ExperimentRegistry.find(id), 0)[control_id])
+	if not missions:   # a screen with missions opens on the first stage's conditions (2026-11-03): the plain one gets the same
+		var entry := ConditionPicks.stage_values(ExperimentRegistry.find(id), 0)
+		for control_id in entry:
+			if not MissionRound.condition_holds(entry[control_id], lab.control_value(control_id)):
+				screen._set_control(control_id, entry[control_id])
 	var rows := []
 	var bodies := lab.find_children("*", "RigidBody3D", true, false)
 	for attempt in ROUNDS[id].slice(0, 2):

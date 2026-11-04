@@ -729,7 +729,10 @@ func check_projectile_art() -> void:
 		and points[0].distance_to(Vector3(center.x + want.x, want.y + lab.BALL_RADIUS, center.z)) < 1e-4,
 		"projectile: the formula path is at most %d dots on x(t), y(t) (one MultiMesh)" % ProjectileProps.PATH_DOTS, "%d dots" % path.visible_instance_count)
 	var draw_nodes := lab.find_children("*", "GeometryInstance3D", true, false).size()
-	expect.call(draw_nodes <= 27, "projectile: at most 27 drawn 3D nodes (art budget: 13 + the bread cat's 7 + its stand, Task 4g; + the piece game's 6: three crates, the stumps, the piece's 2, 2026-10-29)", "%d" % draw_nodes)
+	expect.call(draw_nodes <= 26, "projectile: at most 26 drawn 3D nodes (art budget: 13 + the bread cat's 7 + its stand, Task 4g; + the piece game's 6: three crates, the stumps, the piece's 2, 2026-10-29; - the arrow's yellow knob box, 2026-11-03)", "%d" % draw_nodes)
+	var yellow_boxes: Array[Node] = lab.knob.find_children("*", "GeometryInstance3D", true, false)
+	expect.call(yellow_boxes.is_empty() and lab.props.arrow.visible,
+		"projectile: the purple arrow has no yellow box at its end (2026-11-03 playtest; the arrow head marks the tip)", "%d meshes on the tip" % yellow_boxes.size())
 	await _free(lab)
 
 

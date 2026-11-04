@@ -29,6 +29,7 @@ extends RefCounted
 
 const VECTORS_PATH := "res://tests/rotation_lab_vectors.json"
 const EXPERIMENT_SCREEN := "res://scripts/shell/experiment_screen.gd"
+const FIRST_ENTRY := preload("res://tests/first_entry_checks.gd")   # start_case: the definition's start on a screen
 const UI_THEME := "res://scripts/app/ui_theme.gd"
 const STEP_HZ := 60
 const ENGINE_TOLERANCE := 1e-4
@@ -123,6 +124,7 @@ func _open() -> Control:
 	var screen: Control = load(EXPERIMENT_SCREEN).new()
 	screen.setup(ExperimentRegistry.find("rotation"))
 	host.add_child(screen)
+	FIRST_ENTRY.start_case(screen)   # (it opens on stage 1's conditions)
 	await tree.process_frame
 	await tree.physics_frame
 	await tree.physics_frame

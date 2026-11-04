@@ -130,13 +130,35 @@ func check_collision_looks() -> void:
 				var r: float = lab.RADIUS_B if b else lab.RADIUS_A
 				if absf(absf(x) - (lab.WALL - r)) < 1e-9:
 					walls += 1
-					var edge: float = x + look.y if b else x - look.x
+					var edge: float = lab.props.look_centre(lab.ball_b, false).x + look.y if b else lab.props.look_centre(lab.ball_a, true).x - look.x
 					var face: float = lab.props.bumper_right.position.x if b else lab.props.bumper_left.position.x
 					worst_wall = maxf(worst_wall, absf(edge - face))
 		lab.run_action("reset")
 	expect.call(problems.is_empty() and hits >= 5 and walls > 0 and worst_touch <= 1e-4 and worst_wall <= 1e-4,
 		"mass look (collision): equal masses look equal, heavier bigger by the cube root, on the floor; the looks touch at the model's contact and meet the bumpers at its wall bounce",
 		"%s; touch %s m over %d hits, wall %s m over %d steps" % ["; ".join(problems), String.num_scientific(worst_touch), hits, String.num_scientific(worst_wall), walls])
+	# 2026-11-03 playtest "왜 주황 공을 키우면 파랑 공이 줄어드는지?": each look follows its own mass only.
+	# Changing the orange ball's mass leaves the blue ball's drawn size as it was (and the other way
+	# round); the stages' masses 1/1 -> 3/1 -> 3/2 never shrink a ball whose mass stayed.
+	var coupled := []
+	for fixed in [1.0, 3.0]:
+		var sizes_a := []
+		var sizes_b := []
+		for other in [0.5, 1.0, 2.0, 10.0]:
+			lab.set_control("mass_a", fixed)
+			lab.set_control("mass_b", other)
+			await _frames(1)
+			sizes_a.append(_box(lab.props.spin_a).size.y)
+			lab.set_control("mass_a", other)
+			lab.set_control("mass_b", fixed)
+			await _frames(1)
+			sizes_b.append(_box(lab.props.spin_b).size.y)
+		for sizes in [sizes_a, sizes_b]:
+			for size in sizes:
+				if absf(size - sizes[0]) > 1e-4:
+					coupled.append("%s kg: drawn %s" % [fixed, str(sizes)])
+					break
+	expect.call(coupled.is_empty(), "mass look (collision): a ball's drawn size follows its own mass only (the blue ball keeps its size when the orange one gets heavier, and the other way round)", "; ".join(coupled))
 	await _free(lab)
 
 

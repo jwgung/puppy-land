@@ -274,10 +274,12 @@ func _ready() -> void:
 	_camera_home = view.rig.get_state()   # the definition's view (before a restored, user-turned one)
 	if not _state.is_empty():
 		_camera_home = _state.get("camera_home", _camera_home)
-		_restore_state()
-	elif apply_launch_args:
-		_apply_launch_args()
-		_camera_home = view.rig.get_state()   # a measurement's --camera is the view it opens with
+		_restore_state()   # (a rebuilt screen keeps its own conditions, not the opening stage's)
+	else:
+		_apply_entry_conditions()
+		if apply_launch_args:
+			_apply_launch_args()   # (after: a measurement's --ctl-* wins)
+			_camera_home = view.rig.get_state()   # a measurement's --camera is the view it opens with
 	_refresh()
 	_setup_slingshot()   # after the state: a restored launch point is the pull's origin
 	_setup_tap_catcher() # before the question: it keeps the overlays' order (the question moves the box)
@@ -812,6 +814,19 @@ func _release_mission_text(pulse: bool) -> void:
 		_pulse_strip()
 
 
+## The lab as the stage it opens at says (MissionRound.entry_conditions, 2026-11-03 playtest: the first
+## mission and the lab must agree): set once, through _set_control like a tap, before the child can
+## touch anything; the hand guide still waits for the child.
+func _apply_entry_conditions() -> void:
+	if mission_round == null:
+		return
+	var values := mission_round.entry_conditions()
+	var touched := _guide_touched
+	for id in values:
+		_set_control(id, values[id])
+	_guide_touched = touched
+
+
 ## missions.auto_conditions (2026-10-29: the collision's ball weights): the conditions the round asks
 ## for (MissionRound.take_conditions: the current stage's, once per stage or reset, only at rest, only
 ## the values that differ) are set through _set_control, the path a tap or the sidebar takes (so the
@@ -1109,7 +1124,8 @@ func _run_result_bubble(delta: float) -> void:
 
 ## Where Puppy's line goes: just above Puppy on the view (the cat without him, else the view's upper
 ## middle), its tail pointing at him; inside the view and clear of the other overlays (the title, the
-## key cards, the strip, 다시, the picture buttons, the tip, Dugi's box) when it can be: above him,
+## key cards, the strip, 다시, the picture buttons, the tip, Dugi's box) and of what the lab keeps in
+## sight (Experiment.keep_in_sight) when it can be: above him,
 ## else beside him, else below. The side is chosen when the bubble opens (`choose`, also when Dugi's
 ## box opens after it; a win and a miss alike, the landing stamp is not avoided since 2026-11-02) and kept; it never jumps: once placed it moves at
 ## most ResultBubble.MAX_STEP a frame, to a new side too, and else only follows Puppy (2026-10-31 user:
@@ -1134,6 +1150,10 @@ func _fit_result_bubble(choose := true) -> void:
 	var avoid := overlay_rects()
 	if body.size.x > 0.0:
 		avoid.append(body)   # the bubble never covers Puppy himself
+	for box in experiment.keep_in_sight():   # what the lab keeps in sight (the buoyancy's cat on its way)
+		var r := view_rect_of(box)
+		if r.size.x > 0.0:
+			avoid.append(r.grow(4.0))
 	if _mission_pill != null and _mission_pill.visible:
 		avoid.append(_mission_pill.get_rect().grow(4.0))
 	if dialogue != null and dialogue.active and dialogue.visible:
@@ -1590,8 +1610,8 @@ func show_guide() -> bool:
 		"drag", "pull":
 			var to: Vector3 = spec.to
 			hand_guide.play(str(spec.kind), at, func() -> Vector2: return _guide_view_point(to))
-		"hold":
-			hand_guide.play("hold", at)
+		"hold", "tap":
+			hand_guide.play(str(spec.kind), at)
 	return hand_guide.playing()
 
 
