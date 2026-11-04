@@ -23,6 +23,7 @@ keytool -genkeypair -v -keystore upload.jks -alias upload \
 |---|---|
 | `UPLOAD_KEYSTORE_BASE64` | `base64 -w0 upload.jks` 출력 |
 | `UPLOAD_STORE_PASSWORD` | 키스토어(=키) 비밀번호 |
+| `PLAY_SERVICE_ACCOUNT_JSON` | Play 업로드용 서비스 계정 JSON 키(3절의 'Play 업로드') |
 
 - Deployment branches and tags: **Selected branches and tags** → 태그 규칙 `v*` 하나만. 브랜치(`main` 포함)에서 돈 워크플로는 시크릿을 읽지 못한다.
 - 저장소 수준 시크릿에 같은 이름이 남아 있으면 지운다(Environment가 있어도 저장소 시크릿은 모든 워크플로가 읽는다).
@@ -38,6 +39,7 @@ gh api -X POST repos/<owner>/<repo>/environments/play-release/deployment-branch-
   -f name='v*' -f type=tag
 base64 -w0 upload.jks | gh secret set UPLOAD_KEYSTORE_BASE64 --env play-release
 gh secret set UPLOAD_STORE_PASSWORD --env play-release --body "$(cat upload.password)"   # $(...)가 끝의 개행을 지운다
+gh secret set PLAY_SERVICE_ACCOUNT_JSON --env play-release < play-service-account.json
 gh api repos/<owner>/<repo>/environments/play-release   # 승인자·규칙이 들어갔는지 확인
 ```
 
@@ -46,6 +48,15 @@ gh api repos/<owner>/<repo>/environments/play-release   # 승인자·규칙이 �
 **CI(권장)**: `git tag v0.1.1 && git push origin v0.1.1` → `.github/workflows/release.yml`이 서명된 AAB를 만들어 GitHub Release에 붙인다. 수동 실행(workflow_dispatch)도 **태그를 골라서** 실행해야 한다(브랜치에서 실행하면 Environment(`play-release`)의 배포 규칙에 막혀 job이 시작되지 않는다). 수동 실행은 아티팩트만 올리고, GitHub Release는 태그 push로만 만들어진다. CI는 Godot 편집기 설정(SDK·Java 경로)을 워크플로가 직접 기록한다.
 
 필수 승인자를 두었으므로 태그를 push(또는 수동 실행)하면 `bundle` job이 Actions 화면에서 승인을 기다린다. 승인하면 빌드가 시작된다.
+
+**Play 업로드(자동)**: 태그 push로 Release가 만들어지면 `play` job이 그 AAB를 Play 비공개 테스트 트랙(`alpha`)에 올린다(`r0adkll/upload-google-play`, 상태 `completed`). 이 job도 `play-release` Environment 승인을 따로 기다린다. 필요한 것:
+
+- Play Console → 사용자 및 권한에서 서비스 계정을 초대하고 `jwgung.puppyland` 앱에 **출시 관리(릴리스 올리기)** 권한을 준다. 서비스 계정은 Google Cloud에서 만들고 Play Developer API를 켠다.
+- 그 계정의 JSON 키를 Environment 시크릿 `PLAY_SERVICE_ACCOUNT_JSON`에 넣는다(`gh secret set PLAY_SERVICE_ACCOUNT_JSON --env play-release < key.json`). 저장소 수준 시크릿으로 두지 않는다.
+- 출시 노트는 `docs/release/whatsnew/whatsnew-ko-KR`·`whatsnew-en-US`(각 500자 이내)이다. 이전 태그 이후 이 폴더가 그대로면 job이 실패한다(이전 `v*` 태그가 없는 첫 릴리스는 검사를 건너뛴다). 태그를 찍기 전에 고친다.
+- 같은 versionCode는 거부된다. Google 검토는 그대로 남는다.
+- 서비스 계정에는 이 앱의 릴리스 관리 권한만 준다(재무·사용자 관리 권한은 주지 않는다). 키는 가끔 새로 만들고, 승인할 때는 태그가 가리키는 커밋이 `main`·`dev`에 있는 것인지 본다.
+- 시크릿이 없으면 `play` job만 실패한다. Release는 이미 만들어졌으므로 AAB를 내려받아 Console에 직접 올려도 된다.
 
 CI는 빌드 전에 versionCode가 이전 GitHub Release 제목 끝의 `-v<코드>`보다 큰지 검사하고, 빌드 뒤에는 `build.sh`가 만든 코드가 검사한 값과 같은지 대조한다. 같거나 작으면 Play가 거부하므로 거기서 실패한다(히스토리를 줄이는 정리 뒤에도 안전망이 된다). 릴리스가 있는데 어느 제목에서도 코드를 읽지 못하면(제목 형식이 바뀐 경우) 검사가 눈먼 채 통과하지 않도록 실패한다. 이미 Release가 만들어진 같은 커밋을 다시 돌리면 코드가 같아 검사에서 실패하는 것이 정상이다(새 커밋과 새 태그로 올린다).
 
@@ -77,7 +88,7 @@ apps/lab3d/tools/build.sh play
 1. 앱 만들기: 이름·기본 언어 한국어·앱(게임 아님/교육용인지 정책에 맞게 선택)·무료.
 2. 앱 콘텐츠: 개인정보처리방침 URL `https://jwgung.github.io/puppy-land/privacy/`(`site/privacy`. **main에 머지돼 Pages 배포가 끝난 뒤에야 열리므로** 그 뒤에 입력한다), 광고 없음, 대상 연령(아동 포함 → Families 정책), 콘텐츠 등급(IARC), 데이터 보안(수집·공유 없음), 앱 액세스(로그인 없음).
 3. 스토어 등록정보: `docs/release/store/` 의 그림·스크린샷. 한국어(기본)는 `feature-graphic-ko.png`·`screenshots/ko-*.png`, 영어(en-US)는 `feature-graphic-en.png`·`screenshots/en-*.png`를 쓴다. 그래픽은 Pillow가 필요하다(`pip install pillow`). `python3 docs/release/store/make_store_art.py`로 만든다(영어는 `scene-throw-en.png`가 있을 때). ko 그림은 `capture_store_shots.gd`가 만들고, 영어 그림은 영어 빌드를 태블릿에서 손으로 찍은 것이다.
-4. **비공개 테스트** 트랙에 AAB 업로드 → 테스터 12명 이상이 **14일 연속** 참여해야 프로덕션을 신청할 수 있다(2023-11 이후 만든 개인 계정). 테스트를 가장 먼저 시작한다.
+4. **비공개 테스트** 트랙에 AAB 업로드(태그를 push하면 3절의 `play` job이 올린다. 같은 versionCode를 Console에서 또 올리지 않는다. 서비스 계정을 아직 안 만들었다면 Console에서 직접 올린다) → 테스터 12명 이상이 **14일 연속** 참여해야 프로덕션을 신청할 수 있다(2023-11 이후 만든 개인 계정). 테스트를 가장 먼저 시작한다.
 5. 프로덕션 신청 → 심사.
 
 ## 6. 정책 메모
