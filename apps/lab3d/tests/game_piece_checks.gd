@@ -1334,7 +1334,7 @@ func check_clue_glow() -> void:
 ## beat), Puppy's clue at the object, and the spring's fitting stage says the beat does not change with the pull.
 func check_words() -> void:
 	var want := {"projectile": "상자", "collision": "얼음", "free-fall": "버튼", "friction": "상자", "incline-friction": "도미노", "spring": "종",
-		"rotation": "보물 상자", "pulley": "선반", "constraints": "거북이 박자", "buoyancy": "바위섬", "orbit": "조각"}
+		"rotation": "보물 상자", "pulley": "선반", "constraints": "거북이 시계", "buoyancy": "바위섬", "orbit": "조각"}
 	var clue := {"projectile": "상자", "collision": "얼음", "free-fall": "버튼", "friction": "길", "incline-friction": "도미노", "spring": "종",
 		"rotation": "보물 상자", "pulley": "선반", "constraints": "거북이 시계", "buoyancy": "바위섬", "orbit": "우주"}
 	var problems := []

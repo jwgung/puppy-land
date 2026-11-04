@@ -42,22 +42,22 @@
   "missions": {
     "stages": [
       {
-        "text": "Tilt the wooden slide a little and knock down the yellow dominoes!",
-        "say": "Gravity pulls the box down, and the floor holds on to the box. The floor's holding force is called **friction**. With a little tilt, the pull beats friction. So the box goes down.",
-        "win": "Crash! The yellow dominoes fell!",
-        "miss": "Tilt it a little and let go from the top!"
+        "text": "Tilt the wooden slide just a little and knock over the yellow dominoes!",
+        "say": "Gravity pulls the box down, and the floor holds on to it. The floor's holding force is called **friction**. Even a little tilt lets the pull beat friction. So the box slides down.",
+        "win": "Crash! The yellow dominoes fell over!",
+        "miss": "Tilt the wood a little and start from the top!"
       },
       {
-        "text": "Tilt the same wood more and knock down the blue dominoes!",
-        "say": "With a bigger tilt, gravity pulls the box down harder. So it is faster at the end and goes farther.",
-        "win": "The blue dominoes fell too!",
-        "miss": "Tilt the wood a lot and let go from the top!"
+        "text": "Keep the wood, tilt it more and knock over the blue dominoes!",
+        "say": "With a bigger tilt, gravity pulls the box down harder. So the box gets faster and goes farther.",
+        "win": "The blue dominoes fell over too!",
+        "miss": "Keep the wood and tilt it more!"
       },
       {
-        "text": "Keep the tilt, change to steel and knock down the red pillar!",
-        "say": "Steel is slippery, so its friction is small. So at the same tilt the box goes faster. It goes farther too.",
-        "win": "The red pillar fell!",
-        "miss": "Keep the tilt and change to steel!"
+        "text": "Keep the tilt, switch to steel and knock over the red pillar!",
+        "say": "Steel is slippery, so its friction is small. So at the same tilt the box goes faster and farther.",
+        "win": "Boom! The red pillar fell over!",
+        "miss": "Keep the tilt and switch to steel!"
       }
     ]
   },
@@ -66,7 +66,7 @@
     "intro": "This is the slide lab. Gravity pulls the box down the slide. The floor holds on to the box. The floor's holding force is called **friction**. Change the floor's material and the tilt! Let's see how fast the box goes down.",
     "title": "Let's slide a box down the slide!",
     "place": "Slide",
-    "say": "With a big tilt the box slides. The steeper, the faster it gets.",
+    "say": "Tilt the slide and the box slides down. The more you tilt, the faster it goes.",
     "tip": "Tap the box and it slides down!",
     "picks": {
       "material": [
