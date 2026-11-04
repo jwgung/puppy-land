@@ -152,6 +152,9 @@
     "high": "Draws the 3D view at full resolution. Edge smoothing is MSAA 2x as in Medium. For fast devices."
   },
   "settings.tiers": { "low": "Low", "medium": "Medium", "high": "High" },
+  "settings.ui_size": "Screen size",
+  "settings.ui_size_note": "The size of words and buttons. Auto makes them bigger on a small screen.",
+  "settings.ui_sizes": { "auto": "Auto", "normal": "Normal", "large": "Large", "extra_large": "Extra large" },
   "speaker.dugi": "Dugidugi",
   "speaker.puppy": "Puppy",
   "spring.reach_wait": "Shows when it swings",

@@ -17,6 +17,7 @@ var expect: Callable
 const UI_THEME := "res://scripts/app/ui_theme.gd"
 const PHONE := Vector2(1560, 720)
 const TABLET := Vector2(1152, 720)
+const UiScale := preload("res://tests/ui_scale_checks.gd")   # PHONE_ZOOMED (화면 크기)
 const EXPERIMENT_SCREEN := "res://scripts/shell/experiment_screen.gd"
 const HOME_SCREEN := "res://scripts/app/island_home_screen.gd"
 
@@ -302,7 +303,7 @@ func check_stage_says() -> void:
 ## Every say, question, reason and clue fits in two pages of the box, phone and tablet.
 func check_fit() -> void:
 	var over := []
-	for size in [PHONE, TABLET]:
+	for size in [PHONE, TABLET, UiScale.PHONE_ZOOMED]:
 		for definition in ExperimentRegistry.load_all():
 			var stages: Array = MissionRound.missions(definition).get("stages", [])
 			if stages.is_empty():
@@ -315,9 +316,9 @@ func check_fit() -> void:
 				box.set_words(text)
 				box._text_width = 0.0   # lay out again for these words
 				if not screen._layout_dialogue() or box.pages().size() > 2 or box.joined() != text:
-					over.append("%s %s: %s (%d pages)" % [definition.id, "phone" if size == PHONE else "tablet", text, box.pages().size()])
+					over.append("%s %s: %s (%d pages)" % [definition.id, "phone" if size == PHONE else ("tablet" if size == TABLET else "phone zoomed"), text, box.pages().size()])
 			await _free(screen)
-	expect.call(over.is_empty(), "stage says: every say, question, reason and clue fits in 2 pages of the box (phone, tablet) and reads back whole", "; ".join(over))
+	expect.call(over.is_empty(), "stage says: every say, question, reason and clue fits in 2 pages of the box (phone, tablet, phone zoomed) and reads back whole", "; ".join(over))
 
 
 func _lab(id: String, size: Vector2) -> Control:

@@ -1,4 +1,5 @@
-## Settings: quality tier (ported from the spike's "Q" button), sound (효과음 / 배경 음악, SoundBoard),
+## Settings: the language, 화면 크기 (the UI's zoom, Quality.set_ui_size), quality tier (ported from the
+## spike's "Q" button), sound (효과음 / 배경 음악, SoundBoard),
 ## the story (이야기 다시 보기, 처음부터 다시 하기). No 개발자 card (2026-10-31 user: the fps overlay is not a
 ## child's setting; measurements turn it on with --fps=1). The on/off settings are
 ## big check boxes (2026-10-29 user request: check boxes, not switches; UiTheme "CheckBox", a 64-unit
@@ -97,6 +98,7 @@ func _ready() -> void:
 	_apply.pressed.connect(_apply_tier)
 	quality.add_child(_apply)
 	column.add_child(_build_language_card())
+	column.add_child(_build_ui_size_card())
 	column.add_child(quality_card)
 	column.add_child(_build_sound_card())
 	column.add_child(_build_story_card())
@@ -127,6 +129,43 @@ func _build_language_card() -> Control:
 		row.add_child(option)
 		language_buttons[code] = option
 	return card
+
+
+## 화면 크기 (2026-11-04 playtest: too small on a phone): 자동 / 보통 / 크게 / 아주 크게 (Quality.UI_SIZES),
+## the one in use pressed. Picking one saves it and scales the UI at once (Quality.set_ui_size); this
+## screen fills the root, so it lays itself out again at the new size.
+var ui_size_buttons := {}
+
+
+func _build_ui_size_card() -> Control:
+	var card := Ui.panel()
+	card.name = "UiSizeCard"
+	var box := Ui.vbox(12)
+	card.add_child(box)
+	box.add_child(Ui.label(Locale.t("settings.ui_size"), "SectionLabel"))
+	var row := Ui.hbox(12)
+	box.add_child(row)
+	var group := ButtonGroup.new()
+	var names: Dictionary = Locale.map("settings.ui_sizes")
+	for choice in Quality.UI_SIZES:
+		var option := Ui.button(str(names.get(choice, choice)), "ChipButton", 64)
+		option.name = "UiSize_" + choice
+		option.toggle_mode = true
+		option.button_group = group
+		option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		option.set_pressed_no_signal(choice == Quality.ui_size)
+		option.pressed.connect(choose_ui_size.bind(choice))
+		row.add_child(option)
+		ui_size_buttons[choice] = option
+	box.add_child(Ui.label(Locale.t("settings.ui_size_note"), "MutedLabel", true))
+	return card
+
+
+func choose_ui_size(choice: String) -> void:
+	for id in ui_size_buttons:
+		ui_size_buttons[id].set_pressed_no_signal(id == choice)
+	if choice != Quality.ui_size:
+		Quality.set_ui_size(choice)
 
 
 func choose_language(code: String) -> void:

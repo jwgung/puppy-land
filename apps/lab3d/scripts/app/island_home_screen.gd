@@ -114,6 +114,7 @@ const GROUP_SIDE := 0.42
 const SPOT_RADIUS := 2.2             # m: how far a tap may be from a spot and still hit it
 const LABEL_FULL_DISTANCE := 34.0    # m: a spot name nearer than this is full size
 const LABEL_MIN_SCALE := 0.7          # the smallest a far spot name gets
+const LABEL_SHORT_UNITS := 720.0      # the screen's short side the names are sized for (_label_keep)
 
 ## The map's island (its zones, square and paths: the labs' worlds read it too, LabWorld).
 var island := Island.current()
@@ -856,7 +857,7 @@ func _place_labels() -> void:
 		# Pinned at its bottom centre; a far one shrinks a little, like the landmark under it.
 		var depth := eye.distance_to(spot.at)
 		label.pivot_offset = Vector2(label.size.x * 0.5, label.size.y)
-		label.scale = Vector2.ONE * clampf(LABEL_FULL_DISTANCE / maxf(depth, 0.01), LABEL_MIN_SCALE, 1.0)
+		label.scale = Vector2.ONE * clampf(LABEL_FULL_DISTANCE / maxf(depth, 0.01), LABEL_MIN_SCALE, 1.0) * _label_keep()
 		shown.append([depth, label])
 	# Names that meet stay put: the nearer one is drawn over the farther (no jumping aside).
 	shown.sort_custom(func(a: Array, b: Array) -> bool: return a[0] > b[0])
@@ -864,6 +865,14 @@ func _place_labels() -> void:
 	for entry in shown:
 		move_child(entry[1], at)
 		at += 1
+
+
+## The spot names keep the map's 3D scale on a zoomed screen (화면 크기, 2026-11-04): the map is framed
+## for a 720-unit short side, and names grown with the UI met each other in the play yard (at x1.1 on
+## a phone). So a name is drawn 720 / short side smaller, as large on the glass as at x1.0.
+func _label_keep() -> float:
+	var short := minf(size.x, size.y)
+	return minf(1.0, short / LABEL_SHORT_UNITS) if short > 0.0 else 1.0
 
 
 ## A spot's name shows: always without the story; on the night map only once its piece is found.

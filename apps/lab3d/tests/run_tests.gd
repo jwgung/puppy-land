@@ -117,6 +117,10 @@
 ##    (DragScroll) and presses nothing; check boxes instead of switches; 처음부터 다시 하기 asks first and
 ##    then erases the whole store; the map walk (speed, Puppy and Dugi following apart, map-size
 ##    actors, the last spot kept) and the story with the new places.
+## 23d. 화면 크기 (tests/ui_scale_checks.gd, 2026-11-04 playtest): the UI zoom rule (tablet 1.0, phones
+##    1.1, fixed choices, the long-side floor), on the root (units, the 3D view's pixels, the finger
+##    radius, the demo's pulls), the choice saved and kept by 처음부터 다시 하기, the settings screen
+##    zoomed; the layout checks here and in the other files also run at the zoomed phone (PHONE_ZOOMED).
 ## Times are engine fixed steps (60 Hz), independent of rendering FPS.
 extends SceneTree
 
@@ -130,6 +134,11 @@ const STEP_HZ := 60
 ## Landscape screens in UI units (the short side is 720): phone 2340x1080, tablet 1920x1200 (SM-P200).
 const PHONE_LANDSCAPE := Vector2(1560, 720)
 const TABLET_LANDSCAPE := Vector2(1152, 720)
+## The phone at the largest 화면 크기 zoom (2026-11-04, tests/ui_scale_checks.gd: 1418x655; a narrower
+## screen does not zoom that far, Quality.UI_MIN_LONG_UNITS).
+const QualityScript := preload("res://scripts/core/quality.gd")
+const PHONE_ZOOMED := PHONE_LANDSCAPE / QualityScript.UI_ZOOM_MAX
+const SCREEN_NAMES := {PHONE_LANDSCAPE: "phone", TABLET_LANDSCAPE: "tablet", PHONE_ZOOMED: "phone zoomed"}
 
 var _failures := 0
 ## A key card over the 3D view never shows a unit symbol or a formula letter (N, m/s², J, √, θ, v₀...).
@@ -152,6 +161,12 @@ func _run() -> void:
 	Locale.path = "user://language-test.cfg"
 	Locale.set_language("ko")
 	DirAccess.remove_absolute(ProgressStore.path)
+	# The 화면 크기 choice: the test settings file (a desktop run's saved choice never zooms the checks).
+	var quality_script: GDScript = load("res://scripts/core/quality.gd")
+	quality_script.set("settings_path", quality_script.get("SETTINGS_TEST_PATH"))
+	DirAccess.remove_absolute(quality_script.get("settings_path"))
+	root.get_node("Quality").load_ui_size()
+	root.get_node("Quality").apply_root_viewport()
 	# The story plays only where a check turns it on (tests/story_checks.gd): the App screens the
 	# other checks build never start it.
 	Story.app_may_enable = false
@@ -398,6 +413,11 @@ func _run() -> void:
 	_expect(polish != null and polish.can_instantiate(), "polish checks compile", "")
 	if polish != null and polish.can_instantiate():
 		await polish.new(self, _expect).run()
+	print("== screen size (2026-11-04): the UI zoom rule, the root, the saved choice, the settings zoomed ==")
+	var ui_scale: GDScript = load("res://tests/ui_scale_checks.gd")
+	_expect(ui_scale != null and ui_scale.can_instantiate(), "screen size checks compile", "")
+	if ui_scale != null and ui_scale.can_instantiate():
+		await ui_scale.new(self, _expect).run()
 	print("== the night map (2026-10-28): fixed order, locks, Puppy's riddle, hint, night by pieces, old saves, launches ==")
 	var explore: GDScript = load("res://tests/explore_checks.gd")
 	_expect(explore != null and explore.can_instantiate(), "explore checks compile", "")
@@ -755,14 +775,14 @@ func _check_slide_in() -> void:
 
 ## The list banner draws nothing for a collapsed rect (no polygon errors in the log).
 ## Experiment list cards in one line (2026-10-23 user request): [icon] [title / question] [실험 시작] on
-## a phone (1560x720) and a tablet (1152x720): the button is right of the text block and centred on
+## a phone (1560x720) and a tablet (1152x720), and the phone zoomed (화면 크기): the button is right of the text block and centred on
 ## its height, the icon too; a tap on the card (not on the button) starts the experiment once, a drag
 ## does not.
 func _check_list_cards() -> void:
 	var problems := []
 	var root_size := root.size
-	for size: Vector2 in [PHONE_LANDSCAPE, TABLET_LANDSCAPE]:
-		root.size = Vector2i(size)
+	for size: Vector2 in [PHONE_LANDSCAPE, TABLET_LANDSCAPE, PHONE_ZOOMED]:
+		root.size = Vector2i(ceili(size.x), 720)   # identity stretch (short side 720): the touches are in units; the host is the zoomed screen
 		var host := Control.new()
 		host.theme = load(UI_THEME).build()
 		host.size = size
@@ -807,7 +827,15 @@ func _check_list_cards() -> void:
 		# finger's events.
 		chosen.clear()
 		var scroll: ScrollContainer = list.find_children("*", "ScrollContainer", true, false)[0]
+		# From the first card past the top one that is on the page with room for the 200-unit drag above it
+		# (on a zoomed, lower screen the second card's middle can be below the page's end).
+		var page := scroll.get_global_rect()
 		var from: Vector2 = (cards[1].find_child("Text", true, false) as Control).get_global_rect().get_center()
+		for card: Control in cards.slice(1):
+			var middle: Vector2 = (card.find_child("Text", true, false) as Control).get_global_rect().get_center()
+			if middle.y - 210.0 >= page.position.y and middle.y + 10.0 <= page.end.y:
+				from = middle
+				break
 		await _mouse_at(from, true)
 		for i in range(1, 9):
 			scroll.scroll_vertical = 25 * i
@@ -1340,8 +1368,8 @@ func _check_layout(definition: Dictionary) -> void:
 	var host := Control.new()
 	host.theme = load(UI_THEME).build()
 	root.add_child(host)
-	for size: Vector2 in [PHONE_LANDSCAPE, TABLET_LANDSCAPE]:
-		var name := "phone" if size == PHONE_LANDSCAPE else "tablet"
+	for size: Vector2 in [PHONE_LANDSCAPE, TABLET_LANDSCAPE, PHONE_ZOOMED]:
+		var name: String = SCREEN_NAMES[size]
 		host.size = size
 		var screen: Control = load(EXPERIMENT_SCREEN).new()
 		screen.setup(definition)

@@ -23,6 +23,7 @@ const UI_THEME := "res://scripts/app/ui_theme.gd"
 const EXPERIMENT_SCREEN := "res://scripts/shell/experiment_screen.gd"
 const PHONE := Vector2(1560, 720)
 const TABLET := Vector2(1152, 720)
+const UiScale := preload("res://tests/ui_scale_checks.gd")   # PHONE_ZOOMED (화면 크기)
 const GRAB_MIN := 72.0
 ## Per lab: the objects a finger still picks up (one gesture per lab).
 const KEPT := {
@@ -52,7 +53,7 @@ func run() -> void:
 	for id in KEPT:
 		await check_tap_is_sidebar(id)
 	for id in KEPT:
-		for size in [PHONE, TABLET]:
+		for size in [PHONE, TABLET, UiScale.PHONE_ZOOMED]:
 			await check_layout(id, size)
 	for id in KEPT:
 		await check_drags(id)

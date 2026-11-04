@@ -44,6 +44,7 @@ const THROW_FRAMES := 28
 const CAT_VERTS_MAX := 3500
 const PHONE := Vector2(1560, 720)
 const TABLET := Vector2(1152, 720)
+const UiScale := preload("res://tests/ui_scale_checks.gd")   # PHONE_ZOOMED (화면 크기)
 
 var tree: SceneTree
 var expect: Callable   # (ok: bool, label: String, detail: String)
@@ -578,7 +579,8 @@ func _screen_rect(screen: Control, box: AABB) -> Rect2:
 
 
 func check_layout(id: String, entry := false) -> void:
-	for setup in [[PHONE, false, "phone"], [TABLET, false, "tablet"], [TABLET, true, "tablet, sidebar open"]]:
+	for setup in [[PHONE, false, "phone"], [TABLET, false, "tablet"], [TABLET, true, "tablet, sidebar open"],
+			[UiScale.PHONE_ZOOMED, false, "phone zoomed"], [UiScale.PHONE_ZOOMED, true, "phone zoomed, sidebar open"]]:
 		var screen: Control = await _open(id, setup[0], setup[1], entry)
 		var lab: Experiment = screen.experiment
 		var cat: CatActor = lab.props.cat
@@ -918,7 +920,8 @@ static func _role_keep(id: String, lab: Experiment) -> PackedVector3Array:
 ## the run's result.
 func check_role(run_id: String) -> void:
 	var id := run_id.get_slice("/", 0)
-	for setup in [[PHONE, false, "phone"], [TABLET, false, "tablet"], [TABLET, true, "tablet, sidebar open"]]:
+	for setup in [[PHONE, false, "phone"], [TABLET, false, "tablet"], [TABLET, true, "tablet, sidebar open"],
+			[UiScale.PHONE_ZOOMED, false, "phone zoomed"], [UiScale.PHONE_ZOOMED, true, "phone zoomed, sidebar open"]]:
 		# Every screen opens on stage 1: no stamps left by an earlier run (2026-11-04: the riding run's phone
 		# screen opened on stage 3 after the runs before it had won stages 1 and 2, floated, won the round and
 		# the cat crossed to the islet; whether it did hung on what earlier checks of the same process left).

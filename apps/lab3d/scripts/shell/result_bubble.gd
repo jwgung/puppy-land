@@ -92,12 +92,21 @@ func edge() -> Color:
 	return WIN_EDGE if won else MISS_EDGE
 
 
-## The bubble's own size (its panel at the line's width, wrapped past MAX_TEXT_WIDTH).
+## The bubble's own size (its panel at the line's width, wrapped past MAX_TEXT_WIDTH). A wrapped line's
+## height is that of all its lines from the first call (2026-11-04: the panel's minimum size, read
+## before, still said one line on the call that chooses the side; a frame later it was two, and on a
+## zoomed phone the taller bubble above Puppy then met the strip, so when Dugi's box opened the side
+## was chosen again and the bubble went beside him as a run started).
 func bubble_size() -> Vector2:
 	if label.get_minimum_size().x > MAX_TEXT_WIDTH:
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		label.custom_minimum_size.x = MAX_TEXT_WIDTH
-	panel.size = panel.get_combined_minimum_size()
+	# From the label itself, shaped at its wrap width now: the containers' minimum sizes (and the
+	# label's cached one) are only updated a frame later.
+	if label.autowrap_mode != TextServer.AUTOWRAP_OFF:
+		label.size = Vector2(MAX_TEXT_WIDTH, label.size.y)
+	var style := panel.get_theme_stylebox("panel")
+	panel.size = label.get_minimum_size().max(label.custom_minimum_size) + (style.get_minimum_size() if style != null else Vector2.ZERO)
 	return panel.size
 
 
