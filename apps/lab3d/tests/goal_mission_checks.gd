@@ -435,7 +435,7 @@ func check_push() -> void:
 	if not (cards == ["", "", ""] and bars[0] < bars[1] and bars[1] < bars[2] and bars[2] < 1.0
 			and absf(ExperimentRegistry.card_bar(definition, "start_force") - full) < 1e-3):
 		problems.append("the bar: cards %s, lengths %s, full %.3f N vs clay 16 kg %.3f N" % [str(cards), str(bars), ExperimentRegistry.card_bar(definition, "start_force"), full])
-	# 2026-11-03 playtest "상자 별로 미는 힘 차이가 잘 안 느껴짐. 좀 더 차이를 두자": the normal box takes at
+	# 2026-11-03 playtest "the push differences between the boxes were hard to feel": the normal box takes at
 	# least 3 times the light box's push and the heavy one at least 8 times (before 2.5 and 5 times).
 	if not (shown[1] >= 3.0 * shown[0] - 1e-9 and shown[2] >= 8.0 * shown[0] - 1e-9 and bars[2] - bars[0] > 0.45):
 		problems.append("too alike: pushes %s, bars %s" % [str(shown), str(bars)])
