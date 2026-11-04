@@ -293,7 +293,7 @@ func check_result_bubbles() -> void:
 ## and stays on the side it opened on.
 func check_bubble_steady() -> void:
 	var problems := []
-	for size in [TABLET]:
+	for size in [TABLET, PHONE, UiScale.PHONE_ZOOMED]:
 		for definition in ExperimentRegistry.load_all():
 			DirAccess.remove_absolute(ProgressStore.path)
 			var screen := await _open(definition, size)
@@ -320,7 +320,7 @@ func check_bubble_steady() -> void:
 				problems.append("%s (%.0fx%.0f): jumped %.1f, side changed %s" % [definition.id, size.x, size.y, worst, flipped])
 			await _free(screen)
 	DirAccess.remove_absolute(ProgressStore.path)
-	expect.call(problems.is_empty(), "result bubble: in every lab it moves at most %.0f units a frame and keeps its side while a run starts under it (tablet, phone zoomed)" % ResultBubble.MAX_STEP,
+	expect.call(problems.is_empty(), "result bubble: in every lab it moves at most %.0f units a frame and keeps its side while a run starts under it (tablet, phone, phone zoomed)" % ResultBubble.MAX_STEP,
 		"; ".join(problems))
 
 
@@ -609,7 +609,7 @@ func check_yard_spread() -> void:
 				if rect.grow(6.0).intersects(IslandHomeChecks._unscaled(home, other_label)):
 					problems.append("%s (%s): the name touches %s's" % [spot.id, setup[1], other.id])
 		await _free(home)
-	expect.call(problems.is_empty(), "play yard: its four spots inside the fence, stages 1.1 m or more apart (before: 0.75 m), the walk to each clear of the others, the names 6 units apart and off the other landmarks' tops, covering at most 15 % of one (phone, tablet)", "; ".join(problems))
+	expect.call(problems.is_empty(), "play yard: its four spots inside the fence, stages 1.1 m or more apart (before: 0.75 m), the walk to each clear of the others, the names 6 units apart and off the other landmarks' tops, covering at most 15 % of one (phone, tablet, phone zoomed)", "; ".join(problems))
 
 
 ## A spot's landmark on the map screen: its stage and model (up to its top), projected.

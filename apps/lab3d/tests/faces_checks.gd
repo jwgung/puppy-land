@@ -316,9 +316,9 @@ func check_fit() -> void:
 				box.set_words(text)
 				box._text_width = 0.0   # lay out again for these words
 				if not screen._layout_dialogue() or box.pages().size() > 2 or box.joined() != text:
-					over.append("%s %s: %s (%d pages)" % [definition.id, "phone" if size == PHONE else "tablet", text, box.pages().size()])
+					over.append("%s %s: %s (%d pages)" % [definition.id, "phone" if size == PHONE else ("tablet" if size == TABLET else "phone zoomed"), text, box.pages().size()])
 			await _free(screen)
-	expect.call(over.is_empty(), "stage says: every say, question, reason and clue fits in 2 pages of the box (phone, tablet) and reads back whole", "; ".join(over))
+	expect.call(over.is_empty(), "stage says: every say, question, reason and clue fits in 2 pages of the box (phone, tablet, phone zoomed) and reads back whole", "; ".join(over))
 
 
 func _lab(id: String, size: Vector2) -> Control:

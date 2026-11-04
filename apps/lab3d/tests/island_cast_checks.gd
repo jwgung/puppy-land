@@ -651,7 +651,7 @@ func check_dialogue() -> void:
 					split_problems.append_array(_page_problems(box, definition.id, text))
 					max_pages = maxi(max_pages, box.pages().size())
 			await _close(screen)
-	expect.call(split_problems.is_empty(), "dialogue: every kid say text (and prediction question and reason) splits at its spaces into pages of at most %d lines that fit (phone, tablet), and joins back exactly" % DialogueBox.LINES,
+	expect.call(split_problems.is_empty(), "dialogue: every kid say text (and prediction question and reason) splits at its spaces into pages of at most %d lines that fit (phone, tablet, phone zoomed), and joins back exactly" % DialogueBox.LINES,
 		"; ".join(split_problems) if not split_problems.is_empty() else "up to %d pages" % max_pages)
 
 	var screen := await _open("collision", TABLET)
