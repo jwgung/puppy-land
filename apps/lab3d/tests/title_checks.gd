@@ -11,6 +11,7 @@ var expect: Callable
 const APP := "res://scripts/app/app.gd"
 const PHONE := Vector2(1560, 720)
 const TABLET := Vector2(1152, 720)
+const UiScale := preload("res://tests/ui_scale_checks.gd")   # PHONE_ZOOMED (화면 크기)
 
 
 func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:
@@ -240,7 +241,7 @@ func check_skips(quality_script: GDScript) -> void:
 ## Phone and tablet: the logo over the buttons, all inside the screen; the island turns by itself, takes
 ## no input and shows no names; the logo bobs.
 func check_layout() -> void:
-	for size in [PHONE, TABLET]:
+	for size in [PHONE, TABLET, UiScale.PHONE_ZOOMED]:
 		var host := Control.new()
 		host.theme = UiTheme.build()
 		host.size = size

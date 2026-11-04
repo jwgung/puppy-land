@@ -20,8 +20,10 @@ var expect: Callable
 const UI_THEME := "res://scripts/app/ui_theme.gd"
 const EXPERIMENT_SCREEN := "res://scripts/shell/experiment_screen.gd"
 const HOME_SCREEN := "res://scripts/app/island_home_screen.gd"
+const IslandHomeChecks := preload("res://tests/island_home_checks.gd")   # its spot-name rect
 const PHONE := Vector2(1560, 720)
 const TABLET := Vector2(1152, 720)
+const UiScale := preload("res://tests/ui_scale_checks.gd")   # PHONE_ZOOMED (화면 크기)
 const OLD_BUTTONS := ["공 놓기", "출발", "발사", "놓기", "상자 놓기", "동그랗게 돌게"]
 const LINE_MAX := 24             # characters of a result line (one short line)
 const LANDMARK_COVER := 0.15     # the share of another yard landmark a spot name may cover (its stage's near edge)
@@ -291,33 +293,34 @@ func check_result_bubbles() -> void:
 ## and stays on the side it opened on.
 func check_bubble_steady() -> void:
 	var problems := []
-	for definition in ExperimentRegistry.load_all():
-		DirAccess.remove_absolute(ProgressStore.path)
-		var screen := await _open(definition, TABLET)
-		screen.mission_round.end_question()
-		screen.show_result(0, false)
-		var bubble: ResultBubble = screen.result_bubble()
-		if bubble == null:
+	for size in [TABLET]:
+		for definition in ExperimentRegistry.load_all():
+			DirAccess.remove_absolute(ProgressStore.path)
+			var screen := await _open(definition, size)
+			screen.mission_round.end_question()
+			screen.show_result(0, false)
+			var bubble: ResultBubble = screen.result_bubble()
+			if bubble == null:
+				await _free(screen)
+				continue
+			var last := bubble.position
+			var side: int = screen._bubble_side
+			var worst := 0.0
+			var flipped := false
+			for i in roundi(ResultBubble.SHOW_S * 60.0) - 2:
+				await tree.process_frame
+				if i == 10:
+					screen.experiment_action("release")
+				if screen.result_bubble() != bubble:
+					break
+				worst = maxf(worst, bubble.position.distance_to(last))
+				last = bubble.position
+				flipped = flipped or screen._bubble_side != side
+			if worst > ResultBubble.MAX_STEP + 0.01 or flipped:
+				problems.append("%s (%.0fx%.0f): jumped %.1f, side changed %s" % [definition.id, size.x, size.y, worst, flipped])
 			await _free(screen)
-			continue
-		var last := bubble.position
-		var side: int = screen._bubble_side
-		var worst := 0.0
-		var flipped := false
-		for i in roundi(ResultBubble.SHOW_S * 60.0) - 2:
-			await tree.process_frame
-			if i == 10:
-				screen.experiment_action("release")
-			if screen.result_bubble() != bubble:
-				break
-			worst = maxf(worst, bubble.position.distance_to(last))
-			last = bubble.position
-			flipped = flipped or screen._bubble_side != side
-		if worst > ResultBubble.MAX_STEP + 0.01 or flipped:
-			problems.append("%s: jumped %.1f, side changed %s" % [definition.id, worst, flipped])
-		await _free(screen)
 	DirAccess.remove_absolute(ProgressStore.path)
-	expect.call(problems.is_empty(), "result bubble: in every lab it moves at most %.0f units a frame and keeps its side while a run starts under it" % ResultBubble.MAX_STEP,
+	expect.call(problems.is_empty(), "result bubble: in every lab it moves at most %.0f units a frame and keeps its side while a run starts under it (tablet, phone zoomed)" % ResultBubble.MAX_STEP,
 		"; ".join(problems))
 
 
@@ -573,7 +576,7 @@ func check_yard_spread() -> void:
 			var gap := pa.distance_to(pb) - ra - MapLandmarks.stage_radius(spots[b][0])
 			if gap < 1.1:   # (before 2026-10-29: 0.75 m, rotation - pulley)
 				problems.append("%s - %s stages %.2f m apart" % [spots[a][0], spots[b][0], gap])
-	for setup in [[PHONE, "phone"], [TABLET, "tablet"]]:
+	for setup in [[PHONE, "phone"], [TABLET, "tablet"], [UiScale.PHONE_ZOOMED, "phone zoomed"]]:
 		var home := await _home(setup[0])
 		await tree.process_frame
 		await tree.process_frame
@@ -590,7 +593,7 @@ func check_yard_spread() -> void:
 						break
 			# Its name: clear of every other yard landmark and of the other yard names.
 			var label: Control = home._labels[spot.id]
-			var rect := Rect2(label.position, label.size)
+			var rect: Rect2 = IslandHomeChecks._unscaled(home, label)
 			for other: Dictionary in home._spots:
 				if other.id == spot.id or other.id not in yard:
 					continue
@@ -603,7 +606,7 @@ func check_yard_spread() -> void:
 				if rect.intersects(head) or covered > LANDMARK_COVER:
 					problems.append("%s (%s): the name covers %d %% of the %s landmark" % [spot.id, setup[1], roundi(covered * 100.0), other.id])
 				var other_label: Control = home._labels[other.id]
-				if rect.grow(6.0).intersects(Rect2(other_label.position, other_label.size)):
+				if rect.grow(6.0).intersects(IslandHomeChecks._unscaled(home, other_label)):
 					problems.append("%s (%s): the name touches %s's" % [spot.id, setup[1], other.id])
 		await _free(home)
 	expect.call(problems.is_empty(), "play yard: its four spots inside the fence, stages 1.1 m or more apart (before: 0.75 m), the walk to each clear of the others, the names 6 units apart and off the other landmarks' tops, covering at most 15 % of one (phone, tablet)", "; ".join(problems))

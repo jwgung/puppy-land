@@ -147,6 +147,9 @@
     "high": "3D 화면을 원본 해상도로 그려요. 가장자리 다듬기는 보통과 같은 MSAA 2x이고, 성능이 좋은 기기용이에요."
   },
   "settings.tiers": { "low": "낮음", "medium": "보통", "high": "높음" },
+  "settings.ui_size": "화면 크기",
+  "settings.ui_size_note": "글자와 단추의 크기예요. 자동은 작은 화면에서 크게 보여 줘요.",
+  "settings.ui_sizes": { "auto": "자동", "normal": "보통", "large": "크게", "extra_large": "아주 크게" },
   "speaker.dugi": "두기두기",
   "speaker.puppy": "퍼피",
   "spring.reach_wait": "흔들면 보여요",

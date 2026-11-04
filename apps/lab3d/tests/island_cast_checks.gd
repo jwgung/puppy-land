@@ -40,6 +40,7 @@ const FIRST_ENTRY := preload("res://tests/first_entry_checks.gd")   # start_case
 const UI_THEME := "res://scripts/app/ui_theme.gd"
 const PHONE := Vector2(1560, 720)
 const TABLET := Vector2(1152, 720)
+const UiScale := preload("res://tests/ui_scale_checks.gd")   # PHONE_ZOOMED (화면 크기)
 const POINT_TOL_DEG := 1.0
 const DUGI_VERTS_MAX := 3300        # 3,050 model vertices + the shadow
 const PUPPY_VERTS_MAX := 3450       # 3,199 + the shadow
@@ -551,7 +552,8 @@ func check_layout(id: String, entry := false) -> void:
 	var key := id + (" stage-1 entry" if entry else "")
 	if not _scene.has(key):
 		return
-	for setup in [[PHONE, false, "phone"], [TABLET, false, "tablet"], [TABLET, true, "tablet, sidebar open"]]:
+	for setup in [[PHONE, false, "phone"], [TABLET, false, "tablet"], [TABLET, true, "tablet, sidebar open"],
+			[UiScale.PHONE_ZOOMED, false, "phone zoomed"], [UiScale.PHONE_ZOOMED, true, "phone zoomed, sidebar open"]]:
 		var screen := await _open(id, setup[0], setup[1], true, entry)
 		var cast: IslandCast = screen.cast
 		var lab: Experiment = screen.experiment
@@ -628,7 +630,7 @@ func check_dialogue() -> void:
 	var split_problems := []
 	var max_pages := 0
 	for definition in ExperimentRegistry.load_all():
-		for size in [PHONE, TABLET]:
+		for size in [PHONE, TABLET, UiScale.PHONE_ZOOMED]:
 			var screen := await _open(definition.id, size)
 			var box: DialogueBox = screen.dialogue
 			if not screen._layout_dialogue():

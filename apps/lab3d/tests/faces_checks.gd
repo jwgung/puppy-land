@@ -17,6 +17,7 @@ var expect: Callable
 const UI_THEME := "res://scripts/app/ui_theme.gd"
 const PHONE := Vector2(1560, 720)
 const TABLET := Vector2(1152, 720)
+const UiScale := preload("res://tests/ui_scale_checks.gd")   # PHONE_ZOOMED (화면 크기)
 const EXPERIMENT_SCREEN := "res://scripts/shell/experiment_screen.gd"
 const HOME_SCREEN := "res://scripts/app/island_home_screen.gd"
 
@@ -302,7 +303,7 @@ func check_stage_says() -> void:
 ## Every say, question, reason and clue fits in two pages of the box, phone and tablet.
 func check_fit() -> void:
 	var over := []
-	for size in [PHONE, TABLET]:
+	for size in [PHONE, TABLET, UiScale.PHONE_ZOOMED]:
 		for definition in ExperimentRegistry.load_all():
 			var stages: Array = MissionRound.missions(definition).get("stages", [])
 			if stages.is_empty():
