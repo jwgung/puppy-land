@@ -2,7 +2,7 @@
   "title": "How much easier with more pulley ropes?",
   "category": "Turning and linking",
   "question": "If more ropes hold up a heavy load, how much less force do you need?",
-  "steps": ["At the top, pick 1, 2 and then 4 ropes.", "Press and hold the rope's end to pull.", "Compare the rope you pulled with how high the load went."],
+  "steps": ["At the top, pick 1, 2 and then 4 ropes.", "Press and hold the rope's end to pull it. When it stops, press again.", "Compare the rope you pulled with how high the load went."],
   "observe": "See whether the less force you need, the longer the rope you pull for the same height.",
   "terms": [
     { "name": "Pulley", "description": "A wheel that changes the rope's direction or lowers the force needed." },
@@ -14,7 +14,7 @@
     "description": "The more ropes hold the load, the less force you need, but the longer the distance you must pull.",
     "equation": "F = mg/n · d_pull = n·d_lift"
   },
-  "tip": "Press and hold the rope's end with one finger: the pull grows by 65 N each second (the bar beside it fills, up to 250 N; once it starts to move, the pull stays there). When it reaches the force needed, the rope is pulled 1 m each second and the load rises 1/n of the pulled rope (5 cm steps). Let go and the catch holds the load, so press again. Change 1, 2 and 4 ropes in the conditions and compare the force needed and the rope pulled.",
+  "tip": "Press and hold the rope's end with one finger: the pull grows by 65 N each second (the bar beside it fills, up to 250 N; once it starts to move, the pull stays there). When it reaches the force needed, the rope is pulled 1 m each second and the load rises 1/n of the pulled rope (5 cm steps, at most 2.6 m of rope each press). Let go and the catch holds the load, so press again. Change 1, 2 and 4 ropes in the conditions and compare the force needed and the rope pulled.",
   "tip_short": "Press and hold the rope's end to pull",
   "controls": [
     {
@@ -46,19 +46,19 @@
         "text": "Lift the treasure chest to the shelf with 1 rope!",
         "say": "There is a tool that lifts loads with a rope over a wheel. It is called a **pulley**. With one rope, your hand holds the chest's whole weight. So it takes a lot of force.",
         "win": "Heave-ho! It's up on the shelf!",
-        "miss": "The chest won't budge. Press it longer!"
+        "miss": "Use one rope and press and hold longer!"
       },
       {
-        "text": "Lift the treasure chest to the shelf with 2 ropes!",
-        "say": "With the pulley, two ropes share the chest. So it takes only half the force. But you pull twice as much rope.",
-        "win": "Up with two ropes! The light is on!",
-        "miss": "Press and hold to lift it with two ropes!"
+        "text": "Change to 2 ropes and lift the treasure chest to the shelf!",
+        "say": "Two ropes share the chest, so it takes only half the force. But you must pull twice as much rope, so you pull it a few times.",
+        "win": "Up with two ropes too! Another light is on!",
+        "miss": "Change to two ropes and press and hold!"
       },
       {
-        "text": "Lift it to the shelf easily with 4 ropes!",
-        "say": "When four ropes share the load, it takes only a little force. But you pull four times as much rope.",
+        "text": "Change to 4 ropes and lift the treasure chest to the shelf!",
+        "say": "When four ropes share the chest, it takes only a little force. But you must pull four times as much rope, so you pull it even more times.",
         "win": "The bars opened! The piece is coming out!",
-        "miss": "Press and hold to lift it with four ropes!"
+        "miss": "Change to four ropes and press and hold!"
       }
     ]
   },
@@ -68,7 +68,7 @@
     "title": "Do more ropes make it easier?",
     "place": "Rope lift",
     "say": "The more ropes, the less force it takes. But you have to pull the rope longer.",
-    "tip": "Press and hold the rope's end.",
+    "tip": "Press and hold the rope's end. When it stops, press again!",
     "picks": {
       "strands": [
         { "label": "1 rope" },

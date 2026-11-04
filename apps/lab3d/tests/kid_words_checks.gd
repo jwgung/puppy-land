@@ -262,7 +262,8 @@ func check_content_lint() -> void:
 	var readout := ExperimentScreen.kid_value("m/s", 8.5, 1)
 	if readout != "1초에 8.5미터":
 		found.append("slingshot speed '%s'" % readout)
-	# The approved wordings (2026-10-28; the swing, slide, spring and drum stages 2026-11-01: one change a stage).
+	# The approved wordings (2026-10-28; the swing, slide, spring and drum stages 2026-11-01: one change a stage;
+	# the slide, swing and pulley stages reworded 2026-11-04: natural words, the pulley names the change).
 	var want := {
 		"pulley": [ExperimentRegistry.kid_text(ExperimentRegistry.find("pulley"), "title"), "줄이 많으면 힘이 덜 들까?"],
 		"buoyancy": [MissionRound.missions(ExperimentRegistry.find("buoyancy")).stages[0].text, "작은 빈 통을 물에 띄우기!"],
@@ -278,11 +279,11 @@ func check_content_lint() -> void:
 		"projectile": [MissionRound.missions(ExperimentRegistry.find("projectile")).stages.map(func(s: Dictionary) -> String: return s.text),
 			["낮게 던져서 가까운 상자 맞히기!", "얼마나 기울여 던질까? 먼 상자 맞히기!", "높이 던져서 나무 위 상자 맞히기!"]],
 		"constraints_stages": [MissionRound.missions(ExperimentRegistry.find("constraints")).stages.map(func(s: Dictionary) -> String: return s.text),
-			["지구에서 보통 줄로 거북이 박자 맞추기!", "지구에서 줄만 길게 해서 느린 박자 맞추기!", "같은 긴 줄로 달에서 아주 느린 박자 맞추기!"]],
+			["지구에서 보통 줄로 거북이 시계 박자 맞추기!", "이번에는 줄만 길게 바꿔서 느린 박자 맞추기!", "긴 줄 그대로 달에 가서 아주 느린 박자 맞추기!"]],
 		"pulley_stages": [MissionRound.missions(ExperimentRegistry.find("pulley")).stages.map(func(s: Dictionary) -> String: return s.text),
-			["1줄로 보물 상자를 선반까지 올리기!", "2줄로 보물 상자를 선반까지 올리기!", "4줄로 가볍게 선반까지 올리기!"]],
+			["1줄로 보물 상자를 선반까지 올리기!", "2줄로 바꿔서 보물 상자를 선반까지 올리기!", "4줄로 바꿔서 보물 상자를 선반까지 올리기!"]],
 		"incline-friction": [MissionRound.missions(ExperimentRegistry.find("incline-friction")).stages.map(func(s: Dictionary) -> String: return s.text),
-			["나무 미끄럼틀을 조금 기울여 노란 도미노 넘어뜨리기!", "같은 나무로 더 많이 기울여 파란 도미노 넘어뜨리기!", "같은 기울기로 강철로 바꿔 빨간 기둥 넘어뜨리기!"]],
+			["나무 미끄럼틀을 살짝 기울여 노란 도미노 쓰러뜨리기!", "나무 그대로 더 많이 기울여 파란 도미노 쓰러뜨리기!", "기울기 그대로 강철로 바꿔서 빨간 기둥 쓰러뜨리기!"]],
 	}
 	for id in want:
 		if want[id][0] != want[id][1]:
