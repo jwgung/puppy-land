@@ -2,7 +2,7 @@
 ## at HOME_R from the star, HOME_DEG round from the planet's start (2026-11-03 playtest "마지막 미션에서
 ## 별이 너무 가까이 있어. 좀 더 멀리 있게 해서 맞추게 해줘": 9 m at 42° instead of 5 m at 47°, where every
 ## escaping tangent shot from 4 m passed it). Now a shot along the circle (90°) passes it by at every
-## speed: the child aims a little outwards (55–65°, 3.8–6 m/s at 60°); the pull's dotted way ahead
+## speed: the child aims a little outwards (55–65°, 4–6 m/s at 60°); the pull's dotted way ahead
 ## shows whether a shot goes through it. Stages 1 and 2 are laps (MissionRound: the formula's laps at 4 m, then
 ## two at 2 m): little sparkles sit on the stage's circle and pop when the formula planet passes them
 ## (a picture of the way round; the stamp is the laps'). Stage 3 asks for the planet to leave the star

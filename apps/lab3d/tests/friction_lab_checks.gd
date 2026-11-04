@@ -407,7 +407,7 @@ func check_first_pull_input() -> void:
 	var before_start: float = forces[started - 2] if started > 1 else -1.0
 	expect.call(held and gauge_ok and started > 0 and at_start > limit and before_start <= limit and fill_ok
 		and started == ceili(limit / lab.PUSH_RATE * STEP_HZ + 1e-9),
-		"friction (press and hold in a fresh screen): the push grows 25 N/s from 0 (gauge = push / 80 N); the box starts on the first step above mu_s m g = %.2f N (step %d, %.2f s)" % [limit, started, started / float(STEP_HZ)],
+		"friction (press and hold in a fresh screen): the push grows 25 N/s from 0 (gauge = push / PUSH_MAX); the box starts on the first step above mu_s m g = %.2f N (step %d, %.2f s)" % [limit, started, started / float(STEP_HZ)],
 		"held %s, ramp %s, start step %d: %.3f N (before %.3f N), gauge %s %.3f" % [held, gauge_ok, started, at_start, before_start, gauge.visible, gauge.fraction])
 	await _until(lab, lab.frames + 20)
 	var shown: Dictionary = lab.observations()
@@ -497,7 +497,7 @@ func check_press_again() -> void:
 	if not (lab.status() == "end" and lab.push.stopped() and at_end <= limit + step_n + 1e-9 and absf(lab.props.gauge.fraction * lab.PUSH_MAX - at_end) < 1e-9):
 		problems.append("at the end: %s, push %.3f N, stopped %s, gauge %.3f" % [lab.status(), at_end, lab.push.stopped(), lab.props.gauge.fraction])
 	lab.hold_ended("box")
-	# A press on a box still sliding: the push stops once it passes mu_s m g (it does not grow to 80 N).
+	# A press on a box still sliding: the push stops once it passes mu_s m g (it does not grow to PUSH_MAX).
 	lab.reset_box()
 	await press_until_slide.call()
 	for i in 30:

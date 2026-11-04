@@ -19,7 +19,7 @@ static func factor(mass: float, reference: float) -> float:
 ## Radius of a ball of `mass` (kg) of the stuff whose 1 kg ball has radius `radius_1kg`: it follows
 ## its own mass only (another ball's mass never changes it; 2026-11-03 playtest).
 static func radius(mass: float, radius_1kg: float) -> float:
-	return radius_1kg * factor(mass, 1.0)
+	return radius_1kg * factor(maxf(mass, 0.01), 1.0)
 
 
 ## How far two balls of radii `a` and `b` resting on one floor must each be drawn along it away from

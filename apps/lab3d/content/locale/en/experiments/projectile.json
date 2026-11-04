@@ -10,7 +10,7 @@
     { "name": "Projectile motion", "description": "The curved path a thrown thing makes while gravity acts on it." }
   ],
   "law": { "title": "Motion of a thrown object", "description": "While it moves sideways, gravity adds downward speed, so it moves in a curve." },
-  "tip": "Press the ball, pull it back and let go: it flies the other way. The pull's direction is the angle and its length is the speed. Tap the ball once to change its height with the yellow handle beside it. You can also drag the yellow handle at the arrow's tip to set the direction and speed.",
+  "tip": "Press the ball, pull it back and let go: it flies the other way. The pull's direction is the angle and its length is the speed. Tap the ball once to change its height with the yellow handle beside it.",
   "tip_short": "Pull the ball back and let go to throw",
   "controls": [
     {

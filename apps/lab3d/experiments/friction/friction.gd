@@ -1,7 +1,7 @@
 ## Guided push friction lab (Phase 1 Task 4b; web preset "friction", "얼마나 세게 밀어야 움직일까?"):
 ## a box on a level floor with friction, pushed towards +x by the bread cat. The child presses and
 ## holds the box itself (2026-10-28 user decision, no handle): while held the applied force grows
-## from 0 at PUSH_RATE N/s up to PUSH_MAX (80 N, the old handle's +-80 N) - HoldRamp - and a gauge
+## from 0 at PUSH_RATE N/s up to PUSH_MAX (125 N; 80 N, the old handle's +-80 N, until 2026-11-03) - HoldRamp - and a gauge
 ## beside the box fills, both stopping at the push that starts the box (2026-11-01); letting go sets it back to 0 at once and the box slides on until friction
 ## stops it (the web's handle let go). The box starts exactly when the ramped force passes
 ## mu_s m g (PushFrictionLaw). Conditions: material (the web's four, mu_s =
