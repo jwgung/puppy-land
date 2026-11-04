@@ -1,11 +1,12 @@
-# A v* tag builds the Play Store bundle (AAB, signed with the upload key) and attaches it to a GitHub
-# Release; the bundle is then uploaded to the Play Console by hand (docs/release/README.md).
+# A v* tag builds the Play Store bundle (AAB, signed with the upload key), attaches it to a GitHub
+# Release and uploads it to the Play closed-testing track "alpha" (job "play"; docs/release/README.md).
 # The version comes from apps/lab3d/tools/build.sh play: versionCode = commits up to the tag,
 # versionName = the tag (v0.1.1 -> 0.1.1). A manual run (workflow_dispatch) uploads an artifact only,
 # and only when started on a v* tag (on any other ref the environment's deployment rule stops the job).
 # The build must beat the versionCode of every earlier GitHub Release (Play rejects a lower one).
 # Secrets live in the "play-release" Environment, not in the repository: UPLOAD_KEYSTORE_BASE64,
-# UPLOAD_STORE_PASSWORD (the key's password is the same), alias "upload". Its deployment rule allows
+# UPLOAD_STORE_PASSWORD (the key's password is the same), alias "upload", and PLAY_SERVICE_ACCOUNT_JSON
+# (a Play API service account; only the "play" job reads it). Its deployment rule allows
 # v* tags only (docs/release/README.md, section 2). Third-party actions are pinned to commit SHAs.
 name: Release
 
@@ -130,3 +131,42 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           STEM: ${{ needs.bundle.outputs.stem }}
         run: gh release create "$GITHUB_REF_NAME" out/* --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME ($STEM)" --generate-notes
+
+  # Uploads the bundle on the Release to the closed-testing track. Needs its own approval of the
+  # "play-release" Environment, which holds the service-account key; the Release already exists, so
+  # a failure here (e.g. a rejected release) is fixed in the Play Console or by a new tag.
+  play:
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    needs: [bundle, publish]
+    runs-on: ubuntu-latest
+    environment: play-release
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0 # to compare with the previous tag
+          sparse-checkout: docs/release/whatsnew
+          persist-credentials: false
+      - name: Release notes were edited
+        run: |
+          # The first release has no earlier tag, so there is nothing to compare with.
+          prev=$(git describe --tags --abbrev=0 --match 'v*' "$GITHUB_REF_NAME^" 2>/dev/null || true)
+          [ -n "$prev" ] || echo "::notice::no earlier v* tag; release notes not compared"
+          if [ -n "$prev" ] && git diff --quiet "$prev" "$GITHUB_REF_NAME" -- docs/release/whatsnew; then
+            echo "::error::docs/release/whatsnew is unchanged since $prev, so last release's notes would go out again. Edit them and tag the new commit."
+            exit 1
+          fi
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          path: out
+          merge-multiple: true
+      - uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: jwgung.puppyland
+          releaseFiles: out/*.aab
+          track: alpha
+          status: completed
+          whatsNewDirectory: docs/release/whatsnew
