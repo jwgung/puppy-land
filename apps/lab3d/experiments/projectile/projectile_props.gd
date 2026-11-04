@@ -1,7 +1,7 @@
 ## Grass island props of the projectile lab (apps/lab3d/docs/art-direction.md, section 9). Meshes and
 ## reactions only: the floor, ball and arrow-knob bodies are built by projectile.gd.
-## - the purple velocity arrow (the web's purple arrow, VelocityArrow) from the ball to the yellow
-##   knob (VelocityArrow.knob_mesh), rebuilt only when its length changes (about 60 vertices),
+## - the purple velocity arrow (the web's purple arrow, VelocityArrow) from the ball to its tip
+##   (no yellow knob box at its end since 2026-11-03), rebuilt only when its length changes (about 60 vertices),
 ## - the formula path: PATH_DOTS white dots on x(t), y(t) from the launch to the landing (one
 ##   MultiMesh, updated only when a condition or the start changes) and a white ring where the
 ##   formula lands,
@@ -177,7 +177,7 @@ func set_cat_grip(on: bool) -> void:
 		_hold_cat(_ball.global_position)   # the waiting ball's centre either way (its body is where it waits)
 
 
-## The velocity arrow from the ball centre along (angle, speed), ending at the knob's near face.
+## The velocity arrow from the ball centre along (angle, speed), ending `knob_half` short of the tip.
 func set_arrow(center: Vector3, angle_deg: float, tip_length: float, knob_half: float) -> void:
 	arrow.point(center, angle_deg, tip_length - knob_half)
 	_launch_dir = Vector3(cos(deg_to_rad(angle_deg)), sin(deg_to_rad(angle_deg)), 0.0)

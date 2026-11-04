@@ -1,8 +1,8 @@
 ## Guided projectile lab (Phase 1 Task 4a; web preset "projectile"): one ball is thrown from a
 ## launch stand with the speed and direction of the purple velocity arrow, in the chosen field.
 ## Conditions: gravity (the web's buttons), launch angle (0..90 deg, 15 deg steps like the web
-## arrow's snap) and speed (1..9 m/s; the web arrow is capped at 9.09 m/s). The arrow's yellow knob
-## can be dragged in the vertical plane of the throw (web step 1, "보라색 화살표를 끌어 방향을
+## arrow's snap) and speed (1..9 m/s; the web arrow is capped at 9.09 m/s). The arrow's tip knob
+## (drawn by nothing since 2026-11-03: no yellow box at the arrow's end) could be dragged in the vertical plane of the throw (web step 1, "보라색 화살표를 끌어 방향을
 ## 정해요"; ArrowSurface), and the ball moved along the launch line and raised with its height
 ## handle (launch height 0..3 m; the web launches from 0.42 m, the default here is 0.5 m). In the
 ## game (2026-10-27, one drag per lab) the finger only pulls the slingshot: the launch height is the
@@ -61,7 +61,6 @@ var out_of_bounds := false
 var _path := PackedVector3Array()   # reused by _fill_path (the drag preview runs every frame)
 var _out_steps := 0                 # fixed steps counted after the ball was stopped out of bounds
 var _ball_visual: MeshInstance3D
-var _knob_visual: MeshInstance3D
 var _shown_start := Vector3.INF     # ball centre the arrow / knob were placed for
 var _shown_knob := Vector3.INF      # knob position the arrow preview was made for
 ## The slingshot game (Plan G3, set by slingshot_setup): no formula path or landing ring before a
@@ -167,7 +166,6 @@ func release() -> void:
 		reset_run()
 	apply_field(ball)
 	(ball.corrector as UniformFieldCorrector).release(ball, launch_velocity())
-	_knob_visual.visible = false
 	if trail_only:   # the new throw's trail: the formula path from its launch, shown as it flies
 		projectile_props().set_path(formula_path(), null)
 		_show_trail()
@@ -427,7 +425,6 @@ func _show_preview(bottom: Vector3, angle: float, launch_speed: float, place_kno
 	var tip := ArrowSurface.tip(angle, launch_speed)
 	if place_knob:
 		knob.global_position = center + Vector3(tip.x, -tip.y, 0.0)
-		_knob_visual.visible = true
 	_shown_start = center
 	_shown_knob = knob.global_position
 	projectile_props().set_arrow(center, angle, tip.length(), KNOB_SIZE * 0.5)
@@ -494,7 +491,6 @@ func _show_pull(value: Vector2) -> void:
 	var center := ball_center()
 	var tip := ArrowSurface.tip(value.x, value.y)
 	knob.global_position = center + Vector3(tip.x, -tip.y, 0.0)
-	_knob_visual.visible = true
 	_shown_start = center
 	_shown_knob = knob.global_position
 	projectile_props().set_arrow(center, value.x, tip.length(), KNOB_SIZE * 0.5)
@@ -528,7 +524,6 @@ func _build_world() -> void:
 	ball.add_child(_ball_visual)
 	add_child(ball)
 	knob = _make_knob("ArrowKnob", KNOB_LAYER, KNOB_SIZE)
-	_knob_visual = knob.get_node("Visual")
 	projectile_props().dress(self, ball, _ball_visual, BALL_RADIUS * 2.0)
 	game = ProjectileGame.new(self)   # the piece game: the crates and the star piece (visual only)
 	add_child(game)

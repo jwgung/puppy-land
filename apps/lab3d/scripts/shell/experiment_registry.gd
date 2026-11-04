@@ -458,6 +458,10 @@ static func _validate_manipulation(manipulation: Variant, actions: Array = []) -
 		var angle_step: Variant = slingshot.get("angle_step", 15.0)
 		if not (angle_step is float or angle_step is int) or angle_step <= 0.0:
 			problems.append("manipulation.slingshot.angle_step must be a number > 0")
+		# The lowest launch speed the pull reaches (collision: 0 = never away from the other ball).
+		var lowest: Variant = slingshot.get("min", 0.0)
+		if not (lowest is float or lowest is int):
+			problems.append("manipulation.slingshot.min must be a number")
 	return problems
 
 

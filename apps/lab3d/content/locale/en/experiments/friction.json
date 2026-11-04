@@ -15,7 +15,7 @@
     "description": "Static friction holds an object up to its limit, and when it slides, the work of friction turns mechanical energy into thermal energy.",
     "equation": "Fₛ ≤ μₛN · W_friction = ΔE_thermal"
   },
-  "tip": "Press and hold the box with one finger: the push grows by 25 N each second (the bar beside it fills, up to 80 N; once the box starts to move, the push stays there). Let go and the push is 0. Drag with two fingers to turn the view.",
+  "tip": "Press and hold the box with one finger: the push grows by 25 N each second (the bar beside it fills, up to 125 N; once the box starts to move, the push stays there). Let go and the push is 0. Drag with two fingers to turn the view.",
   "tip_short": "Press and hold the box to push it",
   "controls": [
     {

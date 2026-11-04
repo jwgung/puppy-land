@@ -14,7 +14,7 @@
     "pan_radius": 7.0,
     "default_mode": "front",
     "views": {
-      "front": { "yaw_deg": 0.0, "pitch_deg": -40.0, "distance": 16.0 },
+      "front": { "yaw_deg": 0.0, "pitch_deg": -44.0, "distance": 18.0, "target": [0.0, 1.6, 2.0] },
       "three_quarter": { "yaw_deg": 26.0, "pitch_deg": -42.0 },
       "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 17.0 },
       "side": { "yaw_deg": 90.0, "pitch_deg": -14.0, "distance": 16.0 },
@@ -73,7 +73,7 @@
     "judge_on": ["orbiting"],
     "miss_on": ["crash", "leaving", "far"],
     "reveal_on": ["orbiting", "leaving", "crash", "far"],
-    "hidden_until_end": ["predicted", "escape_speed"],
+    "hidden_until_end": ["predicted", "escape_speed", "fetched"],
     "stages": [
       {
         "threshold": 1.0,
@@ -93,11 +93,12 @@
         "observe": "launch_speed",
         "threshold": 3.67,
         "judge_on": ["far"],
+        "also": [{ "observe": "fetched", "compare": "greater", "threshold": 0.5 }],
         "conditions": { "radius": 4.0 },
         "say_face": "surprised",
         "win_face": "surprised",
         "miss_face": "thinking",
-        "miss_on": ["crash", "orbiting"]
+        "miss_on": ["crash", "orbiting", "far"]
       }
     ]
   },
@@ -139,7 +140,7 @@
       "delay_s": 1.5
     },
     "puppy": {
-      "at": [1.0, -9.0]
+      "at": [5.1, -8.2]
     }
   },
   "observations": [
@@ -152,7 +153,8 @@
     { "id": "period", "unit": "s", "digits": 2 },
     { "id": "speed", "unit": "m/s", "digits": 2 },
     { "id": "lap", "unit": "s", "digits": 2 },
-    { "id": "laps", "digits": 2 }
+    { "id": "laps", "digits": 2 },
+    { "id": "fetched", "digits": 0 }
   ],
   "manipulation": {
     "grab_radius": 72.0,

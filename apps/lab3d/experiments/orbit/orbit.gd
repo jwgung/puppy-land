@@ -48,6 +48,9 @@ var direction := DEFAULT_DIRECTION
 ## OrbitChallenge prediction of the launch (PhysicsLaws.orbit_analyze).
 var prediction: Dictionary = {}
 var crashes := 0
+## The leaving (unbound) formula planet came within OrbitGame.ATTACH of the far piece this run
+## (2026-11-03: the last stage wants it, observation "fetched").
+var fetched := false
 var _floor: StaticBody3D
 var _analyzed_key := PackedFloat64Array()   # (radius, vx, vz) of _analyzed
 var _analyzed: Dictionary = {}
@@ -133,6 +136,7 @@ func reset_run() -> void:
 	if planet == null:
 		return
 	_pace = 0.0
+	fetched = false
 	_clear_run()
 	if answer_preview:
 		_show_prediction(start_radius, prediction)
@@ -147,6 +151,7 @@ func reset_run() -> void:
 
 func _notify_released() -> void:
 	_pace = 0.0
+	fetched = false
 	_preview_key = Vector3.INF
 	props.hide_preview()
 	if not answer_preview:
@@ -181,6 +186,9 @@ func _physics_process(_delta: float) -> void:
 			crashes += 1
 			props.crashed(Vector3(model.cx - model.x, 0.0, model.cz - model.z))
 			impact.emit(0.6)
+		if not fetched and model.outcome == "" and model.specific_energy() >= 0.0 \
+				and Vector2(model.x - model.cx, model.z - model.cz).distance_to(OrbitGame.home_xz()) <= OrbitGame.ATTACH:
+			fetched = true
 		if model.outcome == "" and _graph_due(model.steps, model.time()):
 			_add_graph_point()
 		if status() != _last_status:
@@ -304,6 +312,7 @@ func observations() -> Dictionary:
 		"speed": model.speed(),
 		"lap": model.first_lap_time if model.first_lap_time >= 0.0 else "—",
 		"laps": absf(model.swept) / TAU,   # turns round the star since the launch (either way)
+		"fetched": 1.0 if fetched else 0.0,
 	}
 
 

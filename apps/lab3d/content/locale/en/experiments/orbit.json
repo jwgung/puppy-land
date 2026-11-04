@@ -51,10 +51,10 @@
         "miss": "Shoot it sideways, just right, from close by!"
       },
       {
-        "text": "From 4 meters, shoot it very hard to bring back the far piece!",
+        "text": "From 4 meters, shoot it hard and hit the far-away piece!",
         "say": "When it is very fast, the star's gravity can't hold it. Then the planet leaves the star and goes far away.",
         "win": "Whoosh! It brought the piece back!",
-        "miss": "Shoot it a bit harder!"
+        "miss": "Pull so the dots go through the piece!"
       }
     ]
   },
@@ -96,7 +96,8 @@
     { "label": "Expected circular period 2π√(r³/GM)" },
     { "label": "Speed now" },
     { "label": "Time of one lap" },
-    { "label": "Laps around the star", "unit": "" }
+    { "label": "Laps around the star", "unit": "" },
+    { "label": "Hit the far piece (formula path, 1 = hit)" }
   ],
   "graph": {
     "title": "Launch speed and orbit speeds",

@@ -72,8 +72,8 @@ const ROUNDS := {
 		["the light box again: nothing", [["ctl", "mass", "light"], ["hold", 1.0]], 150, 1],
 		["the normal box held 1.2 s: still on the path", [["ctl", "mass", "normal"], ["hold", 1.2]], 150, 1],
 		["the normal box held 2.2 s: off the path", [["ctl", "mass", "normal"], ["hold", 2.2]], 150, 2],
-		["the heavy box held 2 s: still on the path", [["ctl", "mass", "heavy"], ["hold", 2.0]], 150, 2],
-		["the heavy box held 3 s: off the path", [["ctl", "mass", "heavy"], ["hold", 3.0]], 150, 3],
+		["the heavy box held 3 s: still on the path (16 kg since 2026-11-03: it starts after 2.5 s)", [["ctl", "mass", "heavy"], ["hold", 3.0]], 150, 2],
+		["the heavy box held 4 s: off the path", [["ctl", "mass", "heavy"], ["hold", 4.0]], 150, 3],
 	],
 	"rotation": [
 		["the middle point lifts with 186.9 N: not the near point", [["ctl", "effort", "mid"], ["hand", 400.0]], 20, 0],
@@ -91,7 +91,8 @@ const ROUNDS := {
 		["from 2 m at the circular speed: two laps", [["act", "circular"], ["act", "launch"]], 600, 2],
 		["from 2 m at 6 m/s: it leaves, but not from 4 m", [["ctl", "speed", 6.0], ["act", "launch"]], 400, 2],
 		["from 4 m at 3.6 m/s: far away but still bound (under 3.67)", [["ctl", "radius", 4.0], ["ctl", "speed", 3.6], ["act", "launch"]], 900, 2],
-		["from 4 m at 5 m/s: it leaves the star", [["ctl", "speed", 5.0], ["act", "launch"]], 600, 3],
+		["from 4 m at 6 m/s: it leaves the star but flies past the far piece (2026-11-03: the piece is 9 m out)", [["ctl", "speed", 6.0], ["act", "launch"]], 600, 2],
+		["from 4 m at 5 m/s aimed outwards (60°): it leaves the star through the far piece", [["ctl", "direction", 60.0], ["ctl", "speed", 5.0], ["act", "launch"]], 600, 3],
 	],
 	"buoyancy": [
 		["the start: the 70 kg load in the big drum floats, but the first stage wants the small drum", [["ctl", "volume", "big"], ["ctl", "mass", 70.0], ["act", "release"]], 1200, 0],

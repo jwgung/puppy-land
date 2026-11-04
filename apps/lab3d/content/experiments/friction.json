@@ -38,8 +38,8 @@
       "default": "start",
       "options": [
         { "id": "light", "kg": 2.0, "note": "2 kg" },
-        { "id": "normal", "kg": 5.0, "note": "5 kg" },
-        { "id": "heavy", "kg": 10.0, "note": "10 kg" },
+        { "id": "normal", "kg": 6.0, "note": "6 kg" },
+        { "id": "heavy", "kg": 16.0, "note": "16 kg" },
         { "id": "start", "kg": 8.0 }
       ]
     }
@@ -96,12 +96,12 @@
     "say_face": "explain",
     "picks": {
       "mass": [
-        { "value": "light", "picture": "box", "size": 0.585 },
-        { "value": "normal", "picture": "box", "size": 0.794 },
+        { "value": "light", "picture": "box", "size": 0.5 },
+        { "value": "normal", "picture": "box", "size": 0.721 },
         { "value": "heavy", "picture": "box", "size": 1.0 }
       ]
     },
-    "bars": { "start_force": 74.556 }
+    "bars": { "start_force": 119.2896 }
   },
   "note": {
     "numbers": [
