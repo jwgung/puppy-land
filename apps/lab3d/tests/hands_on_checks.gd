@@ -194,6 +194,13 @@ func check_result_lines() -> void:
 						problems.append("%s %d: '%s' has %s" % [definition.id, i + 1, text, word])
 				if _kid_symbols(text):
 					problems.append("%s %d: '%s' has a symbol or a number" % [definition.id, i + 1, text])
+			# The line after a miss with the conditions off (optional): the same rules as the miss line.
+			var off := str(stages[i].get("miss_conditions", ""))
+			if off != "" and (off.length() > LINE_MAX or _kid_symbols(off) or str(MissionRound.result_line(definition, i, false, true)[0]) != off):
+				problems.append("%s %d miss_conditions: '%s' (%d)" % [definition.id, i + 1, off, off.length()])
+			for word in Story.science_words():
+				if off.contains(word):
+					problems.append("%s %d: '%s' has %s" % [definition.id, i + 1, off, word])
 	expect.call(problems.is_empty() and count == 66, "result lines: 11 labs x 3 stages have a win and a miss line (66), short (<= %d), no science words or symbols, a known face" % LINE_MAX, "%d lines; %s" % [count, "; ".join(problems)])
 
 

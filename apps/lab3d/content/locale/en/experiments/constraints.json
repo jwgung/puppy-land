@@ -55,19 +55,22 @@
         "text": "On the Earth, match the turtle clock's beat with the medium rope!",
         "say": "A ball on a rope swinging back and forth is called a **pendulum**. Gravity pulls the ball down, so the pendulum swings. Remember this beat well!",
         "win": "Tick-tock! Right on the turtle clock's beat!",
-        "miss": "Off the beat! Try the medium rope on the Earth!"
+        "miss": "Off the beat! Pull it just a little and let go!",
+        "miss_conditions": "Pick the Earth and the medium rope!"
       },
       {
         "text": "Now make only the rope longer and match the slow beat!",
         "say": "With a longer rope, the ball travels a longer path. So one swing there and back takes longer.",
         "win": "Tick-tock! The long rope matched the beat too!",
-        "miss": "Off the beat! Change to the long rope!"
+        "miss": "Off the beat! Pull it just a little and let go!",
+        "miss_conditions": "Pick the Earth and the long rope!"
       },
       {
         "text": "Keep the long rope, go to the Moon and match the very slow beat!",
         "say": "The Moon's gravity is weak, so it pulls the ball gently. So even with the same rope, it swings very slowly on the Moon.",
-        "win": "The clock's door opened! The piece is coming out!",
-        "miss": "Keep the long rope and go to the Moon!"
+        "win": "The barred door opened! The piece is coming out!",
+        "miss": "Off the beat! Pull it just a little and let go!",
+        "miss_conditions": "Pick the Moon and the long rope!"
       }
     ]
   },

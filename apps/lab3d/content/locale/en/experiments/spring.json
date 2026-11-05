@@ -47,19 +47,22 @@
         "text": "Pull the light ball and ring the near bell!",
         "say": "A spring pulls the ball back as much as it is stretched. This force is called the **elastic force**. So the ball goes as far to the other side as you pulled, and rings the bell.",
         "win": "Ding! The bell rang!",
-        "miss": "A bit short of the bell! Pull more!"
+        "miss": "A bit short of the bell! Pull more!",
+        "miss_conditions": "Pick the light ball!"
       },
       {
         "text": "Pull the same ball farther and ring the far bell!",
         "say": "The farther you pull, the bigger the elastic force. So the ball goes far to the other side too. To reach the far bell, pull that far.",
         "win": "Ding-dong! The far bell rang too!",
-        "miss": "Pull it farther!"
+        "miss": "Pull it farther!",
+        "miss_conditions": "Pick the light ball!"
       },
       {
         "text": "Change to the heavy ball and ring the same far bell!",
         "say": "Pulled just as far, the heavy ball reaches the same bell. But being heavy, it swings back and forth more slowly.",
         "win": "Ding-ding! The heavy ball reached the far bell too!",
-        "miss": "Pull the heavy ball as far as the far bell!"
+        "miss": "Pull the heavy ball as far as the far bell!",
+        "miss_conditions": "Pick the heavy ball!"
       }
     ]
   },

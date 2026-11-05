@@ -279,6 +279,7 @@ func check_puppy_words_each_language() -> void:
 			for stage in MissionRound.missions(definition).get("stages", []):
 				lines.append(str(stage.get("win", "")))
 				lines.append(str(stage.get("miss", "")))
+				lines.append(str(stage.get("miss_conditions", "")))
 		for line in lines:
 			for word in words:
 				if line.to_lower().contains(str(word).to_lower()):

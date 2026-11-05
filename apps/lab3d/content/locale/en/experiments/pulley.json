@@ -46,19 +46,22 @@
         "text": "Lift the treasure chest to the shelf with 1 rope!",
         "say": "There is a tool that lifts loads with a rope over a wheel. It is called a **pulley**. With one rope, your hand holds the chest's whole weight. So it takes a lot of force.",
         "win": "Heave-ho! It's up on the shelf!",
-        "miss": "Use one rope and press and hold longer!"
+        "miss": "Press and hold it longer!",
+        "miss_conditions": "Use one rope and leave the load as it is!"
       },
       {
         "text": "Change to 2 ropes and lift the treasure chest to the shelf!",
         "say": "Two ropes share the chest, so it takes only half the force. But you must pull twice as much rope, so you pull it a few times.",
         "win": "Up with two ropes too! Another light is on!",
-        "miss": "Change to two ropes and press and hold!"
+        "miss": "Press and hold it all the way up!",
+        "miss_conditions": "Use two ropes and leave the load as it is!"
       },
       {
         "text": "Change to 4 ropes and lift the treasure chest to the shelf!",
         "say": "When four ropes share the chest, it takes only a little force. But you must pull four times as much rope, so you pull it even more times.",
         "win": "The bars opened! The piece is coming out!",
-        "miss": "Change to four ropes and press and hold!"
+        "miss": "Press and hold it all the way up!",
+        "miss_conditions": "Use four ropes and leave the load as it is!"
       }
     ]
   },

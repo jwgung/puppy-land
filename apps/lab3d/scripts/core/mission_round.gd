@@ -226,12 +226,17 @@ static func missed(definition: Dictionary, stage: int, status: String, observati
 
 
 ## Puppy's result line of stage `stage` [text, face]: `win` (face win_face, else happy) after its stamp,
-## `miss` (miss_face, else thinking) after a miss; ["", ""] when the stage has none.
-static func result_line(definition: Dictionary, stage: int, won: bool) -> Array:
+## `miss` (miss_face, else thinking) after a miss; ["", ""] when the stage has none. A miss with the
+## stage's conditions off (`conditions_off`: another gravity, ball, rope... picked) tells the stage's
+## `miss_conditions` (what to pick, miss_conditions_face) when it has one (2026-11-05 user: the miss
+## hint about the throw is wrong advice when the picked conditions are what is off).
+static func result_line(definition: Dictionary, stage: int, won: bool, conditions_off := false) -> Array:
 	var stages: Array = missions(definition).get("stages", [])
 	if stage < 0 or stage >= stages.size() or not stages[stage] is Dictionary:
 		return ["", ""]
 	var key := "win" if won else "miss"
+	if not won and conditions_off and str(stages[stage].get("miss_conditions", "")) != "":
+		key = "miss_conditions"
 	var text := str(stages[stage].get(key, ""))
 	var face: Variant = stages[stage].get(key + "_face")
 	return [text, str(face) if face is String and face in Story.FACES else ("happy" if won else "thinking")]
@@ -371,6 +376,7 @@ static func _validate_series(missions: Variant, series: Array) -> PackedStringAr
 ## `missions` (Plan G1, G2, optional): the stages and how a run is judged (this file's header) —
 ## {"stages": [{"text": <non-empty>, "say"?: <Dugi's explanation of the stage>, "say_face"?: <Story.FACES>, "threshold"?: <number > 0>, "conditions"?: {...},
 ##              "win"?, "miss"?: <Puppy's result lines>, "win_face"?, "miss_face"?: <Story.FACES>, "miss_on"?: [...],
+##              "miss_conditions"?: <Puppy's line after a miss with the conditions off>, "miss_conditions_face"?,
 ##              "change"?: [<control id>, ...], "observe"?: <an observation id> | "",
 ##              "compare"?: ..., "judge_on"?: [...]}, ...],
 ##  "observe"?: <an observation id>, "compare"?: "greater" | "less",
@@ -436,7 +442,9 @@ static func _validate_missions(missions: Variant, observations: Array, controls:
 				if not (stage.get(key) is String and stage.get(key) != ""):
 					problems.append("missions.stages[%d].%s must be a text" % [i, key])
 		if stage is Dictionary:
-			for key in ["win_face", "miss_face"]:
+			if stage.has("miss_conditions") and not (stage.miss_conditions is String and stage.miss_conditions != ""):
+				problems.append("missions.stages[%d].miss_conditions must be a text" % i)
+			for key in ["win_face", "miss_face", "miss_conditions_face"]:
 				if stage.has(key) and not stage[key] in Story.FACES:
 					problems.append("missions.stages[%d].%s must be one of Story.FACES" % [i, key])
 			if stage.has("miss_on") and not _statuses(stage.miss_on):
@@ -929,7 +937,12 @@ func tell(stage_index: int, won: bool) -> void:
 	_armed = false
 	_resolved = true
 	_miss_polls = 0
-	var line := result_line(definition, stage_index, won)
+	var off := false
+	if not won and lab != null:
+		var stages: Array = missions(definition).get("stages", [])
+		if stage_index >= 0 and stage_index < stages.size() and stages[stage_index] is Dictionary:
+			off = not conditions_met(stages[stage_index].get("conditions", {}), lab)
+	var line := result_line(definition, stage_index, won, off)
 	if not _first_result and stage_index >= reason_stage(definition):
 		_first_result = true   # (the first result of the stage the question is about)
 		if reason != "":   # (never without Dugi: open() asks nothing then)

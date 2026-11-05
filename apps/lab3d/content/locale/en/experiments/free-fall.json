@@ -51,19 +51,22 @@
         "text": "Drop the red and pink balls together to press the buttons!",
         "say": "The pull of the ground is called **gravity**. Gravity makes heavy and light balls speed up at the same rate. So dropped from the same height, they land together.",
         "win": "Click! Both buttons went down together!",
-        "miss": "The balls landed apart. Make them the same height!"
+        "miss": "The balls landed apart. Make them the same height!",
+        "miss_conditions": "Pick the Earth and the heavy ball!"
       },
       {
         "text": "On the Moon, drop both balls together from the very top!",
         "say": "The Moon's gravity is weaker than the Earth's, so it pulls gently. That is why the balls fall slowly. From the very top it takes more than 3 seconds.",
-        "win": "Together on the Moon too! The light is on!",
-        "miss": "Take the pink ball up to the top like the red one!"
+        "win": "Together on the Moon too! Another light is on!",
+        "miss": "Take both balls up to the very top!",
+        "miss_conditions": "Pick the Moon and the heavy ball!"
       },
       {
         "text": "On Jupiter, drop both balls together in under 1 second!",
         "say": "Jupiter's gravity is much stronger than the Earth's. So the balls fall very fast. But the two balls still land together.",
         "win": "The door opened! I see the piece!",
-        "miss": "On Jupiter, put both balls at the same height!"
+        "miss": "On Jupiter, put both balls at the same height!",
+        "miss_conditions": "Pick Jupiter and the heavy ball!"
       }
     ]
   },

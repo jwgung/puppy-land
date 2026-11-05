@@ -274,7 +274,7 @@ func check_content_lint() -> void:
 		"free-fall": [MissionRound.missions(ExperimentRegistry.find("free-fall")).stages.map(func(s: Dictionary) -> String: return s.text),
 			["빨간 공과 분홍 공을 같이 떨어뜨려 버튼 누르기!", "달에서 두 공을 맨 위에서 같이 떨어뜨리기!", "목성에서 두 공을 같이 1초 안에 떨어뜨리기!"]],
 		"collision": [MissionRound.missions(ExperimentRegistry.find("collision")).stages.map(func(s: Dictionary) -> String: return s.text),
-			["같은 무게 공을 세게 부딪혀 얼음에 금 내기!", "무거운 파란 공으로 더 세게 부딪히기!", "무거운 주황 공을 세게 쳐서 얼음 깨기!"]],
+			["같은 무게 공을 세게 부딪혀 얼음에 금 내기!", "무거운 파란 공으로 더 세게 부딪히기!", "조금 무거운 주황 공을 세게 쳐서 얼음 깨기!"]],
 		# Batch B (2026-10-29) and the throw's angle game.
 		"projectile": [MissionRound.missions(ExperimentRegistry.find("projectile")).stages.map(func(s: Dictionary) -> String: return s.text),
 			["낮게 던져서 가까운 상자 맞히기!", "얼마나 기울여 던질까? 먼 상자 맞히기!", "높이 던져서 나무 위 상자 맞히기!"]],
@@ -283,7 +283,7 @@ func check_content_lint() -> void:
 		"pulley_stages": [MissionRound.missions(ExperimentRegistry.find("pulley")).stages.map(func(s: Dictionary) -> String: return s.text),
 			["1줄로 보물 상자를 선반까지 올리기!", "2줄로 바꿔서 보물 상자를 선반까지 올리기!", "4줄로 바꿔서 보물 상자를 선반까지 올리기!"]],
 		"incline-friction": [MissionRound.missions(ExperimentRegistry.find("incline-friction")).stages.map(func(s: Dictionary) -> String: return s.text),
-			["나무 미끄럼틀을 살짝 기울여 노란 도미노 쓰러뜨리기!", "나무 그대로 더 많이 기울여 파란 도미노 쓰러뜨리기!", "기울기 그대로 강철로 바꿔서 빨간 기둥 쓰러뜨리기!"]],
+			["나무 미끄럼틀을 조금 기울여 노란 도미노 쓰러뜨리기!", "나무 그대로 더 많이 기울여 파란 도미노 쓰러뜨리기!", "기울기 그대로 강철로 바꿔서 빨간 기둥 쓰러뜨리기!"]],
 	}
 	for id in want:
 		if want[id][0] != want[id][1]:
