@@ -42,22 +42,25 @@
   "missions": {
     "stages": [
       {
-        "text": "Tilt the wooden slide just a little and knock over the yellow dominoes!",
+        "text": "Tilt the wooden slide a little and knock over the yellow dominoes!",
         "say": "Gravity pulls the box down, and the floor holds on to it. The floor's holding force is called **friction**. Even a little tilt lets the pull beat friction. So the box slides down.",
         "win": "Crash! The yellow dominoes fell over!",
-        "miss": "Tilt the wood a little and start from the top!"
+        "miss": "Let the box go from the very top!",
+        "miss_conditions": "Pick Wood and A little tilt!"
       },
       {
         "text": "Keep the wood, tilt it more and knock over the blue dominoes!",
         "say": "With a bigger tilt, gravity pulls the box down harder. So the box gets faster and goes farther.",
         "win": "The blue dominoes fell over too!",
-        "miss": "Keep the wood and tilt it more!"
+        "miss": "Let the box go from the very top!",
+        "miss_conditions": "Pick Wood and A big tilt!"
       },
       {
         "text": "Keep the tilt, switch to steel and knock over the red pillar!",
         "say": "Steel is slippery, so its friction is small. So at the same tilt the box goes faster and farther.",
         "win": "Boom! The red pillar fell over!",
-        "miss": "Keep the tilt and switch to steel!"
+        "miss": "Let the box go from the very top!",
+        "miss_conditions": "Pick Steel and A big tilt!"
       }
     ]
   },

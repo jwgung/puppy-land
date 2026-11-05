@@ -22,9 +22,9 @@ const MAP_CLUES := {
 	"incline-friction": "노란 비탈 아래를 봐!",
 	"spring": "울타리 안, 통통 튀는 용수철 쪽이야!",
 	"constraints": "기둥에 큰 노란 공이 매달린 곳이야!",
-	"rotation": "빨간 시소 밑에 뭔가 있어!",
+	"rotation": "빨간 시소 쪽이야! 파란 상자를 봐!",
 	"pulley": "줄 끝에 빨간 상자가 매달린 곳이야!",
-	"buoyancy": "연못 가운데 바위섬에서 반짝여!",
+	"buoyancy": "연못에 빨간 통이 둥둥 떠 있는 곳이야!",
 	"orbit": "마지막은 섬에서 제일 높은 전망대야!",
 }
 const WRONG := "음… 여긴 아닌 것 같아."

@@ -30,7 +30,7 @@ const CLUES := {
 }
 const PROLOGUE := [
 	["dugi", "여기는 바다 위 나라, 퍼피랜드예요."],
-	["dugi", "퍼피랜드에는 섬이 많아요. 그중 하나가 우리 과학섬이에요."],
+	["dugi", "퍼피랜드에는 섬이 많아요. 그중 하나가 우리 뉴턴섬이에요."],
 	["puppy", "밤마다 길잡이 별이 바다를 비춰 줘. 배들이 길을 잃지 않게!"],
 	["puppy", "어? 길잡이 별이 깨졌어!"],
 	["dugi", "별빛이 없으면 밤바다에서는 아무것도 안 보여요. 배가 길을 찾을 수 없어요."],
@@ -532,7 +532,7 @@ func _free(screen: Control) -> void:
 ## (emulate_mouse_from_touch). The dialogue box takes one step for it: the next page, not the next
 ## page already typed out (2026-10-28, SM-X115 prologue check).
 func check_one_tap() -> void:
-	var words := "퍼피랜드에는 섬이 많아요. 그중 하나가 우리 과학섬이에요."
+	var words := "퍼피랜드에는 섬이 많아요. 그중 하나가 우리 뉴턴섬이에요."
 	for i in 16:
 		words += " 밤마다 길잡이 별이 바다를 비춰 줘. 배들이 길을 잃지 않게!"
 	var box := DialogueBox.new(words)

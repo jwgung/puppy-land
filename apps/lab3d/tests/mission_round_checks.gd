@@ -40,6 +40,7 @@ func run() -> void:
 	check_clue_question_bridge()
 	check_stamps_and_reason()
 	check_miss_lines()
+	check_miss_conditions()
 	check_finished_place()
 	check_no_dugi()
 	check_auto_conditions()
@@ -193,6 +194,27 @@ func check_miss_lines() -> void:
 	round.check_miss(false)
 	round.check_miss(false)
 	expect.call(told.size() == 1, "round module: a condition change drops the attempt's line", str(told))
+
+
+## A miss with the stage's picked conditions off (another gravity, another ball) tells the stage's
+## `miss_conditions` (what to pick), not the `miss` hint about the throw itself (2026-11-05 user).
+func check_miss_conditions() -> void:
+	var told := []
+	for gravity in ["moon", "earth"]:
+		var round := _round("free-fall")
+		round.end_question()
+		round.result_told.connect(func(_stage: int, _won: bool, text: String, _face: String) -> void: told.append(text))
+		var lab = round.lab
+		lab.controls = {"gravity": gravity, "mass": "heavy"}
+		round.touched()
+		lab.now = "landed"
+		lab.values = {"together_time": null}
+		round.check_miss(false)
+		round.check_miss(false)
+	var stage: Dictionary = MissionRound.missions(ExperimentRegistry.find("free-fall")).stages[0]
+	var want := [str(stage.get("miss_conditions", "")), str(stage.miss)]
+	expect.call(want[0] != "" and told == want,
+		"round module: a miss with the stage's conditions off tells miss_conditions, else the miss line", "%s / %s" % [told, want])
 
 
 ## The last stamp completes the round (the store's round_done once); a reopened finished place asks

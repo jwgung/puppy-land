@@ -43,23 +43,26 @@
         "text": "Push the bar near the pivot to lift the treasure chest!",
         "say": "The place that holds the bar up is called the **pivot**. Pushing near the pivot, the chest is hard to lift. You must push very hard.",
         "win": "Heave-ho! The chest went up!",
-        "miss": "Press Near and hold it longer!"
+        "miss": "Press Near and hold it longer!",
+        "miss_conditions": "Pick Near and leave the load as it is!"
       },
       {
         "text": "Push the bar in the middle to lift the treasure chest!",
         "say": "Pushing a bit farther from the pivot takes less force.",
         "win": "Up it goes! The piece is coming up!",
-        "miss": "Press and hold the middle point!"
+        "miss": "Press and hold the middle point!",
+        "miss_conditions": "Pick Middle and leave the load as it is!"
       },
       {
         "text": "Push the bar far out to lift the treasure chest gently!",
         "say": "The farther from the pivot you push, the less force it takes. The bar lifts the chest easily. A gentle push is enough.",
         "win": "A gentle push lifted it!",
-        "miss": "Press the point far out!"
+        "miss": "Press the point far out!",
+        "miss_conditions": "Pick Far and leave the load as it is!"
       }
     ]
   },
-  "story": { "clue": "The piece is stuck under the treasure chest! Let's press the bar and lift the chest.", "map_clue": "There's something under the red seesaw!" },
+  "story": { "clue": "The piece is stuck under the treasure chest! Let's press the bar and lift the chest.", "map_clue": "It's by the red seesaw! Look at the blue box!" },
   "kid": {
     "intro": "This is the lever lab. The place that holds the bar up is called the **pivot**. Push one side of the bar down and the load on the other side goes up. The farther from the pivot you push, the less force it takes. Let's see where it is easiest to push!",
     "title": "Lift a heavy load with a bar!",

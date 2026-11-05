@@ -42,19 +42,22 @@
         "text": "Go around the star once, 4 meters away!",
         "say": "The star's gravity pulls the planet. Launched just right, it doesn't fall in but goes round the star.",
         "win": "Whee! It went around once!",
-        "miss": "Shoot it sideways, just right!"
+        "miss": "Shoot it sideways, just right!",
+        "miss_conditions": "Pick four meters from the star!"
       },
       {
         "text": "Go around twice close to the star, at 2 meters!",
         "say": "Close to the star, the gravity is strong. So it goes around faster.",
         "win": "Wow, it went around twice!",
-        "miss": "Shoot it sideways, just right, from close by!"
+        "miss": "Shoot it sideways, just right, from close by!",
+        "miss_conditions": "Pick two meters from the star!"
       },
       {
         "text": "From 4 meters, shoot it hard and hit the far-away piece!",
         "say": "When it is very fast, the star's gravity can't hold it. Then the planet leaves the star and goes far away.",
         "win": "Whoosh! It brought the piece back!",
-        "miss": "Pull so the dots go through the piece!"
+        "miss": "Pull harder, so the white dots pass the piece!",
+        "miss_conditions": "Pick four meters from the star!"
       }
     ]
   },

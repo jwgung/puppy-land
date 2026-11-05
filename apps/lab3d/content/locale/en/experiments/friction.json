@@ -56,19 +56,22 @@
         "text": "Push the light box to open the way!",
         "say": "The force with which the floor holds on to the box is called **friction**. Push harder than friction and the box slides. So it moves out of the way.",
         "win": "The box moved out of the way!",
-        "miss": "The box won't budge. Press it longer!"
+        "miss": "The box is still in the way. Keep pressing!",
+        "miss_conditions": "Pick the light box!"
       },
       {
         "text": "Push the medium box off the path too!",
         "say": "A heavier box has more friction, so the floor holds it tighter. So you have to press longer to make it move.",
-        "win": "The medium box moved too! The door opened!",
-        "miss": "The way is still blocked. Press it longer!"
+        "win": "The medium box moved too! Another door opened!",
+        "miss": "The way is still blocked. Keep pressing!",
+        "miss_conditions": "Pick the medium box!"
       },
       {
         "text": "Clear the heavy box too and go to the piece!",
         "say": "The heaviest box has the most friction. So you have to push the hardest to open the way.",
         "win": "The way is open! Let's go to the piece!",
-        "miss": "It's the heavy box! Press it for a long time!"
+        "miss": "It's the heavy box! Keep pressing a long time!",
+        "miss_conditions": "Pick the heavy box!"
       }
     ]
   },
