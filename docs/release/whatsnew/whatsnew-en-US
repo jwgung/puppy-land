@@ -1,4 +1,4 @@
-Updates from play-testing.
-- Clearer hand guides and condition hints; key terms are bold with a yellow highlight.
-- Tuned the drop, collide, push, buoyancy and planet experiments.
-- Larger on-screen text and buttons on high-resolution phones, with a bigger-size option in Settings.
+Polished dialogue and hints.
+- Our island in the opening story is now called Newton Island.
+- Puppy's lines now match what each experiment shows.
+- When a wrong condition is picked, Puppy says the right one and the bread cat's paw taps its picture button.
