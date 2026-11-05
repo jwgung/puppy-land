@@ -195,6 +195,8 @@ var _tap_catcher: TapCatcher = null       # a tap on the 3D view turns Dugi's or
 var _ask_age := 0.0                      # seconds the question has waited for a pick
 var _nudging := false                    # the paw shows a picture button (during the question)
 var _coach: GuideCoach = null
+var _picks_tapping := -1   # the stage whose picture button the paw is tapping now
+var _picks_nudge_stage := -1   # a miss's stage whose picture button the paw taps once the row shows (_nudge_picks)
 var _guide_touched := false             # a finger or a control acted since the last step
 
 
@@ -917,11 +919,66 @@ func nudge_choices() -> void:
 		return _choices.position + first.position + first.size * 0.5 if _choices != null and is_instance_valid(first) else HandGuide.OFF_VIEW)
 
 
+## After a miss of stage `stage` with its conditions off (2026-11-05 user: children do not find the
+## picture buttons at the bottom), the paw taps the first button that makes an unmet condition hold, the
+## way it taps the question's buttons (nudge_choices). The row hides while Dugi talks or asks: the tap
+## waits for it (_run_guide). Nothing when the conditions hold or no button fixes them.
+func _nudge_picks(stage: int) -> void:
+	_picks_nudge_stage = stage
+	_try_nudge_picks()
+
+
+## The pending tap of _nudge_picks, once the row shows; dropped when the stage moved on or its
+## conditions hold now (the child picked them).
+func _try_nudge_picks() -> void:
+	if _picks_tapping >= 0 and not _picks_free():
+		# Dugi's box came over the row while the paw tapped (his reason right after the miss): again once it shows.
+		_picks_nudge_stage = _picks_tapping
+		_picks_tapping = -1
+		_end_nudge()
+	if _picks_nudge_stage < 0:
+		return
+	var button := _pick_to_tap(_picks_nudge_stage)
+	if button == null or mission_round == null or mission_round.stage() != _picks_nudge_stage:
+		_picks_nudge_stage = -1
+		return
+	if hand_guide == null or _nudging or not _picks_free():
+		return
+	_picks_tapping = _picks_nudge_stage
+	_picks_nudge_stage = -1
+	view.move_child(hand_guide, -1)   # over the buttons while it shows them
+	_nudging = true
+	hand_guide.play("tap", func() -> Vector2:
+		return _picks_row.position + button.position + button.size * 0.5 \
+			if _picks_row != null and is_instance_valid(button) else HandGuide.OFF_VIEW)
+
+
+## The row shows and nothing covers it (Dugi's box or question).
+func _picks_free() -> bool:
+	return picks_shown() and not _asking() and not (dialogue != null and dialogue.active)
+
+
+## The first picture button that makes an unmet condition of stage `stage` hold (null when none).
+func _pick_to_tap(stage: int) -> Control:
+	var stages: Array = MissionRound.missions(definition.raw).get("stages", [])
+	if stage < 0 or stage >= stages.size():
+		return null
+	var conditions: Dictionary = stages[stage].get("conditions", {})
+	for pick in _picks:
+		var want: Variant = conditions.get(pick.control)
+		if want == null or MissionRound.condition_holds(want, experiment.control_value(pick.control)):
+			continue
+		if MissionRound.condition_holds(want, pick.preset.value):
+			return pick.button
+	return null
+
+
 ## The paw back under the overlays it sat under after the question (and not showing the buttons).
 func _end_nudge() -> void:
 	if not _nudging:
 		return
 	_nudging = false
+	_picks_tapping = -1
 	if hand_guide != null:
 		hand_guide.stop()
 		_put_guide_back()
@@ -1068,6 +1125,8 @@ func _on_result_told(_stage: int, won: bool, text: String, face: String) -> void
 	_bubble_side = -1
 	_bubble_saw_box = dialogue != null and dialogue.active and dialogue.visible
 	_fit_result_bubble()
+	if not won:
+		_nudge_picks(_stage)
 
 
 ## The bubble shown now (null when none; tests).
@@ -1576,10 +1635,11 @@ func _run_guide(delta: float) -> void:
 	var used := manipulator != null and manipulator.mode != ""
 	var touched := _guide_touched or used
 	_guide_touched = false
+	_try_nudge_picks()
 	if _nudging:
 		if not hand_guide.playing():
 			_end_nudge()
-		return   # the paw shows the picture buttons now (nudge_choices)
+		return   # the paw shows the picture buttons now (nudge_choices, _nudge_picks)
 	if (touched or _guide_blocked()) and hand_guide.playing():
 		hand_guide.stop()
 	var was_seen := _coach.seen

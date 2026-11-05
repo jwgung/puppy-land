@@ -41,6 +41,7 @@ func run() -> void:
 	await check_once_and_idle()
 	await check_slingshot_after_run()
 	await check_first_stays_due()
+	await check_picks_after_miss()
 	await check_map_tap()
 	await check_map_walk()
 	DirAccess.remove_absolute(ProgressStore.path)
@@ -291,6 +292,58 @@ func check_slingshot_after_run() -> void:
 	expect.call(ready_ok and at_launch and pulled,
 		"hand guide (slingshot): before a throw the hand is on the ball; after it on the launch point; the pull ends on the slingshot's surface",
 		"ready %s launch %s pulled %s (status %s)" % [ready_ok, at_launch, pulled, status])
+
+
+## A miss with the stage's conditions off (2026-11-05 user: children do not find the picture buttons at
+## the bottom): the paw taps the button that makes the condition hold (the Earth for free fall's first
+## stage after the Moon). A miss with the conditions right shows no buttons.
+func check_picks_after_miss() -> void:
+	DirAccess.remove_absolute(ProgressStore.path)
+	var screen := await _open("free-fall")
+	screen.mission_round.end_question()
+	if screen.dialogue.active:
+		screen.dialogue.close(true)   # (Dugi's bridge line: the row shows once it is closed)
+	screen._set_control("gravity", "moon")
+	await _frames(3)
+	screen.mission_round.tell(0, false)
+	await _frames(2)
+	if screen.dialogue.active:
+		screen.dialogue.close(true)   # (the first result's reason: the paw waits for it, checked below)
+	await _seconds(0.3)
+	var guide: HandGuide = screen.hand_guide
+	var button := screen.find_child("Pick_gravity_earth", true, false) as Control
+	var row := button.get_parent() as Control if button != null else null
+	var want := Rect2(row.position + button.position, button.size) if button != null else Rect2()
+	var off_ok: bool = guide.playing() and guide.kind == "tap" and want.has_point(guide.tip)
+	var off_info := "%s %s tip %s want %s" % [guide.playing(), guide.kind, guide.tip, want]
+	guide.stop()
+	await _frames(2)
+	screen._set_control("gravity", "earth")
+	await _frames(3)
+	screen.mission_round.tell(0, false)
+	await _frames(2)
+	var right_ok: bool = not guide.playing()
+	await _close(screen)
+	# The first result after the prediction opens Dugi's reason box over the buttons: the paw waits for it.
+	DirAccess.remove_absolute(ProgressStore.path)
+	ProgressStore.set_mark(ProgressStore.GUIDES, "free-fall", true)   # (no first gesture on the balls in the way)
+	screen = await _open("free-fall")
+	guide = screen.hand_guide
+	screen._predict_pick_choice(str(MissionRound.predict(screen.definition.raw).get("answer", "")))
+	await _seconds(0.3)
+	screen._set_control("gravity", "moon")
+	await _frames(3)
+	screen.mission_round.tell(0, false)
+	await _frames(3)
+	var box_open: bool = screen.dialogue.active
+	var waited: bool = box_open and not guide.playing() and not screen.picks_shown()
+	screen.dialogue.close(true)
+	await _seconds(0.5)
+	var after_box: bool = guide.playing() and guide.kind == "tap" and screen.picks_shown()
+	await _close(screen)
+	expect.call(off_ok and right_ok and waited and after_box,
+		"hand guide (picture buttons): a miss with the conditions off taps the button that fixes them (after Dugi's box closes, the buttons shown); a miss with them right does not",
+		"off: %s; right: playing %s; box %s waited %s, after the box %s" % [off_info, not right_ok, box_open, waited, after_box])
 
 
 ## A first guide with nothing to show (no pull end yet) is not used up: nothing is kept, and it comes

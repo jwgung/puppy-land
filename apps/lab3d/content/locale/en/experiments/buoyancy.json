@@ -46,25 +46,28 @@
         "text": "Float the small empty barrel!",
         "say": "Water pushes a barrel in it upwards. This force is called **buoyancy**. The empty barrel is light, so buoyancy wins. So even the small barrel floats.",
         "win": "Bob, bob! The small barrel floats!",
-        "miss": "Make the small barrel light and float it!"
+        "miss": "Make the small barrel light and float it!",
+        "miss_conditions": "Try the small empty barrel!"
       },
       {
         "text": "What if Bread Cat rides the small barrel?",
         "say": "Bread Cat and the load are heavy. The weight is bigger than the buoyancy, so the small barrel sinks.",
         "win": "Oops, too heavy! It sank!",
-        "miss": "Put Bread Cat on the small barrel!"
+        "miss": "Put Bread Cat on the small barrel!",
+        "miss_conditions": "Put Bread Cat on the small barrel!"
       },
       {
         "text": "Change to the big barrel and carry Bread Cat to the rock!",
         "say": "A big barrel pushes away a lot of water, so its buoyancy is big. So it floats even with Bread Cat on it.",
         "win": "Whee! Bread Cat made it to the rock!",
-        "miss": "Change to the big barrel!"
+        "miss": "Put Bread Cat on the big barrel!",
+        "miss_conditions": "Put Bread Cat on the big barrel!"
       }
     ]
   },
   "story": {
     "clue": "The piece fell on the rock in the middle of the pond! Let's float a barrel and get across!",
-    "map_clue": "Something sparkles on the rock in the pond!"
+    "map_clue": "It's where a red barrel bobs in the pond!"
   },
   "kid": {
     "intro": "This is the floating lab. Water pushes things in it upwards. This force is called **buoyancy**. The more water a barrel pushes away, the bigger the buoyancy. To get Bread Cat across to the rock, the barrel has to float. Change the barrel's size and the load!",

@@ -57,19 +57,19 @@
         "text": "Bump two balls of the same weight hard to crack the ice!",
         "say": "When two balls bump, they push each other with the same force. This is called **action and reaction**. The faster the blue ball, the harder the bump. So the orange ball gets pushed a lot.",
         "win": "Crack! The ice cracked!",
-        "miss": "Pull a little harder!"
+        "miss": "Harder! If not, change to rubber balls!"
       },
       {
         "text": "Bump even harder with the heavy blue ball!",
         "say": "A heavy blue ball has more momentum. So it pushes harder and gives the orange ball a bigger jolt.",
-        "win": "Crrrack! The crack got bigger!",
-        "miss": "Pull it all the way back and hit hard!"
+        "win": "Crrrack! Another crack appeared!",
+        "miss": "Pull it back more! If not, try rubber!"
       },
       {
-        "text": "Hit the heavy orange ball hard to break the ice!",
+        "text": "Hit the slightly heavy orange ball hard to break the ice!",
         "say": "A heavy orange ball is hard to move. It needs a big jolt. Hit it hard with the heavy blue ball. The big jolt breaks the ice!",
         "win": "Smash! The ice broke!",
-        "miss": "Pull it all the way back and hit!"
+        "miss": "Pull all the way! If not, try rubber!"
       }
     ]
   },

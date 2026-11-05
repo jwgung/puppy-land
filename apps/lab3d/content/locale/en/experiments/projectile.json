@@ -50,13 +50,13 @@
         "text": "How slanted should you throw? Hit the far box!",
         "say": "Thrown at a slant, the ball goes both forward and up. It flies the farthest and reaches the far box.",
         "win": "Boom! The far box fell over too!",
-        "miss": "Throw it a bit slanted!"
+        "miss": "Throw it slanted, right in between!"
       },
       {
         "text": "Throw high and hit the box in the tree!",
         "say": "Thrown high, the ball goes up a lot. Then it comes down close by. So it reaches the box on the high branch.",
         "win": "Wow! The box in the tree fell down!",
-        "miss": "Throw it higher, upwards!"
+        "miss": "Not straight up! Throw it high and forward!"
       }
     ]
   },
