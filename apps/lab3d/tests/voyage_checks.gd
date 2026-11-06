@@ -41,7 +41,7 @@ func run() -> void:
 	TitleScreen.app_may_show = false
 	Story.app_may_enable = false
 	Story.enabled = false
-	Island.dev_open = false
+	Island.set_dev_open(false)
 	quality_script.set("_args_cache", saved_args)
 	ProgressStore.reset_all()
 	Island.forget_current()
@@ -82,6 +82,8 @@ func check_content() -> void:
 			order.append(s)
 	if order != Story.VOYAGE_SHOTS:
 		problems.append("shots %s" % str(order))
+	if VoyageScreen.SHOTS.keys() != Story.VOYAGE_SHOTS:
+		problems.append("VoyageScreen.SHOTS %s" % str(VoyageScreen.SHOTS.keys()))
 	if voyage.is_empty() or str(voyage[-1].get("who")) != "fox":
 		problems.append("the keeper does not speak last")
 	var prologue := Story.pages_of(NEXT, "prologue")
@@ -101,9 +103,9 @@ func check_content() -> void:
 func check_due_rule() -> void:
 	Story.enabled = true
 	_first_done()
-	Island.dev_open = false
+	Island.set_dev_open(false)
 	var in_making := Story.voyage_due(ProgressStore.load()) == ""   # the next island is not playable yet (#72)
-	Island.dev_open = true
+	Island.set_dev_open(true)
 	var due := Story.voyage_due(ProgressStore.load()) == NEXT
 	ProgressStore.set_mark(ProgressStore.STORY, "finale", false)
 	var no_finale := Story.voyage_due(ProgressStore.load()) == ""
@@ -113,7 +115,7 @@ func check_due_rule() -> void:
 	ProgressStore.reset_all()
 	var fresh := Story.voyage_due(ProgressStore.load()) == "" and not Story.any_voyage_seen()
 	Story.enabled = false
-	Island.dev_open = false
+	Island.set_dev_open(false)
 	expect.call(in_making and due and no_finale and once and fresh,
 		"voyage: due once the next island is open and the finale was seen, never while it is in the making, once only",
 		"%s %s %s %s %s" % [in_making, due, no_finale, once, fresh])
@@ -136,7 +138,7 @@ func _free(app: Control) -> void:
 	for i in 3:
 		await tree.process_frame
 	Story.enabled = false
-	Island.dev_open = false
+	Island.set_dev_open(false)
 
 
 ## 시작하기 after the first island's finale: the voyage, page by page, then the next island's map with
@@ -348,7 +350,7 @@ func check_title_islands(_quality_script: GDScript) -> void:
 func check_layout() -> void:
 	_first_done()
 	Story.mark_voyage_seen(NEXT)
-	Island.dev_open = true
+	Island.set_dev_open(true)
 	Story.enabled = true
 	for size in [PHONE, TABLET, UiScale.PHONE_ZOOMED]:
 		var host := Control.new()
@@ -408,5 +410,5 @@ func check_layout() -> void:
 		expect.call(problems.is_empty(), "섬 고르기 and voyage (%s): the title's buttons, the cards, the voyage's box and 건너뛰기 on screen, no overlap"
 			% ("phone" if size == PHONE else ("tablet" if size == TABLET else "phone zoomed")), "; ".join(problems))
 	Story.enabled = false
-	Island.dev_open = false
+	Island.set_dev_open(false)
 	ProgressStore.reset_all()

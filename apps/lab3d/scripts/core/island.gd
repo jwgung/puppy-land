@@ -61,8 +61,8 @@ static var _islands: Dictionary = {}
 ## The island in use ("" until first asked: then read from the progress once, not per frame).
 static var _current_id := ""
 ## Every island of the list is open, in the making or not (the developer switch --islands=open, #75:
-## App sets it for the run, never in the Play build; the voyage demo and tests too).
-static var dev_open := false
+## App sets it for the run, never in the Play build; the voyage demo and tests too): set_dev_open.
+static var _dev_open := false
 
 
 ## The list's entries, in order (the file's, or the tests' list).
@@ -82,6 +82,15 @@ static func use_index(entries: Array) -> void:
 	_index = entries.duplicate(true)
 	_islands = {}
 	_current_id = ""
+
+
+## Every island open for this run (`on`) or as the progress says (the only way to change it).
+static func set_dev_open(on: bool) -> void:
+	_dev_open = on
+
+
+static func dev_open() -> bool:
+	return _dev_open
 
 
 ## The island `island_id` opens after ("" for the first).
@@ -147,7 +156,7 @@ static func forget_current() -> void:
 ## `island_id` is open when it is playable (every spot an experiment): the first island then always;
 ## another when every spot of the island it opens after is complete. An unknown island never is.
 static func is_open(island_id: String, progress: Dictionary) -> bool:
-	if dev_open and not entry(island_id).is_empty():
+	if _dev_open and not entry(island_id).is_empty():
 		return true
 	if entry(island_id).is_empty() or not by_id(island_id).playable():
 		return false
@@ -193,6 +202,15 @@ func has_sundial() -> bool:
 ## spots are only places on its map (#72).
 func playable() -> bool:
 	return problem == "" and spots().all(func(spot: String) -> bool: return not ExperimentRegistry.find(spot).is_empty())
+
+
+## The spots as MapIsland.build takes them, in the map's order: [[id, Vector2 at, landmark yaw deg], ...].
+func map_spots() -> Array:
+	var out := []
+	for zone in zones:
+		for spot in zones[zone].spots:
+			out.append([spot[0], Vector2(spot[1][0], spot[1][1]), spot[2]])
+	return out
 
 
 ## The spot ids in the map's order (zone by zone).

@@ -67,7 +67,7 @@ func _ready() -> void:
 	_set_fps(Quality.cmdline_value("fps") == "1")   # measurements only (no setting since 2026-10-31)
 	Locale.start()   # the child's language (saved), else the device's, else English
 	_definitions = ExperimentRegistry.load_all()
-	Island.dev_open = Quality.dev_value("islands") == "open"   # a developer switch: never in the Play build
+	Island.set_dev_open(Quality.dev_value("islands") == "open")   # a developer switch: never in the Play build
 	var dev_island := dev_island_of(Quality.all_args(), OS.has_feature("play"))
 	if dev_island != "":
 		Island.use_for_run(dev_island)
@@ -311,7 +311,7 @@ func _demo_story(value: String) -> Dictionary:
 	var full := func(spot: String) -> int:
 		return MissionRound.missions(ExperimentRegistry.find(spot)).get("stages", []).size()
 	if kind in ["voyage", "islands"]:
-		Island.dev_open = not OS.has_feature("play")   # the next island is still in the making (#72)
+		Island.set_dev_open(not OS.has_feature("play"))   # the next island is still in the making (#72)
 		for spot in Story.spots():
 			store[spot] = full.call(spot)
 		ProgressStore.save(store)

@@ -23,15 +23,26 @@ const TO_AT := Vector3(0.0, 0.0, -110.0)
 const START := Vector3(3.0, 0.0, -15.5)
 const END_FROM_TO := Vector3(4.0, 0.0, 14.2)
 const BEND := 6.0
-## The trip's boat: MapSea's boat this much bigger, the trio aboard at the map's size
-## (IslandHomeScreen.ACTOR_SCALE = BOAT_SCALE x ACTOR_ON_BOAT).
+## The trip's boat: the map's boat (BoatArt) this much bigger, the trio aboard about the map's size
+## (BOAT_SCALE x ACTOR_ON_BOAT = 0.714, about IslandHomeScreen.ACTOR_SCALE 0.7).
 const BOAT_SCALE := 1.7
 const ACTOR_ON_BOAT := 0.42
-## [puppy, dugi, cat] on the boat's deck (boat local, bow +z).
+## Where the trio stand on the deck (boat local, bow +z), in the order of `aboard`: puppy, dugi, cat.
 const ABOARD := [Vector3(0.0, 0.56, 0.62), Vector3(-0.22, 0.52, -0.1), Vector3(0.2, 0.55, -0.72)]
-## Each shot's stretch of the way (0 = the shore of `from`, 1 = the beach of `to`); the pages of a
-## shot share it, each gliding its part in GLIDE_S.
-const SHOT_WAY := {"depart": [0.0, 0.05], "sea": [0.42, 0.5], "flicker": [0.5, 0.58], "arrive": [0.92, 1.0]}
+## Each shot of the voyage (the keys are Story.VOYAGE_SHOTS, in order; tests check it):
+## - way: its stretch of the boat's way (0 = the shore of `from`, 1 = the beach of `to`); the pages
+##   of a shot share it, each gliding its part in GLIDE_S;
+## - eye, target: the camera, each [anchor, offset]: anchor "start" (START), "boat" (the boat now)
+##   or "to" (TO_AT, the next island);
+## - face: where the trio look: "camera", "keeper", or their own yaws deg on the boat [puppy, dugi, cat].
+## As they leave they look back at the shore (the star over it), on the sea ahead past the camera,
+## while the next island flickers the camera looks at it past the boat, at the landing from the beach.
+const SHOTS := {
+	"depart": {"way": [0.0, 0.05], "eye": ["start", Vector3(5.5, 2.4, -8.5)], "target": ["start", Vector3(-0.8, 1.6, 4.0)], "face": "camera"},
+	"sea": {"way": [0.42, 0.5], "eye": ["boat", Vector3(4.5, 3.4, 7.0)], "target": ["boat", Vector3(-0.5, 0.2, -25.0)], "face": [-30.0, 20.0, -20.0]},
+	"flicker": {"way": [0.5, 0.58], "eye": ["boat", Vector3(3.0, 3.0, 6.0)], "target": ["to", Vector3(0.0, 1.5, 0.0)], "face": [-30.0, 20.0, -20.0]},
+	"arrive": {"way": [0.92, 1.0], "eye": ["to", Vector3(12.0, 3.0, 17.5)], "target": ["to", Vector3(3.2, 0.8, 13.0)], "face": "keeper"},
+}
 const GLIDE_S := 4.0
 ## The next island going dark and bright again (the flicker shot): its own tint, one dark beat per FLICKER_S.
 const DARK_TINT := Vector3(0.24, 0.28, 0.58)
@@ -54,6 +65,7 @@ var boat: Node3D
 var puppy: PuppyActor
 var dugi: DugiActor
 var cat: CatActor
+var aboard: Array[Node3D] = []     # [puppy, dugi, cat] (ABOARD's order)
 var keeper: Node3D
 var star: Node3D
 var to_island: MeshInstance3D
@@ -116,13 +128,12 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
-	MapIsland.material().set_shader_parameter("lit_mask", 0)
+	MapIsland.light_no_spots()
 
 
 func _build_world() -> void:
-	MapIsland.material().set_shader_parameter("lit_mask", 0)   # day: no spot lit
-	var from_island := Island.by_id(from)
-	MapIsland.new(from_island).build(world, _spots(from_island))
+	MapIsland.light_no_spots()   # day: no spot lit
+	MapIsland.new(Island.by_id(from)).build(world, Island.by_id(from).map_spots())
 	sea = MapSea.new()
 	sea.build(world)
 	sea.set_lanterns(false)
@@ -131,7 +142,7 @@ func _build_world() -> void:
 	holder.position = TO_AT + Vector3(0.0, -0.02, 0.0)   # its shallows just under the first island's sea
 	world.add_child(holder)
 	to_map = MapIsland.new(Island.by_id(to))
-	to_map.build(holder, _spots(Island.by_id(to)))
+	to_map.build(holder, Island.by_id(to).map_spots())
 	for child in holder.get_children():
 		if child.name == "MapSky":
 			child.free()   # one sky: the first island's
@@ -142,16 +153,16 @@ func _build_world() -> void:
 	boat = Node3D.new()
 	boat.name = "TripBoat"
 	boat.scale = Vector3.ONE * BOAT_SCALE
-	boat.add_child(ArtKit.instance(MapSea.boat_mesh(ArtPalette.RED), MapIsland.material()))
+	boat.add_child(ArtKit.instance(BoatArt.mesh(ArtPalette.RED), MapIsland.material()))
 	world.add_child(boat)
 	puppy = PuppyActor.new()
 	dugi = DugiActor.new()
 	cat = CatActor.new(BreadCat.new())
-	for i in 3:
-		var actor: Node3D = [puppy, dugi, cat][i]
-		boat.add_child(actor)
-		actor.scale = Vector3.ONE * ACTOR_ON_BOAT
-		actor.position = ABOARD[i]
+	aboard = [puppy, dugi, cat]
+	for i in aboard.size():
+		boat.add_child(aboard[i])
+		aboard[i].scale = Vector3.ONE * ACTOR_ON_BOAT
+		aboard[i].position = ABOARD[i]
 	keeper = keeper_model()
 	keeper.scale = Vector3.ONE * KEEPER_SCALE
 	world.add_child(keeper)
@@ -174,14 +185,6 @@ static func keeper_model() -> Node3D:
 			mi.material_override = ArtKit.toon_material(mat.albedo_texture)
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return model
-
-
-static func _spots(island: Island) -> Array:
-	var spots := []
-	for zone in island.zones:
-		for spot in island.zones[zone].spots:
-			spots.append([spot[0], Vector2(spot[1][0], spot[1][1]), spot[2]])
-	return spots
 
 
 ## The boat's place on its way (0..1): along the line from the shore to the beach, bent out a little.
@@ -207,14 +210,10 @@ func _open_page(i: int) -> void:
 	page = i
 	var entry: Dictionary = _pages[i]
 	var new_shot := str(entry.get("shot", "depart"))
-	var same: Array = _pages.filter(func(e: Dictionary) -> bool: return str(e.get("shot", "")) == new_shot)
-	var j := 0
-	for k in i:
-		if str(_pages[k].get("shot", "")) == new_shot:
-			j += 1
-	var span: Array = SHOT_WAY.get(new_shot, [0.0, 0.0])
-	_glide_from = lerpf(span[0], span[1], float(j) / same.size())
-	_glide_to = lerpf(span[0], span[1], float(j + 1) / same.size())
+	var part := _part_of_shot(i)
+	var span: Array = SHOTS[new_shot].way
+	_glide_from = lerpf(span[0], span[1], float(part.x) / part.y)
+	_glide_to = lerpf(span[0], span[1], float(part.x + 1) / part.y)
 	_glide_t = 0.0
 	if new_shot != shot:
 		shot = new_shot
@@ -230,23 +229,32 @@ func _open_page(i: int) -> void:
 	_layout()
 
 
-## Who stands where for the shot: the trio look back to the shore as they leave, ahead on the sea,
-## at the keeper on the beach; the keeper shows only there.
+## Page `i`'s place among the pages of its shot: (its index there, how many pages the shot has).
+func _part_of_shot(i: int) -> Vector2i:
+	var its := str(_pages[i].get("shot", ""))
+	var index := 0
+	var count := 0
+	for k in _pages.size():
+		if str(_pages[k].get("shot", "")) == its:
+			if k < i:
+				index += 1
+			count += 1
+	return Vector2i(index, count)
+
+
+## Who stands where for the shot (SHOTS face): the keeper and the star show only in their shots.
 func _pose_cast() -> void:
 	keeper.visible = shot == "arrive"
 	star.visible = shot == "depart"
-	match shot:
-		"depart":
-			for actor in [puppy, dugi, cat]:
-				_face(actor, view_eye())
-		"sea", "flicker":
-			puppy.rotation.y = deg_to_rad(-30.0)
-			dugi.rotation.y = deg_to_rad(20.0)
-			cat.rotation.y = deg_to_rad(-20.0)
-		"arrive":
-			for actor in [puppy, dugi, cat]:
-				_face(actor, keeper.position)
-			_face(keeper, way_point(1.0))
+	var face: Variant = SHOTS[shot].face
+	if face is Array:
+		for i in aboard.size():
+			aboard[i].rotation.y = deg_to_rad(face[i])
+		return
+	for actor in aboard:
+		_face(actor, view_eye() if face == "camera" else keeper.position)
+	if face == "keeper":
+		_face(keeper, way_point(1.0))
 
 
 func _face(actor: Node3D, target: Vector3) -> void:
@@ -316,30 +324,19 @@ func advance(delta: float) -> void:
 		StarArt.face_camera(star, view.rig, _clock)
 
 
-## The camera of the shot now: from the shore of `from` back at it as they leave, behind the boat
-## out on the sea, past the boat at the next island while it flickers, from the beach at the landing.
+## The camera of the shot now (SHOTS eye and target).
 func view_eye() -> Vector3:
-	var at := boat.position
-	match shot:
-		"sea":
-			return at + Vector3(4.5, 3.4, 7.0)
-		"flicker":
-			return at + Vector3(3.0, 3.0, 6.0)
-		"arrive":
-			return TO_AT + Vector3(12.0, 3.0, 17.5)
-	return START + Vector3(5.5, 2.4, -8.5)
+	return _at(SHOTS[shot if shot != "" else "depart"].eye)
 
 
 func view_target() -> Vector3:
-	var at := boat.position
-	match shot:
-		"sea":
-			return at + Vector3(-0.5, 0.2, -25.0)
-		"flicker":
-			return TO_AT + Vector3(0.0, 1.5, 0.0)
-		"arrive":
-			return TO_AT + Vector3(3.2, 0.8, 13.0)
-	return START + Vector3(-0.8, 1.6, 4.0)
+	return _at(SHOTS[shot if shot != "" else "depart"].target)
+
+
+## A point [anchor, offset] of SHOTS: from START, the boat now or the next island.
+func _at(point: Array) -> Vector3:
+	var anchor: Vector3 = {"start": START, "boat": boat.position, "to": TO_AT}[point[0]]
+	return anchor + (point[1] as Vector3)
 
 
 func _layout() -> void:

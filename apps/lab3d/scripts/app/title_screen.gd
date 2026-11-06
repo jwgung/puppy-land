@@ -76,12 +76,8 @@ func _ready() -> void:
 	view.viewport.add_child(env)
 	var island := Island.current()
 	map = MapIsland.new(island)
-	var spots := []
-	for zone in island.zones:
-		for spot in island.zones[zone].spots:
-			spots.append([spot[0], Vector2(spot[1][0], spot[1][1]), spot[2]])
-	map.build(world, spots)
-	MapIsland.material().set_shader_parameter("lit_mask", 0)   # day: no spot lit (the night map's)
+	map.build(world, island.map_spots())
+	MapIsland.light_no_spots()   # day: no spot lit (the night map's)
 	view.rig.configure({
 		"target": [0.0, IslandHomeScreen.TARGET_Y, 0.0],
 		"distance": DISTANCE,

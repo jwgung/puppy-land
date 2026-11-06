@@ -74,6 +74,8 @@ const RETURN_S := 1.4
 const FIRST_SHOT := {"yaw": 0.0, "pitch": -8.0, "dist": 150.0, "target": Vector3(0.0, 6.0, -55.0)}
 const DIALOGUE_MARGIN := 12.0
 const DIALOGUE_SHARE := 0.8        # of the view width the box may take (the scene stays in view)
+## Another island's prologue (#75): its square seen from these [yaw deg, pitch deg, distance m] in turn.
+const SQUARE_SHOTS := [[15.0, -20.0, 9.0], [-25.0, -24.0, 8.0], [40.0, -30.0, 11.0], [-5.0, -16.0, 7.5]]
 ## The night map's hint: the next spot glints this long after the riddle, a twinkle every period.
 const HINT_DELAY_S := 20.0
 const HINT_PERIOD_S := 2.4
@@ -405,8 +407,7 @@ func _first_island() -> bool:
 	return home.island.id == "" or home.island.id == ProgressStore.FIRST_ISLAND
 
 
-## Another island's prologue views of its square: a few angles round it, `far` times the distance.
-const SQUARE_SHOTS := [[15.0, -20.0, 9.0], [-25.0, -24.0, 8.0], [40.0, -30.0, 11.0], [-5.0, -16.0, 7.5]]
+## Another island's prologue view `i` of its square (SQUARE_SHOTS), `far` times the distance.
 func _square_shot(i: int, far := 1.0) -> Dictionary:
 	var home_at := Vector3(home.island.home.x, 0.5, home.island.home.y)
 	var s: Array = SQUARE_SHOTS[i % SQUARE_SHOTS.size()]
