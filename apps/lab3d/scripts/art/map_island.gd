@@ -52,9 +52,15 @@ const OTHER_FLOWERS := 18
 const VALLEY_HEIGHT := 1.2
 const RIVER_WIDTH := 0.55
 const RIVER_MOUTH := 0.95
+## The river lies RIVER_LIFT over the ground: between the yard's sand (OVERLAY_LIFT) and the paths
+## (PATH_LIFT), so it neither fights the grass nor covers a path's end (LabWorld lifts its own more:
+## its ground's faces stray further from the smooth surface, LabWorld.RIVER_LIFT).
 const RIVER_LIFT := 0.04
 const SUNDIAL_AT := Vector2(0.0, -0.85)
-const SUNDIAL_TOP := 0.9             # MapLandmarks.sundial's height
+## The volcano's foot ring sits this far under the lowest ground round it (no gap on a slope).
+const VOLCANO_SINK := 0.25
+## The coast zone's sand edge wavers: [order, share of the radius, phase] round its middle.
+const COAST_WAVER := [[3.0, 0.07, 1.0], [5.0, 0.04, 0.3]]
 const LIGHTHOUSE_CLEAR := 0.8        # m round the lighthouse kept clear of decoration
 
 var island: Island
@@ -88,13 +94,12 @@ func _init(of: Island) -> void:
 			_valleys.append([top, top.distance_to(_v2(spec.at)) + float(spec.radius), float(spec.get("height", VALLEY_HEIGHT))])
 	if island.features.has("river"):
 		river_points = path_samples(island.features.river, PATH_STEP)
-		var total := 0.0
+		var along := PackedFloat32Array([0.0])   # the length up to each sample
 		for k in range(1, river_points.size()):
-			total += river_points[k - 1].distance_to(river_points[k])
-		var along := 0.0
+			along.append(along[k - 1] + river_points[k - 1].distance_to(river_points[k]))
+		var total := maxf(along[along.size() - 1], 0.001)
 		for k in river_points.size():
-			along += river_points[k - 1].distance_to(river_points[k]) if k > 0 else 0.0
-			river_widths.append(lerpf(RIVER_WIDTH, RIVER_MOUTH, along / maxf(total, 0.001)))
+			river_widths.append(lerpf(RIVER_WIDTH, RIVER_MOUTH, along[k] / total))
 	_build_grid()
 
 
@@ -380,7 +385,10 @@ const GROUND_COLORS := {"meadow": ArtPalette.MEADOW, "coast": ArtPalette.SAND, "
 static func in_ground(p: Vector2, center: Vector2, radius: float, ground: String) -> bool:
 	if ground == "coast":
 		var t := (p - center).angle()
-		radius *= 1.0 + 0.07 * sin(3.0 * t + 1.0) + 0.04 * sin(5.0 * t + 0.3)
+		var k := 1.0
+		for w in COAST_WAVER:
+			k += w[1] * sin(w[0] * t + w[2])
+		radius *= k
 	return p.distance_to(center) < radius
 
 
@@ -800,7 +808,7 @@ func clear(x: float, z: float, radius: float) -> bool:
 			"coast":   # the sand: no grass things
 				if in_ground(p, c, float(spec.radius) + 0.3 + radius, "coast"):
 					return false
-	if not _features_clear(p, radius):
+	if not features_clear(p, radius):
 		return false
 	for d in decorations:
 		if p.distance_to(Vector2(d[1], d[2])) < d[3] + radius:
@@ -810,7 +818,7 @@ func clear(x: float, z: float, radius: float) -> bool:
 
 ## True when nothing of the island's features (#72) is within `radius` of `p`: the volcano's
 ## foot, the river and its banks, the lighthouse (the sundial is on the square, kept clear anyway).
-func _features_clear(p: Vector2, radius: float) -> bool:
+func features_clear(p: Vector2, radius: float) -> bool:
 	var f := island.features
 	if f.has("volcano") and p.distance_to(_v2(f.volcano.at)) < float(f.volcano.radius) + 0.4 + radius:
 		return false
@@ -826,62 +834,85 @@ func _features_clear(p: Vector2, radius: float) -> bool:
 ## The volcano, the lighthouse, the sundial and the river, when the island has them (the mechanics
 ## island has none: its mesh is what it was).
 func _add_features(b: ArtMeshBuilder) -> void:
-	var f := island.features
-	if f.has("volcano"):
-		var at := _v2(f.volcano.at)
-		var radius := float(f.volcano.radius)
-		var y := height_at(at.x, at.y)
-		var low := y
-		for i in 16:
-			var p := at + Vector2.from_angle(TAU * i / 16.0) * radius
-			low = minf(low, height_at(p.x, p.y))
-		MapLandmarks.volcano(b, Transform3D(Basis(), Vector3(at.x, y, at.y)), radius, float(f.volcano.height), y - low + 0.25)
-	if f.has("lighthouse"):
-		var at := _v2(f.lighthouse)
-		MapLandmarks.lighthouse(b, Transform3D(Basis(), Vector3(at.x, height_at(at.x, at.y), at.y)))
-	if f.get("sundial", false):
-		var info := home_lookout()
-		MapLandmarks.sundial(b, Transform3D(Basis(), info.at - Vector3.UP * float(info.top)))
+	_add_volcano(b)
+	_add_marks(b)
 	if not river_points.is_empty():
 		_add_river(b)
 
 
-## The river: a ribbon on the ground from its source to under the sea, light at its edges, widening
-## towards the mouth, with a round source.
+## The volcano on the ground at its middle, its foot sunk under the lowest ground round it.
+func _add_volcano(b: ArtMeshBuilder) -> void:
+	if not island.features.has("volcano"):
+		return
+	var v: Dictionary = island.features.volcano
+	var at := _v2(v.at)
+	var radius := float(v.radius)
+	var y := height_at(at.x, at.y)
+	var low := y
+	for i in 16:
+		var p := at + Vector2.from_angle(TAU * i / 16.0) * radius
+		low = minf(low, height_at(p.x, p.y))
+	MapLandmarks.volcano(b, Transform3D(Basis(), Vector3(at.x, y, at.y)), radius, float(v.height), y - low + VOLCANO_SINK)
+
+
+## The lighthouse on the beach and the sundial on the square.
+func _add_marks(b: ArtMeshBuilder) -> void:
+	if island.features.has("lighthouse"):
+		var at := _v2(island.features.lighthouse)
+		MapLandmarks.lighthouse(b, Transform3D(Basis(), Vector3(at.x, height_at(at.x, at.y), at.y)))
+	if island.has_sundial():
+		var info := home_lookout()
+		MapLandmarks.sundial(b, Transform3D(Basis(), info.at - Vector3.UP * float(info.top)))
+
+
+## The river: a ribbon on the ground from its source to under the sea, widening towards the mouth,
+## with a round source.
 func _add_river(b: ArtMeshBuilder) -> void:
-	var n := river_points.size()
-	var rows: Array = []   # [left edge, middle, right edge] per sample
+	add_ribbon(b, ribbon_rows(river_points, river_widths, func(q: Vector2) -> float: return height_at(q.x, q.y) + RIVER_LIFT))
+	var source := river_points[0]
+	var disc: Array = []
+	for s in 10:
+		disc.append(source + Vector2.from_angle(TAU * s / 10.0) * river_widths[0] * 0.5)
+	_add_flat(b, source, disc, RIVER_LIFT, ArtPalette.RIVER)
+
+
+## A river's cross-sections [left edge, middle, right edge] (Vector3) at `points` (x, z), `widths`
+## wide, at `height`(x, z) (MapIsland and LabWorld share them).
+static func ribbon_rows(points: PackedVector2Array, widths: PackedFloat32Array, height: Callable) -> Array:
+	var n := points.size()
+	var rows: Array = []
 	for k in n:
-		var p := river_points[k]
-		var t: Vector2 = (river_points[mini(k + 1, n - 1)] - river_points[maxi(k - 1, 0)]).normalized()
-		var side := Vector2(-t.y, t.x) * river_widths[k] * 0.5
+		var p := points[k]
+		var t: Vector2 = (points[mini(k + 1, n - 1)] - points[maxi(k - 1, 0)]).normalized()
+		var side := Vector2(-t.y, t.x) * widths[k] * 0.5
 		var row: Array = []
 		for q: Vector2 in [p + side, p, p - side]:
-			row.append(Vector3(q.x, height_at(q.x, q.y) + RIVER_LIFT, q.y))
+			row.append(Vector3(q.x, height.call(q), q.y))
 		rows.append(row)
+	return rows
+
+
+## The river ribbon between consecutive `rows` (ribbon_rows): light at its edges (RIVER_EDGE), the
+## water's colour in the middle (RIVER).
+static func add_ribbon(b: ArtMeshBuilder, rows: Array) -> void:
 	var edge := ArtPalette.RIVER_EDGE
 	var mid := ArtPalette.RIVER
-	for k in n - 1:
+	for k in rows.size() - 1:
 		var a: Array = rows[k]
 		var c: Array = rows[k + 1]
 		b.add_triangle([a[0], c[0], c[1]], [edge, edge, mid])
 		b.add_triangle([a[0], c[1], a[1]], [edge, mid, mid])
 		b.add_triangle([a[1], c[1], c[2]], [mid, mid, edge])
 		b.add_triangle([a[1], c[2], a[2]], [mid, edge, edge])
-	var source := river_points[0]
-	var disc: Array = []
-	for s in 10:
-		disc.append(source + Vector2.from_angle(TAU * s / 10.0) * river_widths[0] * 0.5)
-	_add_flat(b, source, disc, RIVER_LIFT, mid)
 
 
 ## Where the story's pieces gather when the island's lookout is the square (Island.HOME), like a
 ## spot's {at, top, stand}: the sundial's top (the square's middle without one), its height over the
 ## square, and where the cat stands (the square's middle).
 func home_lookout() -> Dictionary:
-	var dial: bool = island.features.get("sundial", false)
+	var dial := island.has_sundial()
 	var at := home + SUNDIAL_AT if dial else home
-	var top := SUNDIAL_TOP if dial else 0.0
+	var top := MapLandmarks.SUNDIAL_HEIGHT if dial else 0.0
 	return {"at": Vector3(at.x, height_at(at.x, at.y) + PLAZA_LIFT + top, at.y), "top": top,
 		"stand": Vector3(home.x, walk_height(home.x, home.y), home.y)}
 

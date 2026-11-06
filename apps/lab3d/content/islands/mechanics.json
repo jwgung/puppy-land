@@ -1,5 +1,5 @@
 {
-  "about": "역학 섬(ADR 0003)의 배치. 지도 홈(IslandHomeScreen)·타이틀·실험 땅(LabWorld)·이야기(Story)가 읽는다(Island). zones: 구역 id -> ground(meadow·hill·yard·pond), look(실험 땅 모양, 없으면 ground), at·radius·size·height, spots [실험 id, [x, z], 모형 방향(도)]. 구역과 장소의 순서가 지도의 순서다. home: 고양이 광장 [x, z]. paths: 흙길 [x, z] 꺾은선. coast: 해안 타원 반지름과 고조파 [차수, m, 위상], 곶 [각도, m, 폭]. trees [x, z, 크기], rocks [x, z, 반지름], clouds [x, y, z, 크기], far_clouds [각도, 거리, 높이, 크기], sea_waves [각도, 거리, 크기]. lab_facing: 광장 쪽을 보지 않는 실험의 방향(도). lookout: 별 조각이 모이는 장소. order: 밤 지도에서 찾는 순서(장소마다 한 번).",
+  "about": "역학 섬(ADR 0003)의 배치. 지도 홈(IslandHomeScreen)·타이틀·실험 땅(LabWorld)·이야기(Story)가 읽는다(Island). zones: 구역 id -> ground(meadow·hill·yard·pond), look(실험 땅 모양, 없으면 ground), at·radius·size·height, spots [실험 id, [x, z], 모형 방향(도)]. 구역과 장소의 순서가 지도의 순서다. home: 고양이 광장 [x, z]. paths: 흙길 [x, z] 꺾은선. coast: 해안 타원 반지름과 고조파 [차수, m, 위상], 곶 [각도, m, 폭]. trees [x, z, 크기], rocks [x, z, 반지름], clouds [x, y, z, 크기], far_clouds [각도, 거리, 높이, 크기], sea_waves [각도, 거리, 크기]. lab_facing: 광장 쪽을 보지 않는 실험의 방향(도). lookout: 별 조각이 모이는 장소. order: 밤 지도에서 찾는 순서(장소마다 한 번). 다른 섬에서는 ground가 coast·valley도 되고, lookout이 home(광장)도 되며, 섬의 지형은 features다(hutton.json, #72).",
   "zones": {
     "meadow": {
       "at": [-6.0, 3.6],

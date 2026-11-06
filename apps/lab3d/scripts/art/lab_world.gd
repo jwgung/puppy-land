@@ -61,9 +61,18 @@ const FENCE_HEIGHT := 0.9
 const FENCE_CLEAR := CLEAR + 1.5     # the own yard's fence never comes nearer
 const RAILING_STEP := 2.0            # m between the lookout railing's posts
 const RAILING_COAST := COAST_MIN + 6.0
+## The hutton island's features in the lab (#72): the volcano's foot sinks VOLCANO_SINK m under the
+## lowest ground round it (more than the map's: the lab's ground faces stray further from ground_y);
+## the lighthouse and the sundial stand at least MARK_CLEAR m outside the clearing; the river lies
+## RIVER_LIFT m over ground_y (MapIsland.RIVER_LIFT is 0.04 map m: here the far ground's jittered faces
+## run up to a decimetre over the smooth surface); the coast's sand runs into the map's beach within
+## COAST_BEACH_REACH x the coast zone's radius.
+const VOLCANO_SINK := 0.6
+const MARK_CLEAR := 3.0
+const RIVER_LIFT := 0.12
+const COAST_BEACH_REACH := 1.6
 ## The zone's look in the lab is the island's (Island.look_of: meadow, hill, yard, pond, lookout, coast,
-## valley). Where a
-## lab looks (map angle of its -z, deg, atan2(z, x)) when not towards the square is the island's
+## valley). Where a lab looks (map angle of its -z, deg, atan2(z, x)) when not towards the square is the island's
 ## `lab_facing` (the lookout along the north coast: the sea on its right, the island on its left).
 ## Clouds in the lab's sky [angle from the front view deg, distance, height above the sea, size]:
 ## over the far land and sea within the camera's turn (+-100 deg) and a few far ones.
@@ -269,7 +278,7 @@ func ground_color(l: Vector2, s := -1.0) -> Color:
 					return MapIsland.GROUND_COLORS[spec.ground]
 				# The coast's sand runs on into the map's beach (wider than the lab's BEACH strip).
 				if spec.ground == "coast" and map.coast_fraction(m.x, m.y) > MapIsland.grass_edge() - 0.04 \
-						and m.distance_to(_v2(spec.at)) < float(spec.radius) * 1.6:
+						and m.distance_to(_v2(spec.at)) < float(spec.radius) * COAST_BEACH_REACH:
 					return ArtPalette.SAND
 			"yard":
 				var c := _v2(spec.at)
@@ -451,7 +460,7 @@ func _far_clear(at: Vector2, radius: float) -> bool:
 		return false
 	if _in_pond(at, radius + 2.0) or ground_color(at) in [ArtPalette.YARD_SAND, ArtPalette.SAND]:
 		return false
-	if not map._features_clear(to_map(at), radius / K):
+	if not map.features_clear(to_map(at), radius / K):
 		return false
 	for f in far_things:
 		if at.distance_to(Vector2(f[1], f[2])) < f[3] + radius:
@@ -473,33 +482,51 @@ func _pond_y(at: Vector2) -> float:
 	return ground_y(at)
 
 
-## The island's features (#72), LANDMARK_SCALE x where the map has them: the volcano (pushed out
-## of the clearing and the ground's blend for the lab at its foot), the lighthouse and the square's
-## sundial in front of the lab (BEHIND_DEG), and the river on the far ground (not in the clearing).
+## The island's features (#72), LANDMARK_SCALE x where the map has them: the volcano, the lighthouse
+## and the square's sundial, and the river on the far ground.
 func _add_features(b: ArtMeshBuilder) -> void:
-	var f := map.island.features
-	var ahead := func(at: Vector2) -> bool: return absf(Vector2(0.0, -1.0).angle_to(at - _c)) <= deg_to_rad(BEHIND_DEG)
-	if f.has("volcano"):
-		var at := to_lab(_v2(f.volcano.at))
-		var radius := float(f.volcano.radius) * LANDMARK_SCALE
-		var keep := CLEAR + BLEND + radius
-		if at.distance_to(_c) < keep:
-			at = _c + ((at - _c).normalized() if at.distance_to(_c) > 0.01 else Vector2(0.0, -1.0)) * keep
-		if ahead.call(at) or at.distance_to(_c) < CAMERA_REACH + radius:
-			var y := ground_y(at)
-			var low := y
-			for k in 16:
-				low = minf(low, ground_y(at + Vector2.from_angle(TAU * k / 16.0) * radius))
-			MapLandmarks.volcano(b, Transform3D(lab_basis(), Vector3(at.x, y, at.y)), radius, float(f.volcano.height) * LANDMARK_SCALE, y - low + 0.6)
-			far_things.append(["volcano", at.x, at.y, radius])
+	_add_volcano(b)
+	_add_marks(b)
+	if not map.river_points.is_empty():
+		_add_river(b)
+
+
+## True when lab point `at` is within BEHIND_DEG of the front view (the camera turns +-100 deg).
+func _ahead(at: Vector2) -> bool:
+	return absf(Vector2(0.0, -1.0).angle_to(at - _c)) <= deg_to_rad(BEHIND_DEG)
+
+
+## The volcano: pushed out of the clearing and the ground's blend (the lab at its foot), built when
+## in front or within the camera's reach.
+func _add_volcano(b: ArtMeshBuilder) -> void:
+	if not map.island.features.has("volcano"):
+		return
+	var v: Dictionary = map.island.features.volcano
+	var at := to_lab(_v2(v.at))
+	var radius := float(v.radius) * LANDMARK_SCALE
+	var keep := CLEAR + BLEND + radius
+	if at.distance_to(_c) < keep:
+		at = _c + ((at - _c).normalized() if at.distance_to(_c) > 0.01 else Vector2(0.0, -1.0)) * keep
+	if not _ahead(at) and at.distance_to(_c) >= CAMERA_REACH + radius:
+		return
+	var y := ground_y(at)
+	var low := y
+	for k in 16:
+		low = minf(low, ground_y(at + Vector2.from_angle(TAU * k / 16.0) * radius))
+	MapLandmarks.volcano(b, Transform3D(lab_basis(), Vector3(at.x, y, at.y)), radius, float(v.height) * LANDMARK_SCALE, y - low + VOLCANO_SINK)
+	far_things.append(["volcano", at.x, at.y, radius])
+
+
+## The lighthouse and the square's sundial, in front of the lab and outside the clearing, on land.
+func _add_marks(b: ArtMeshBuilder) -> void:
 	var marks: Array = []
-	if f.has("lighthouse"):
-		marks.append(["lighthouse", to_lab(_v2(f.lighthouse))])
-	if f.get("sundial", false):
+	if map.island.features.has("lighthouse"):
+		marks.append(["lighthouse", to_lab(_v2(map.island.features.lighthouse))])
+	if map.island.has_sundial():
 		marks.append(["sundial", to_lab(map.home + MapIsland.SUNDIAL_AT)])
 	for mark in marks:
 		var at: Vector2 = mark[1]
-		if at.distance_to(_c) < CLEAR + 3.0 or at.distance_to(_c) > coast_at((at - _c).angle()) - SHORE_W or not ahead.call(at):
+		if at.distance_to(_c) < CLEAR + MARK_CLEAR or at.distance_to(_c) > coast_at((at - _c).angle()) - SHORE_W or not _ahead(at):
 			continue
 		var xf := Transform3D(lab_basis().scaled(Vector3.ONE * LANDMARK_SCALE), Vector3(at.x, ground_y(at), at.y))
 		if mark[0] == "lighthouse":
@@ -507,31 +534,25 @@ func _add_features(b: ArtMeshBuilder) -> void:
 		else:
 			MapLandmarks.sundial(b, xf)
 		far_things.append([mark[0], at.x, at.y, 2.0])
-	if not map.river_points.is_empty():
-		_add_river(b)
 
 
-## The river (MapIsland's, K x) as a ribbon on the far ground: its runs outside the clearing, down to
-## the sea.
+## The river (MapIsland's, K x, MapIsland.ribbon_rows / add_ribbon): its runs outside the clearing,
+## down to the sea.
 func _add_river(b: ArtMeshBuilder) -> void:
-	var edge := ArtPalette.RIVER_EDGE
-	var mid := ArtPalette.RIVER
-	var pts := map.river_points
-	var last: Array = []
-	for k in pts.size():
-		var p := to_lab(pts[k])
-		var t: Vector2 = to_lab(pts[mini(k + 1, pts.size() - 1)]) - to_lab(pts[maxi(k - 1, 0)])
-		var side := Vector2(-t.y, t.x).normalized() * map.river_widths[k] * K * 0.5
-		var row: Array = []
-		var shown := p.distance_to(_c) > CLEAR + BLEND * 0.5
-		for q: Vector2 in [p + side, p, p - side]:
-			row.append(Vector3(q.x, ground_y(q) + 0.12, q.y))
-		if shown and not last.is_empty():
-			b.add_triangle([last[0], row[0], row[1]], [edge, edge, mid])
-			b.add_triangle([last[0], row[1], last[1]], [edge, mid, mid])
-			b.add_triangle([last[1], row[1], row[2]], [mid, mid, edge])
-			b.add_triangle([last[1], row[2], last[2]], [mid, edge, edge])
-		last = row if shown else []
+	var points := PackedVector2Array()
+	var widths := PackedFloat32Array()
+	for k in map.river_points.size():
+		points.append(to_lab(map.river_points[k]))
+		widths.append(map.river_widths[k] * K)
+	var rows := MapIsland.ribbon_rows(points, widths, func(q: Vector2) -> float: return ground_y(q) + RIVER_LIFT)
+	var run: Array = []
+	for k in rows.size():
+		if points[k].distance_to(_c) > CLEAR + BLEND * 0.5:
+			run.append(rows[k])
+		else:
+			MapIsland.add_ribbon(b, run)
+			run = []
+	MapIsland.add_ribbon(b, run)
 
 
 ## The yards' white picket fences (lab size, FENCE_HEIGHT: posts and one board between them),

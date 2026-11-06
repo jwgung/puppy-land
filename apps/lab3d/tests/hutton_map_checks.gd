@@ -14,6 +14,14 @@ const ORDER := ["day-night", "shadow-clock", "seasons", "water-cycle", "dew-clou
 	"river", "strata", "earthquake", "volcano"]
 const ZONES := {"hill": "hill", "coast": "coast", "valley": "valley"}
 const LAB_VERTS_MAX := 30000   # lab_world_checks.VERTS_MAX
+## The mechanics island's map and two of its lab worlds (built at the origin) as they were before the
+## hutton island (#72): vertex count and the md5 of the vertex positions. The hutton features add
+## nothing to an island without them; a change here must be intentional (update the pin with it).
+const MECHANICS_PIN := {
+	"map": [42426, "559a1fc33974ff848e90ad9c1883ed6d"],
+	"orbit": [27702, "cf577bdf194109ce07eeeb95fb17b6ff"],
+	"buoyancy": [29406, "6ba7d0a6cff15096a76e379577f53fb9"],
+}
 
 var tree: SceneTree
 var expect: Callable
@@ -32,6 +40,7 @@ func run() -> void:
 	check_hutton_data()
 	check_features_checked()
 	check_never_opens()
+	await check_mechanics_pinned()
 	await check_hutton_map()
 	await check_hutton_labs()
 	ProgressStore.reset_all()
@@ -80,17 +89,20 @@ func check_features_checked() -> void:
 		"volcano without height": {"features": {"volcano": {"at": [0.0, -8.0], "radius": 2.0}}},
 		"lighthouse not a point": {"features": {"lighthouse": 3.0}},
 		"sundial not true/false": {"features": {"sundial": "yes"}},
+		"a zone with no spots": {"zones": {"hill": {"at": [0.0, 0.0], "ground": "hill", "radius": 2.0, "height": 1.0, "spots": []}}, "order": [], "lookout": "home"},
+		"a coast without its radius": {"zones": {"coast": {"at": [0.0, 0.0], "ground": "coast", "spots": [["typhoon", [1.0, 1.0], 0.0]]}}, "order": ["typhoon"], "lookout": "home"},
 	}
 	for name in broken:
 		var data := base.duplicate(true)
 		data.merge(broken[name], true)
-		if Island.from_data(data).problem == "":
-			problems.append("%s reads without a problem" % name)
+		var island := Island.from_data(data)
+		if island.problem == "" or island.complete({}) or island.playable():
+			problems.append("%s reads without a problem (or counts as complete)" % name)
 	var on_square: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://content/islands/mechanics.json"))
 	on_square.lookout = Island.HOME
 	if Island.from_data(on_square).problem != "":
 		problems.append("the square as the mechanics lookout: %s" % Island.from_data(on_square).problem)
-	expect.call(problems.is_empty(), "hutton island: a lookout that is not a spot or the square, and a broken feature, say what is wrong",
+	expect.call(problems.is_empty(), "hutton island: a lookout that is not a spot or the square, a broken feature, a zone with no spots or a coast without its radius say what is wrong (never complete or playable)",
 		"; ".join(problems))
 
 
@@ -111,11 +123,48 @@ func check_never_opens() -> void:
 		problems.append("hutton opens after %s" % str(Island.entry("hutton").get("opens_after", "")))
 	# A developer's look: --island=<id> of a listed island (App), nothing for another.
 	var app: GDScript = load("res://scripts/app/app.gd")
-	if app.call("dev_island_of", PackedStringArray(["--island=hutton"])) != "hutton" or app.call("dev_island_of", PackedStringArray(["--island=atlantis"])) != "" \
-			or app.call("dev_island_of", PackedStringArray([])) != "":
+	if app.call("dev_island_of", PackedStringArray(["--island=hutton"]), false) != "hutton" or app.call("dev_island_of", PackedStringArray(["--island=atlantis"]), false) != "" \
+			or app.call("dev_island_of", PackedStringArray([]), false) != "":
 		problems.append("--island=<id> is not read")
-	expect.call(problems.is_empty(), "hutton island: in the making (its spots are not experiments) it never opens in the app, even after the mechanics island; --island=hutton shows its map",
+	# ... and never in the Play build, nor the other developer switches (Quality.DEV_KEYS).
+	if app.call("dev_island_of", PackedStringArray(["--island=hutton"]), true) != "":
+		problems.append("--island=hutton opens in the Play build")
+	for arg in ["--island=hutton", "--progress=complete", "--ask=show"]:
+		var key: String = arg.trim_prefix("--").get_slice("=", 0)
+		if Quality.dev_arg(PackedStringArray([arg]), key, true) != "" or Quality.dev_arg(PackedStringArray([arg]), key, false) != arg.get_slice("=", 1):
+			problems.append("%s: Play build %s, dev build %s" % [arg, Quality.dev_arg(PackedStringArray([arg]), key, true), Quality.dev_arg(PackedStringArray([arg]), key, false)])
+	if Quality.dev_arg(PackedStringArray(["--quality=low"]), "quality", false) != "":
+		problems.append("--quality is read as a developer switch")
+	expect.call(problems.is_empty(), "hutton island: in the making (its spots are not experiments) it never opens in the app, even after the mechanics island; --island=hutton shows its map (never in the Play build, nor --progress=complete or --ask=show)",
 		"; ".join(problems))
+
+
+## The mechanics map and lab worlds are what they were (MECHANICS_PIN).
+func check_mechanics_pinned() -> void:
+	var got := {}
+	Island.use_for_run("mechanics")
+	var screen := await _home(PHONE)
+	got["map"] = _pin(screen.find_child("Island", true, false))
+	await _free(screen)
+	for lab in ["orbit", "buoyancy"]:
+		var holder := Node3D.new()
+		tree.root.add_child(holder)
+		LabWorld.new(lab, Vector3.ZERO).build(holder)
+		got[lab] = _pin(holder.get_child(0))
+		holder.queue_free()
+		await tree.process_frame
+	Island.forget_current()
+	var changed := MECHANICS_PIN.keys().filter(func(k: String) -> bool: return got[k] != MECHANICS_PIN[k])
+	expect.call(changed.is_empty(), "mechanics island: its map and lab worlds are unchanged by the hutton features (vertex count and md5 pinned)",
+		"; ".join(changed.map(func(k: String) -> String: return "%s %s (pinned %s)" % [k, str(got[k]), str(MECHANICS_PIN[k])])))
+
+
+static func _pin(node: Node) -> Array:
+	var verts: PackedVector3Array = (node as MeshInstance3D).mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var ctx := HashingContext.new()
+	ctx.start(HashingContext.HASH_MD5)
+	ctx.update(verts.to_byte_array())
+	return [verts.size(), ctx.finish().hex_encode()]
 
 
 ## The map (--island=hutton): one static island mesh and the sky within the mechanics map's vertices,
@@ -163,7 +212,7 @@ func check_hutton_map() -> void:
 	var trees := 0
 	for d in map.decorations:
 		trees += 1 if d[0] == "tree" else 0
-		if not map._features_clear(Vector2(d[1], d[2]), 0.0) or map.water_at(d[1], d[2]):
+		if not map.features_clear(Vector2(d[1], d[2]), 0.0) or map.water_at(d[1], d[2]):
 			problems.append("%s at (%.1f, %.1f) on a feature" % [d[0], d[1], d[2]])
 		var coast: Dictionary = map.zones.coast
 		if MapIsland.in_ground(Vector2(d[1], d[2]), Vector2(coast.at[0], coast.at[1]), float(coast.radius), "coast"):
@@ -178,8 +227,8 @@ func check_hutton_map() -> void:
 	if map.coast_fraction(mouth.x, mouth.y) < 1.0 or source.distance_to(Vector2(volcano.at[0], volcano.at[1])) > float(volcano.radius) + 0.5:
 		problems.append("the river does not run from the volcano's foot into the sea")
 	var downhill := true
-	for k in range(4, map.river_points.size(), 4):
-		var a := map.river_points[k - 4]
+	for k in range(1, map.river_points.size()):
+		var a := map.river_points[k - 1]
 		var b := map.river_points[k]
 		downhill = downhill and map.height_at(b.x, b.y) <= map.height_at(a.x, a.y) + 0.02
 	if not downhill:

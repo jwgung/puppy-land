@@ -12,7 +12,9 @@
 ## An island in the making (#72, 2026-11-06: the hutton island's map before its experiments): its spots
 ## are laid out but not every spot is an experiment yet (`playable()` false). It never opens in the
 ## child's app (is_open), whatever the island before it; a developer sees its map with
-## --island=<id> (App: this run only, nothing saved, no story, the bench store).
+## --island=<id> (App: this run only, nothing saved, no story, the bench store; never in the Play
+## build). Before such an island becomes playable its `product` must be set (the payment, #77): until
+## then it would open for free.
 class_name Island
 extends RefCounted
 
@@ -134,8 +136,8 @@ static func forget_current() -> void:
 	_current_id = ""
 
 
-## `island_id` is open: the first island always; another when every spot of the island it opens
-## after is complete. An unknown island never is.
+## `island_id` is open when it is playable (every spot an experiment): the first island then always;
+## another when every spot of the island it opens after is complete. An unknown island never is.
 static func is_open(island_id: String, progress: Dictionary) -> bool:
 	if entry(island_id).is_empty() or not by_id(island_id).playable():
 		return false
@@ -170,6 +172,11 @@ static func from_data(data: Dictionary) -> Island:
 	island.order = _array(data.get("order")).filter(func(id: Variant) -> bool: return id is String)
 	island.problem = island._check()
 	return island
+
+
+## The island has the sundial on its square (features.sundial).
+func has_sundial() -> bool:
+	return features.get("sundial", false) == true
 
 
 ## Every spot is an experiment (ExperimentRegistry): false for an island in the making, whose
@@ -218,6 +225,8 @@ func _check() -> String:
 		if not spec is Dictionary or str(spec.get("ground", "")) not in GROUNDS or _array(spec.get("at")).size() != 2 \
 				or not spec.get("spots") is Array:
 			return "zone %s: ground, at or spots" % zone
+		if (spec.spots as Array).is_empty():   # else complete() and playable() would hold for nothing
+			return "zone %s has no spots" % zone
 		if spec.ground in ["coast", "valley"] and float(spec.get("radius", 0.0)) <= 0.0:
 			return "zone %s: a %s needs its radius" % [zone, spec.ground]
 		for spot: Variant in spec.spots:

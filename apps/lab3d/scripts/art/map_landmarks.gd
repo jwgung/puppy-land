@@ -229,12 +229,16 @@ static func _star(b: ArtMeshBuilder, xf: Transform3D) -> float:
 const VOLCANO_RINGS := [[1.0, 0.0], [0.8, 0.3], [0.58, 0.6], [0.38, 0.88], [0.28, 1.0], [0.19, 0.84]]
 const VOLCANO_SIDES := 14
 const VOLCANO_JITTER := 0.07         # share of the radius the slope vertices move (facets)
+## The thin smoke over the crater: puffs [x, y over the rim, z, radius] in shares of the radius.
+const SMOKE_PUFFS := [[0.05, 0.3, 0.0, 0.13], [0.12, 0.62, -0.06, 0.1], [0.24, 0.9, -0.12, 0.075]]
+## The sundial's height (its dial's top; where the story's pieces gather, MapIsland.home_lookout).
+const SUNDIAL_HEIGHT := 0.9
 
 
 ## An asleep volcano at `xf` (origin = the ground at its middle): a faceted cone `radius` m round and
 ## `height` m high whose foot ring sits `sink` m under the origin (into the ground round it), brown
-## slopes darker towards the rim, a dark crater and a thin wisp of smoke. Returns the rim's height.
-static func volcano(b: ArtMeshBuilder, xf: Transform3D, radius: float, height: float, sink: float) -> float:
+## slopes darker towards the rim, a dark crater and a thin wisp of smoke.
+static func volcano(b: ArtMeshBuilder, xf: Transform3D, radius: float, height: float, sink: float) -> void:
 	var rings: Array = []
 	for k in VOLCANO_RINGS.size():
 		var row: Array = []
@@ -270,15 +274,14 @@ static func volcano(b: ArtMeshBuilder, xf: Transform3D, radius: float, height: f
 	b.flat = false   # soft round puffs (the clouds')
 	b.ao_min = 0.9
 	b.ao_height = 0.3 * radius
-	for puff in [[0.05, 0.3, 0.0, 0.13], [0.12, 0.62, -0.06, 0.1], [0.24, 0.9, -0.12, 0.075]]:
+	for puff in SMOKE_PUFFS:
 		b.add_sphere(xf * Transform3D(Basis(), Vector3(puff[0] * radius, height + puff[1] * radius, puff[2] * radius)), puff[3] * radius, 4, 8, ArtPalette.SMOKE)
 	b.flat = was_flat
-	return height
 
 
 ## A lighthouse on its rock: a red and white striped tower, a white gallery, the yellow lamp and a
-## red roof. Returns its height above xf.
-static func lighthouse(b: ArtMeshBuilder, xf: Transform3D) -> float:
+## red roof (about 2.4 m).
+static func lighthouse(b: ArtMeshBuilder, xf: Transform3D) -> void:
 	b.ao_min = 0.8
 	b.ao_height = 0.3
 	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, -0.2, 0.0)), 0.58, 0.48, 0.42, 8, ArtPalette.ROCK)
@@ -296,12 +299,11 @@ static func lighthouse(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	b.ao_min = 1.0
 	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, deck + 0.08, 0.0)), 0.2, 0.2, 0.26, 8, ArtPalette.YELLOW, false)
 	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, deck + 0.34, 0.0)), 0.3, 0.0, 0.32, 10, ArtPalette.RED)
-	return deck + 0.66
 
 
 ## The sundial on the square: a stone drum with a cream dial, twelve hour marks and a yellow
-## pointer (the gnomon) along the dial's north-south line. Returns its height above xf.
-static func sundial(b: ArtMeshBuilder, xf: Transform3D) -> float:
+## pointer (the gnomon) along the dial's north-south line, SUNDIAL_HEIGHT high.
+static func sundial(b: ArtMeshBuilder, xf: Transform3D) -> void:
 	b.ao_min = 0.8
 	b.ao_height = 0.3
 	b.add_cylinder(xf, 0.34, 0.3, 0.45, 10, ArtPalette.ROCK)
@@ -312,8 +314,7 @@ static func sundial(b: ArtMeshBuilder, xf: Transform3D) -> float:
 		var size := Vector3(0.12, 0.02, 0.04) if h % 3 == 0 else Vector3(0.07, 0.02, 0.03)
 		b.add_rounded_box(xf * Transform3D(Basis(Vector3.UP, -a), Vector3(0.44 * cos(a), 0.535, 0.44 * sin(a))), size, 0.0, 0, ArtPalette.TRUNK)
 	# The gnomon: a thin wedge from the dial's middle, rising towards -z.
-	_wedge(b, xf * Transform3D(Basis(Vector3.UP, PI * 0.5), Vector3(0.0, 0.53, -0.12)), Vector2(0.3, 0.025), 0.36, ArtPalette.YELLOW, ArtPalette.YELLOW_TOP)
-	return 0.9
+	_wedge(b, xf * Transform3D(Basis(Vector3.UP, PI * 0.5), Vector3(0.0, 0.53, -0.12)), Vector2(0.3, 0.025), SUNDIAL_HEIGHT - 0.54, ArtPalette.YELLOW, ArtPalette.YELLOW_TOP)
 
 
 # --- helpers ---------------------------------------------------------------------------------

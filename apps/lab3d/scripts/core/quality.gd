@@ -122,6 +122,28 @@ static func cmdline_value(key: String) -> String:
 	return ""
 
 
+## The developer switches (DEV_KEYS: another island's map, a finished progress, the AI question
+## button) are read only outside the Play build (feature "play"): a launch intent cannot open an
+## island, write the child's progress or show the button on a child's device (#72 review).
+const DEV_KEYS := ["island", "progress", "ask"]
+
+
+## Value of the developer switch `--<key>=` (DEV_KEYS) in this build ("" in the Play build).
+static func dev_value(key: String) -> String:
+	return dev_arg(all_args(), key, OS.has_feature("play"))
+
+
+## dev_value's rule on given args (tests): "" when `play` or `key` is not a developer switch.
+static func dev_arg(args: PackedStringArray, key: String, play: bool) -> String:
+	if play or key not in DEV_KEYS:
+		return ""
+	var prefix := "--%s=" % key
+	for arg in args:
+		if arg.begins_with(prefix):
+			return arg.trim_prefix(prefix)
+	return ""
+
+
 ## Engine + user command-line args, plus on Android the launch intent's string extra "opargs"
 ## (comma-separated; the release template ignores Godot's own command_line_params extra):
 ## adb shell am start -n <pkg>/com.godot.game.GodotAppLauncher --es opargs "--quality=low"
