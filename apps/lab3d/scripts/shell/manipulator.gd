@@ -82,8 +82,9 @@ const DEMO_HOLDS := [2.0, 3.5]   # s the demo holds a hold object (alternating; 
 var view: View3D
 var experiment: Experiment
 ## id -> {"surface": String, "snap": float, "height_max": float, "height_step": float, "drag": bool,
-## "hold": bool} (height_max 0 = no height handle; drag false = a finger never picks it up; hold = a
-## press holds it, nothing is dragged).
+## "hold": bool, "guide": String, "guide_to": String, "marker": bool} (height_max 0 = no height handle;
+## drag false = a finger never picks it up; hold = a press holds it, nothing is dragged; marker false
+## = no footprint marker while dragged, default true).
 var rules: Dictionary = {}
 ## The definition's manipulation.grab_radius (UI units around an object's centre a press picks it).
 var grab_radius := PICK_RADIUS
@@ -613,6 +614,8 @@ func _update_target(announce := true) -> void:
 		var juice := experiment.manipulation_juice(active_id)
 		if juice:
 			juice.wobble()
+	if not rules[active_id].get("marker", true):
+		return   # (#74: the globe's knob turns the Earth; no footprint to show)
 	var markers: Array = _marker_pair(active_id)
 	var marker_xf := _surface.pose(t, MARKER_LIFT)
 	markers[0].global_transform = marker_xf

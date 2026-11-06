@@ -22,7 +22,8 @@ func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:
 func run() -> void:
 	# The checks switch languages (the content is read again): the other checks' loaded definitions
 	# and story stay the very objects they were (some checks hold or adjust them).
-	var kept := [Locale.lang, ExperimentRegistry._cache, ExperimentRegistry._hidden, ExperimentRegistry._loaded, Story._content]
+	var kept := [Locale.lang, ExperimentRegistry._cache, ExperimentRegistry._hidden, ExperimentRegistry._loaded, Story._content,
+		ExperimentRegistry._island, ExperimentRegistry._island_ids]
 	check_switch_keeps_state()
 	check_keys()
 	check_no_words_in_code()
@@ -37,6 +38,8 @@ func run() -> void:
 	ExperimentRegistry._hidden = kept[2]
 	ExperimentRegistry._loaded = kept[3]
 	Story._content = kept[4]
+	ExperimentRegistry._island = kept[5]
+	ExperimentRegistry._island_ids = kept[6]
 
 
 func _gd_files(dir: String, out: Array) -> void:

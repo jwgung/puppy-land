@@ -189,8 +189,9 @@ func manipulation() -> Dictionary:
 
 
 ## The manipulation rules: object id -> {"surface", "snap", "height_max", "height_step", "drag",
-## "hold", "guide", "guide_to"} (the one reading of manipulation.objects: the Manipulator and the lab's
-## grid both use it). `guide` / `guide_to`: the hand guide's gesture and drag end ("" = the default).
+## "hold", "guide", "guide_to", "marker"} (the one reading of manipulation.objects: the Manipulator and
+## the lab's grid both use it). `guide` / `guide_to`: the hand guide's gesture and drag end ("" = the
+## default); `marker` (default true): the footprint marker shows while it is dragged (#74).
 func manipulation_rules() -> Dictionary:
 	var result := {}
 	for object in manipulation().get("objects", []):
@@ -205,6 +206,7 @@ func manipulation_rules() -> Dictionary:
 			"hold": object.get("hold", false) == true,
 			"guide": str(object.get("guide", "")),
 			"guide_to": str(object.get("guide_to", "")),
+			"marker": object.get("marker", true) != false,
 		}
 	return result
 

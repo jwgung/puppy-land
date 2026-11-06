@@ -57,8 +57,8 @@ func check_observations_and_rules() -> void:
 		and ExperimentDefinition.control_digits(d.control("speed")) == 1 and ExperimentDefinition.control_digits({"digits": 0}) == 0,
 		"definition: an observation by id; digits default to 2 (a control's to 1)", "")
 	var rules := d.manipulation_rules()
-	expect.call(rules.ball == {"surface": "floor", "snap": 0.25, "height_max": 2.0, "height_step": 0.5, "drag": true, "hold": false, "guide": "", "guide_to": ""}
-		and rules.box == {"surface": "", "snap": 0.0, "height_max": 0.0, "height_step": 0.0, "drag": false, "hold": true, "guide": "", "guide_to": ""},
+	expect.call(rules.ball == {"surface": "floor", "snap": 0.25, "height_max": 2.0, "height_step": 0.5, "drag": true, "hold": false, "guide": "", "guide_to": "", "marker": true}
+		and rules.box == {"surface": "", "snap": 0.0, "height_max": 0.0, "height_step": 0.0, "drag": false, "hold": true, "guide": "", "guide_to": "", "marker": true},
 		"definition: the manipulation rules with their defaults", str(rules))
 	expect.call(d.grid_step("ball") == 0.25 and d.grid_step("box") == 0.0 and d.grid_step("nope") == 0.0
 		and d.slingshot().get("object") == "ball" and d.has_manipulation(),

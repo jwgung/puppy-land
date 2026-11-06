@@ -31,9 +31,12 @@ const EARTH_TILT := 23.44
 const UPRIGHT := 0.0
 ## Hutton Island's stand-in place: Seoul (37 deg 34 min N).
 const SEOUL_LATITUDE := 37.57
-## The sun within this many degrees of the horizon is rising or setting ("sunrise" / "sunset"): a game
-## band for the 낮과 밤 spot's morning stage (about 40 minutes at Seoul), revisited with its missions (#74).
-const EDGE_DEG := 7.5
+## Within this many hours of the geometric sunrise (sunset) the sun is rising ("sunrise") or setting
+## ("sunset"): the 낮과 밤 spot's morning band (#74, 2026-11-06 user decision: about 1 h either side of sunrise; the
+## evening band of the same width is the stage's "그건 해 지는 쪽이야!" miss). Measured in hour angle
+## from the sunrise's, so it is an hour at every latitude and season (an altitude band, 7.5 deg before
+## #74, was about 40 minutes at Seoul). A polar day or night has no sunrise and no band.
+const EDGE_HOURS := 1.0
 ## Glide rates (deg/s) when the lab shows a change happen (glide_to): a day in 4 s, a year in 6 s.
 const ROTATION_RATE := 90.0
 const ORBIT_RATE := 60.0
@@ -98,14 +101,26 @@ static func noon_altitude(latitude: float, decl: float) -> float:
 ## Hours of the day the sun's centre is above the geometric horizon (0 in a polar night, 24 in a
 ## polar day): cos H0 = -tan(latitude) tan(decl).
 static func day_length(latitude: float, decl: float) -> float:
+	var h0 := sunset_hour_angle(latitude, decl)
+	if is_nan(h0):
+		return 0.0 if sun_altitude_at_noon_below(latitude, decl) else HOURS_PER_ROTATION
+	return 2.0 * h0 / DEG_PER_HOUR
+
+
+## The hour angle (deg, 0..180) of the geometric sunset (the sunrise is at minus it): cos H0 =
+## -tan(latitude) tan(decl). NAN in a polar day or night (the sun never crosses the horizon).
+static func sunset_hour_angle(latitude: float, decl: float) -> float:
 	var phi := deg_to_rad(latitude)
 	var d := deg_to_rad(decl)
 	var c := -sin(phi) * sin(d) / (cos(phi) * cos(d))
-	if c >= 1.0:
-		return 0.0
-	if c <= -1.0:
-		return HOURS_PER_ROTATION
-	return 2.0 * rad_to_deg(acos(c)) / DEG_PER_HOUR
+	if c >= 1.0 or c <= -1.0:
+		return NAN
+	return rad_to_deg(acos(c))
+
+
+## The sun stays below the horizon all day (a polar night; else, without a sunset, a polar day).
+static func sun_altitude_at_noon_below(latitude: float, decl: float) -> bool:
+	return noon_altitude(latitude, decl) <= 0.0
 
 
 ## The shadow's length (m) of an upright stick `height` m tall with the sun at `altitude_deg`; INF
@@ -184,13 +199,30 @@ func shadow_tip() -> Vector3:
 	return Vector3(length * sin(az), 0.0, -length * cos(az))
 
 
-## "night", "sunrise" / "sunset" (the sun within EDGE_DEG of the horizon, rising before noon, setting
-## after), or "day".
+## Hours from the geometric sunrise (before it: negative; the short way round the day, -12..12) and
+## from the sunset; NAN in a polar day or night.
+func hours_from_sunrise() -> float:
+	return _hours_from(-sunset_hour_angle(input("latitude"), sun_declination()))
+
+
+func hours_from_sunset() -> float:
+	return _hours_from(sunset_hour_angle(input("latitude"), sun_declination()))
+
+
+func _hours_from(event_hour_angle: float) -> float:
+	if is_nan(event_hour_angle):
+		return NAN
+	return wrapf(hour_angle(input("rotation")) - event_hour_angle, -180.0, 180.0) / DEG_PER_HOUR
+
+
+## "sunrise" / "sunset" (within EDGE_HOURS of the geometric sunrise / sunset), else "day" or "night"
+## (the sun's centre above or below the horizon).
 func status() -> String:
-	var alt := sun_altitude()
-	if absf(alt) <= EDGE_DEG:
-		return "sunrise" if is_morning() else "sunset"
-	return "day" if alt > 0.0 else "night"
+	if absf(hours_from_sunrise()) <= EDGE_HOURS:
+		return "sunrise"
+	if absf(hours_from_sunset()) <= EDGE_HOURS:
+		return "sunset"
+	return "day" if is_day() else "night"
 
 
 ## hour (h), altitude, azimuth, noon_altitude, declination (deg), day_length (h), the inputs orbit,

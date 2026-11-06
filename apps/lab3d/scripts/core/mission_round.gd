@@ -125,10 +125,13 @@ var judged_run := false
 var predict_ended := false
 
 var _asking := false
-var _clue := ""
-## Dugi's introduction of the lab (kid.intro, 2026-10-31 user: "처음에 이 실험이 무슨 실험인지, 어떤 힘을
-## 보고 싶은 건지"): after Puppy's clue, before the question, every visit while stages are left (Story).
-var _intro := ""
+## The lines before the question still to open (dialogue_line() each): on the spot's first visit the
+## island keeper's line (story.keeper, #74) and Puppy's clue (story.clue), then Dugi's introduction
+## (kid.intro and kid.intro_more, 2026-10-31 user: "처음에 이 실험이 무슨 실험인지, 어떤 힘을 보고 싶은
+## 건지": every visit while stages are left, with the story). The first is in the box while _clue_open.
+var _opening: Array = []
+## How many of them are the first visit's (the keeper's and the clue): told once (store.mark_clue).
+var _first_visit := 0
 var _clue_open := false
 var _question := ""
 var _question_face := Story.DEFAULT_FACE
@@ -662,14 +665,16 @@ func open(dugi: bool) -> void:
 		predict_ended = true   # the round is done (or no Dugi to ask): no question, no clue
 		return
 	var id := str(definition.get("id", ""))
+	_opening = []
 	if Story.enabled and not store.clue_seen(id):
-		_clue = Story.clue(definition)
+		_opening = first_visit_lines(definition)
+	_first_visit = _opening.size()
 	if Story.enabled:
-		_intro = intro(definition).text
+		_opening.append_array(intro_lines(definition))
 	var question := predict(definition)
 	if question.is_empty():
 		predict_ended = true   # no question: the clue and the introduction alone, if any
-		_asking = _clue != "" or _intro != ""
+		_asking = not _opening.is_empty()
 		return
 	reason = str(question.get("reason", ""))
 	_question = str(question.get("question", ""))
@@ -680,7 +685,7 @@ func open(dugi: bool) -> void:
 ## Where the round is now.
 func phase() -> Phase:
 	if _asking:
-		return Phase.CLUE if _clue != "" or _intro != "" else Phase.ASKING
+		return Phase.CLUE if not _opening.is_empty() else Phase.ASKING
 	return Phase.DONE if stage() < 0 else Phase.PLAYING
 
 
@@ -695,42 +700,50 @@ static func dialogue_line(text: String, face: String, picture := "", speaker := 
 	return {"text": text, "face": face, "picture": picture, "speaker": speaker}
 
 
-## The next line before the question waits for its box (dialogue_line()): Puppy's clue (no
-## picture), then Dugi's introduction ({} when there is none to open, or one is open).
+## The next line before the question waits for its box (dialogue_line()): on the first visit the
+## keeper's line and Puppy's clue (no picture), then Dugi's introduction ({} when there is none to
+## open, or one is open).
 func clue_to_open() -> Dictionary:
-	if not _asking or _clue_open:
+	if not _asking or _clue_open or _opening.is_empty():
 		return {}
-	if _clue != "":
-		return dialogue_line(_clue, Story.clue_face(definition), "", "puppy")
-	if _intro != "":
-		var told := intro(definition)
-		told.text = _intro
-		return told
-	return {}
+	return _opening[0]
 
 
-## A line before the question (the clue or the introduction) is in the box now (not yet read).
+## A line before the question (the keeper's, the clue or the introduction) is in the box now (not yet read).
 func clue_open() -> bool:
-	return _asking and (_clue != "" or _intro != "") and _clue_open
+	return _asking and not _opening.is_empty() and _clue_open
 
 
-## The screen opened the line in its box; Puppy's clue is told once (kept in the store).
+## The screen opened the line in its box; the first visit's lines are told once (kept in the store
+## when the first of them opens).
 func clue_opened() -> void:
 	_clue_open = true
-	if _clue != "":
+	if _first_visit > 0:
 		store.mark_clue(str(definition.get("id", "")))
 
 
-## The open line was read (its box closed): the next one (Dugi's introduction), then Dugi asks, or
-## the round plays when there is no question.
+## The open line was read (its box closed): the next one, then Dugi asks, or the round plays when
+## there is no question.
 func clue_read() -> void:
-	if _clue != "":
-		_clue = ""
-	else:
-		_intro = ""
+	if not _opening.is_empty():
+		_opening.pop_front()
+		_first_visit = maxi(0, _first_visit - 1)
 	_clue_open = false
-	if _clue == "" and _intro == "" and _question == "":
+	if _opening.is_empty() and _question == "":
 		end_question()
+
+
+## The lines of a spot's first visit (dialogue_line() each): the island keeper's (story.keeper, #74:
+## the fox tells what is wrong there) and Puppy's clue (story.clue); [] without them.
+static func first_visit_lines(definition: Dictionary) -> Array:
+	var out := []
+	var keeper := Story.keeper(definition)
+	if keeper != "":
+		out.append(dialogue_line(keeper, Story.keeper_face(definition), "", Story.KEEPER))
+	var clue := Story.clue(definition)
+	if clue != "":
+		out.append(dialogue_line(clue, Story.clue_face(definition), "", "puppy"))
+	return out
 
 
 ## Dugi's introduction of the lab (dialogue_line(): kid.intro, kid.intro_face, kid.intro_picture;
@@ -740,6 +753,21 @@ static func intro(definition: Dictionary) -> Dictionary:
 	if not kid is Dictionary:
 		return dialogue_line("", Story.DEFAULT_FACE)
 	return dialogue_line(str(kid.get("intro", "")), Story.face_or_default(kid.get("intro_face")), ExplainPictures.picture_or_none(kid.get("intro_picture")))
+
+
+## Every line of Dugi's introduction: intro() and then kid.intro_more's lines (#74: an introduction
+## in several lines, each with its own face and picture, {"text", "face"?, "picture"?}); [] when
+## there is no introduction.
+static func intro_lines(definition: Dictionary) -> Array:
+	var first := intro(definition)
+	if str(first.text) == "":
+		return []
+	var out := [first]
+	var kid: Variant = definition.get("kid")
+	for more: Variant in (kid.get("intro_more", []) if kid is Dictionary else []):
+		if more is Dictionary and str(more.get("text", "")) != "":
+			out.append(dialogue_line(str(more.text), Story.face_or_default(more.get("face")), ExplainPictures.picture_or_none(more.get("picture"))))
+	return out
 
 
 ## Dugi's question (dialogue_line(); the text "" when the clue came alone). It has no picture:
@@ -779,8 +807,8 @@ func end_question() -> void:
 	if not _asking:
 		return
 	_asking = false
-	_clue = ""
-	_intro = ""
+	_opening = []
+	_first_visit = 0
 	_clue_open = false
 	question_ended.emit()
 

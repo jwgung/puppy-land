@@ -3,7 +3,8 @@
 ## never opens in the child's app while its spots are not experiments (Island.playable), its map
 ## builds like the mechanics one (one static island mesh and the sky, within the mechanics map's
 ## vertices) with its coast sand, valley, volcano, river, lighthouse and sundial placed clear of the
-## spots, paths and the three friends, a tap on a spot opens nothing, and a lab on its coast or in its
+## spots, paths and the three friends, a tap on a spot in the making opens nothing (its first lab,
+## day-night #74, is a lab), and a lab on its coast or in its
 ## valley stands on that ground within the labs' budget. The mechanics island is unchanged: no
 ## features, the same checks as before (island_home_checks, lab_world_checks).
 extends RefCounted
@@ -13,6 +14,8 @@ const PHONE := Vector2(1560, 720)
 const ORDER := ["day-night", "shadow-clock", "seasons", "water-cycle", "dew-cloud", "sea-breeze", "typhoon",
 	"river", "strata", "earthquake", "volcano"]
 const ZONES := {"hill": "hill", "coast": "coast", "valley": "valley"}
+## The hutton spots that are experiments so far (#74); the island opens when all are.
+const EXPERIMENTS := ["day-night"]
 const LAB_VERTS_MAX := 30000   # lab_world_checks.VERTS_MAX
 ## The mechanics island's map and two of its lab worlds (built at the origin) as they were before the
 ## hutton island (#72). The hutton features add nothing to an island without them; a change here must
@@ -54,6 +57,7 @@ func run() -> void:
 	check_hutton_data()
 	check_features_checked()
 	check_never_opens()
+	check_paid_before_playable()
 	await check_mechanics_pinned()
 	await check_hutton_map()
 	await check_hutton_labs()
@@ -120,13 +124,27 @@ func check_features_checked() -> void:
 		"; ".join(problems))
 
 
-## Its spots are not experiments yet: the island is not playable and never opens, even with every
-## mechanics spot complete; the mechanics island is playable and open.
+## ADR 0005: every island after the first is paid. An island with `opens_after` that is playable
+## (every spot a lab, so it opens) must name its product: until the payment (#77) sets hutton's
+## product, making the hutton island playable fails here instead of opening it for free.
+func check_paid_before_playable() -> void:
+	var problems := []
+	for entry: Dictionary in Island.index():
+		if str(entry.get("opens_after", "")) != "" and Island.by_id(str(entry.id)).playable() and str(entry.get("product", "")) == "":
+			problems.append("%s is playable with no product (#77)" % entry.id)
+	expect.call(problems.is_empty(), "islands: a later island (opens_after) is playable only with its product set (ADR 0005, the payment #77)", "; ".join(problems))
+
+
+## Not every spot is an experiment yet (only EXPERIMENTS): the island is not playable and never
+## opens, even with every mechanics spot complete; the mechanics island is playable and open.
 func check_never_opens() -> void:
 	var full := {}
 	for spot in Island.by_id("mechanics").spots():
 		full[spot] = MissionRound.missions(ExperimentRegistry.find(spot)).get("stages", []).size()
 	var problems := []
+	var labs := Island.by_id("hutton").spots().filter(func(spot: String) -> bool: return not ExperimentRegistry.find(spot).is_empty())
+	if labs != EXPERIMENTS:
+		problems.append("the hutton spots that are experiments: %s (want %s)" % [str(labs), str(EXPERIMENTS)])
 	if Island.by_id("hutton").playable():
 		problems.append("hutton is playable")
 	if Island.is_open("hutton", full):
@@ -216,7 +234,7 @@ static func _lab_pin_problems(lab: String, got: Dictionary, pin: Dictionary) -> 
 ## 11 spots apart on the grass and out of the water, paths on land and dry, decoration clear of the
 ## features and off the coast's sand, the volcano behind the island, the river from its foot downhill
 ## into the sea, the lighthouse on the beach, the sundial behind the three on the square; the spot
-## names are the ids and a tap opens nothing.
+## names are the ids (a lab's spot: its place name) and a tap opens nothing (a lab's spot: the cat walks there).
 func check_hutton_map() -> void:
 	var mechanics_verts := await _map_vertices("mechanics")
 	Island.use_for_run("hutton")
@@ -248,8 +266,9 @@ func check_hutton_map() -> void:
 			if other.id != spot.id and at.distance_to(Vector2(other.at.x, other.at.z)) < 2.5:
 				problems.append("%s and %s closer than 2.5 m" % [spot.id, other.id])
 		var label: Label = _find_label(screen._labels.get(spot.id))
-		if label == null or label.text != spot.id:
-			problems.append("%s's name %s (want its id: no experiment yet)" % [spot.id, label.text if label != null else "none"])
+		var name: String = ExperimentRegistry.kid_text(ExperimentRegistry.find(spot.id), "place") if spot.id in EXPERIMENTS else spot.id
+		if label == null or label.text != name:
+			problems.append("%s's name %s (want %s)" % [spot.id, label.text if label != null else "none", name])
 	for q in map.path_points:
 		if not on_grass.call(q, MapIsland.PATH_WIDTH * 0.5) or map.water_at(q.x, q.y):
 			problems.append("path point %s off the grass or in the river" % str(q))
@@ -288,13 +307,21 @@ func check_hutton_map() -> void:
 	for actor: Node3D in screen.trio():
 		if Vector2(actor.position.x, actor.position.z).distance_to(Vector2(dial.at.x, dial.at.z)) < 0.85:
 			problems.append("%s stands in the sundial" % actor.name)
-	# A tap on a spot with no experiment: a shake, no walk, nothing opened.
+	# A tap on a spot with no experiment: a shake, no walk, nothing opened. A spot that is an
+	# experiment (#74: day-night) is a lab: the cat walks there.
 	var opened := []
 	screen.experiment_chosen.connect(func(d: Dictionary) -> void: opened.append(d))
-	screen._walk_to_spot(0)
-	if screen._walking or not opened.is_empty():
-		problems.append("a tap walks or opens something")
-	expect.call(problems.is_empty(), "hutton map: 1 island mesh + sky (no more vertices than the mechanics map), 11 spots clear, coast sand, valley, volcano, river to the sea, lighthouse, sundial; a tap opens nothing",
+	for i in screen._spots.size():
+		if not screen._spots[i].id in EXPERIMENTS:
+			screen._walk_to_spot(i)
+			if screen._walking or not opened.is_empty():
+				problems.append("a tap on %s walks or opens something" % screen._spots[i].id)
+			break
+	var lab: int = screen._spots.map(func(spot: Dictionary) -> String: return spot.id).find(EXPERIMENTS[0])
+	screen._walk_to_spot(lab)
+	if not (screen._walking or not opened.is_empty()):
+		problems.append("a tap on %s neither walks nor opens it" % EXPERIMENTS[0])
+	expect.call(problems.is_empty(), "hutton map: 1 island mesh + sky (no more vertices than the mechanics map), 11 spots clear, coast sand, valley, volcano, river to the sea, lighthouse, sundial; a tap on a spot in the making opens nothing, the lab's spot (day-night) is a lab",
 		"; ".join(problems.slice(0, 8)) if not problems.is_empty() else "%d vertices (mechanics %d), %d trees, %d decorations" % [verts, mechanics_verts, trees, map.decorations.size()])
 	await _free(screen)
 	Island.forget_current()

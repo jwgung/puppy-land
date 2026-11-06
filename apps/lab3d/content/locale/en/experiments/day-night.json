@@ -1,0 +1,97 @@
+{
+  "title": "Why do we have day and night?",
+  "category": "Earth and sky",
+  "question": "Does night come because the sun moves, or because the Earth turns?",
+  "steps": [
+    "Drag the Earth left or right with your finger to turn it.",
+    "See whether the fox's house is on the side facing the sun or on the other side.",
+    "Watch the sky over the fox's yard change in the window below."
+  ],
+  "observe": "The half facing the sun has day, the other half has night. As the Earth turns from west to east, the fox's house goes through morning, noon, evening and night in turn.",
+  "terms": [
+    {
+      "name": "Axis",
+      "description": "An invisible rod through the middle of the Earth, joining its north end and its south end."
+    },
+    { "name": "Rotation", "description": "The Earth turning about its axis from west to east, once a day." },
+    {
+      "name": "Day and night",
+      "description": "The side facing the sun gets sunlight and has day; the other side gets none and has night."
+    }
+  ],
+  "law": {
+    "equation": "one rotation = one day",
+    "title": "The Earth's rotation, day and night",
+    "description": "The Earth turns about its axis once a day, from west to east. The sun stays still: the side facing it has day, the other side night. The Earth's turning brings day and night."
+  },
+  "tip": "Drag the Earth left or right with one finger: it turns as far as your finger moves. It stops as soon as you let go, and it turns either way. The orange arrow at the north end shows the way the Earth really turns (from west to east).",
+  "tip_short": "Drag the Earth left or right to turn it",
+  "actions": [{ "label": "Start over" }],
+  "predict": {
+    "question": "Does night come because the sun moves, or because the Earth turns?",
+    "choices": [{ "label": "The sun moves" }, { "label": "The Earth turns" }],
+    "reason": "The sun stays still. The Earth turns, and the fox's house goes to the far side. Then it's night.",
+    "bridge": "Turn the Earth and see for yourself!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Turn the Earth so the sun is high over the fox's house!",
+        "say": "When the fox's house faces the sun, it is noon. The sun is at its highest.",
+        "win": "Noon! The sun is up high!",
+        "miss": "Turn it to face the sun!"
+      },
+      {
+        "text": "Make it night at the fox's house, to see the fox's favorite star!",
+        "say": "When the fox's house is away from the sun, no sunlight gets there. So it is night, and the stars come out.",
+        "win": "Twinkle twinkle! The fox smiled!",
+        "miss": "Turn it away from the sun!"
+      },
+      {
+        "text": "Make it morning at the fox's house, just as the sun comes up!",
+        "say": "The Earth turns from west to east. So the sun always rises in the east. Morning is where the house turns from night into the sun.",
+        "win": "Morning sun! The piece shines!",
+        "miss": "That's where the sun sets!"
+      }
+    ]
+  },
+  "story": {
+    "keeper": "This is my house. The sun hasn't come up right for days. It's dark all the time…",
+    "clue": "Something sparkled by the house! A piece? It's too dark to see.",
+    "map_clue": "Up on the hill, by the big globe!"
+  },
+  "kid": {
+    "intro": "This is the day and night lab. Imagine a rod through the middle of the Earth, from its north end to its south end. It is called the **axis**.",
+    "intro_more": [
+      {
+        "text": "The Earth spins around its axis like a top, once a day. This is called **rotation**. It always turns from west to east."
+      },
+      { "text": "The side facing the sun has day. The other side has night." }
+    ],
+    "title": "Turn the Earth to make day and night!",
+    "place": "Day and night",
+    "say": "The side facing the sun has day, the other side has night. The Earth turns, so day and night take turns.",
+    "tip": "Drag the Earth left or right to turn it.",
+    "cards": { "state": "Sky over the fox's house", "altitude": "Sun's height" }
+  },
+  "note": {
+    "law": "The side facing the sun has day, the other side night. The Earth turns once a day, and that brings day and night.",
+    "formula": "one rotation = one day",
+    "numbers": [
+      { "label": "Sky over the fox's house" },
+      { "label": "Sun's height (above the horizon)" },
+      { "label": "Sun's direction (north 0°, east 90°, south 180°)" }
+    ]
+  },
+  "observations": [
+    { "label": "Sky over the fox's house" },
+    { "label": "Sun's height (above the horizon)" },
+    { "label": "Sun's direction (north 0°, east 90°, south 180°)" }
+  ],
+  "graph": {
+    "title": "The sun's height at the fox's house through one turn",
+    "x": { "label": "How far the Earth turned (from midnight)" },
+    "y": { "label": "Sun's height" },
+    "series": [{ "label": "Sun's height" }, { "label": "Now" }]
+  }
+}

@@ -1381,7 +1381,7 @@ func _cancel_next() -> void:
 func _go_next() -> void:
 	_next_wait = -1.0   # (once: also when called directly)
 	_next_due = false
-	if experiment.status() != "ready":
+	if experiment.status() != "ready" and not experiment.keeps_run_between_stages():
 		experiment_action("reset")
 	mission_round.go_on()
 	next_goes += 1
