@@ -8,8 +8,10 @@
 ##   view, clear of the dialogue box (and the bust and name tag) and of the top chips, on phone,
 ##   tablet and the zoomed phone; a tap on the card turns the page like a tap on the box (the lab's
 ##   object under it is not touched) and the card goes with the box;
-## - a story page with a picture (a stand-in page) shows its card and the next page's does not;
-## - each picture draws at 1x and 2x with every shape triangulated.
+## - a story page with a picture (a stand-in page) shows its card and the next page's does not; a
+##   picture on Puppy's page shows no card (Dugi only, Story.page_picture);
+## - each picture draws at 1x and 2x with every shape triangulated, the card has the pictures'
+##   aspect, and ExplainPictures draws no text (its source calls only shape-drawing APIs).
 extends RefCounted
 
 var tree: SceneTree
@@ -34,6 +36,7 @@ func run() -> void:
 		await check_lab_card(size)
 	await check_story_page()
 	await check_draws()
+	check_no_text()
 	DirAccess.remove_absolute(ProgressStore.path)
 
 
@@ -77,7 +80,7 @@ func check_field() -> void:
 		"own %s, found %s" % [str(own), str(problems)])
 	# The round hands each line's picture on.
 	var intro := MissionRound.intro(good)
-	expect.call(intro[2] == "axis" and MissionRound.intro(ExperimentRegistry.find("projectile"))[2] == "",
+	expect.call(intro.picture == "axis" and MissionRound.intro(ExperimentRegistry.find("projectile")).picture == "",
 		"explain pictures: Dugi's introduction carries its picture (none without one)", str(intro))
 
 
@@ -181,8 +184,8 @@ func check_lab_card(size: Vector2) -> void:
 		"shown %s %s; through %s (%d taps)" % [shown, "; ".join(problems), through, turns])
 	if size == PHONE:
 		# Dugi's explanation of the stage being played carries the stage's picture.
-		var say: Array = screen.explain_say()
-		expect.call(say.size() == 3 and say[2] == "morning_evening", "explain pictures: Dugi's stage explanation carries its picture", str(say))
+		var say: Dictionary = screen.explain_say()
+		expect.call(say.picture == "morning_evening", "explain pictures: Dugi's stage explanation carries its picture", str(say))
 	host.queue_free()
 	tree.root.size = root_size
 	for i in 3:
@@ -198,6 +201,7 @@ func check_story_page() -> void:
 	Story.forget_loaded()
 	var content := Story._load().duplicate(true)
 	content.prologue[1].picture = "axis"
+	content.prologue[2].picture = "river"   # Puppy's page: no card (Dugi only)
 	Story._content = content
 	var host := Control.new()
 	host.theme = load(UI_THEME).build()
@@ -228,7 +232,7 @@ func check_story_page() -> void:
 				break
 			box.advance()
 	expect.call(str(seen) == str(["dugi:-", "dugi:axis", "puppy:-"]) and clear,
-		"explain pictures: a story page's picture shows on its card (clear of the box, the emblem and the skip button); the next page has none",
+		"explain pictures: a story page's picture shows on its card (clear of the box, the emblem and the skip button); Puppy's page with a picture shows none",
 		"%s clear %s" % [str(seen), clear])
 	host.queue_free()
 	await tree.process_frame
@@ -255,7 +259,25 @@ func check_draws() -> void:
 				problems.append("%s x%d: %d shapes, %d failed" % [kind, scale, drawn, ExplainPictures.failed - failed])
 			card.queue_free()
 	await tree.process_frame
-	expect.call(problems.is_empty(), "explain pictures: each of the 4 pictures draws at 1x and 2x, every shape triangulated", "; ".join(problems))
+	var aspect_ok := is_equal_approx(DialogueBox.CARD_SIZE.aspect(), ExplainPictures.ASPECT) and is_equal_approx(ExplainPictures.DESIGN.aspect(), ExplainPictures.ASPECT)
+	expect.call(problems.is_empty() and aspect_ok, "explain pictures: each of the 4 pictures draws at 1x and 2x, every shape triangulated; the card has the pictures' aspect",
+		"%s aspect %s" % ["; ".join(problems), aspect_ok])
+
+
+## No letters inside a picture (2026-11-06 user): ExplainPictures's drawing calls are shapes only
+## (no draw_string / draw_char / fonts / labels), so a label cannot slip in later unseen.
+func check_no_text() -> void:
+	var source := FileAccess.get_file_as_string("res://scripts/shell/explain_pictures.gd")
+	var allowed := ["draw_polygon", "draw_polyline", "draw_style_box", "draw_set_transform", "draw_set_transform_matrix", "draw_card", "draw_center"]
+	var used := {}
+	for m in RegEx.create_from_string("\\bdraw_\\w+").search_all(source):
+		used[m.get_string()] = true
+	var bad: Array = used.keys().filter(func(name: String) -> bool: return not name in allowed)
+	for word in ["Font", "Label", "TextServer", "TextLine", "TextParagraph", "RichText", "Locale."]:
+		if source.contains(word):
+			bad.append(word)
+	expect.call(source != "" and used.has("draw_polygon") and bad.is_empty(),
+		"explain pictures: no text in a picture (only shape drawing calls, no fonts, labels or words)", str(bad))
 
 
 func _tap(at: Vector2) -> void:

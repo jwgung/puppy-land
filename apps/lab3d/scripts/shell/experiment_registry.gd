@@ -190,8 +190,7 @@ static func _validate_kid(kid: Variant, ids: Array) -> PackedStringArray:
 			if not kid[key] in Story.FACES:
 				problems.append("kid.%s must be one of Story.FACES" % key)
 		elif key == "say_picture" or key == "intro_picture":
-			if ExplainPictures.problem(key, kid[key]) != "":
-				problems.append(ExplainPictures.problem("kid." + key, kid[key]))
+			problems.append_array(ExplainPictures.check(kid, key, "kid." + key))
 		elif key == "picks":
 			pass   # ConditionPicks.validate (it needs the controls and the missions)
 		elif key == "bars":

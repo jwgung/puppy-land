@@ -17,8 +17,9 @@ class_name ExplainPictures
 extends RefCounted
 
 const KINDS := ["axis", "morning_evening", "sea_breeze", "river"]
-## The card's drawing space (its aspect is the card's, 3:2).
-const DESIGN := Vector2(432.0, 288.0)
+## The card's width : height (DialogueBox.CARD_SIZE has it too) and its drawing space (the mockup's).
+const ASPECT := 1.5
+const DESIGN := Vector2(432.0, 432.0 / ASPECT)
 const INSET := 9.0           # the paper border around the scene panel
 const LIP := 5.0             # the darker bottom edge, like the dialogue box
 const PANEL_RADIUS := 12.0
@@ -32,6 +33,26 @@ const ARROW_HEAD_WIDTH := 2.5
 const ARROW_HALO := 3.0
 const ARROW_EDGE := 1.1
 const ARROW_ROUND := 0.9
+## Soft light: GLOW_LAYERS circles from the middle out (strength / GLOW_SPREAD + GLOW_FLOOR of 255 at
+## the rim, GLOW_FALL the fall-off), SHADOW_LAYERS circles from SHADOW_OUTER of the radius in by SHADOW_GROW each.
+const GLOW_LAYERS := 14
+const GLOW_SPREAD := 3.0
+const GLOW_FLOOR := 8.0
+const GLOW_FALL := 1.2
+const SHADOW_LAYERS := 6
+const SHADOW_OUTER := 1.08
+const SHADOW_GROW := 0.03
+const SHADOW_COLOR := Color8(60, 40, 30)
+## The globe: GLOBE_OCEAN_LAYERS circles shading the ocean towards the light, GLOBE_SHADE_LAYERS
+## crescents darkening the far side (GLOBE_SHADE_ALPHA each), the offset circle that spares the lit
+## side (GLOBE_LIT_OFFSET of the radius towards the light).
+const GLOBE_OCEAN_LAYERS := 22
+const GLOBE_OCEAN_DARK := Color8(30, 104, 208)
+const GLOBE_OCEAN_LIGHT := Color8(74, 168, 242)
+const GLOBE_SHADE_LAYERS := 6
+const GLOBE_SHADE_ALPHA := 0.065
+const GLOBE_SHADE := Color8(10, 30, 90)
+const GLOBE_LIT_OFFSET := 0.35
 
 const PAPER := UiTheme.DIALOGUE_PAPER
 const OUT := UiTheme.DIALOGUE_LINE
@@ -49,7 +70,8 @@ const GRASSD := Color8(52, 150, 44)
 const SAND := Color8(243, 216, 140)
 const WHITE := Color(1, 1, 1)
 
-## Filled shapes drawn, and those whose polygon could not be triangulated (tests: none).
+## Filled shapes drawn, and those whose polygon could not be triangulated
+## (tests/explain_picture_checks.gd counts both: every picture draws shapes, none fails).
 static var shapes := 0
 static var failed := 0
 
@@ -59,9 +81,12 @@ static func picture_or_none(value: Variant) -> String:
 	return str(value) if value is String and value in KINDS else ""
 
 
-## The problem with a content line's picture field `key` (`value`), or "" when it is fine.
-static func problem(key: String, value: Variant) -> String:
-	return "" if value is String and value in KINDS else "%s must be one of ExplainPictures.KINDS" % key
+## The problem with the picture field `key` of a content line `holder` (named `path` in the
+## message): [] when it has none or names a picture.
+static func check(holder: Variant, key: String, path: String) -> PackedStringArray:
+	if not (holder is Dictionary and holder.has(key)) or picture_or_none(holder[key]) != "":
+		return PackedStringArray()
+	return PackedStringArray(["%s must be one of ExplainPictures.KINDS" % path])
 
 
 ## Draws the card (paper, lip, outline) with picture `kind` filling `rect` of `canvas`.
@@ -87,7 +112,7 @@ static func draw_card(canvas: CanvasItem, kind: String, rect: Rect2) -> void:
 ## left (west) to the right (east).
 static func _axis(p: Pen) -> void:
 	p.sky(Color8(214, 238, 255), Color8(160, 208, 250))
-	for cloud in [[Vector2(60, 50), 1.0], [Vector2(370, 222), 1.1], [Vector2(344, 48), 0.7]]:
+	for cloud: Array in [[Vector2(60, 50), 1.0], [Vector2(370, 222), 1.1], [Vector2(344, 48), 0.7]]:
 		p.cloud(cloud[0], cloud[1], Color(1, 1, 1, 0.78))
 	var c := Vector2(216, 142)
 	var r := 76.0
@@ -107,7 +132,7 @@ static func _axis(p: Pen) -> void:
 		var d1 := a0.lerp(a1, (i + 0.62) / n)
 		p.line(PackedVector2Array([d0, d1]), PAPER, 6.5)
 		p.line(PackedVector2Array([d0, d1]), INK, 3.6)
-	for knob in [a0, a1]:
+	for knob: Vector2 in [a0, a1]:
 		p.ellipse(knob, 8.0, 8.0, PAPER)
 		p.ellipse(knob, 6.5, 6.5, ORG)
 		p.ring(knob, 6.5, 6.5, OUT, 2.0)
@@ -140,7 +165,7 @@ static func _morning_evening(p: Pen) -> void:
 		var t := i / 19.0
 		var rr := r * (1.2 - 1.0 * t)
 		p.fill(ellipse_points(c + Vector2(r * 0.35 * t, 0), rr, rr), Color8(34, 110, 214).lerp(Color8(110, 196, 250), t), earth)
-	for land in [blob(c + Vector2(34, -26), 26, 18, 3), blob(c + Vector2(40, 30), 22, 24, 6), blob(c + Vector2(-24, -10), 20, 26, 9),
+	for land: PackedVector2Array in [blob(c + Vector2(34, -26), 26, 18, 3), blob(c + Vector2(40, 30), 22, 24, 6), blob(c + Vector2(-24, -10), 20, 26, 9),
 			blob(c + Vector2(-34, 38), 14, 10, 11)]:
 		p.fill(land, GRASS, earth)
 	# The night half with a soft edge (alpha linear across the edge band: exact on any triangulation).
@@ -149,7 +174,7 @@ static func _morning_evening(p: Pen) -> void:
 	p.fill(rect_points(Rect2(c.x - r - 4, c.y - r - 4, r + 4 - soft, 2 * r + 8)), Color(night, 0.92), earth)
 	p.fill_by(rect_points(Rect2(c.x - soft, c.y - r - 4, 2 * soft, 2 * r + 8)),
 		func(v: Vector2) -> Color: return Color(night, 0.92 * clampf((c.x + soft - v.x) / (2 * soft), 0.0, 1.0)), earth)
-	for city in [Vector2(-40, -20), Vector2(-30, 10), Vector2(-52, 26), Vector2(-22, -44), Vector2(-46, -6)]:
+	for city: Vector2 in [Vector2(-40, -20), Vector2(-30, 10), Vector2(-52, 26), Vector2(-22, -44), Vector2(-46, -6)]:
 		p.ellipse(c + city, 1.8, 1.8, Color8(255, 224, 120))
 	p.ring(c, r, r, OUT, 3.0)
 	p.ellipse(c, 5, 5, PAPER)
@@ -157,7 +182,7 @@ static func _morning_evening(p: Pen) -> void:
 	var big := r + 20.0
 	p.arrow(arc_points(c, big, big, -118.0, -238.0, 0.0, 80), ORG)
 	p.arrow(arc_points(c, big, big, 62.0, -12.0, 0.0, 80), ORG)
-	for y in [c.y - r, c.y + r]:
+	for y: float in [c.y - r, c.y + r]:
 		p.ellipse(Vector2(c.x, y), 6.5, 6.5, PAPER)
 		p.ring(Vector2(c.x, y), 6.5, 6.5, OUT, 2.0)
 	p.horizon_sun(Vector2(c.x, c.y - r - 38.0), false)   # evening: the sun goes down
@@ -185,13 +210,19 @@ static func _sea_breeze(p: Pen) -> void:
 	var sea_bottom := Color8(44, 116, 196)
 	p.fill_by(rect_points(Rect2(0, surf, 226, DESIGN.y - surf)),
 		func(v: Vector2) -> Color: return sea_top.lerp(sea_bottom, clampf((v.y - surf) / (DESIGN.y - surf), 0.0, 1.0)))
-	for wave in [Vector2(26, 204), Vector2(84, 214), Vector2(140, 203), Vector2(190, 216), Vector2(52, 230), Vector2(120, 238), Vector2(176, 242)]:
+	for wave: Vector2 in [Vector2(26, 204), Vector2(84, 214), Vector2(140, 203), Vector2(190, 216), Vector2(52, 230), Vector2(120, 238), Vector2(176, 242)]:
 		p.line(arc_points(wave, 12, 5, 200, 340, 0.0, 14), Color(1, 1, 1, 0.86), 2.4)
-	p.fill(PackedVector2Array([Vector2(226, surf), Vector2(236, surf - 6), Vector2(260, surf - 8), Vector2(DESIGN.x, surf - 8),
-		Vector2(DESIGN.x, DESIGN.y), Vector2(226, DESIGN.y)]), SAND)
-	p.fill(PackedVector2Array([Vector2(226, surf), Vector2(236, surf - 6), Vector2(260, surf - 8), Vector2(DESIGN.x, surf - 8),
-		Vector2(DESIGN.x, surf + 2), Vector2(260, surf + 2), Vector2(236, surf + 4)]), GRASS)
-	p.line(PackedVector2Array([Vector2(236, surf - 6), Vector2(260, surf - 8), Vector2(DESIGN.x - 9, surf - 8)]), GRASSL, 2.2)
+	# The land's top edge: the sand under it, a strip of grass along it, a light line on the grass.
+	var shore := PackedVector2Array([Vector2(226, surf), Vector2(236, surf - 6), Vector2(260, surf - 8), Vector2(DESIGN.x, surf - 8)])
+	var sand := shore.duplicate()
+	sand.append_array([Vector2(DESIGN.x, DESIGN.y), Vector2(226, DESIGN.y)])
+	p.fill(sand, SAND)
+	var grass := shore.duplicate()
+	grass.append_array([Vector2(DESIGN.x, surf + 2), Vector2(260, surf + 2), Vector2(236, surf + 4)])
+	p.fill(grass, GRASS)
+	var edge := shore.slice(1)
+	edge[edge.size() - 1] = Vector2(DESIGN.x - INSET, surf - 8)
+	p.line(edge, GRASSL, 2.2)
 	# The house and the tree on the land.
 	var h := Vector2(332, surf - 8)
 	p.round_rect(Rect2(h.x - 24, h.y - 30, 48, 30), 3, Color8(255, 238, 205), OUT, 2.0)
@@ -202,7 +233,7 @@ static func _sea_breeze(p: Pen) -> void:
 	p.round_rect(Rect2(h.x + 10, h.y - 24, 9, 9), 1.5, Color8(160, 210, 255), OUT, 1.5)
 	var tree := 392.0
 	p.fill(rect_points(Rect2(tree - 2.5, surf - 28, 5, 20)), Color8(120, 80, 50))
-	for leaf in [Vector3(0, -40, 15), Vector3(-10, -30, 12), Vector3(10, -30, 12)]:
+	for leaf: Vector3 in [Vector3(0, -40, 15), Vector3(-10, -30, 12), Vector3(10, -30, 12)]:
 		var at := Vector2(tree + leaf.x, surf + leaf.y - 6)
 		p.ellipse(at, leaf.z, leaf.z, Color8(60, 170, 60))
 		p.ring(at, leaf.z, leaf.z, GRASSD, 1.5)
@@ -210,7 +241,7 @@ static func _sea_breeze(p: Pen) -> void:
 	var cool := Color8(66, 142, 255)
 	var warm := Color8(240, 110, 56)
 	var aloft := Color8(238, 160, 100)
-	var top := 76.0
+	var high := 76.0
 	var left := 52.0
 	var right := 292.0
 	var bottom := surf - 24.0
@@ -218,9 +249,9 @@ static func _sea_breeze(p: Pen) -> void:
 	# Each side is one arrow from the corner before it, its tip short of the next corner.
 	var gap := 9.0
 	p.arrow(_corner_then(arc_points(Vector2(left + rc, bottom - rc), rc, rc, 180, 90, 0.0, 24), Vector2(right - rc - gap, bottom)), cool)
-	p.arrow(_corner_then(arc_points(Vector2(right - rc, bottom - rc), rc, rc, 90, 0, 0.0, 24), Vector2(right, top + rc + gap)), warm)
-	p.arrow(_corner_then(arc_points(Vector2(right - rc, top + rc), rc, rc, 0, -90, 0.0, 24), Vector2(left + rc + gap, top)), aloft)
-	p.arrow(_corner_then(arc_points(Vector2(left + rc, top + rc), rc, rc, -90, -180, 0.0, 24), Vector2(left, bottom - rc - gap)), cool)
+	p.arrow(_corner_then(arc_points(Vector2(right - rc, bottom - rc), rc, rc, 90, 0, 0.0, 24), Vector2(right, high + rc + gap)), warm)
+	p.arrow(_corner_then(arc_points(Vector2(right - rc, high + rc), rc, rc, 0, -90, 0.0, 24), Vector2(left + rc + gap, high)), aloft)
+	p.arrow(_corner_then(arc_points(Vector2(left + rc, high + rc), rc, rc, -90, -180, 0.0, 24), Vector2(left, bottom - rc - gap)), cool)
 
 
 ## `corner` and then a straight run to `to`.
@@ -240,7 +271,7 @@ static func _river(p: Pen) -> void:
 	for i in 40:
 		var at := Vector2(rng.randf_range(16, DESIGN.x - 16), rng.randf_range(16, DESIGN.y - 20))
 		p.line(PackedVector2Array([at + Vector2(-3, 0), at + Vector2(0, -5), at + Vector2(3, 0)]), Color8(60, 150, 50), 1.6, false)
-	for flower in [[Vector2(40, 60), WHITE], [Vector2(380, 70), Color8(255, 210, 60)], [Vector2(60, 230), Color8(255, 120, 170)],
+	for flower: Array in [[Vector2(40, 60), WHITE], [Vector2(380, 70), Color8(255, 210, 60)], [Vector2(60, 230), Color8(255, 120, 170)],
 			[Vector2(392, 230), WHITE], [Vector2(330, 40), Color8(255, 120, 170)]]:
 		p.ellipse(flower[0], 3, 3, flower[1])
 		p.ellipse(flower[0], 1.2, 1.2, YEL)
@@ -266,10 +297,10 @@ static func _river(p: Pen) -> void:
 	p.ellipse(c, inner + 3.0, inner + 3.0, Color8(214, 184, 110))
 	p.ellipse(c + Vector2(0, -2), inner - 1.0, inner - 1.0, SAND)
 	p.ellipse(c + Vector2(-4, -8), inner - 12.0, inner - 12.0, Color8(250, 228, 160))
-	for dot in [Vector2(-22, -30), Vector2(-8, -34), Vector2(10, -30), Vector2(26, -22), Vector2(-30, -10), Vector2(30, -6),
+	for dot: Vector2 in [Vector2(-22, -30), Vector2(-8, -34), Vector2(10, -30), Vector2(26, -22), Vector2(-30, -10), Vector2(30, -6),
 			Vector2(-14, -18), Vector2(12, -12), Vector2(0, -4)]:
 		p.ellipse(c + dot, 2.2, 2.2, Color8(214, 176, 100))
-	for ripple in [Vector2(200, mid - 12), Vector2(250, mid + 16), Vector2(300, mid - 14), Vector2(330, mid + 14)]:
+	for ripple: Vector2 in [Vector2(200, mid - 12), Vector2(250, mid + 16), Vector2(300, mid - 14), Vector2(330, mid + 14)]:
 		p.line(arc_points(c, ripple.y, ripple.y, ripple.x, ripple.x + 16, 0.0, 8), Color(1, 1, 1, 0.8), 2.0)
 	var fast := PackedVector2Array([c + Vector2(-mid - 14, 62), c + Vector2(-mid - 14, 0)])
 	fast.append_array(arc_points(c, mid + 14, mid + 14, 180, 332, 0.0, 120).slice(1))
@@ -305,7 +336,7 @@ static func round_rect_points(r: Rect2, radius: float, steps := 6) -> PackedVect
 	var out := PackedVector2Array()
 	var corners := [[r.end - Vector2(radius, radius), 0.0], [Vector2(r.position.x + radius, r.end.y - radius), 90.0],
 		[r.position + Vector2(radius, radius), 180.0], [Vector2(r.end.x - radius, r.position.y + radius), 270.0]]
-	for corner in corners:
+	for corner: Array in corners:
 		for i in steps + 1:
 			out.append(corner[0] + Vector2.from_angle(deg_to_rad(corner[1] + 90.0 * i / steps)) * radius)
 	return out
@@ -324,9 +355,10 @@ static func blob(c: Vector2, rx: float, ry: float, seed: int, n := 14, jitter :=
 	return out
 
 
-## An arrow's shape along `path` of shaft `width`: [its outline (one simple polygon: the round
-## tail, the tapering shaft, the head), the shaft's spine, its normals, its half widths].
-static func arrow_shape(path: PackedVector2Array, width: float) -> Array:
+## An arrow's shape along `path` of shaft `width`: {"outline": one simple polygon (the round tail,
+## the tapering shaft, the head), "spine": the shaft's middle line, "normals" and "halves": its
+## normal and half width at each spine point}.
+static func arrow_shape(path: PackedVector2Array, width: float) -> Dictionary:
 	var points := resample(path, 1.5)
 	var head_length := width * ARROW_HEAD_LENGTH
 	# The head's base: on the path, head_length back from the tip along it.
@@ -375,7 +407,7 @@ static func arrow_shape(path: PackedVector2Array, width: float) -> Array:
 		var grown := Geometry2D.offset_polygon(rounded[0], ARROW_ROUND, Geometry2D.JOIN_ROUND)
 		if grown.size() == 1:
 			outline = grown[0]
-	return [outline, spine, normals, halves]
+	return {"outline": outline, "spine": spine, "normals": normals, "halves": halves}
 
 
 ## `path` with its points every `step` (or closer) along it.
@@ -460,7 +492,7 @@ class Pen:
 					ExplainPictures.failed += 1
 					continue
 				var colors := PackedColorArray()
-				for v in piece:
+				for v: Vector2 in piece:
 					colors.append(color_at.call(v))
 				canvas.draw_polygon(piece, colors)
 				if colors[0].a >= 0.99 and _flat(colors):
@@ -469,7 +501,7 @@ class Pen:
 					canvas.draw_polyline(rim, colors[0], 1.0, true)
 
 	func _flat(colors: PackedColorArray) -> bool:
-		for k in colors:
+		for k: Color in colors:
 			if k != colors[0]:
 				return false
 		return true
@@ -494,7 +526,7 @@ class Pen:
 	func line(points: PackedVector2Array, color: Color, width: float, caps := true) -> void:
 		canvas.draw_polyline(points, color, width, true)
 		if caps:
-			for end in [points[0], points[-1]]:
+			for end: Vector2 in [points[0], points[-1]]:
 				fill(ExplainPictures.ellipse_points(end, width / 2.0, width / 2.0, 16), color)
 
 	## The scene's sky: a vertical gradient over the whole panel.
@@ -513,41 +545,46 @@ class Pen:
 
 	func cloud(at: Vector2, scale: float, color: Color) -> void:
 		var puffs := ExplainPictures.ellipse_points(at, 16 * scale, 16 * scale)
-		for puff in [Vector3(16, -6, 13), Vector3(-16, -3, 11), Vector3(30, 2, 9)]:
+		for puff: Vector3 in [Vector3(16, -6, 13), Vector3(-16, -3, 11), Vector3(30, 2, 9)]:
 			var more := ExplainPictures.ellipse_points(at + Vector2(puff.x, puff.y) * scale, puff.z * scale, puff.z * scale)
 			puffs = Geometry2D.merge_polygons(puffs, more)[0]
 		fill(puffs, color)
 
 	## A soft glow: stacked translucent circles, strongest in the middle.
 	func glow(c: Vector2, r: float, color: Color, strength: float) -> void:
-		for i in range(14, 0, -1):
-			var t := i / 14.0
-			fill(ExplainPictures.ellipse_points(c, r * t, r * t), Color(color, (strength * pow(1.0 - t, 1.2) / 3.0 + 8.0) / 255.0))
+		var n := ExplainPictures.GLOW_LAYERS
+		for i in range(n, 0, -1):
+			var t := float(i) / n
+			var alpha := strength * pow(1.0 - t, ExplainPictures.GLOW_FALL) / ExplainPictures.GLOW_SPREAD + ExplainPictures.GLOW_FLOOR
+			fill(ExplainPictures.ellipse_points(c, r * t, r * t), Color(color, alpha / 255.0))
 
 	## A soft shadow under a round thing: stacked translucent circles growing outwards.
 	func soft_shadow(c: Vector2, r: float, alpha: float) -> void:
-		for i in 6:
-			var rr := r * (1.08 - 0.03 * i)
-			fill(ExplainPictures.ellipse_points(c, rr, rr), Color(60.0 / 255, 40.0 / 255, 30.0 / 255, alpha / 6.0))
+		var n := ExplainPictures.SHADOW_LAYERS
+		for i in n:
+			var rr := r * (ExplainPictures.SHADOW_OUTER - ExplainPictures.SHADOW_GROW * i)
+			fill(ExplainPictures.ellipse_points(c, rr, rr), Color(ExplainPictures.SHADOW_COLOR, alpha / n))
 
 	## The globe: shadow, an ocean lit from `lit`, its lands, the far side's soft shade, a highlight, the rim.
 	func globe(c: Vector2, r: float, lit: Vector2, lands: Array) -> void:
 		var earth := ExplainPictures.ellipse_points(c, r, r, 64)
 		soft_shadow(c + Vector2(4, 7), r, 0.35)
-		for i in 22:
-			var t := i / 21.0
+		var layers := ExplainPictures.GLOBE_OCEAN_LAYERS
+		for i in layers:
+			var t := float(i) / (layers - 1)
 			var rr := r * (1.2 - 1.05 * t)
-			fill(ExplainPictures.ellipse_points(c + lit * r * 0.55 * t, rr, rr), Color8(30, 104, 208).lerp(Color8(74, 168, 242), t), earth)
-		for land in lands:
+			fill(ExplainPictures.ellipse_points(c + lit * r * 0.55 * t, rr, rr), ExplainPictures.GLOBE_OCEAN_DARK.lerp(ExplainPictures.GLOBE_OCEAN_LIGHT, t), earth)
+		for land: Array in lands:
 			fill(land[0], land[1], earth)
-		for k in 6:
-			var lit_side := ExplainPictures.ellipse_points(c + lit * r * 0.35, r * (0.8 + 0.06 * k), r * (0.8 + 0.06 * k), 64)
-			for shade in Geometry2D.clip_polygons(earth, lit_side):   # (no hole: lit_side reaches past the rim)
-				fill(shade, Color(10.0 / 255, 30.0 / 255, 90.0 / 255, 0.065))
+		for k in ExplainPictures.GLOBE_SHADE_LAYERS:
+			var spare := r * (0.8 + 0.06 * k)
+			var lit_side := ExplainPictures.ellipse_points(c + lit * r * ExplainPictures.GLOBE_LIT_OFFSET, spare, spare, 64)
+			for shade: PackedVector2Array in Geometry2D.clip_polygons(earth, lit_side):   # (no hole: lit_side reaches past the rim)
+				fill(shade, Color(ExplainPictures.GLOBE_SHADE, ExplainPictures.GLOBE_SHADE_ALPHA))
 		var spot := c + Vector2(lit.x * r * 0.62, lit.y * r * 0.66)
 		for k in 2:
 			var hl := PackedVector2Array()
-			for v in ExplainPictures.ellipse_points(Vector2.ZERO, r * (0.16 + 0.04 * k), r * (0.09 + 0.03 * k), 32):
+			for v: Vector2 in ExplainPictures.ellipse_points(Vector2.ZERO, r * (0.16 + 0.04 * k), r * (0.09 + 0.03 * k), 32):
 				hl.append(spot + v.rotated(deg_to_rad(-30.0)))
 			fill(hl, Color(1, 1, 1, 0.3 if k == 0 else 0.15))
 		ring(c, r, r, ExplainPictures.OUT, 3.0)
@@ -561,17 +598,17 @@ class Pen:
 	func arrow(path: PackedVector2Array, color: Color, width := ExplainPictures.ARROW_WIDTH, dark := Color(0, 0, 0, 0), halo := ExplainPictures.PAPER) -> void:
 		if dark.a == 0.0:
 			dark = color.lerp(Color.BLACK, 0.35)
-		var shape := ExplainPictures.arrow_shape(path, width)
-		var outline: PackedVector2Array = shape[0]
-		for part in Geometry2D.offset_polygon(outline, ExplainPictures.ARROW_HALO, Geometry2D.JOIN_ROUND):
+		var shape: Dictionary = ExplainPictures.arrow_shape(path, width)
+		var outline: PackedVector2Array = shape.outline
+		for part: PackedVector2Array in Geometry2D.offset_polygon(outline, ExplainPictures.ARROW_HALO, Geometry2D.JOIN_ROUND):
 			fill(part, halo)
 		fill(outline, dark)
-		for part in Geometry2D.offset_polygon(outline, -ExplainPictures.ARROW_EDGE, Geometry2D.JOIN_ROUND):
+		for part: PackedVector2Array in Geometry2D.offset_polygon(outline, -ExplainPictures.ARROW_EDGE, Geometry2D.JOIN_ROUND):
 			fill(part, color)
 		# The light stripe: the shaft's middle nudged towards the light (top left), fading out at both ends.
-		var spine: PackedVector2Array = shape[1]
-		var normals: PackedVector2Array = shape[2]
-		var halves: PackedFloat32Array = shape[3]
+		var spine: PackedVector2Array = shape.spine
+		var normals: PackedVector2Array = shape.normals
+		var halves: PackedFloat32Array = shape.halves
 		var stripe := PackedVector2Array()
 		var light := Vector2(-0.6, -0.8)
 		var from := int(spine.size() * 0.12)
@@ -617,8 +654,8 @@ class Pen:
 	func moon(c: Vector2) -> void:
 		var disc := ExplainPictures.ellipse_points(c, 11, 11)
 		var bite := ExplainPictures.ellipse_points(c + Vector2(5.5, -3.5), 9.5, 9.5)
-		for part in Geometry2D.clip_polygons(disc, bite):   # (no hole: the bite reaches past the disc)
+		for part: PackedVector2Array in Geometry2D.clip_polygons(disc, bite):   # (no hole: the bite reaches past the disc)
 			fill(part, Color8(255, 236, 150))
 			ring_points(part, Color8(214, 176, 60), 1.4)
-		for star in [Vector3(12, -12, 2.2), Vector3(14, 6, 1.6)]:
+		for star: Vector3 in [Vector3(12, -12, 2.2), Vector3(14, 6, 1.6)]:
 			fill(ExplainPictures.ellipse_points(c + Vector2(star.x, star.y), star.z, star.z, 10), Color8(255, 244, 200))

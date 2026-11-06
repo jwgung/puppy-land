@@ -53,8 +53,10 @@ const MORE_ROOM := 30.0                     # right of the text: the ▼
 const SWAP_S := 0.16
 const SWAP_SCALE := 0.94
 const SWAP_ALPHA := 0.55
-## The explanation picture's card (#73: 384 x 256 UI units, scaled with the UI zoom like every panel).
-const CARD_SIZE := Vector2(384.0, 256.0)
+## The explanation picture's card (#73: 384 x 256 UI units, scaled with the UI zoom like every
+## panel), the pictures' own aspect (ExplainPictures.ASPECT).
+const CARD_WIDTH := 384.0
+const CARD_SIZE := Vector2(CARD_WIDTH, CARD_WIDTH / ExplainPictures.ASPECT)
 ## Room kept between the card and the box or an avoided rect.
 const CARD_GAP := 12.0
 ## The highlight under a term when the theme has none (DialogueLabel's term_highlight).
@@ -71,7 +73,7 @@ var words_face := ""
 ## own words (set_words).
 var picture := ""
 var words_picture := ""
-## Rects in the parent (the view) the card keeps clear of when it can (set before layout()).
+## Rects in the parent (the view) the card keeps clear of when it can (set_card_avoid, before layout()).
 var card_avoid: Array[Rect2] = []
 var card: Control
 ## Portrait pictures swapped in (a new speaker or face; tests: a same-face line swaps nothing).
@@ -315,22 +317,42 @@ func layout(view: Rect2, right: float, margin: float) -> bool:
 	return true
 
 
+## The card keeps clear of these controls (the visible ones, as they stand now): their rects in
+## this box's parent. The screen calls it before each layout().
+func set_card_avoid(controls: Array) -> void:
+	card_avoid.clear()
+	var parent := get_parent() as Control
+	for c: Control in controls:
+		if c == null or not c.is_visible_in_tree():
+			continue
+		var r := c.get_global_rect()
+		card_avoid.append(parent.get_global_transform().affine_inverse() * r if parent != null else r)
+
+
 ## The card's place: the middle of `view`; up when it would come near the box (and its name tag).
 ## Near an avoided rect it moves down below it while it stays above the box, else to its right
-## while it stays in the view (a narrow view: it stays and may overlap).
+## while it stays in the view. A move can bring it onto another avoided rect, so the rects are
+## checked again (a few passes) until none is in the way; a narrow view where no place is clear
+## keeps the last place (it may overlap).
 func _place_card(view: Rect2) -> void:
 	var at := view.get_center() - CARD_SIZE / 2.0
 	var under := position.y + box.position.y - NAME_LIFT - CARD_GAP
 	at.y = minf(at.y, under - CARD_SIZE.y)
-	for avoid in card_avoid:
-		if not Rect2(at, CARD_SIZE).intersects(avoid.grow(CARD_GAP)):
-			continue
-		var below := avoid.end.y + CARD_GAP
-		var right := avoid.end.x + CARD_GAP
-		if below + CARD_SIZE.y <= under:
-			at.y = maxf(at.y, below)
-		elif right + CARD_SIZE.x <= view.end.x - CARD_GAP:
-			at.x = maxf(at.x, right)
+	for pass_index in 4:
+		var moved := false
+		for avoid in card_avoid:
+			if not Rect2(at, CARD_SIZE).intersects(avoid.grow(CARD_GAP)):
+				continue
+			var below := avoid.end.y + CARD_GAP
+			var right := avoid.end.x + CARD_GAP
+			if below + CARD_SIZE.y <= under and below > at.y:
+				at.y = below
+				moved = true
+			elif right + CARD_SIZE.x <= view.end.x - CARD_GAP and right > at.x:
+				at.x = right
+				moved = true
+		if not moved:
+			break
 	at.y = maxf(at.y, view.position.y)
 	card.position = at - position
 	card.size = CARD_SIZE

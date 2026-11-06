@@ -406,7 +406,7 @@ func _open_page(i: int) -> void:
 	if i < pages.size():
 		var entry: Dictionary = pages[i]
 		dialogue.set_speaker(str(entry.get("who", "dugi")), Story.face_or_default(entry.get("face")))
-		dialogue.open(str(entry.get("text", "")), "", ExplainPictures.picture_or_none(entry.get("picture")))
+		dialogue.open(str(entry.get("text", "")), "", Story.page_picture(entry))
 		_layout()
 
 
@@ -958,10 +958,7 @@ func _layout() -> void:
 		skip_button.position = Vector2(view_size.x - skip_button.size.x - DIALOGUE_MARGIN, DIALOGUE_MARGIN)
 	var right := view_size.x - DIALOGUE_MARGIN   # the whole width (2026-10-29 user)
 	if dialogue != null and dialogue.active:
-		dialogue.card_avoid.clear()   # the explanation picture's card keeps clear of the emblem and the skip button
-		for c: Control in [emblem, skip_button]:
-			if c != null and c.visible:
-				dialogue.card_avoid.append(c.get_rect())
+		dialogue.set_card_avoid([emblem, skip_button])   # the explanation picture's card keeps clear of them
 		dialogue.visible = dialogue.layout(Rect2(Vector2.ZERO, view_size), right, DIALOGUE_MARGIN)
 	if riddle != null and riddle.active:
 		riddle.visible = riddle.layout(Rect2(Vector2.ZERO, view_size), right, DIALOGUE_MARGIN)
