@@ -72,8 +72,8 @@ func check_data() -> void:
 		return
 	problems.append_array(ExperimentRegistry.validate(definition))
 	var island := ExperimentRegistry.island_labs("hutton").map(func(d: Dictionary) -> String: return str(d.id))
-	if island != [ID]:
-		problems.append("hutton's labs %s" % str(island))
+	if island.is_empty() or island[0] != ID:
+		problems.append("hutton's labs %s (day-night first)" % str(island))
 	if ExperimentRegistry.load_all().any(func(d: Dictionary) -> bool: return d.id == ID):
 		problems.append("listed with the first island's labs")
 	if not ExperimentRegistry.island_labs("mechanics").is_empty():

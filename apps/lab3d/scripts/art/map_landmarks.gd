@@ -50,6 +50,8 @@ static func add(b: ArtMeshBuilder, id: String, xf: Transform3D) -> float:
 			return _star(b, xf)
 		"day-night":
 			return _globe(b, xf)
+		"shadow-clock":
+			return _shadow_stick(b, xf)
 	_rod(b, xf, Vector3.ZERO, Vector3(0.0, 1.0, 0.0), 0.08, ArtPalette.BLUE)
 	_ball(b, xf, Vector3(0.0, 1.15, 0.0), 0.2, ArtPalette.WHITE)
 	return 1.35
@@ -338,6 +340,22 @@ static func _globe(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	_rod(b, xf, center - axis * 0.62, center + axis * 0.66, 0.035, ArtPalette.STEEL_SHINE)
 	_ball(b, xf, center + axis * 0.68, 0.07, ArtPalette.RED)
 	return 1.9
+
+
+## The shadow yard (#86): a stick with a red ball, its dark shadow along the ground to a flat stone,
+## a little flower bed on the other side and the sun on a curved wire over it.
+static func _shadow_stick(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	_rod(b, xf, Vector3.ZERO, Vector3(0.0, 1.0, 0.0), 0.06, ArtPalette.WOOD)
+	_ball(b, xf, Vector3(0.0, 1.05, 0.0), 0.12, ArtPalette.RED)
+	_box(b, xf, Vector3(-0.45, 0.012, 0.25), Vector3(0.9, 0.025, 0.16), Color("434a86"))
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(-0.95, 0.0, 0.5)), 0.24, 0.22, 0.07, 8, ArtPalette.ROCK)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.6, 0.0, 0.35)), 0.2, 0.2, 0.05, 8, ArtPalette.SOIL)
+	_ball(b, xf, Vector3(0.6, 0.12, 0.35), 0.08, ArtPalette.PINK)
+	var arc := [Vector3(0.75, 0.2, -0.35), Vector3(0.55, 1.1, -0.45), Vector3(0.0, 1.55, -0.5), Vector3(-0.55, 1.1, -0.45), Vector3(-0.75, 0.2, -0.35)]
+	for k in arc.size() - 1:
+		_rod(b, xf, arc[k], arc[k + 1], 0.02, ArtPalette.STEEL_SHINE)
+	_ball(b, xf, Vector3(0.45, 1.25, -0.46), 0.18, ArtPalette.YELLOW)
+	return 1.8
 
 
 # --- helpers ---------------------------------------------------------------------------------
