@@ -232,7 +232,7 @@ static func complete_progress() -> void:
 		ProgressStore.set_mark(ProgressStore.CLUES, spot, true)
 	ProgressStore.save(store)
 	for part in ["prologue", "finale"]:
-		ProgressStore.set_mark(ProgressStore.STORY, part, true)
+		Story.mark_seen(part)
 
 
 func _demo_story(value: String) -> Dictionary:
@@ -245,7 +245,7 @@ func _demo_story(value: String) -> Dictionary:
 	var config := ConfigFile.new()   # a fresh bench store
 	config.save(ProgressStore.path)
 	if kind != "prologue":
-		ProgressStore.set_mark(ProgressStore.STORY, "prologue", true)
+		Story.mark_seen("prologue")
 	var store := {}
 	var full := func(spot: String) -> int:
 		return MissionRound.missions(ExperimentRegistry.find(spot)).get("stages", []).size()

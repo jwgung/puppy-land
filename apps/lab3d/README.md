@@ -44,7 +44,7 @@ apps/lab3d/
   experiments/pulley/                 도르래 실험(장면, PulleyLabModel = 웹 PulleyAdvantageChallenge, PulleyLabDriver = 짐 구동, PulleyProps 소품)
   experiments/manipulation_dev/       조작 확인용 개발 장면(목록에 없음, --experiment=manipulation-dev)
   content/experiments/                실험 정의 JSON(index.json + 실험별 파일: 데이터, 말은 content/locale)
-  content/locale/<언어>/              글(ui.json: 코드의 글, experiments/·story.json: 데이터 파일과 같은 모양의 말)
+  content/locale/<언어>/              글(ui.json: 코드의 글, experiments/·story/: 데이터 파일과 같은 모양의 말)
   assets/characters/                  빵고양이·두기두기·퍼피 glb + 텍스처 아틀라스(소스: art_src/characters/bread_cat.py, dugi.py, puppy.py, Blender 스크립트), 두기두기 대화창 초상화 portraits/(모델 렌더, dugi_portrait.py)
   assets/props/                       털실 공·택배 박스 glb + 텍스처(소스: art_src/props/yarn_ball.py, parcel_box.py)
   assets/ui/                          손 안내의 빵고양이 앞발 그림 guide_paw.png(소스: tools/render_guide_paw.gd, 빵고양이 모델을 게임 재질로 렌더함, 젤리 없음)
@@ -81,7 +81,7 @@ apps/lab3d/
 
 ### 실험 목록
 
-목록 화면 순서는 `content/experiments/index.json`이다. 섬의 배치(구역 id `meadow`·`hill`·`yard`·`pond`·`lookout`과 장소 좌표, 광장, 흙길, 해안, 나무·바위·구름·물결, 광장 쪽을 보지 않는 실험의 방향, 별 조각이 모이는 장소 `lookout`, 밤 지도에서 찾는 순서 `order`)는 `content/islands/mechanics.json`이고 `Island`(`scripts/core/island.gd`)가 읽어 검사한다(2026-11-02, [ADR 0003](../../docs/adr/0003-one-app-one-island-per-field.md)). 지도 홈·타이틀·실험 땅(`LabWorld`)·이야기(`Story`)가 모두 `Island.current()`를 읽는다. 예전에는 `MapIsland`·`LabWorld` 상수와 `content/story.json`의 `order`에 있었다. 옮기기 전후 지도와 실험 땅 12개의 메시는 바이트까지 같다. 문구는 언어 폴더에 있다(아래 "언어").
+목록 화면 순서는 `content/experiments/index.json`이다. 섬의 배치(구역 id `meadow`·`hill`·`yard`·`pond`·`lookout`과 장소 좌표, 광장, 흙길, 해안, 나무·바위·구름·물결, 광장 쪽을 보지 않는 실험의 방향, 별 조각이 모이는 장소 `lookout`, 밤 지도에서 찾는 순서 `order`)는 `content/islands/mechanics.json`이고 `Island`(`scripts/core/island.gd`)가 읽어 검사한다(2026-11-02, [ADR 0003](../../docs/adr/0003-one-app-one-island-per-field.md)). 지도 홈·타이틀·실험 땅(`LabWorld`)·이야기(`Story`)가 모두 `Island.current()`를 읽는다. 섬 목록은 `content/islands/index.json`(#69, 2026-11-06: 순서, 배치 파일, `opens_after` = 이 섬의 장소를 모두 끝내면 열림, 결제 상품 `product`)이다. 지금 섬은 진행 파일의 `[map] island`(`Island.current_id()`, 앱은 마지막 섬으로 열린다)이고, 열림은 저장하지 않고 앞 섬의 도장으로 계산한다(`Island.is_open`). 장소 단위 저장(도장·성공 조건·깃발·단서·조각·손 안내)은 실험 id 키라 섬끼리 실험 id가 겹치지 않는다(시험). 섬 단위 저장(첫·끝 이야기, 마지막 장소)은 `ProgressStore.island_key`로 섬 id를 붙이고, 첫 섬(`mechanics`)은 섬이 생기기 전 저장과 같은 맨 키를 쓴다(옮길 것 없음). 예전에는 `MapIsland`·`LabWorld` 상수와 `content/story.json`의 `order`에 있었다. 옮기기 전후 지도와 실험 땅 12개의 메시는 바이트까지 같다. 문구는 언어 폴더에 있다(아래 "언어").
 
 | 실험 (id) | 웹 2D | 보정 방식 | 조건 | 조작 | 관찰값(공식) · 시뮬레이션 | 그래프 | Task |
 |---|---|---|---|---|---|---|---|
@@ -141,7 +141,7 @@ apps/lab3d/
 - **언어별 그림**: 타이틀 로고(`assets/icon/splash.png` 한국어, `splash_en.png` 영어, `splash_banner.py --lang`), 퍼피 깃발 글자(과학섬 / SCIENCE: `puppy.glb` / `puppy_en.glb`, 초상화 `portraits/en/`, `puppy.py --lang`, `puppy_portrait.py --lang`). 부트 스플래시는 언어를 알기 전에 뜨므로 그림 없이 하늘색만 보인다(`boot_splash/show_image=false`; 글 없는 세 얼굴은 빈 제목처럼 보였다, 2026-11-02 사용자 "타이틀에 또 빈칸"). Android 앱 이름은 영어 "Bread Cat Science Island", 한국어 기기는 "빵고양이 과학섬"(`config/name_localized`).
 - **시험**: 시험은 한국어로 돈다(`run_tests.gd`가 `Locale.set_language("ko")`; 사용자가 정한 한국어 문장 그대로를 본다). 영어는 `locale_checks.gd`가 본다: 모든 언어가 기준 언어의 글을 같은 자리에 다 가짐, 각 언어의 `kid.states`가 그 언어의 상태 글을 가리킴, 퍼피의 줄이 그 언어의 과학 낱말(`story.science_words`)을 쓰지 않음, 언어 고르기(저장 > 기기 > 영어).
 - `ui.json`: 코드의 글. 키 → 글(또는 목록·표: 미션 순서 말 `mission.ordinals`, 퍼피가 쓰지 않는 과학 낱말 `story.science_words`, 카드 단위 말 `kid.units`, 품질 이름·설명, 카메라 시점 이름). 코드는 `Locale.t("키")`·`Locale.list`·`Locale.map`으로 읽는다. 실험의 상태 글(`<실험>.status.<상태>`)도 여기 있고, 실험 말 파일의 `kid.states`는 이 글을 키로 쓴다(같은 언어 안에서 맞춘다).
-- `experiments/<id>.json`·`story.json`: 데이터 파일과 같은 모양의 말. 읽을 때 `Locale.overlay`가 제자리에 넣는다(객체는 키마다, 목록은 순서대로). 그 언어에 없는 글은 기준 언어 `en`의 글이다(`ui.json`은 키마다, 말 파일은 `en` 파일 위에 그 언어 파일을 겹쳐서). 글을 키로 쓰는 표(`kid.states`)는 겹치지 않고 그 언어의 것으로 통째로 바꾼다(`Locale.TEXT_KEYED`).
+- `experiments/<id>.json`·`story/<섬>.json`: 데이터 파일과 같은 모양의 말. 읽을 때 `Locale.overlay`가 제자리에 넣는다(객체는 키마다, 목록은 순서대로). 그 언어에 없는 글은 기준 언어 `en`의 글이다(`ui.json`은 키마다, 말 파일은 `en` 파일 위에 그 언어 파일을 겹쳐서). 글을 키로 쓰는 표(`kid.states`)는 겹치지 않고 그 언어의 것으로 통째로 바꾼다(`Locale.TEXT_KEYED`).
 - 나누기: `tools/split_text.py`가 한글이 든 글(한글 키를 가진 객체는 통째로)을 말 파일로 옮겼다. 메모 `about`은 데이터 파일에 남는다. 나누기 전후 레지스트리와 이야기가 읽은 정의는 키 순서만 다르고 같다(키 순서를 따르는 코드 없음).
 - 시험 `tests/locale_checks.gd`: 코드가 부르는 키가 모든 언어의 `ui.json`에 있고 안 쓰는 키가 없음, 코드(`scripts`·`experiments`)와 데이터 파일(`content/experiments`·`content/islands`·`content/story.json`)에 한글 글이 없음, overlay가 제자리에 넣음.
 - 남은 것: `content/ai_apps.json`의 앱 이름(뤼튼)은 앱 자신의 이름이라 그대로 둔다. 영어 글은 초안이다(사용자 검토 전). 한글이 아닌 다른 문자(일본어 등)의 폰트는 아직 없다.
@@ -326,7 +326,7 @@ Android 뒤로가기 한 번이 두 번 오는 문제(2026-10-29, SM-X115 Androi
 
 사용자 승인(2026-10-28). 과학섬은 바다 나라 **퍼피랜드**의 한 섬이다. 밤바다를 비춰 배가 길을 잃지 않게 하던 **길잡이 별**이 깨져 조각 11개가 섬의 실험 장소 11곳에 하나씩 떨어졌다. 장소의 도장 3개(그 실험을 다 깸) = 조각 하나를 찾음. 역할은 고정이다: 퍼피 = 탐정(단서: 무엇이 어디에, 과학은 설명하지 않음), 두기두기 = 과학자(이유: 왜), 빵고양이 = 몸으로 함(말하지 않음). 이야기는 그림과 말뿐이다: 실험의 물리·미션·조작·표시 값을 읽지도 바꾸지도 않는다.
 
-- **글**: 첫 이야기 8쪽과 끝 이야기 3쪽(2026-11-01 전 2쪽)과 끝 이야기의 다시 당기기 말(`finale_retry`)은 `content/story.json`(`who`: `dugi`·`puppy`, `face`: 표정(아래 "대화 표정"))과 그 말 `content/locale/<언어>/story.json`(`text`), 퍼피 단서는 실험 JSON마다 `story.clue`(`ExperimentRegistry`가 확인). 모두 사용자가 정한 문장 그대로(시험).
+- **글**: 첫 이야기 8쪽과 끝 이야기 3쪽(2026-11-01 전 2쪽)과 끝 이야기의 다시 당기기 말(`finale_retry`)은 섬마다 `content/story/<섬>.json`(`who`: `dugi`·`puppy`, `face`: 표정(아래 "대화 표정"))과 그 말 `content/locale/<언어>/story/<섬>.json`(`text`), 퍼피 단서는 실험 JSON마다 `story.clue`(`ExperimentRegistry`가 확인). 모두 사용자가 정한 문장 그대로(시험).
 - **저장** (`ProgressStore`, `user://progress.cfg`의 새 구역, 도장 구역과 따로): `[story]` `prologue`·`finale` = true(본 뒤), `[clues]` 장소 = true(단서를 말한 뒤), `[pieces]` 장소 = false(실험에서 찾음, 지도에서 전망대로 날아갈 차례) / true(날아감). 키가 없으면 날아간 것으로 본다: 이야기 전 저장(이미 도장 3개인 장소)은 찾은 조각으로 세고 날아가기는 다시 하지 않는다. 이상한 값은 "안 봄/날아감"으로 읽는다.
 - **켜고 끄기** (`Story.enabled`): 아이의 앱에서만 켠다. 측정·확인 실행(`--progress=bench`, `--auto-drag`, `--auto-release`, `--demo-celebrate`, `--demo-flag`, `--sound=0`)은 끔(첫 이야기·단서·조각·문장 모두 없음, 진행도 쓰지 않음). 화면 찍기는 `--demo-story`(아래)로만 켜고 그때는 `progress-bench.cfg`만 쓴다.
 
@@ -373,7 +373,7 @@ Android 뒤로가기 한 번이 두 번 오는 문제(2026-10-29, SM-X115 Androi
 
 사용자 요청 "대화시 표정을 좀 더 다양하게". 초상화가 말하는 사람마다 한 장이던 것을 줄마다 표정 다섯 가지로 바꿨다(`Story.FACES`): `explain` 설명(두기두기 막대 가리키기, 퍼피 손 들어 알려 주기, 기본), `happy` 기쁨, `surprised` 놀람, `thinking` 생각, `worried` 걱정. 그림은 `assets/characters/portraits/{dugi,puppy}_<표정>.webp`(아트 디렉션 12절).
 
-- **표시**: 콘텐츠의 줄마다 표정 이름을 붙인다(옆 필드라 글 시험은 그대로): `story.json` 쪽마다 `face`, `map_wrong_face`; 실험 JSON `story.clue_face`·`story.map_clue_face`, `predict.question_face`, `kid.say_face`, `kid.intro_face`, `missions.stages[i].say_face`. 예측 이유는 코드가 정한다: 맞히면 `happy`, 틀리면 `thinking`(`Story.REASON_FACE`, 틀려도 실패가 아님). 붙이지 않은 줄은 `explain`.
+- **표시**: 콘텐츠의 줄마다 표정 이름을 붙인다(옆 필드라 글 시험은 그대로): `story/<섬>.json` 쪽마다 `face`, `map_wrong_face`; 실험 JSON `story.clue_face`·`story.map_clue_face`, `predict.question_face`, `kid.say_face`, `kid.intro_face`, `missions.stages[i].say_face`. 예측 이유는 코드가 정한다: 맞히면 `happy`, 틀리면 `thinking`(`Story.REASON_FACE`, 틀려도 실패가 아님). 붙이지 않은 줄은 `explain`.
 - **대화창**(`DialogueBox.set_speaker(who, face)`, `open(words, face)`): 같은 사람·같은 표정이면 아무것도 바꾸지 않는다(다시 튀지 않음). 표정이 바뀌면 그림만 0.16초 동안 0.94배·반투명에서 제자리로 부드럽게 들어온다(그리기만, 상자·초상화의 자리와 크기는 그대로). 한 줄 안에서는 바뀌지 않는다.
 - **역할**(2026-10-29 사용자): 퍼피는 단서(어디서 무엇을)와 이야기만 말하고 과학은 설명하지 않는다. 과학 설명은 두기두기다. 퍼피 단서 셋을 바꿨다(공 떨어뜨리기·용수철은 2026-10-29 조각 게임에서 다시 바꿈, 아래 "조각 꺼내기 게임"): 공 떨어뜨리기 "조각이 탑 위에 걸렸어! 공을 떨어뜨려서 맞혀 보자.", 용수철 "용수철이 조각을 물고 있어. 공을 당겼다 놓아 보자!", 흔들 추 "조각이 매달린 공 근처에 있어. 공을 흔들어 보자!". 첫 이야기 3쪽은 "밤마다 길잡이 별이 바다를 비춰 줘. 배들이 길을 잃지 않게!"(전에는 "그래서 배들이…"). 퍼피의 모든 줄(단서·수수께끼·"여긴 아닌 것 같아"·이야기 쪽)에 과학 설명 낱말(`Story.science_words()`: 천천히·빨리·중력·힘이·그래서·때문·끌어당·밀어내 등)이 없는지 시험한다(두기두기 줄은 예외).
 

@@ -11,8 +11,7 @@ var tree: SceneTree
 var expect: Callable
 const HANGUL := "[\\x{AC00}-\\x{D7A3}]"
 ## Data files with their words apart (their `about` notes may be in Korean: they are not shown).
-const DATA_DIRS := ["res://content/experiments", "res://content/islands"]
-const DATA_FILES := ["res://content/story.json"]
+const DATA_DIRS := ["res://content/story", "res://content/experiments", "res://content/islands"]
 
 
 func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:
@@ -136,7 +135,7 @@ func check_no_words_in_code() -> void:
 ## The data files hold no words (their `about` notes aside): the words are in content/locale.
 func check_no_words_in_data() -> void:
 	var hangul := RegEx.create_from_string(HANGUL)
-	var files: Array = DATA_FILES.duplicate()
+	var files: Array = []
 	for dir in DATA_DIRS:
 		for name in DirAccess.get_files_at(dir):
 			if name.ends_with(".json"):
@@ -157,7 +156,7 @@ func check_no_words_in_data() -> void:
 			found.append(path)
 	for file in files:
 		walk.call(walk, JSON.parse_string(FileAccess.get_file_as_string(file)), file)
-	expect.call(found.is_empty() and files.size() > 12, "locale: no words in the data files (content/experiments, content/islands, content/story.json)",
+	expect.call(found.is_empty() and files.size() > 12, "locale: no words in the data files (content/experiments, content/islands, content/story)",
 		", ".join(found.slice(0, 8)) if not found.is_empty() else "%d files" % files.size())
 
 
@@ -195,10 +194,11 @@ static func _paths(value: Variant, path: String, out: Dictionary) -> void:
 
 static func _words_files(code: String) -> Array:
 	var root := Locale.ROOT.path_join(code)
-	var out := ["story.json"]
-	for name in DirAccess.get_files_at(root.path_join("experiments")):
-		if name.ends_with(".json"):
-			out.append("experiments".path_join(name))
+	var out := []
+	for dir in ["experiments", "story"]:
+		for name in DirAccess.get_files_at(root.path_join(dir)):
+			if name.ends_with(".json"):
+				out.append(dir.path_join(name))
 	out.sort()
 	return out
 

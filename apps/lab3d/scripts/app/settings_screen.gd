@@ -268,6 +268,7 @@ func restart() -> void:
 	if not restart_confirm.visible:
 		return
 	ProgressStore.reset_all()
+	Island.forget_current()   # the saved island went with the progress: the first island again
 	ExperimentScreen.reset_tips_shown()
 	show_restart_confirm(false)
 	# After this input pass: the tap came through the scroller's replay (DragScroll), and changing the

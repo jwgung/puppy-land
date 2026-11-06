@@ -37,8 +37,14 @@ const PIECES := "pieces"
 ## The hand guides already shown (a lab id, or "map" for the map's tap): the first guide comes once.
 const GUIDES := "guides"
 ## The map (2026-10-29): [map] last_spot = the spot id the trio last walked to (they stand there when
-## the map opens again; none: the square).
+## the map opens again; none: the square), per island (island_key); island = the island in use
+## (#69: the app opens on it; Island.current_id).
 const MAP := "map"
+## The islands (#69, 2026-11-06): the spot-level sections above are keyed by experiment id (no
+## experiment is on two islands); the island-level keys (the story's prologue / finale, the map's
+## last spot) carry the island id. The first island keeps the bare keys, so a save from before the
+## islands reads as its own and nothing is moved.
+const FIRST_ISLAND := "mechanics"
 
 
 static func load() -> Dictionary:
@@ -160,24 +166,42 @@ static func clear_section(section: String) -> void:
 		config.save(path)
 
 
-## The spot the trio last walked to on the map ("" when none: they stand on the square).
-static func last_spot() -> String:
-	var value: Variant = _read().get_value(MAP, "last_spot", "")
+## The key of an island-level save: the bare key for the first island, "<island>.<key>" for another.
+static func island_key(island: String, key: String) -> String:
+	return key if island == FIRST_ISLAND else "%s.%s" % [island, key]
+
+
+## The spot the trio last walked to on `island`'s map ("" when none: they stand on the square).
+static func last_spot(island: String) -> String:
+	var value: Variant = _read().get_value(MAP, island_key(island, "last_spot"), "")
 	return value if value is String else ""
 
 
-static func set_last_spot(id: String) -> void:
+static func set_last_spot(island: String, id: String) -> void:
 	var config := _read()
+	var key := island_key(island, "last_spot")
 	if id == "":
-		if config.has_section_key(MAP, "last_spot"):
-			config.erase_section_key(MAP, "last_spot")
+		if config.has_section_key(MAP, key):
+			config.erase_section_key(MAP, key)
 	else:
-		config.set_value(MAP, "last_spot", id)
+		config.set_value(MAP, key, id)
+	config.save(path)
+
+
+## The island the child was on ("" when none is saved: Island takes the first).
+static func current_island() -> String:
+	var value: Variant = _read().get_value(MAP, "island", "")
+	return value if value is String else ""
+
+
+static func set_current_island(island: String) -> void:
+	var config := _read()
+	config.set_value(MAP, "island", island)
 	config.save(path)
 
 
 ## 처음부터 다시 하기 (settings, confirmed): every section of the store in use is gone — the stamps,
-## the cleared runs, the flags, the story (prologue, clues, pieces, finale) and the map's last spot.
+## the cleared runs, the flags, the story (prologue, clues, pieces, finale), the map's last spots and the island in use.
 ## Only the file at `path` (the bench or test store in measurements and tests). The sound and the
 ## other settings live in user://settings.cfg and stay.
 static func reset_all() -> void:

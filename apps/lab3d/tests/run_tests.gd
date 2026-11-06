@@ -112,6 +112,10 @@
 ##    lines and their bubble; Dugi's bridge, the strip's pulse, the reason after the first line, every
 ##    question answered by stage 1; the orbit shown 2.5x faster with the model's numbers; the play yard
 ##    spread out; the pulley rope on the wheels' rims.
+## 22b. the islands (tests/island_list_checks.gd, #69 2026-11-06): content/islands/index.json (mechanics
+##    first), the island in use saved and opened again, an island open when every spot of the one before
+##    is complete, the island-level saves keyed by island (an old save is the first island's), no
+##    experiment on two islands, the island's story file.
 ## 23c. UI polish (tests/polish_checks.gd, 2026-10-29): 자세히's header (닫기) stays above the scrolled
 ##    note; a vertical drag from a button, check box or slider scrolls the settings and the note
 ##    (DragScroll) and presses nothing; check boxes instead of switches; 처음부터 다시 하기 asks first and
@@ -299,6 +303,11 @@ func _run() -> void:
 	_expect(home != null and home.can_instantiate(), "island home checks compile", "")
 	if home != null and home.can_instantiate():
 		await home.new(self, _expect).run()
+	print("== the islands (#69: the list, the island in use, opening after the one before, island-level saves) ==")
+	var islands: GDScript = load("res://tests/island_list_checks.gd")
+	_expect(islands != null and islands.can_instantiate(), "island list checks compile", "")
+	if islands != null and islands.can_instantiate():
+		await islands.new(self, _expect).run()
 	print("== game G3: the slingshot (pull = angle / speed, big readout, no path, formula stamp) ==")
 	var slingshot: GDScript = load("res://tests/slingshot_checks.gd")
 	_expect(slingshot != null and slingshot.can_instantiate(), "slingshot checks compile", "")

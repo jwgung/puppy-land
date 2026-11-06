@@ -4,11 +4,15 @@
 ## the coast, the decoration, which way a lab looks when not towards the square, the spot where the
 ## star pieces gather and the order the spots are found in. The words are not here.
 ##
-## There is one island now (the mechanics island, content/islands/mechanics.json); `current()` is it.
+## The islands are listed in content/islands/index.json (#69, 2026-11-06): in order, each with its
+## layout file, the island it opens after (every spot of that one complete, computed from the stamps:
+## nothing is saved for it) and its product (ADR 0005). `current()` is the island in use: the one
+## saved in the progress ([map] island), else the first.
 class_name Island
 extends RefCounted
 
-const CURRENT_PATH := "res://content/islands/mechanics.json"
+const ROOT := "res://content/islands"
+const INDEX_PATH := "res://content/islands/index.json"
 const GROUNDS := ["meadow", "hill", "yard", "pond"]
 
 ## Zone id -> {ground, look (the lab ground's look; default the ground), at [x, z], radius or
@@ -29,19 +33,95 @@ var far_clouds: Array = []   # [angle deg, distance, height, size]
 var sea_waves: Array = []    # [angle deg, distance, size]
 var lab_facing: Dictionary = {}   # experiment id -> map angle deg of the lab's front
 var lookout := ""
+## The island's id in the list ("" for an island read straight from data).
+var id := ""
 var order: Array = []
 ## What is wrong with the file ("" when nothing): tests read it.
 var problem := ""
 
-static var _current: Island = null
+## The list's entries [{id, file, opens_after, product}] (read once; tests may set their own).
+static var _index: Array = []
+## The islands read so far, by id.
+static var _islands: Dictionary = {}
+## The island in use ("" until first asked: then read from the progress once, not per frame).
+static var _current_id := ""
+
+
+## The list's entries, in order (the file's, or the tests' list).
+static func index() -> Array:
+	if _index.is_empty():
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(INDEX_PATH))
+		var islands: Variant = parsed.get("islands") if parsed is Dictionary else null
+		_index = (islands as Array).filter(func(e: Variant) -> bool: return e is Dictionary and e.get("id") is String) \
+				if islands is Array else []
+		if _index.is_empty():
+			push_error("Island: no islands in %s" % INDEX_PATH)
+	return _index
+
+
+## Tests: lay out their own list (an empty one: the file's again). The islands are read again.
+static func use_index(entries: Array) -> void:
+	_index = entries.duplicate(true)
+	_islands = {}
+	_current_id = ""
+
+
+## The island ids, in the list's order.
+static func ids() -> Array:
+	return index().map(func(e: Dictionary) -> String: return str(e.id))
+
+
+## The list's entry of `island_id` ({} when it is not an island).
+static func entry(island_id: String) -> Dictionary:
+	for e in index():
+		if e.id == island_id:
+			return e
+	return {}
+
+
+## The island `island_id` (read once; an unknown id reads as an island with a problem).
+static func by_id(island_id: String) -> Island:
+	if not _islands.has(island_id):
+		var path := ROOT.path_join(str(entry(island_id).get("file", "")))
+		var island := load_file(path) if entry(island_id).has("file") else from_data({})
+		island.id = island_id
+		if island.problem != "":
+			push_error("Island %s (%s): %s" % [island_id, path, island.problem])
+		_islands[island_id] = island
+	return _islands[island_id]
+
+
+## The island in use: the one saved in the progress when it is in the list, else the first.
+static func current_id() -> String:
+	if _current_id == "":
+		var saved := ProgressStore.current_island()
+		var all := ids()
+		_current_id = saved if saved in all else (str(all[0]) if not all.is_empty() else "")
+	return _current_id
 
 
 static func current() -> Island:
-	if _current == null:
-		_current = load_file(CURRENT_PATH)
-		if _current.problem != "":
-			push_error("Island %s: %s" % [CURRENT_PATH, _current.problem])
-	return _current
+	return by_id(current_id())
+
+
+## The child goes to `island_id`: saved, so the app opens there next time.
+static func set_current(island_id: String) -> void:
+	_current_id = island_id
+	ProgressStore.set_current_island(island_id)
+
+
+## The island in use is read from the progress again on the next use (tests, a reset progress).
+static func forget_current() -> void:
+	_current_id = ""
+
+
+## `island_id` is open: the first island always; another when every spot of the island it opens
+## after is complete. An unknown island never is.
+static func is_open(island_id: String, progress: Dictionary) -> bool:
+	if entry(island_id).is_empty():
+		return false
+	var after := str(entry(island_id).get("opens_after", ""))
+	return after == "" or by_id(after).complete(progress)
 
 
 static func load_file(path: String) -> Island:
@@ -79,6 +159,18 @@ func spots() -> Array:
 		for spot in zones[zone].spots:
 			out.append(spot[0])
 	return out
+
+
+## Every spot's stages are stamped (its piece found; an old save counts too).
+func complete(progress: Dictionary) -> bool:
+	return found(progress).size() == spots().size()
+
+
+## The spots whose every stage is stamped.
+func found(progress: Dictionary) -> Array:
+	return spots().filter(func(spot: String) -> bool:
+		var stages: Array = MissionRound.missions(ExperimentRegistry.find(spot)).get("stages", [])
+		return not stages.is_empty() and ProgressStore.stamps(progress, spot) >= stages.size())
 
 
 ## The lab ground's look of `zone`: its `look`, else its ground.
