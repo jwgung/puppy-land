@@ -222,6 +222,100 @@ static func _star(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	return 2.55
 
 
+# --- the island's features (#72: the hutton island; MapIsland and LabWorld place them) ------------
+
+## The volcano's cone profile [share of the radius, share of the height] from the foot (sunk under
+## the ground) to the crater's rim, then down inside the crater.
+const VOLCANO_RINGS := [[1.0, 0.0], [0.8, 0.3], [0.58, 0.6], [0.38, 0.88], [0.28, 1.0], [0.19, 0.84]]
+const VOLCANO_SIDES := 14
+const VOLCANO_JITTER := 0.07         # share of the radius the slope vertices move (facets)
+
+
+## An asleep volcano at `xf` (origin = the ground at its middle): a faceted cone `radius` m round and
+## `height` m high whose foot ring sits `sink` m under the origin (into the ground round it), brown
+## slopes darker towards the rim, a dark crater and a thin wisp of smoke. Returns the rim's height.
+static func volcano(b: ArtMeshBuilder, xf: Transform3D, radius: float, height: float, sink: float) -> float:
+	var rings: Array = []
+	for k in VOLCANO_RINGS.size():
+		var row: Array = []
+		for i in VOLCANO_SIDES:
+			var j := 0.0 if k == 0 or k >= VOLCANO_RINGS.size() - 2 else 1.0
+			var theta := TAU * (i + 0.5 * j * MapIsland._hash(i, k, 11)) / VOLCANO_SIDES
+			var r: float = radius * float(VOLCANO_RINGS[k][0]) * (1.0 + j * VOLCANO_JITTER * MapIsland._hash(i, k, 12))
+			var y: float = -sink if k == 0 else height * float(VOLCANO_RINGS[k][1]) * (1.0 + j * 0.05 * MapIsland._hash(i, k, 13))
+			row.append(xf * Vector3(r * cos(theta), y, r * sin(theta)))
+		rings.append(row)
+	var top := xf * Vector3(0.0, height, 0.0)
+	var up := xf.basis * Vector3.UP
+	for k in rings.size() - 1:
+		var inside := k == rings.size() - 2   # the rim down into the crater
+		var color: Color = ArtPalette.CRATER if inside else (ArtPalette.VOLCANO if k < 2 else ArtPalette.VOLCANO_TOP)
+		for i in VOLCANO_SIDES:
+			var n := (i + 1) % VOLCANO_SIDES
+			var q: Array = [rings[k][i], rings[k][n], rings[k + 1][n], rings[k + 1][i]]
+			var mid: Vector3 = (q[0] + q[1] + q[2] + q[3]) * 0.25
+			var out: Vector3 = mid - top
+			out.y = 0.0
+			var facing: Vector3 = (up - out.normalized() * 0.3) if inside else (out.normalized() + up * 0.6)
+			var c := color.lightened(0.04 * (MapIsland._hash(i, k, 14) * 0.5 + 0.5))
+			b.add_triangle([q[0], q[1], q[2]], [c, c, c], facing)
+			b.add_triangle([q[0], q[2], q[3]], [c, c, c], facing)
+	var floor_y := height * 0.78
+	var centre := xf * Vector3(0.0, floor_y, 0.0)
+	var last: Array = rings[rings.size() - 1]
+	for i in VOLCANO_SIDES:
+		var c := ArtPalette.CRATER.darkened(0.15)
+		b.add_triangle([centre, last[i], last[(i + 1) % VOLCANO_SIDES]], [c, c, c], up)
+	var was_flat := b.flat
+	b.flat = false   # soft round puffs (the clouds')
+	b.ao_min = 0.9
+	b.ao_height = 0.3 * radius
+	for puff in [[0.05, 0.3, 0.0, 0.13], [0.12, 0.62, -0.06, 0.1], [0.24, 0.9, -0.12, 0.075]]:
+		b.add_sphere(xf * Transform3D(Basis(), Vector3(puff[0] * radius, height + puff[1] * radius, puff[2] * radius)), puff[3] * radius, 4, 8, ArtPalette.SMOKE)
+	b.flat = was_flat
+	return height
+
+
+## A lighthouse on its rock: a red and white striped tower, a white gallery, the yellow lamp and a
+## red roof. Returns its height above xf.
+static func lighthouse(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.ao_min = 0.8
+	b.ao_height = 0.3
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, -0.2, 0.0)), 0.58, 0.48, 0.42, 8, ArtPalette.ROCK)
+	var bands := 4
+	var tower := 1.5
+	for k in bands:
+		var t0 := float(k) / bands
+		var t1 := float(k + 1) / bands
+		var r0 := lerpf(0.33, 0.24, t0)
+		var r1 := lerpf(0.33, 0.24, t1)
+		b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, 0.2 + tower * t0, 0.0)), r0, r1, tower / bands, 10,
+			ArtPalette.RED if k % 2 == 0 else ArtPalette.WHITE, false)
+	var deck := 0.2 + tower
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, deck, 0.0)), 0.36, 0.36, 0.08, 10, ArtPalette.WHITE)
+	b.ao_min = 1.0
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, deck + 0.08, 0.0)), 0.2, 0.2, 0.26, 8, ArtPalette.YELLOW, false)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, deck + 0.34, 0.0)), 0.3, 0.0, 0.32, 10, ArtPalette.RED)
+	return deck + 0.66
+
+
+## The sundial on the square: a stone drum with a cream dial, twelve hour marks and a yellow
+## pointer (the gnomon) along the dial's north-south line. Returns its height above xf.
+static func sundial(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.ao_min = 0.8
+	b.ao_height = 0.3
+	b.add_cylinder(xf, 0.34, 0.3, 0.45, 10, ArtPalette.ROCK)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, 0.45, 0.0)), 0.55, 0.55, 0.08, 16, ArtPalette.ROCK, true, ArtPalette.PLATE)
+	b.ao_min = 1.0
+	for h in 12:
+		var a := TAU * h / 12.0
+		var size := Vector3(0.12, 0.02, 0.04) if h % 3 == 0 else Vector3(0.07, 0.02, 0.03)
+		b.add_rounded_box(xf * Transform3D(Basis(Vector3.UP, -a), Vector3(0.44 * cos(a), 0.535, 0.44 * sin(a))), size, 0.0, 0, ArtPalette.TRUNK)
+	# The gnomon: a thin wedge from the dial's middle, rising towards -z.
+	_wedge(b, xf * Transform3D(Basis(Vector3.UP, PI * 0.5), Vector3(0.0, 0.53, -0.12)), Vector2(0.3, 0.025), 0.36, ArtPalette.YELLOW, ArtPalette.YELLOW_TOP)
+	return 0.9
+
+
 # --- helpers ---------------------------------------------------------------------------------
 
 ## A plain box: a bevel (108 triangles instead of 12) does not show at the map's distance.

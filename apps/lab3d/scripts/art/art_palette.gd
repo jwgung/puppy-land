@@ -29,6 +29,14 @@ const MEADOW := Color("7ad957")       # the meadow's lighter grass
 const POND := Color("4cb5f2")         # the pond's water
 const PLAZA := Color("eedfb8")        # the cat's home square
 const PLATE := Color("fbf4e2")        # the round stage under a spot's landmark
+# The hutton island's own ground and landforms (#72)
+const VALLEY := Color("9fce55")       # the valley's drier grass
+const VOLCANO := Color("a0704f")      # the volcano's lower slopes
+const VOLCANO_TOP := Color("7e5440")  # its upper slopes and rim
+const CRATER := Color("4c362c")       # inside the crater (asleep: no glow)
+const SMOKE := Color("e4e7ee")        # the thin smoke over the crater
+const RIVER := Color("4cb5f2")        # the river's middle (the pond's water)
+const RIVER_EDGE := Color("8fd3ff")   # its light edges
 
 # Apparatus primaries (one colour per part; the lighter variant is its top face)
 const YELLOW := Color("ffc61a")

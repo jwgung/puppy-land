@@ -1,6 +1,7 @@
 {
-  "about": "섬 목록(#69, 2026-11-06). 순서대로 islands: id, file(같은 곳의 섬 배치 파일 이름), opens_after(이 섬의 장소를 모두 끝내면 열린다, 없으면 처음부터 열림), product(결제 상품 id, ADR 0005, 없으면 결제 없음. 아직 아무도 읽지 않는다: 결제는 #77). 첫 섬은 mechanics다: 섬이 생기기 전 저장의 섬 단위 키(첫·끝 이야기, 마지막 장소)는 첫 섬의 것이다(ProgressStore.FIRST_ISLAND). 지금 섬은 진행 파일의 [map] island(Island.current_id).",
+  "about": "섬 목록(#69, 2026-11-06). 순서대로 islands: id, file(같은 곳의 섬 배치 파일 이름), opens_after(이 섬의 장소를 모두 끝내면 열린다, 없으면 처음부터 열림), product(결제 상품 id, ADR 0005, 없으면 결제 없음. 아직 아무도 읽지 않는다: 결제는 #77). 첫 섬은 mechanics다: 섬이 생기기 전 저장의 섬 단위 키(첫·끝 이야기, 마지막 장소)는 첫 섬의 것이다(ProgressStore.FIRST_ISLAND). 지금 섬은 진행 파일의 [map] island(Island.current_id). 장소가 아직 모두 실험이 아닌 섬(hutton, #72)은 앞 섬을 끝내도 열리지 않는다(Island.playable).",
   "islands": [
-    {"id": "mechanics", "file": "mechanics.json"}
+    {"id": "mechanics", "file": "mechanics.json"},
+    {"id": "hutton", "file": "hutton.json", "opens_after": "mechanics", "product": ""}
   ]
 }

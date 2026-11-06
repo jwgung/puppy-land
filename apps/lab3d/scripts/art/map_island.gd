@@ -2,6 +2,9 @@
 ## irregular coastline with a sand beach in a sea that fills the view, the zones as ground (a
 ## meadow, hills, a sandy play yard, a pond), dirt paths between the spots, each spot's landmark
 ## (MapLandmarks) on a round stage, and trees, rocks, flowers and clouds placed clear of them.
+## The hutton island (#72) adds two grounds and its features (Island.features): a sand `coast` zone
+## running into the beach with a lighthouse, a `valley` whose grass rises to an asleep volcano with a
+## river from its foot to the sea, and the sundial on the square (where its story's pieces gather).
 ## The labs stand on a close-up corner of this same island (LabWorld: its coast, hills, zones,
 ## landmarks and material, seen from the lab's spot).
 ##
@@ -42,6 +45,17 @@ const SKY_RADIUS := 400.0
 const FLOWER_SEED := 27
 const MEADOW_FLOWERS := 22
 const OTHER_FLOWERS := 18
+## The hutton island's features (#72). The valley's ground rises VALLEY_HEIGHT m (a zone's `height`
+## overrides it) to its volcano, falling off over the zone; the river is a ribbon RIVER_WIDTH m wide
+## at its source, RIVER_MOUTH m where it meets the sea; the sundial stands SUNDIAL_AT from the square's
+## middle, behind the three friends' row.
+const VALLEY_HEIGHT := 1.2
+const RIVER_WIDTH := 0.55
+const RIVER_MOUTH := 0.95
+const RIVER_LIFT := 0.04
+const SUNDIAL_AT := Vector2(0.0, -0.85)
+const SUNDIAL_TOP := 0.9             # MapLandmarks.sundial's height
+const LIGHTHOUSE_CLEAR := 0.8        # m round the lighthouse kept clear of decoration
 
 var island: Island
 var zones: Dictionary
@@ -49,10 +63,14 @@ var paths: Array
 var home: Vector2
 var _grid: Array = []               # rings x sectors of Vector3 (the top's vertices)
 var _hills: Array = []              # [centre Vector2, radius, height]
+var _valleys: Array = []            # [top Vector2 (the volcano's middle), reach, height]
 ## Built pieces, for tests: path samples (Vector2), decorations [kind, x, z, radius], per spot.
 var path_points := PackedVector2Array()
 var decorations: Array = []
 var spot_info: Dictionary = {}
+## The river as drawn: its samples (x, z) and the ribbon's width at each (#72).
+var river_points := PackedVector2Array()
+var river_widths := PackedFloat32Array()
 
 
 ## The map of `of` (Island: its zones, paths, square and coast).
@@ -65,6 +83,18 @@ func _init(of: Island) -> void:
 		var spec: Dictionary = zones[zone]
 		if spec.ground == "hill":
 			_hills.append([_v2(spec.at), float(spec.radius), float(spec.height)])
+		elif spec.ground == "valley":   # rising to the volcano (else the zone's middle) from its far side
+			var top := _v2(island.features.volcano.at) if island.features.has("volcano") else _v2(spec.at)
+			_valleys.append([top, top.distance_to(_v2(spec.at)) + float(spec.radius), float(spec.get("height", VALLEY_HEIGHT))])
+	if island.features.has("river"):
+		river_points = path_samples(island.features.river, PATH_STEP)
+		var total := 0.0
+		for k in range(1, river_points.size()):
+			total += river_points[k - 1].distance_to(river_points[k])
+		var along := 0.0
+		for k in river_points.size():
+			along += river_points[k - 1].distance_to(river_points[k]) if k > 0 else 0.0
+			river_widths.append(lerpf(RIVER_WIDTH, RIVER_MOUTH, along / maxf(total, 0.001)))
 	_build_grid()
 
 
@@ -126,8 +156,10 @@ func walk_height(x: float, z: float) -> float:
 	return height_at(x, z) + lift
 
 
-## True when (x, z) is in the pond's water.
+## True when (x, z) is in the pond's or the river's water.
 func water_at(x: float, z: float) -> bool:
+	if not river_points.is_empty() and river_distance(x, z) < 0.0:
+		return true
 	for zone in zones:
 		var spec: Dictionary = zones[zone]
 		if spec.ground == "pond" and Vector2(x, z).distance_to(_v2(spec.at)) < _pond_radius(spec, atan2(z - spec.at[1], x - spec.at[0])):
@@ -148,7 +180,21 @@ func _hill_height(x: float, z: float) -> float:
 		if d < 1.0:
 			var t := clampf((d - HILL_PLATEAU) / (1.0 - HILL_PLATEAU), 0.0, 1.0)
 			h = maxf(h, hill[2] * (1.0 - t * t * (3.0 - 2.0 * t)))
+	for valley in _valleys:   # one long slope, no plateau: the volcano stands on its top
+		var d: float = Vector2(x, z).distance_to(valley[0]) / valley[1]
+		if d < 1.0:
+			h = maxf(h, valley[2] * (1.0 - d * d * (3.0 - 2.0 * d)))
 	return h
+
+
+## How far (x, z) is outside the river's ribbon (m; negative inside it). INF without a river.
+func river_distance(x: float, z: float) -> float:
+	var p := Vector2(x, z)
+	var best := INF
+	for k in river_points.size() - 1:
+		var q := Geometry2D.get_closest_point_to_segment(p, river_points[k], river_points[k + 1])
+		best = minf(best, p.distance_to(q) - river_widths[k] * 0.5)
+	return best
 
 
 ## The height of a grid vertex at (x, z) on ring `ring`: hills inside the grass, the beach
@@ -272,6 +318,7 @@ func build(world: Node3D, spots: Array) -> Dictionary:
 				_add_yard(land, spec)
 			"pond":
 				_add_pond(land, water, spec)
+	_add_features(land)
 	_add_sea(water)
 	_add_paths(land)
 	_add_plaza(land)
@@ -295,10 +342,10 @@ func build(world: Node3D, spots: Array) -> Dictionary:
 ## darker as they turn from the sun so a hill reads from above) and the sand beach ring sloping
 ## into the sea.
 func _add_top(b: ArtMeshBuilder) -> void:
-	var meadows: Array = []
+	var meadows: Array = []   # the zones with their own ground colour (GROUND_COLORS)
 	for zone in zones:
-		if zones[zone].ground == "meadow":
-			meadows.append([_v2(zones[zone].at), float(zones[zone].radius)])
+		if zones[zone].ground in GROUND_COLORS:
+			meadows.append([_v2(zones[zone].at), float(zones[zone].radius), zones[zone].ground])
 	for j in RINGS.size() - 1:
 		for i in SECTORS:
 			var q := _quad(j, i)
@@ -314,14 +361,27 @@ func _top_color(j: int, i: int, k: int, tri: Array, meadows: Array) -> Color:
 	var c: Vector3 = (tri[0] + tri[1] + tri[2]) / 3.0
 	var color := ArtPalette.GRASS_TOP
 	for m in meadows:
-		if Vector2(c.x, c.z).distance_to(m[0]) < m[1]:
-			color = ArtPalette.MEADOW
+		if in_ground(Vector2(c.x, c.z), m[0], m[1], m[2]):
+			color = GROUND_COLORS[m[2]]
 	var n: Vector3 = (tri[1] - tri[0]).cross(tri[2] - tri[0]).normalized()
 	if n.y < 0.0:
 		n = -n
 	var sun := n.dot(ArtKit.SUN_DIR.normalized())   # the face's light, 0.83 when flat
 	color = color.darkened(clampf((0.83 - sun) * 0.8, 0.0, 0.25)) if sun < 0.83 else color.lightened(clampf((sun - 0.83) * 1.5, 0.0, 0.2))
 	return color.lightened(0.05 * (_hash(i, j, 3 + k) * 0.5 + 0.5))
+
+
+## A zone ground's own colour on the map's top (LabWorld's ground too); the others are grass.
+const GROUND_COLORS := {"meadow": ArtPalette.MEADOW, "coast": ArtPalette.SAND, "valley": ArtPalette.VALLEY}
+
+
+## True when `p` is on the ground of a `ground` zone at `center`, `radius` m round: a circle, whose
+## edge wavers on the coast (its sand runs out into the beach).
+static func in_ground(p: Vector2, center: Vector2, radius: float, ground: String) -> bool:
+	if ground == "coast":
+		var t := (p - center).angle()
+		radius *= 1.0 + 0.07 * sin(3.0 * t + 1.0) + 0.04 * sin(5.0 * t + 0.3)
+	return p.distance_to(center) < radius
 
 
 ## The sea's geometry: only the light shallow ring (a wavy outer edge) hugging the coast, the white
@@ -682,8 +742,8 @@ func _ground_blob(b: ArtMeshBuilder, at: Vector3, radius: float) -> void:
 	var ground := ArtPalette.GRASS_TOP.lightened(0.025)
 	for zone in zones:
 		var spec: Dictionary = zones[zone]
-		if spec.ground == "meadow" and Vector2(at.x, at.z).distance_to(_v2(spec.at)) < float(spec.radius):
-			ground = ArtPalette.MEADOW.lightened(0.025)
+		if spec.ground in GROUND_COLORS and in_ground(Vector2(at.x, at.z), _v2(spec.at), float(spec.radius), spec.ground):
+			ground = (GROUND_COLORS[spec.ground] as Color).lightened(0.025)
 	var dark := ground.lerp(ArtPalette.SHADOW, ArtKit.shadow_alpha())
 	var c := at + Vector3(0.0, 0.012, 0.0)
 	var sides := 12
@@ -737,10 +797,93 @@ func clear(x: float, z: float, radius: float) -> bool:
 				var half := Vector2(float(spec.size[0]), float(spec.size[1])) * 0.5 + Vector2.ONE * (0.3 + radius)
 				if absf(x - c.x) < half.x and absf(z - c.y) < half.y:
 					return false
+			"coast":   # the sand: no grass things
+				if in_ground(p, c, float(spec.radius) + 0.3 + radius, "coast"):
+					return false
+	if not _features_clear(p, radius):
+		return false
 	for d in decorations:
 		if p.distance_to(Vector2(d[1], d[2])) < d[3] + radius:
 			return false
 	return true
+
+
+## True when nothing of the island's features (#72) is within `radius` of `p`: the volcano's
+## foot, the river and its banks, the lighthouse (the sundial is on the square, kept clear anyway).
+func _features_clear(p: Vector2, radius: float) -> bool:
+	var f := island.features
+	if f.has("volcano") and p.distance_to(_v2(f.volcano.at)) < float(f.volcano.radius) + 0.4 + radius:
+		return false
+	if not river_points.is_empty() and river_distance(p.x, p.y) < 0.4 + radius:
+		return false
+	if f.has("lighthouse") and p.distance_to(_v2(f.lighthouse)) < LIGHTHOUSE_CLEAR + radius:
+		return false
+	return true
+
+
+# --- the hutton island's features (#72) -------------------------------------------------------
+
+## The volcano, the lighthouse, the sundial and the river, when the island has them (the mechanics
+## island has none: its mesh is what it was).
+func _add_features(b: ArtMeshBuilder) -> void:
+	var f := island.features
+	if f.has("volcano"):
+		var at := _v2(f.volcano.at)
+		var radius := float(f.volcano.radius)
+		var y := height_at(at.x, at.y)
+		var low := y
+		for i in 16:
+			var p := at + Vector2.from_angle(TAU * i / 16.0) * radius
+			low = minf(low, height_at(p.x, p.y))
+		MapLandmarks.volcano(b, Transform3D(Basis(), Vector3(at.x, y, at.y)), radius, float(f.volcano.height), y - low + 0.25)
+	if f.has("lighthouse"):
+		var at := _v2(f.lighthouse)
+		MapLandmarks.lighthouse(b, Transform3D(Basis(), Vector3(at.x, height_at(at.x, at.y), at.y)))
+	if f.get("sundial", false):
+		var info := home_lookout()
+		MapLandmarks.sundial(b, Transform3D(Basis(), info.at - Vector3.UP * float(info.top)))
+	if not river_points.is_empty():
+		_add_river(b)
+
+
+## The river: a ribbon on the ground from its source to under the sea, light at its edges, widening
+## towards the mouth, with a round source.
+func _add_river(b: ArtMeshBuilder) -> void:
+	var n := river_points.size()
+	var rows: Array = []   # [left edge, middle, right edge] per sample
+	for k in n:
+		var p := river_points[k]
+		var t: Vector2 = (river_points[mini(k + 1, n - 1)] - river_points[maxi(k - 1, 0)]).normalized()
+		var side := Vector2(-t.y, t.x) * river_widths[k] * 0.5
+		var row: Array = []
+		for q: Vector2 in [p + side, p, p - side]:
+			row.append(Vector3(q.x, height_at(q.x, q.y) + RIVER_LIFT, q.y))
+		rows.append(row)
+	var edge := ArtPalette.RIVER_EDGE
+	var mid := ArtPalette.RIVER
+	for k in n - 1:
+		var a: Array = rows[k]
+		var c: Array = rows[k + 1]
+		b.add_triangle([a[0], c[0], c[1]], [edge, edge, mid])
+		b.add_triangle([a[0], c[1], a[1]], [edge, mid, mid])
+		b.add_triangle([a[1], c[1], c[2]], [mid, mid, edge])
+		b.add_triangle([a[1], c[2], a[2]], [mid, edge, edge])
+	var source := river_points[0]
+	var disc: Array = []
+	for s in 10:
+		disc.append(source + Vector2.from_angle(TAU * s / 10.0) * river_widths[0] * 0.5)
+	_add_flat(b, source, disc, RIVER_LIFT, mid)
+
+
+## Where the story's pieces gather when the island's lookout is the square (Island.HOME), like a
+## spot's {at, top, stand}: the sundial's top (the square's middle without one), its height over the
+## square, and where the cat stands (the square's middle).
+func home_lookout() -> Dictionary:
+	var dial: bool = island.features.get("sundial", false)
+	var at := home + SUNDIAL_AT if dial else home
+	var top := SUNDIAL_TOP if dial else 0.0
+	return {"at": Vector3(at.x, height_at(at.x, at.y) + PLAZA_LIFT + top, at.y), "top": top,
+		"stand": Vector3(home.x, walk_height(home.x, home.y), home.y)}
 
 
 ## The sky for low views: the backdrop cylinder (haze at its foot, the horizon, fading into SKY)

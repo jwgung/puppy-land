@@ -14,6 +14,8 @@
 ##   --progress=complete  writes the child's progress as all done, once (2026-11-02 user: "apk 다 깬걸로
 ##                       해줘. 보기 어렵다"): every stamp, the story's prologue, clues and finale seen, every
 ##                       piece flown and flag up, so every spot opens on a day map. For looking at the app.
+##   --island=<id>      the map of island <id> for this run only (an island in the making, #72: its spots
+##                       need not be experiments yet): nothing saved, no story, the bench store
 ## plus the experiment screen's --camera / --ctl-<id> / --sidebar / --scroll-to / --auto-release / --auto-drag.
 class_name App
 extends Control
@@ -59,12 +61,16 @@ func _ready() -> void:
 	_set_fps(Quality.cmdline_value("fps") == "1")   # measurements only (no setting since 2026-10-31)
 	Locale.start()   # the child's language (saved), else the device's, else English
 	_definitions = ExperimentRegistry.load_all()
+	var dev_island := dev_island_of(Quality.all_args())
+	if dev_island != "":
+		Island.use_for_run(dev_island)
+		ProgressStore.path = ProgressStore.BENCH_PATH   # never the child's progress or island
 	if Quality.cmdline_value("progress") == "complete":
 		complete_progress()
 	if Quality.cmdline_value("progress") == "bench" or demo_title(Quality.all_args()):
 		ProgressStore.path = ProgressStore.BENCH_PATH   # a measured map never raises the child's flags
 	# The story plays in the child's app only: never in a measurement (bench store, auto runs, silent).
-	Story.enabled = Story.app_may_enable and not Story.measurement_run(Quality.all_args())
+	Story.enabled = Story.app_may_enable and not Story.measurement_run(Quality.all_args()) and dev_island == ""
 	var demo := _demo_story(Quality.cmdline_value("demo-story"))
 
 	var resume := ""
@@ -98,6 +104,15 @@ static func title_on_launch(args: PackedStringArray) -> bool:
 			if arg.begins_with(prefix):
 				return false
 	return not Story.measurement_run(args)
+
+
+## The island of --island=<id> when it is in the list ("" otherwise).
+static func dev_island_of(args: PackedStringArray) -> String:
+	for arg in args:
+		if arg.begins_with("--island="):
+			var id := arg.trim_prefix("--island=")
+			return id if not Island.entry(id).is_empty() else ""
+	return ""
 
 
 static func demo_title(args: PackedStringArray) -> bool:

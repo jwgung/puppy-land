@@ -5,12 +5,14 @@
 ## north coast, the island's lab_facing). Seen from the lab:
 ## - a flat clearing of radius CLEAR at y = 0 in the zone's ground (the meadow's lighter grass,
 ##   the hill's grass, the play yard's sand inside its white picket fence, the pond's grass with
-##   the pond just behind the apparatus, the lookout's railing over the sea), where
+##   the pond just behind the apparatus, the lookout's railing over the sea; on the hutton island
+##   (#72) the coast's sand and the valley's drier grass on its slope), where
 ##   the apparatus, the cast and the old decoration (ArtKit.TREES / ROCKS / FLOWERS) stand;
 ## - beyond it the map's land: its hills (the hill labs stand on top, the far ground falls away),
 ##   zone ground, the pond, the yard fence, the other zones' landmarks (MapLandmarks, LANDMARK_SCALE)
 ##   on their stages, trees and rocks, down to the beach and the sea at the map's coast (never
-##   nearer than COAST_MIN);
+##   nearer than COAST_MIN); the island's features (Island.features: the volcano, the river, the
+##   lighthouse, the square's sundial) where the map has them;
 ## - the sea to the horizon (shallows, surf, deep sea fading into haze), a haze band at the horizon
 ##   rising into the sky colour (the clear colour, ArtKit.make_environment) and clouds.
 ## A physics edge gets the coast: `edge_x` (the projectile's "섬 밖으로 날아감" box) puts the shore
@@ -59,7 +61,8 @@ const FENCE_HEIGHT := 0.9
 const FENCE_CLEAR := CLEAR + 1.5     # the own yard's fence never comes nearer
 const RAILING_STEP := 2.0            # m between the lookout railing's posts
 const RAILING_COAST := COAST_MIN + 6.0
-## The zone's look in the lab is the island's (Island.look_of: meadow, hill, yard, pond, lookout). Where a
+## The zone's look in the lab is the island's (Island.look_of: meadow, hill, yard, pond, lookout, coast,
+## valley). Where a
 ## lab looks (map angle of its -z, deg, atan2(z, x)) when not towards the square is the island's
 ## `lab_facing` (the lookout along the north coast: the sea on its right, the island on its left).
 ## Clouds in the lab's sky [angle from the front view deg, distance, height above the sea, size]:
@@ -253,7 +256,7 @@ func ground_color(l: Vector2, s := -1.0) -> Color:
 	if theme == "yard" and (s < CLEAR or Geometry2D.is_point_in_polygon(l, _fence)):
 		return ArtPalette.YARD_SAND
 	if s < CLEAR:
-		return ArtPalette.MEADOW if theme == "meadow" else ArtPalette.GRASS_TOP
+		return MapIsland.GROUND_COLORS.get(theme, ArtPalette.GRASS_TOP)
 	var m := to_map(l)
 	for name in map.zones:
 		var spec: Dictionary = map.zones[name]
@@ -261,6 +264,13 @@ func ground_color(l: Vector2, s := -1.0) -> Color:
 			"meadow":
 				if m.distance_to(_v2(spec.at)) < float(spec.radius):
 					return ArtPalette.MEADOW
+			"coast", "valley":
+				if MapIsland.in_ground(m, _v2(spec.at), float(spec.radius), spec.ground):
+					return MapIsland.GROUND_COLORS[spec.ground]
+				# The coast's sand runs on into the map's beach (wider than the lab's BEACH strip).
+				if spec.ground == "coast" and map.coast_fraction(m.x, m.y) > MapIsland.grass_edge() - 0.04 \
+						and m.distance_to(_v2(spec.at)) < float(spec.radius) * 1.6:
+					return ArtPalette.SAND
 			"yard":
 				var c := _v2(spec.at)
 				if absf(m.x - c.x) < float(spec.size[0]) * 0.5 and absf(m.y - c.y) < float(spec.size[1]) * 0.5:
@@ -301,6 +311,7 @@ func build(parent: Node3D, extra_shadows: Callable = Callable()) -> void:
 	# sea fail the depth test before they are shaded (MapIsland.build).
 	_add_near_decor(b)
 	_add_landmarks(b)
+	_add_features(b)
 	_add_far_trees(b)
 	_add_fences(b)
 	_add_railing(b)
@@ -324,7 +335,8 @@ func build(parent: Node3D, extra_shadows: Callable = Callable()) -> void:
 
 
 ## The lab's own trees, rocks and flowers (ArtKit.TREES / ROCKS / FLOWERS around the centre, as on
-## the old island: ArtKit.island_obstacles keeps the cast clear of them); flowers not in the sand yard.
+## the old island: ArtKit.island_obstacles keeps the cast clear of them); flowers not in the sand yard
+## or on the coast's sand.
 func _add_near_decor(b: ArtMeshBuilder) -> void:
 	for t in ArtKit.TREES:
 		_tree(b, Vector2(_c.x + t[0], _c.y + t[1]), t[2])
@@ -332,7 +344,7 @@ func _add_near_decor(b: ArtMeshBuilder) -> void:
 	b.ao_height = 0.3
 	for r in ArtKit.ROCKS:
 		_rock(b, Vector2(_c.x + r[0], _c.y + r[1]), r[2])
-	if theme == "yard":
+	if theme in ["yard", "coast"]:   # no flowers in the sand
 		return
 	b.ao_min = 1.0
 	for i in ArtKit.FLOWERS.size():
@@ -437,7 +449,9 @@ func _far_clear(at: Vector2, radius: float) -> bool:
 	var s := at.distance_to(_c)
 	if s < CLEAR + radius + 1.0 or s > coast_at((at - _c).angle()) - BEACH - radius:
 		return false
-	if _in_pond(at, radius + 2.0) or ground_color(at) == ArtPalette.YARD_SAND:
+	if _in_pond(at, radius + 2.0) or ground_color(at) in [ArtPalette.YARD_SAND, ArtPalette.SAND]:
+		return false
+	if not map._features_clear(to_map(at), radius / K):
 		return false
 	for f in far_things:
 		if at.distance_to(Vector2(f[1], f[2])) < f[3] + radius:
@@ -457,6 +471,67 @@ func _pond_y(at: Vector2) -> float:
 		if at.distance_to(p[0]) < p[1] + 3.0:
 			return ground_y(p[0]) + 0.08
 	return ground_y(at)
+
+
+## The island's features (#72), LANDMARK_SCALE x where the map has them: the volcano (pushed out
+## of the clearing and the ground's blend for the lab at its foot), the lighthouse and the square's
+## sundial in front of the lab (BEHIND_DEG), and the river on the far ground (not in the clearing).
+func _add_features(b: ArtMeshBuilder) -> void:
+	var f := map.island.features
+	var ahead := func(at: Vector2) -> bool: return absf(Vector2(0.0, -1.0).angle_to(at - _c)) <= deg_to_rad(BEHIND_DEG)
+	if f.has("volcano"):
+		var at := to_lab(_v2(f.volcano.at))
+		var radius := float(f.volcano.radius) * LANDMARK_SCALE
+		var keep := CLEAR + BLEND + radius
+		if at.distance_to(_c) < keep:
+			at = _c + ((at - _c).normalized() if at.distance_to(_c) > 0.01 else Vector2(0.0, -1.0)) * keep
+		if ahead.call(at) or at.distance_to(_c) < CAMERA_REACH + radius:
+			var y := ground_y(at)
+			var low := y
+			for k in 16:
+				low = minf(low, ground_y(at + Vector2.from_angle(TAU * k / 16.0) * radius))
+			MapLandmarks.volcano(b, Transform3D(lab_basis(), Vector3(at.x, y, at.y)), radius, float(f.volcano.height) * LANDMARK_SCALE, y - low + 0.6)
+			far_things.append(["volcano", at.x, at.y, radius])
+	var marks: Array = []
+	if f.has("lighthouse"):
+		marks.append(["lighthouse", to_lab(_v2(f.lighthouse))])
+	if f.get("sundial", false):
+		marks.append(["sundial", to_lab(map.home + MapIsland.SUNDIAL_AT)])
+	for mark in marks:
+		var at: Vector2 = mark[1]
+		if at.distance_to(_c) < CLEAR + 3.0 or at.distance_to(_c) > coast_at((at - _c).angle()) - SHORE_W or not ahead.call(at):
+			continue
+		var xf := Transform3D(lab_basis().scaled(Vector3.ONE * LANDMARK_SCALE), Vector3(at.x, ground_y(at), at.y))
+		if mark[0] == "lighthouse":
+			MapLandmarks.lighthouse(b, xf)
+		else:
+			MapLandmarks.sundial(b, xf)
+		far_things.append([mark[0], at.x, at.y, 2.0])
+	if not map.river_points.is_empty():
+		_add_river(b)
+
+
+## The river (MapIsland's, K x) as a ribbon on the far ground: its runs outside the clearing, down to
+## the sea.
+func _add_river(b: ArtMeshBuilder) -> void:
+	var edge := ArtPalette.RIVER_EDGE
+	var mid := ArtPalette.RIVER
+	var pts := map.river_points
+	var last: Array = []
+	for k in pts.size():
+		var p := to_lab(pts[k])
+		var t: Vector2 = to_lab(pts[mini(k + 1, pts.size() - 1)]) - to_lab(pts[maxi(k - 1, 0)])
+		var side := Vector2(-t.y, t.x).normalized() * map.river_widths[k] * K * 0.5
+		var row: Array = []
+		var shown := p.distance_to(_c) > CLEAR + BLEND * 0.5
+		for q: Vector2 in [p + side, p, p - side]:
+			row.append(Vector3(q.x, ground_y(q) + 0.12, q.y))
+		if shown and not last.is_empty():
+			b.add_triangle([last[0], row[0], row[1]], [edge, edge, mid])
+			b.add_triangle([last[0], row[1], last[1]], [edge, mid, mid])
+			b.add_triangle([last[1], row[1], row[2]], [mid, mid, edge])
+			b.add_triangle([last[1], row[2], last[2]], [mid, edge, edge])
+		last = row if shown else []
 
 
 ## The yards' white picket fences (lab size, FENCE_HEIGHT: posts and one board between them),
