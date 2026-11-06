@@ -13,7 +13,9 @@ const KINDS := ["long_arc", "same_arc", "fall_together", "fall_heavy_first", "li
 	# 2026-10-29: the questions that stage 1 answers (ExperimentScreen: answered by doing the first mission).
 	"throw_low_near", "throw_low_far", "hit_flies", "hit_stop", "spring_reach_full", "spring_reach_short",
 	"push_wait", "push_now", "lever_near_hard", "lever_near_easy", "drum_floats", "drum_sinks",
-	"pulley_one_hard", "pulley_one_easy", "slide_go", "slide_stay"]
+	"pulley_one_hard", "pulley_one_easy", "slide_go", "slide_stay",
+	# #74 (낮과 밤): does the sun move round, or does the Earth turn?
+	"sun_moves", "earth_spins"]
 const STRONG := Color("e2683c")
 const PALE := Color("c9b892")
 const GROUND := Color("8a6a46")
@@ -70,6 +72,8 @@ static func draw(canvas: Control, kind: String) -> void:
 			_pulley_one(canvas, r, kind == "pulley_one_hard")
 		"slide_go", "slide_stay":
 			_slide(canvas, r, kind == "slide_go")
+		"sun_moves", "earth_spins":
+			_day_night(canvas, r, kind == "sun_moves")
 		_:
 			_ground(canvas, r)
 
@@ -453,3 +457,41 @@ static func _slide(canvas: Control, r: Rect2, goes: bool) -> void:
 			canvas.draw_line(back, back - down * 10.0, STRONG, 2.5)
 	else:
 		_still(canvas, at + Vector2(0.0, -12.0), STRONG)
+
+
+## The sun (left) and the Earth (right, its far half dark): the sun goes round the Earth on an
+## orange arc ("sun_moves"), or the Earth turns on the spot, an orange arrow round it ("earth_spins").
+## The one that moves is the choice's; the other stands still.
+static func _day_night(canvas: Control, r: Rect2, sun_moves: bool) -> void:
+	var sun := Vector2(r.position.x + r.size.x * 0.2, r.get_center().y + 4.0)
+	var earth := Vector2(r.position.x + r.size.x * 0.66, r.get_center().y + 4.0)
+	var radius := minf(r.size.y * 0.27, 26.0)
+	for k in 8:   # the sun's rays
+		var a := TAU * k / 8.0
+		var d := Vector2(cos(a), sin(a))
+		canvas.draw_line(sun + d * 15.0, sun + d * 21.0, Color("f2c14e"), 3.0, true)
+	canvas.draw_circle(sun, 12.0, Color("f2c14e"))
+	canvas.draw_circle(earth, radius, WATER)
+	canvas.draw_circle(earth + Vector2(-radius * 0.3, -radius * 0.2), radius * 0.35, Color("4fbf3b"))
+	var night := PackedVector2Array()   # the half away from the sun
+	for k in 17:
+		var a := -PI * 0.5 + PI * k / 16.0
+		night.append(earth + Vector2(cos(a), sin(a)) * radius)
+	canvas.draw_colored_polygon(night, Color(0.1, 0.14, 0.35, 0.55))
+	if sun_moves:
+		var arc := PackedVector2Array()   # over the Earth from the sun's side round to its far side
+		var mid := (sun + earth) * 0.5 + Vector2(r.size.x * 0.12, 0.0)
+		var rx := r.size.x * 0.4
+		for k in 15:
+			var a := PI + PI * 0.92 * k / 14.0
+			arc.append(mid + Vector2(cos(a) * rx, sin(a) * r.size.y * 0.42))
+		canvas.draw_polyline(arc, STRONG, 4.0, true)
+		_arrow(canvas, arc[-2], arc[-1], STRONG, 4.0)
+	else:
+		var ring := PackedVector2Array()   # round the Earth, passing in front left to right
+		var rx := radius + 9.0
+		for k in 23:
+			var a := PI * 0.8 + PI * 1.5 * k / 22.0   # left, the front (below) left to right, round the back
+			ring.append(earth + Vector2(cos(a) * rx, -sin(a) * rx * 0.42 + radius * 0.15))
+		canvas.draw_polyline(ring, STRONG, 4.0, true)
+		_arrow(canvas, ring[-2], ring[-1], STRONG, 4.0)

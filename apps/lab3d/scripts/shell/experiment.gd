@@ -170,6 +170,13 @@ func _restart() -> void:
 		reset_run()
 
 
+## The round's next stage starts from the lab as it is (true), not from a reset run (default: the
+## screen runs "reset" before the next mission, as 다시 does). #74: the 낮과 밤 Earth stays turned where
+## the child left it (noon, then on to midnight), only 다시 turns it back to its start.
+func keeps_run_between_stages() -> bool:
+	return false
+
+
 ## Starts the run over from its conditions (experiments with a restartable run).
 func reset_run() -> void:
 	pass

@@ -613,6 +613,8 @@ func _update_target(announce := true) -> void:
 		var juice := experiment.manipulation_juice(active_id)
 		if juice:
 			juice.wobble()
+	if not rules[active_id].get("marker", true):
+		return   # (#74: the globe's knob turns the Earth; no footprint to show)
 	var markers: Array = _marker_pair(active_id)
 	var marker_xf := _surface.pose(t, MARKER_LIFT)
 	markers[0].global_transform = marker_xf

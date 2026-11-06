@@ -15,5 +15,10 @@
   ],
   "hidden": [
     "manipulation-dev.json"
-  ]
+  ],
+  "islands": {
+    "hutton": [
+      "day-night.json"
+    ]
+  }
 }

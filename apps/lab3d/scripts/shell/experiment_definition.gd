@@ -205,6 +205,7 @@ func manipulation_rules() -> Dictionary:
 			"hold": object.get("hold", false) == true,
 			"guide": str(object.get("guide", "")),
 			"guide_to": str(object.get("guide_to", "")),
+			"marker": object.get("marker", true) != false,
 		}
 	return result
 

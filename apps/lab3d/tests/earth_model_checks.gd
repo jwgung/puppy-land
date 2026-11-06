@@ -1,7 +1,8 @@
 ## The earth labs' base and their first model (#70, 2026-11-06): SunModel against the textbook values
 ## (tests/earth_textbook_values.json: one rotation 24 h, Seoul's noon sun at the solstices and the
 ## equinoxes, the day lengths' order, the upright Earth's same noon sun all year, the shortest shadow at noon
-## pointing north, sunrise in the east), EarthModel's glides and reset, and EarthLab with a stand-in
+## pointing north, sunrise in the east), the sunrise and sunset bands (#74: an hour either side),
+## EarthModel's glides and reset, and EarthLab with a stand-in
 ## lab: status / settled / observations / control_value are what MissionRound judges, the model is
 ## stepped only while it animates, and its knob is picked and dragged through the Manipulator.
 extends RefCounted
@@ -70,6 +71,7 @@ func run() -> void:
 	check_shadow()
 	check_sunrise()
 	check_status()
+	check_edge_band()
 	check_glide_and_reset()
 	await check_lab_round()
 	await check_lab_steps()
@@ -268,6 +270,45 @@ func check_status() -> void:
 	var obs := model.observations()
 	expect.call(seen == want and obs.has("hour") and obs.has("altitude") and obs.has("day_length") and obs.has("noon_altitude"),
 		"earth model: status night / sunrise / day / sunset at 0 / 6 / 12 / 18 h, the observations' numbers", str(seen))
+
+
+## The sunrise and sunset bands (#74, 2026-11-06 user decision: about an hour either side, widened
+## from the 7.5 deg altitude band): on Seoul's solstices and equinox the status is "sunrise" within
+## SunModel.EDGE_HOURS of the minute the sun's centre comes up (found by the minute, not by the
+## model's formula) and not 4 minutes past the band, "sunset" the same round the minute it goes down,
+## never "sunrise" after noon or "sunset" before it.
+func check_edge_band() -> void:
+	var problems := []
+	var edge := SunModel.EDGE_HOURS * 60.0
+	for orbit: float in [0.0, 90.0, 270.0]:
+		var model := _seoul(orbit)
+		var rise := -1
+		var down := -1
+		var was_day := false
+		for minute in MINUTES_PER_DAY:
+			_at_minute(model, minute)
+			if model.is_day() and not was_day and minute > 0:
+				rise = minute
+			if not model.is_day() and was_day:
+				down = minute
+			was_day = model.is_day()
+		for event: Array in [[rise, "sunrise"], [down, "sunset"]]:
+			var at := int(event[0])
+			for offset: float in [-edge + 4.0, 0.0, edge - 4.0]:
+				_at_minute(model, at + int(offset))
+				if model.status() != event[1]:
+					problems.append("orbit %d: %+d min from the %s is %s" % [orbit, int(offset), event[1], model.status()])
+			for offset: float in [-edge - 4.0, edge + 4.0]:
+				_at_minute(model, at + int(offset))
+				if model.status() == event[1]:
+					problems.append("orbit %d: %+d min from the %s is still %s" % [orbit, int(offset), event[1], event[1]])
+		for minute in range(0, MINUTES_PER_DAY, 5):
+			_at_minute(model, minute)
+			if (model.status() == "sunrise" and not model.is_morning()) or (model.status() == "sunset" and model.is_morning()):
+				problems.append("orbit %d: %s at minute %d" % [orbit, model.status(), minute])
+				break
+	expect.call(problems.is_empty(), "earth model: \"sunrise\" / \"sunset\" within %.0f h of the sun coming up / going down (Seoul's solstices and equinox), never on the wrong side of noon" % SunModel.EDGE_HOURS,
+		"; ".join(problems))
 
 
 ## Glides: an input moves at its rate and lands on its target exactly, an angle the short way round

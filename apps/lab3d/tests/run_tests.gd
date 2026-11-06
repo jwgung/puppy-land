@@ -138,7 +138,11 @@
 ##    (tests/earth_textbook_values.json: 24 h per rotation, Seoul's noon sun and day length at the
 ##    solstices and equinoxes, the upright Earth's same noon sun, the shadow shortest at noon pointing
 ##    north, sunrise in the east), EarthModel glides and reset, and EarthLab with a stand-in lab (what
-##    MissionRound reads comes from the model, steps only while it glides, the knob through the Manipulator).
+##    MissionRound reads comes from the model, steps only while it glides, the knob through the Manipulator),
+##    the sunrise / sunset bands (#74: an hour either side).
+## 24a. 낮과 밤 (tests/day_night_checks.gd, #74 2026-11-06): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 1, the bands and the judging of the three stages (the evening's miss),
+##    the spot on the hutton map, the opening lines (the fox first), the hand (one to one) and the piece.
 ## Times are engine fixed steps (60 Hz), independent of rendering FPS.
 extends SceneTree
 
@@ -347,6 +351,11 @@ func _run() -> void:
 	_expect(earth != null and earth.can_instantiate(), "earth model checks compile", "")
 	if earth != null and earth.can_instantiate():
 		await earth.new(self, _expect).run()
+	print("== 낮과 밤 (#74): Hutton Island's first lab, its lines, judging, hand and piece ==")
+	var day_night: GDScript = load("res://tests/day_night_checks.gd")
+	_expect(day_night != null and day_night.can_instantiate(), "day-night checks compile", "")
+	if day_night != null and day_night.can_instantiate():
+		await day_night.new(self, _expect).run()
 	print("== the hand guide (2026-10-30: the gesture on the lab's object, once and after a quiet while; the map's tap) ==")
 	var hand: GDScript = load("res://tests/hand_guide_checks.gd")
 	_expect(hand != null and hand.can_instantiate(), "hand guide checks compile", "")

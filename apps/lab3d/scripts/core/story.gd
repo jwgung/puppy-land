@@ -26,6 +26,9 @@ const SPEAKERS := {
 	# "여우" / "Fox" is a placeholder (ui.json speaker.fox) until the user names it.
 	"fox": ["speaker.fox", "res://assets/characters/portraits/fox_%s.webp"],
 }
+## The island keeper who speaks a spot's first line on Hutton Island (#74: story.keeper, before Puppy's
+## clue). Its name tag is the speaker's (ui.json speaker.fox), never written here.
+const KEEPER := "fox"
 ## The portraits' expressions (2026-10-29 user request "대화시 표정을 좀 더 다양하게"), one picture per
 ## speaker and face (art_src/characters/*_portrait.py). Each line of the content may name its face
 ## (`face`, `say_face`, `clue_face`, `map_clue_face`, `question_face`, `map_wrong_face`); an untagged
@@ -137,6 +140,16 @@ static func should_play_prologue(replay := false) -> bool:
 ## Puppy's clue for a lab ("" when it has none).
 static func clue(definition: Dictionary) -> String:
 	return _story_text(definition, "clue")
+
+
+## The island keeper's line on the spot's first visit, before Puppy's clue ("" when it has none: the
+## mechanics island has no keeper). #74: the fox tells what is wrong at the spot.
+static func keeper(definition: Dictionary) -> String:
+	return _story_text(definition, "keeper")
+
+
+static func keeper_face(definition: Dictionary) -> String:
+	return face_or_default(_story_text(definition, "keeper_face"))
 
 
 ## Puppy's riddle on the night map while this spot is the next to find ("" when it has none).

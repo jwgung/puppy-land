@@ -48,6 +48,8 @@ static func add(b: ArtMeshBuilder, id: String, xf: Transform3D) -> float:
 			return _dock(b, xf)
 		"orbit":
 			return _star(b, xf)
+		"day-night":
+			return _globe(b, xf)
 	_rod(b, xf, Vector3.ZERO, Vector3(0.0, 1.0, 0.0), 0.08, ArtPalette.BLUE)
 	_ball(b, xf, Vector3(0.0, 1.15, 0.0), 0.2, ArtPalette.WHITE)
 	return 1.35
@@ -320,6 +322,22 @@ static func sundial(b: ArtMeshBuilder, xf: Transform3D) -> void:
 # --- helpers ---------------------------------------------------------------------------------
 
 ## A plain box: a bevel (108 triangles instead of 12) does not show at the map's distance.
+## The hutton island's 낮과 밤 (#74, "커다란 지구본이 있는 곳"): a big globe on a wooden stand, its
+## axis a leaning rod with the red north end, green lands on the blue sea.
+static func _globe(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.add_cylinder(xf, 0.42, 0.36, 0.14, 8, ArtPalette.WOOD_GRAIN, true, ArtPalette.WOOD)
+	_rod(b, xf, Vector3(0.0, 0.1, 0.0), Vector3(0.0, 0.62, 0.0), 0.07, ArtPalette.WOOD_GRAIN)
+	var center := Vector3(0.0, 1.15, 0.0)
+	var axis := Vector3(0.0, cos(deg_to_rad(23.44)), sin(deg_to_rad(23.44)))
+	_ball(b, xf, center, 0.5, ArtPalette.BLUE)
+	for land: Array in [[Vector3(0.6, 0.5, 0.62), 0.24], [Vector3(-0.7, 0.2, 0.7), 0.2], [Vector3(0.2, -0.6, 0.8), 0.18], [Vector3(0.9, 0.1, -0.4), 0.2]]:
+		var dir: Vector3 = (land[0] as Vector3).normalized()
+		b.add_sphere(xf * Transform3D(_along(dir).scaled_local(Vector3(1.0, 0.35, 1.0)), center + dir * 0.47), float(land[1]), 3, 6, ArtPalette.GRASS)
+	_rod(b, xf, center - axis * 0.62, center + axis * 0.66, 0.035, ArtPalette.STEEL_SHINE)
+	_ball(b, xf, center + axis * 0.68, 0.07, ArtPalette.RED)
+	return 1.9
+
+
 static func _box(b: ArtMeshBuilder, xf: Transform3D, at: Vector3, size: Vector3, color: Color, top: Variant = null) -> void:
 	b.add_rounded_box(xf * Transform3D(Basis(), at), size, 0.0, 0, color, top)
 
