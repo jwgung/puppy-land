@@ -247,7 +247,7 @@ func _full_store() -> void:
 	ProgressStore.set_mark(ProgressStore.STORY, "finale", true)
 	ProgressStore.set_mark(ProgressStore.CLUES, "spring", true)
 	ProgressStore.set_mark(ProgressStore.PIECES, "projectile", false)
-	ProgressStore.set_last_spot("spring")
+	ProgressStore.set_last_spot(ProgressStore.FIRST_ISLAND, "spring")
 
 
 func _store_text() -> String:
@@ -289,7 +289,7 @@ func check_restart() -> void:
 	var empty: bool = ProgressStore.load().is_empty() and not FileAccess.file_exists(ProgressStore.path) \
 		and ProgressStore.cleared("projectile").is_empty() and ProgressStore.pending_flags().is_empty() \
 		and not Story.prologue_seen() and not Story.finale_seen() and not Story.clue_seen("spring") \
-		and ProgressStore.pending(ProgressStore.PIECES).is_empty() and ProgressStore.last_spot() == ""
+		and ProgressStore.pending(ProgressStore.PIECES).is_empty() and ProgressStore.last_spot(ProgressStore.FIRST_ISLAND) == ""
 	if not empty or restarts[0] != 1:
 		problems.append("다시 하기: empty %s, restarts %d" % [empty, restarts[0]])
 	expect.call(problems.is_empty(), "처음부터 다시 하기: the first tap only asks '정말 처음부터 다시 할까요?'; 아니요 keeps everything; 다시 하기 erases stamps, flags, story, pieces and the last spot",
@@ -408,8 +408,8 @@ func check_walk_group() -> void:
 		for actor: Node3D in [screen.cat, screen.puppy, screen.dugi]:
 			if actor.position.distance_to(group[actor]) > 0.01 or absf(angle_difference(actor.rotation.y, group.facing)) > 0.01:
 				problems.append("%s: %s not in its place facing the landmark" % [id, actor.name])
-		if ProgressStore.last_spot() != id:
-			problems.append("%s: last spot saved as '%s'" % [id, ProgressStore.last_spot()])
+		if ProgressStore.last_spot(ProgressStore.FIRST_ISLAND) != id:
+			problems.append("%s: last spot saved as '%s'" % [id, ProgressStore.last_spot(ProgressStore.FIRST_ISLAND)])
 	if min_apart < MIN_APART:
 		problems.append("two of them came %.2f m close" % min_apart)
 	if max_lag > 2.5:
@@ -506,7 +506,7 @@ func check_rest_spot() -> void:
 					problems.append("%s: two places %.2f m apart" % [spot.id, _flat(places[i]).distance_to(_flat(places[j]))])
 	await _free(screen)
 	# The map opens again (after the lab): the three stand at the saved spot; the first time on the square.
-	ProgressStore.set_last_spot("rotation")
+	ProgressStore.set_last_spot(ProgressStore.FIRST_ISLAND, "rotation")
 	screen = await _home(TABLET)
 	var index: int = screen._spot_index("rotation")
 	var group: Dictionary = screen.group_at(screen._spots[index])
@@ -517,7 +517,7 @@ func check_rest_spot() -> void:
 		problems.append("reopened: rest spot %d" % screen.rest_spot)
 	await tree.process_frame
 	# A spot name over them fades (they stand under the next spot's name in the yard); the others not.
-	ProgressStore.set_last_spot("pulley")
+	ProgressStore.set_last_spot(ProgressStore.FIRST_ISLAND, "pulley")
 	await _free(screen)
 	screen = await _home(TABLET)
 	for i in 3:
@@ -532,7 +532,7 @@ func check_rest_spot() -> void:
 			problems.append("the %s name: over the three %s, alpha %.2f" % [id, over, label.modulate.a])
 	if faded == 0:
 		problems.append("at the pulley no name is over the three (the check saw nothing to fade)")
-	ProgressStore.set_last_spot("rotation")
+	ProgressStore.set_last_spot(ProgressStore.FIRST_ISLAND, "rotation")
 	await _free(screen)
 	screen = await _home(TABLET)
 	index = screen._spot_index("rotation")
@@ -542,7 +542,7 @@ func check_rest_spot() -> void:
 	if screen._route.size() < 2 or screen._route[0].distance_to(_flat(group[screen.cat])) > 0.01:
 		problems.append("the next walk does not start at the rest spot")
 	await _free(screen)
-	ProgressStore.set_last_spot("no-such-spot")
+	ProgressStore.set_last_spot(ProgressStore.FIRST_ISLAND, "no-such-spot")
 	screen = await _home(TABLET)
 	if screen.rest_spot != -1 or screen.cat.position.distance_to(screen.trio_spot(screen.cat)) > 0.01 \
 			or _flat(screen.cat.position).distance_to(Island.current().home) > 0.01:
@@ -589,10 +589,10 @@ func check_story_places() -> void:
 	var problems := []
 	DirAccess.remove_absolute(ProgressStore.path)
 	ProgressStore.set_mark(ProgressStore.STORY, "prologue", true)
-	ProgressStore.set_last_spot("pulley")
+	ProgressStore.set_last_spot(ProgressStore.FIRST_ISLAND, "pulley")
 	var home := await _home(TABLET, true)
 	var story: StoryDirector = home.story
-	if home.rest_spot != -1 or ProgressStore.last_spot() != "" or _flat(home.cat.position).distance_to(Island.current().home) > 0.01:
+	if home.rest_spot != -1 or ProgressStore.last_spot(ProgressStore.FIRST_ISLAND) != "" or _flat(home.cat.position).distance_to(Island.current().home) > 0.01:
 		problems.append("prologue: the three are not on the square")
 	var cat_seen := false
 	for p in Story.pages("prologue").size():
@@ -620,7 +620,7 @@ func check_story_places() -> void:
 	ProgressStore.set_mark(ProgressStore.STORY, "prologue", true)
 	ProgressStore.save({"projectile": 3})
 	ProgressStore.set_mark(ProgressStore.PIECES, "projectile", false)
-	ProgressStore.set_last_spot("projectile")
+	ProgressStore.set_last_spot(ProgressStore.FIRST_ISLAND, "projectile")
 	home = await _home(TABLET, false)
 	story = home.story
 	var places: Array = [home.cat.position, home.puppy.position, home.dugi.position]
@@ -637,7 +637,7 @@ func check_story_places() -> void:
 	for id in Story.spots():
 		store[id] = MissionRound.missions(ExperimentRegistry.find(id)).stages.size()
 	ProgressStore.save(store)
-	ProgressStore.set_last_spot("orbit")
+	ProgressStore.set_last_spot(ProgressStore.FIRST_ISLAND, "orbit")
 	home = await _home(TABLET, false)
 	story = home.story
 	var lift_gap := []

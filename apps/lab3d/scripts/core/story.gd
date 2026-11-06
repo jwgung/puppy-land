@@ -8,15 +8,16 @@
 ## control, runs an action or reads a body (the labs' physics, missions, controls and numbers are
 ## the same with or without it).
 ##
-## This is the story's data and saved state: the words (content/story.json with its words in
-## content/locale/<lang>/story.json, each lab's story.clue),
+## This is the story's data and saved state: the words (the island's content/story/<island>.json with
+## its words in content/locale/<lang>/story/<island>.json, each lab's story.clue),
 ## the marks in the ProgressStore (prologue / finale played, clue told, piece flown) and whether the
 ## story runs at all (`enabled`: App turns it on for the child's app, never for a measurement or a
 ## test that does not ask for it). The map's StoryDirector and the lab screen play it.
 class_name Story
 extends RefCounted
 
-const CONTENT_PATH := "res://content/story.json"
+## The island's story (#69): content/story/<island>.json, its words content/locale/<lang>/story/<island>.json.
+const CONTENT_ROOT := "res://content/story"
 ## Who speaks: [the name tag's Locale key, portrait path pattern (%s = the face)] (DialogueBox.set_speaker).
 const SPEAKERS := {
 	"dugi": ["speaker.dugi", "res://assets/characters/portraits/dugi_%s.webp"],
@@ -53,6 +54,8 @@ static var enabled := false
 ## `enabled` itself).
 static var app_may_enable := true
 static var _content: Dictionary = {}
+## The island whose story `_content` is.
+static var _content_island := ""
 
 
 ## The story's pages: "prologue" or "finale" -> [{who, face, text}, ...] (face optional).
@@ -65,13 +68,21 @@ static func pages(part: String) -> Array:
 ## app_may_enable: a language picked in the settings switched the story off, 2026-11-02.)
 static func forget_loaded() -> void:
 	_content = {}
+	_content_island = ""
+
+
+## The story file of `island`.
+static func content_path(island: String) -> String:
+	return CONTENT_ROOT.path_join("%s.json" % island)
 
 
 static func _load() -> Dictionary:
-	if _content.is_empty():
-		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(CONTENT_PATH))
-		parsed = Locale.overlay(parsed, Locale.words("story.json")) if parsed is Dictionary else null
+	var island := Island.current_id()
+	if _content.is_empty() or _content_island != island:
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(content_path(island)))
+		parsed = Locale.overlay(parsed, Locale.words("story/%s.json" % island)) if parsed is Dictionary else null
 		_content = parsed if parsed is Dictionary else {}
+		_content_island = island
 	return _content
 
 
@@ -194,9 +205,7 @@ static func spots() -> Array:
 
 ## The spots whose piece is found: every stage stamped (an old save counts too).
 static func found(progress: Dictionary) -> Array:
-	return spots().filter(func(id: String) -> bool:
-		var stages: Array = MissionRound.missions(ExperimentRegistry.find(id)).get("stages", [])
-		return not stages.is_empty() and ProgressStore.stamps(progress, id) >= stages.size())
+	return Island.current().found(progress)
 
 
 ## The found pieces already at the lookout (their flight played, or an old save: no flight).
@@ -212,11 +221,21 @@ static func to_fly(progress: Dictionary) -> Array:
 
 
 static func prologue_seen() -> bool:
-	return ProgressStore.mark(ProgressStore.STORY, "prologue")
+	return ProgressStore.mark(ProgressStore.STORY, _part_key("prologue"))
 
 
 static func finale_seen() -> bool:
-	return ProgressStore.mark(ProgressStore.STORY, "finale")
+	return ProgressStore.mark(ProgressStore.STORY, _part_key("finale"))
+
+
+## The island's "prologue" or "finale" was played (once, even if the app closes during it).
+static func mark_seen(part: String) -> void:
+	ProgressStore.set_mark(ProgressStore.STORY, _part_key(part), true)
+
+
+## The save key of the island in use's story part (ProgressStore.island_key).
+static func _part_key(part: String) -> String:
+	return ProgressStore.island_key(Island.current_id(), part)
 
 
 static func clue_seen(id: String) -> bool:

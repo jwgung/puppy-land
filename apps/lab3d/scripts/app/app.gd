@@ -232,7 +232,7 @@ static func complete_progress() -> void:
 		ProgressStore.set_mark(ProgressStore.CLUES, spot, true)
 	ProgressStore.save(store)
 	for part in ["prologue", "finale"]:
-		ProgressStore.set_mark(ProgressStore.STORY, part, true)
+		Story.mark_seen(part)
 
 
 func _demo_story(value: String) -> Dictionary:
@@ -244,8 +244,9 @@ func _demo_story(value: String) -> Dictionary:
 	var id := value.get_slice(":", 1) if ":" in value else ""
 	var config := ConfigFile.new()   # a fresh bench store
 	config.save(ProgressStore.path)
+	Island.forget_current()   # the fresh store's island: the first
 	if kind != "prologue":
-		ProgressStore.set_mark(ProgressStore.STORY, "prologue", true)
+		Story.mark_seen("prologue")
 	var store := {}
 	var full := func(spot: String) -> int:
 		return MissionRound.missions(ExperimentRegistry.find(spot)).get("stages", []).size()

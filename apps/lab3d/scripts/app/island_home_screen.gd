@@ -168,7 +168,7 @@ func _ready() -> void:
 	view.rig.focus_modes = ["three_quarter", "orbit", "front", "top", "side"]   # the flag raise frames the spot from any view
 	_demo_flag()
 	view.two_finger_pan = true   # one finger turns the map; two move it (and pinch zooms)
-	rest_spot = _spot_index(ProgressStore.last_spot())
+	rest_spot = _spot_index(ProgressStore.last_spot(island.id))
 	_place_trio(TRIO_YAW)
 	refresh_progress()
 	_build_map_buttons()
@@ -524,8 +524,8 @@ func reset_trio() -> void:
 ## The three on the square again, and the store forgets the last spot (the prologue starts there).
 func trio_home() -> void:
 	rest_spot = -1
-	if ProgressStore.last_spot() != "":
-		ProgressStore.set_last_spot("")
+	if ProgressStore.last_spot(island.id) != "":
+		ProgressStore.set_last_spot(island.id, "")
 	_place_trio(TRIO_YAW)
 
 
@@ -810,7 +810,7 @@ func _step_walk(delta: float) -> void:
 	if k >= 1.0:
 		_walking = false
 		rest_spot = _walk_spot
-		ProgressStore.set_last_spot(str(spot.id))
+		ProgressStore.set_last_spot(island.id, str(spot.id))
 		for actor: Node3D in [cat, puppy, dugi]:
 			if actor != null:
 				actor.position = group[actor]

@@ -471,7 +471,7 @@ func _on_dialogue_closed() -> void:
 func play_finale() -> void:
 	if cinematic():
 		return
-	ProgressStore.set_mark(ProgressStore.STORY, "finale", true)   # once, even if the app closes during it
+	Story.mark_seen("finale")   # once, even if the app closes during it
 	_begin("finale")
 	_finale_intro()
 
@@ -893,7 +893,7 @@ func _finish() -> void:
 	_cat_hop = {}
 	home.reset_trio()
 	if which == "prologue":
-		ProgressStore.set_mark(ProgressStore.STORY, "prologue", true)
+		Story.mark_seen("prologue")
 		sea.set_lanterns(Story.finale_seen())
 	else:
 		sea.set_lanterns(true)
