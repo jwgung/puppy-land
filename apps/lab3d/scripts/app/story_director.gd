@@ -5,6 +5,8 @@
 ##   11 pieces that land at the 11 spots, the dark sea and the lost boats' lanterns, a sweep over the
 ##   island, then the bread cat on the square as the day comes back. A tap turns the page; 건너뛰기
 ##   skips it all. Afterwards the map is as it was (no piece on it, the day, the child's camera).
+##   Another island's prologue (#75: the hutton island's lines after the voyage) is its words over its
+##   square by day, the camera easing between a few views of it; the map's night comes on the last page.
 ## - a found piece's flight (a round completed in a lab): after the spot's flag rises, a star piece
 ##   flies from the spot to the lookout (전망대) and the corner emblem (StarEmblem) fills a wedge.
 ## - the finale (the 11th piece at the lookout, once): the pieces gather into the whole star, Puppy and
@@ -72,6 +74,8 @@ const RETURN_S := 1.4
 const FIRST_SHOT := {"yaw": 0.0, "pitch": -8.0, "dist": 150.0, "target": Vector3(0.0, 6.0, -55.0)}
 const DIALOGUE_MARGIN := 12.0
 const DIALOGUE_SHARE := 0.8        # of the view width the box may take (the scene stays in view)
+## Another island's prologue (#75): its square seen from these [yaw deg, pitch deg, distance m] in turn.
+const SQUARE_SHOTS := [[15.0, -20.0, 9.0], [-25.0, -24.0, 8.0], [40.0, -30.0, 11.0], [-5.0, -16.0, 7.5]]
 ## The night map's hint: the next spot glints this long after the riddle, a twinkle every period.
 const HINT_DELAY_S := 20.0
 const HINT_PERIOD_S := 2.4
@@ -236,6 +240,8 @@ func say_riddle() -> void:
 	if map_guide != null:
 		map_guide.stop()
 	var spot := ExperimentRegistry.find(next_id)
+	if Story.map_clue(spot) == "":
+		return   # a spot with no riddle (an island in the making, #72)
 	_say(Story.map_clue(spot), Story.map_clue_face(spot))
 	_riddle_open = true
 	riddles_told += 1
@@ -247,6 +253,8 @@ func say_wrong() -> void:
 		return
 	_riddle_due = false
 	_riddle_open = false
+	if Story.wrong_line() == "":
+		return   # an island whose story has no such line yet
 	_say(Story.wrong_line(), Story.wrong_face())
 	wrongs_told += 1
 
@@ -390,8 +398,20 @@ func play_prologue() -> void:
 		return
 	_begin("prologue")
 	home.trio_home()   # the story starts on the square (its last page shows the cat there)
-	_set_camera(FIRST_SHOT)
+	_set_camera(FIRST_SHOT if _first_island() else _square_shot(0, 2.0))
 	_open_page(0)
+
+
+## The story is the first island's (its prologue's star and boats); another island's is words over its square.
+func _first_island() -> bool:
+	return home.island.id == "" or home.island.id == ProgressStore.FIRST_ISLAND
+
+
+## Another island's prologue view `i` of its square (SQUARE_SHOTS), `far` times the distance.
+func _square_shot(i: int, far := 1.0) -> Dictionary:
+	var home_at := Vector3(home.island.home.x, 0.5, home.island.home.y)
+	var s: Array = SQUARE_SHOTS[i % SQUARE_SHOTS.size()]
+	return {"yaw": s[0], "pitch": s[1], "dist": float(s[2]) * far, "target": home_at}
 
 
 ## The page `i` of the current part: its words (if any) and its camera, night and beats.
@@ -411,6 +431,11 @@ func _open_page(i: int) -> void:
 
 
 func _prologue_page(i: int) -> void:
+	if not _first_island():
+		_move(_square_shot(i), 2.2)
+		if i == Story.pages("prologue").size() - 1:
+			_beat(1.2, func() -> void: _night(map_night(), 2.0))
+		return
 	var home_at := Vector3(home.island.home.x, 0.0, home.island.home.y)
 	match i:
 		0:   # the far sea of 퍼피랜드: islands, boats; a slow drift

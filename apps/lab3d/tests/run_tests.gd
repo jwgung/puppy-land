@@ -99,6 +99,10 @@
 ##    child's launch (skipped by measurements, --experiment, --screen, resume), its buttons' ways
 ##    (prologue first time, map later, replay, settings and back), its layout; the dialogue's faces
 ##    per line (files, tags, no re-pop, stable box), Dugi's explanation per stage, Puppy's words.
+## 23a1. the voyage and 섬 고르기 (tests/voyage_checks.gd, #75, 2026-11-06): the voyage due after the
+##    finale once the next island opens (never while it is in the making), its shots, skip, back and
+##    replay, the next island's map and prologue; 섬 고르기 only after a voyage, the cards (locked: lock,
+##    condition, no button), choosing, back, 시작하기 to the island in use; phone and tablet layouts.
 ## 23a2. explanation pictures (tests/explain_picture_checks.gd, #73, 2026-11-06): a line's picture
 ##    field is a known kind (registry, Story.validate), its card shows with that line only, in the
 ##    middle of the view clear of the box and the chips (phone, tablet, zoomed phone), a tap on it turns
@@ -437,6 +441,11 @@ func _run() -> void:
 	_expect(title_checks != null and title_checks.can_instantiate(), "title checks compile", "")
 	if title_checks != null and title_checks.can_instantiate():
 		await title_checks.new(self, _expect).run()
+	print("== the voyage and 섬 고르기 (#75): due rule, shots, skip, replay, the next island's prologue; the cards ==")
+	var voyage: GDScript = load("res://tests/voyage_checks.gd")
+	_expect(voyage != null and voyage.can_instantiate(), "voyage checks compile", "")
+	if voyage != null and voyage.can_instantiate():
+		await voyage.new(self, _expect).run()
 	var faces: GDScript = load("res://tests/faces_checks.gd")
 	_expect(faces != null and faces.can_instantiate(), "faces checks compile", "")
 	if faces != null and faces.can_instantiate():

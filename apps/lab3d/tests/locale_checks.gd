@@ -71,7 +71,7 @@ static func _code(line: String) -> String:
 	return line
 
 
-## Every Locale.t / map / list key named in the code (and the keys named through data: the
+## Every Locale.t / map / list key named in the code (and the keys named through data: the islands' names and fields, the
 ## speakers' names, the free-fall balls' names) is in every language's ui.json, of its kind.
 func check_keys() -> void:
 	var call := RegEx.create_from_string("Locale\\.(t|map|list)\\(\"([^\"]+)\"\\)")
@@ -87,6 +87,9 @@ func check_keys() -> void:
 	var balls: Dictionary = (load("res://experiments/free_fall/free_fall.gd") as GDScript).get_script_constant_map().BALLS
 	for id in balls:
 		named["free-fall.ball." + id] = "t"
+	for id in Island.ids():   # the islands' names and fields (섬 고르기, IslandCards, #75)
+		named["island.%s.name" % id] = "t"
+		named["island.%s.about" % id] = "t"
 	var problems := []
 	var langs := DirAccess.get_directories_at(Locale.ROOT)
 	for code in langs:

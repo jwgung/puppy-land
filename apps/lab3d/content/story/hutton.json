@@ -1,0 +1,25 @@
+{
+  "about": "이야기 \"멈춘 해시계\"(허턴섬, docs/islands/hutton.md·hutton-lines.md 확정 2026-11-06). voyage = 첫 섬(뉴턴섬) 끝 이야기 뒤 배를 타고 허턴섬으로 가는 짧은 3D 장면(VoyageScreen, #75): 쪽마다 who·face·shot(카메라와 배의 자리, Story.VOYAGE_SHOTS: depart 뉴턴섬 바닷가 출발, sea 바다 위, flicker 허턴섬만 어두워졌다 밝아짐, arrive 허턴섬 바닷가 도착·섬지기를 만남). prologue = 그 뒤 허턴섬 지도에서 잇는 첫 이야기(대사 7~18). fox = 섬지기(이름표는 speaker.fox). 말은 content/locale/<언어>/story/hutton.json.",
+  "voyage": [
+    { "who": "dugi", "face": "happy", "shot": "depart" },
+    { "who": "puppy", "face": "happy", "shot": "depart" },
+    { "who": "dugi", "face": "explain", "shot": "depart" },
+    { "who": "puppy", "face": "surprised", "shot": "sea" },
+    { "who": "puppy", "face": "thinking", "shot": "flicker" },
+    { "who": "fox", "face": "worried", "shot": "arrive" }
+  ],
+  "prologue": [
+    { "who": "puppy", "face": "explain" },
+    { "who": "fox", "face": "thinking" },
+    { "who": "fox", "face": "worried" },
+    { "who": "fox", "face": "worried" },
+    { "who": "dugi", "face": "explain" },
+    { "who": "fox", "face": "worried" },
+    { "who": "puppy", "face": "worried" },
+    { "who": "puppy", "face": "thinking" },
+    { "who": "fox", "face": "worried" },
+    { "who": "puppy", "face": "thinking" },
+    { "who": "puppy", "face": "explain" },
+    { "who": "fox", "face": "happy" }
+  ]
+}
