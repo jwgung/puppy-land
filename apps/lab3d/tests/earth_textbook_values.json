@@ -1,0 +1,67 @@
+{
+  "about": "Textbook values the earth labs' models must give (#70, 2026-11-06). tests/earth_model_checks.gd reads every entry but `tilt` (the model's EARTH_TILT is checked against it in the test of the noon altitudes). Each entry names its source and its tolerance. The numbers are the relations taught in school science worked out for Seoul's latitude and the Earth's tilt, not numbers printed in a textbook. The sun model (experiments/earth_lab/sun_model.gd) has a circular orbit, local solar time, no equation of time and a geometric horizon (no refraction): it gives the textbook's angles and relations, not almanac sunrise times (2026-11-06 user decision).",
+  "place": {
+    "name": "Seoul",
+    "latitude": 37.57,
+    "source": "Seoul (city hall about 37°34'N 126°58'E); Hutton Island's stand-in place (docs/islands/hutton.md)"
+  },
+  "tilt": {
+    "deg": 23.44,
+    "source": "IAU obliquity of the ecliptic, J2000.0: 23°26'21\" = 23.439°"
+  },
+  "rotation": {
+    "hours_per_rotation": 24.0,
+    "source": "초등·중학교 과학 교과 내용: 지구는 하루에 한 바퀴 자전한다 (one solar day = 24 h)"
+  },
+  "noon_altitude": {
+    "tolerance_deg": 0.05,
+    "source": "초등·중학교 과학 교과 내용: 태양의 남중 고도 = 90° − 위도 + 적위",
+    "cases": [
+      {"name": "June solstice", "orbit": 90.0, "deg": 75.87},
+      {"name": "December solstice", "orbit": 270.0, "deg": 28.99},
+      {"name": "March equinox", "orbit": 0.0, "deg": 52.43},
+      {"name": "September equinox", "orbit": 180.0, "deg": 52.43}
+    ]
+  },
+  "day_length": {
+    "source": "초등·중학교 과학 교과 내용: 낮의 길이는 여름(하지)에 가장 길고 겨울(동지)에 가장 짧으며 춘분·추분에는 약 12시간이다. Geometric horizon, no almanac precision.",
+    "order": [
+      {"name": "June solstice", "orbit": 90.0},
+      {"name": "March equinox", "orbit": 0.0},
+      {"name": "December solstice", "orbit": 270.0}
+    ],
+    "equinox_hours": 12.0,
+    "equinox_tolerance_hours": 0.25
+  },
+  "upright": {
+    "tilt": 0.0,
+    "noon_altitude": 52.43,
+    "spread_max_deg": 0.01,
+    "day_length_hours": 12.0,
+    "day_length_tolerance_hours": 0.25,
+    "source": "초등·중학교 과학 교과 내용: 자전축이 기울어지지 않으면 태양의 남중 고도와 낮의 길이가 일 년 내내 같아 계절이 생기지 않는다"
+  },
+  "shadow": {
+    "stick": 1.0,
+    "shortest_at_hour": 12.0,
+    "noon_azimuth_deg": 0.0,
+    "azimuth_tolerance_deg": 0.01,
+    "noon_length": [
+      {"name": "June solstice", "orbit": 90.0, "m": 0.2517},
+      {"name": "December solstice", "orbit": 270.0, "m": 1.8048}
+    ],
+    "length_tolerance_m": 0.002,
+    "source": "초등·중학교 과학 교과 내용: 그림자는 해의 반대쪽에 생기고 해가 높을수록 짧다; 북반구에서 한낮의 그림자는 북쪽을 가리킨다. Lengths: 1 m / tan(noon altitude)"
+  },
+  "sunrise": {
+    "east_half_deg": [0.0, 180.0],
+    "equinox_azimuth_deg": 90.0,
+    "equinox_tolerance_deg": 1.5,
+    "solstice_azimuths": [
+      {"name": "June solstice", "orbit": 90.0, "deg": 59.9},
+      {"name": "December solstice", "orbit": 270.0, "deg": 120.1}
+    ],
+    "solstice_tolerance_deg": 1.5,
+    "source": "초등·중학교 과학 교과 내용: 해는 동쪽에서 떠서 서쪽으로 진다. Sunrise azimuth from cos A = sin(declination) / cos(latitude) at the geometric horizon: Seoul about 60° (June) and 120° (December)"
+  }
+}

@@ -125,6 +125,11 @@
 ##    1.1, fixed choices, the long-side floor), on the root (units, the 3D view's pixels, the finger
 ##    radius, the demo's pulls), the choice saved and kept by 처음부터 다시 하기, the settings screen
 ##    zoomed; the layout checks here and in the other files also run at the zoomed phone (PHONE_ZOOMED).
+## 24. earth labs (tests/earth_model_checks.gd, #70 2026-11-06): SunModel against the textbook values
+##    (tests/earth_textbook_values.json: 24 h per rotation, Seoul's noon sun and day length at the
+##    solstices and equinoxes, the upright Earth's same noon sun, the shadow shortest at noon pointing
+##    north, sunrise in the east), EarthModel glides and reset, and EarthLab with a stand-in lab (what
+##    MissionRound reads comes from the model, steps only while it glides, the knob through the Manipulator).
 ## Times are engine fixed steps (60 Hz), independent of rendering FPS.
 extends SceneTree
 
@@ -323,6 +328,11 @@ func _run() -> void:
 	_expect(definition_checks != null and definition_checks.can_instantiate(), "experiment definition checks compile", "")
 	if definition_checks != null and definition_checks.can_instantiate():
 		await definition_checks.new(self, _expect).run()
+	print("== earth labs (#70): the sun model against the textbook values, the EarthLab base ==")
+	var earth: GDScript = load("res://tests/earth_model_checks.gd")
+	_expect(earth != null and earth.can_instantiate(), "earth model checks compile", "")
+	if earth != null and earth.can_instantiate():
+		await earth.new(self, _expect).run()
 	print("== the hand guide (2026-10-30: the gesture on the lab's object, once and after a quiet while; the map's tap) ==")
 	var hand: GDScript = load("res://tests/hand_guide_checks.gd")
 	_expect(hand != null and hand.can_instantiate(), "hand guide checks compile", "")
