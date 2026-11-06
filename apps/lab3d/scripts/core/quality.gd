@@ -123,9 +123,9 @@ static func cmdline_value(key: String) -> String:
 
 
 ## The developer switches (DEV_KEYS: another island's map, a finished progress, the AI question
-## button) are read only outside the Play build (feature "play"): a launch intent cannot open an
+## button, every island open: --islands=open, #75) are read only outside the Play build (feature "play"): a launch intent cannot open an
 ## island, write the child's progress or show the button on a child's device (#72 review).
-const DEV_KEYS := ["island", "progress", "ask"]
+const DEV_KEYS := ["island", "progress", "ask", "islands"]
 
 
 ## Value of the developer switch `--<key>=` (DEV_KEYS) in this build ("" in the Play build).

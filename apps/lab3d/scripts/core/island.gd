@@ -60,6 +60,9 @@ static var _index: Array = []
 static var _islands: Dictionary = {}
 ## The island in use ("" until first asked: then read from the progress once, not per frame).
 static var _current_id := ""
+## Every island of the list is open, in the making or not (the developer switch --islands=open, #75:
+## App sets it for the run, never in the Play build; the voyage demo and tests too).
+static var dev_open := false
 
 
 ## The list's entries, in order (the file's, or the tests' list).
@@ -79,6 +82,11 @@ static func use_index(entries: Array) -> void:
 	_index = entries.duplicate(true)
 	_islands = {}
 	_current_id = ""
+
+
+## The island `island_id` opens after ("" for the first).
+static func opens_after(island_id: String) -> String:
+	return str(entry(island_id).get("opens_after", ""))
 
 
 ## The island ids, in the list's order.
@@ -139,6 +147,8 @@ static func forget_current() -> void:
 ## `island_id` is open when it is playable (every spot an experiment): the first island then always;
 ## another when every spot of the island it opens after is complete. An unknown island never is.
 static func is_open(island_id: String, progress: Dictionary) -> bool:
+	if dev_open and not entry(island_id).is_empty():
+		return true
 	if entry(island_id).is_empty() or not by_id(island_id).playable():
 		return false
 	var after := str(entry(island_id).get("opens_after", ""))

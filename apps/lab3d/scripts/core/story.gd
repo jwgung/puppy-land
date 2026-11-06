@@ -63,10 +63,60 @@ static var _content: Dictionary = {}
 static var _content_island := ""
 
 
-## The story's pages: "prologue" or "finale" -> [{who, face, text, picture}, ...] (face optional;
-## picture optional: an ExplainPictures kind on one of Dugi's pages, #73).
+## The story's pages: "prologue", "finale" or "voyage" -> [{who, face, text, picture, shot}, ...]
+## (face optional; picture optional: an ExplainPictures kind on one of Dugi's pages, #73; shot: a
+## voyage page's camera, VOYAGE_SHOTS).
 static func pages(part: String) -> Array:
 	return _load().get(part, [])
+
+
+## The pages of `island`'s story (the island in use: pages(); another: its file read now).
+static func pages_of(island: String, part: String) -> Array:
+	if island == Island.current_id():
+		return pages(part)
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(content_path(island))) if FileAccess.file_exists(content_path(island)) else null
+	parsed = Locale.overlay(parsed, Locale.words("story/%s.json" % island)) if parsed is Dictionary else null
+	return parsed.get(part, []) if parsed is Dictionary else []
+
+
+# --- the voyage to the next island (#75, 2026-11-06 user-approved: a short 3D scene on a boat) -----
+# An island's story file may hold a "voyage": the trip by boat from the island before it, played once
+# (VoyageScreen) when that island's finale was seen and this one opened, before this island's own
+# prologue on its map; 이야기 다시 보기 on this island plays it again (then the prologue). The island
+# picker (섬 고르기, TitleScreen) shows once a voyage was seen.
+
+## A voyage page's camera and the boat's place on the way (VoyageScreen).
+const VOYAGE_SHOTS := ["depart", "sea", "flicker", "arrive"]
+
+
+## The island `island` has a voyage to it (its story's voyage pages).
+static func has_voyage(island: String) -> bool:
+	return not pages_of(island, "voyage").is_empty()
+
+
+static func voyage_seen(island: String) -> bool:
+	return ProgressStore.mark(ProgressStore.STORY, ProgressStore.island_key(island, "voyage"))
+
+
+static func mark_voyage_seen(island: String) -> void:
+	ProgressStore.set_mark(ProgressStore.STORY, ProgressStore.island_key(island, "voyage"), true)
+
+
+## The island the trio sails to now ("" for none): the island after the one in use, once it is open
+## (Island.is_open) and the finale of the one in use was seen, while its voyage was never played.
+static func voyage_due(progress: Dictionary) -> String:
+	if not enabled or not finale_seen():
+		return ""
+	var from := Island.current_id()
+	for id in Island.ids():
+		if Island.opens_after(id) == from and Island.is_open(id, progress) and not voyage_seen(id) and has_voyage(id):
+			return id
+	return ""
+
+
+## Some voyage was played: the title shows 섬 고르기 (#75: the picker comes after the first voyage).
+static func any_voyage_seen() -> bool:
+	return Island.ids().any(func(id: String) -> bool: return voyage_seen(id))
 
 
 ## The explanation picture a story page shows: its `picture` on Dugi's page, "" on anyone else's
@@ -80,7 +130,7 @@ static func page_picture(entry: Dictionary) -> String:
 ## Dugi's pages (Puppy and the island keepers never explain science). Empty = valid.
 static func validate(content: Dictionary) -> PackedStringArray:
 	var problems := PackedStringArray()
-	for part in ["prologue", "finale"]:
+	for part in ["prologue", "finale", "voyage"]:
 		var entries: Variant = content.get(part, [])
 		if not entries is Array:
 			problems.append("%s must list pages" % part)
@@ -95,6 +145,8 @@ static func validate(content: Dictionary) -> PackedStringArray:
 				problems.append("%s[%d].who must be one of Story.SPEAKERS" % [part, i])
 			if entry.has("face") and not entry.face in FACES:
 				problems.append("%s[%d].face must be one of Story.FACES" % [part, i])
+			if part == "voyage" and not entry.get("shot") in VOYAGE_SHOTS:
+				problems.append("%s[%d].shot must be one of Story.VOYAGE_SHOTS" % [part, i])
 			var bad := ExplainPictures.check(entry, "picture", "%s[%d].picture" % [part, i])
 			problems.append_array(bad)
 			if entry.has("picture") and bad.is_empty() and who != "dugi":
@@ -213,7 +265,7 @@ static func science_words() -> Array:
 ## Every line Puppy says: his story pages, every lab's clue and riddle, the wrong-spot line.
 static func puppy_lines() -> Array:
 	var out := []
-	for part in ["prologue", "finale"]:
+	for part in ["prologue", "finale", "voyage"]:
 		for entry in pages(part):
 			if str(entry.get("who", "")) == "puppy":
 				out.append(str(entry.get("text", "")))

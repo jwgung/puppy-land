@@ -8,12 +8,18 @@
 ## the title is skipped (a measurement, a direct --experiment, the settings' renderer restart, a
 ## --demo-story screenshot). The title only shows; it never touches progress, the story's marks or
 ## an experiment. Its cost is the map's (one island mesh + the sky, no labels, no characters).
+##
+## 섬 고르기 (#75, 2026-11-06 user-approved mock B1): once a voyage to another island was seen
+## (Story.any_voyage_seen) a third small button opens the island cards (IslandCards) over the turning
+## island, the logo and the buttons hidden meanwhile; a card's button emits `island_chosen` (App: that
+## island in use, its map). 시작하기 still goes straight to the island in use (the last one played).
 class_name TitleScreen
 extends Control
 
 signal start_requested
 signal story_requested
 signal settings_requested
+signal island_chosen(island: String)
 
 ## Headless test runs build App without a title unless a check turns it on (like Story.app_may_enable).
 static var app_may_show := true
@@ -48,6 +54,8 @@ var logo: TextureRect
 var start_button: Button
 var story_button: Button
 var settings_button: Button
+var islands_button: Button = null   # 섬 고르기 (only once a voyage was seen)
+var island_cards: IslandCards = null
 var _buttons: VBoxContainer
 var _clock := 0.0
 var _logo_top := 0.0
@@ -111,6 +119,12 @@ func _ready() -> void:
 	story_button.name = "StoryButton"
 	story_button.pressed.connect(story_requested.emit)
 	row.add_child(story_button)
+	if Story.any_voyage_seen():
+		islands_button = Ui.button(Locale.t("title.islands"), "TitleButton", 56)
+		islands_button.name = "IslandsButton"
+		islands_button.add_theme_color_override("font_color", UiTheme.TITLE_RED)
+		islands_button.pressed.connect(show_islands)
+		row.add_child(islands_button)
 	settings_button = Ui.button(Locale.t("common.settings"), "TitleButton", 56)
 	settings_button.name = "SettingsButton"
 	settings_button.custom_minimum_size.x = 110.0
@@ -146,6 +160,32 @@ func _process(delta: float) -> void:
 	logo.position.y = _logo_top - BOB_UNITS * sin(TAU * BOB_HZ * _clock)
 
 
-## The logo's rect and the buttons' rects (tests: inside the screen, no overlap).
+## The logo's rect and the buttons' rects (tests: inside the screen, no overlap; 섬 고르기 last when shown).
 func rects() -> Array[Rect2]:
-	return [logo.get_rect(), start_button.get_global_rect(), story_button.get_global_rect(), settings_button.get_global_rect()]
+	var out: Array[Rect2] = [logo.get_rect(), start_button.get_global_rect(), story_button.get_global_rect(), settings_button.get_global_rect()]
+	if islands_button != null:
+		out.append(islands_button.get_global_rect())
+	return out
+
+
+## 섬 고르기: the island cards over the turning island (the logo and the buttons hide meanwhile).
+func show_islands() -> void:
+	if island_cards != null:
+		return
+	island_cards = IslandCards.new()
+	island_cards.chosen.connect(island_chosen.emit)
+	island_cards.back_requested.connect(hide_islands)
+	add_child(island_cards)
+	logo.visible = false
+	_buttons.visible = false
+
+
+## Back from the cards to the title (← 돌아가기, Android back). True when the cards were open.
+func hide_islands() -> bool:
+	if island_cards == null:
+		return false
+	island_cards.queue_free()
+	island_cards = null
+	logo.visible = true
+	_buttons.visible = true
+	return true

@@ -51,6 +51,15 @@
   "incline-friction.status.left": "Left the slope",
   "incline-friction.status.ready": "Not let go yet",
   "incline-friction.status.sliding": "Sliding",
+  "island.hutton.about": "Land, water and weather",
+  "island.hutton.name": "Hutton Island",
+  "island.mechanics.about": "Forces and motion",
+  "island.mechanics.name": "Newton Island",
+  "islands.again": "Play again",
+  "islands.back": "← Back",
+  "islands.continue": "Continue",
+  "islands.locked": "Opens when every piece of %s is found",
+  "islands.next": "Next island",
   "kid.units": {
     "": ["", ""],
     "m": ["", " meters"],
@@ -179,5 +188,6 @@
     "weigh"
   ],
   "story.skip": "Skip",
+  "title.islands": "Islands",
   "title.start": "Start"
 }
