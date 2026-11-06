@@ -22,6 +22,9 @@ const CONTENT_ROOT := "res://content/story"
 const SPEAKERS := {
 	"dugi": ["speaker.dugi", "res://assets/characters/portraits/dugi_%s.webp"],
 	"puppy": ["speaker.puppy", "res://assets/characters/portraits/puppy_%s.webp"],
+	# The second island's keeper (#71, 2026-11-06 look chosen by the user). The name is not decided: the tag
+	# "여우" / "Fox" is a placeholder (ui.json speaker.fox) until the user names it.
+	"fox": ["speaker.fox", "res://assets/characters/portraits/fox_%s.webp"],
 }
 ## The portraits' expressions (2026-10-29 user request "대화시 표정을 좀 더 다양하게"), one picture per
 ## speaker and face (art_src/characters/*_portrait.py). Each line of the content may name its face

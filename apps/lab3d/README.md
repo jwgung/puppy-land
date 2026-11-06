@@ -45,7 +45,7 @@ apps/lab3d/
   experiments/manipulation_dev/       조작 확인용 개발 장면(목록에 없음, --experiment=manipulation-dev)
   content/experiments/                실험 정의 JSON(index.json + 실험별 파일: 데이터, 말은 content/locale)
   content/locale/<언어>/              글(ui.json: 코드의 글, experiments/·story/: 데이터 파일과 같은 모양의 말)
-  assets/characters/                  빵고양이·두기두기·퍼피 glb + 텍스처 아틀라스(소스: art_src/characters/bread_cat.py, dugi.py, puppy.py, Blender 스크립트), 두기두기 대화창 초상화 portraits/(모델 렌더, dugi_portrait.py)
+  assets/characters/                  빵고양이·두기두기·퍼피·섬지기 여우(둘째 섬 허턴섬, 이름 미정) glb + 텍스처 아틀라스(소스: art_src/characters/bread_cat.py, dugi.py, puppy.py, fox.py, Blender 스크립트), 대화창 초상화 portraits/(모델 렌더, dugi_portrait.py, puppy_portrait.py, fox_portrait.py)
   assets/props/                       털실 공·택배 박스 glb + 텍스처(소스: art_src/props/yarn_ball.py, parcel_box.py)
   assets/ui/                          손 안내의 빵고양이 앞발 그림 guide_paw.png(소스: tools/render_guide_paw.gd, 빵고양이 모델을 게임 재질로 렌더함, 젤리 없음)
   art_src/                            캐릭터·소품 생성 Blender 스크립트(외부 .blend 없음)

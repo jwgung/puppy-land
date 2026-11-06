@@ -3,7 +3,7 @@ generated entirely in Blender Python.
 
 Run (headless):
     blender -b --factory-startup -P apps/lab3d/art_src/characters/fox.py -- \
-        [--variant a|b|c] [--out fox.glb] [--preview fox_preview.png] [--size 768]
+        [--out apps/lab3d/assets/characters/fox.glb] [--preview fox_preview.png] [--size 768]
 
 Same storybook chibi as Puppy and Dugi (same helpers, same single 1024 px atlas, same node/pivot
 conventions, same shared face_kit expressions): a big round head a little wider than the bean body,
@@ -12,16 +12,14 @@ chin and bib, dark "socks" on the paws and feet, a big bushy tail with a cream t
 shy: small bean eyes, a tiny closed smile, soft blush. Standing on its hind legs like Dugi/Puppy,
 arms hanging along the sides.
 
-Variants (the look candidates; they differ in fur tone, tail size, the accessory and the blush):
-  a  orange fur, medium tail, a teal scarf, normal blush
-  b  golden fur, a big fluffy tail, a green leaf on the head (no scarf), strong blush
-  c  soft red-brown fur, a small slim tail, a mustard scarf, light blush
+The look (2026-11-06 user choice among three prototypes, issue #71): orange fur, a big fluffy tail with a
+cream tip, a teal scarf with a knot and two hanging ends. The fox's name is not decided yet.
 
 Blender: +Z up, the fox faces -Y; glTF/Godot: +Y up, faces +Z, left side = +X.
 Node tree (no armature; each origin is its pivot):
     Fox                     (empty, origin on the ground between the feet)
       Body                  (mesh: body, feet, tail, scarf; pivot on the ground)
-        Head                (mesh incl. cheek tufts and the optional leaf, pivot at the neck)
+        Head                (mesh incl. cheek tufts, pivot at the neck)
           EarL / EarR       (mesh, pivot at the ear root)
         ArmL / ArmR         (one-segment mitten arm, pivot at the shoulder)
           HandL / HandR     (empty at the paw centre)
@@ -49,36 +47,19 @@ import face_kit as fk  # noqa: E402  (portrait expressions only)
 TEX = 1024
 PAD = 3
 
-# Palette shared by every variant; VARIANTS overrides the fur tone and the accessory colours.
+# storybook pastel: orange fur, cream face / bib / tail tip, dark brown socks and ear tips, teal scarf
 P = dict(
     fur="#e98b45", fur_shade="#d6783a", ear_tip="#5a3426", cream="#fff4e2", blush="#ff9e9a",
     eye="#2a1a14", nose="#3a2218", mouth="#6b3424", tongue="#ff7f8c", sock="#5a3426",
-    scarf="#4fb0a8", scarf_dark="#37908a", leaf="#7cbf5a", leaf_dark="#5a9a42",
+    scarf="#4fb0a8", scarf_dark="#37908a",
 )
-VARIANTS = {
-    "a": dict(fur="#e98b45", fur_shade="#d6783a", tail=1.0, scarf=("#4fb0a8", "#37908a"), leaf=False, blush=1.0),
-    "b": dict(fur="#f0bb55", fur_shade="#dea743", tail=1.4, scarf=None, leaf=True, blush=1.5),
-    "c": dict(fur="#c97a55", fur_shade="#b66a48", tail=0.8, scarf=("#e8b84a", "#c99a30"), leaf=False, blush=0.6),
-}
-VARIANT = dict(VARIANTS["a"])
-
-
-def set_variant(name):
-    global VARIANT
-    v = VARIANTS[name]
-    VARIANT = dict(v)
-    P["fur"], P["fur_shade"] = v["fur"], v["fur_shade"]
-    if v["scarf"]:
-        P["scarf"], P["scarf_dark"] = v["scarf"]
-
-
 # Atlas layout (pixels, origin bottom-left like Blender UVs)
 R_HEAD = (0, 512, 1024, 1024)
 R_EAR = (0, 256, 256, 512)
 R_TAIL = (256, 256, 512, 512)
 R_BODY = (512, 256, 768, 512)
 SWATCH_ORIGIN = (768, 0)  # 4 x 4 swatches of 64 px
-SWATCHES = ["fur", "cream", "sock", "scarf", "scarf_dark", "leaf", "leaf_dark", "nose"]
+SWATCHES = ["fur", "cream", "sock", "scarf", "scarf_dark", "nose"]
 
 
 def region_uv(rect, u, v):
@@ -153,7 +134,7 @@ def paint_head(face=None):
     blend(img, smooth_fill(qz + 0.16, 0.02) * (dy < 0.4), hexc(P["cream"]))
     paint_volume(img, qx, qz, front, HEAD_R * HEAD_SX, HEAD_R * HEAD_SZ, (0.0, -0.105), (0.085, 0.070),
                  hexc("#fffbf3"), (0.94, 0.84, 0.78))
-    bk = float(face.get("blush", 1.0)) * VARIANT["blush"]
+    bk = float(face.get("blush", 1.0))
     for s in (-1, 1):  # blush ovals on the cream cheeks
         blend(img, smooth_fill(sd_ellipse(qx, qz, s * 0.200, -0.088, 0.040 * bk ** 0.5, 0.024 * bk ** 0.5), 0.012) * front,
               hexc(P["blush"]), min(1.0, 0.7 * bk))
@@ -264,17 +245,6 @@ def make_head(bm):
     for s in (-1, 1):  # cheek ruff: a cream tuft on each side sweeping back
         rot = Matrix.Rotation(s * math.radians(-28), 3, "Z")
         ellipsoid(bm, HEAD_C + Vector((s * 0.322, -0.040, -0.095)), (0.062, 0.050, 0.040), cream, 12, 7, rot)
-    if VARIANT["leaf"]:
-        make_leaf(bm)
-
-
-def make_leaf(bm):
-    """A small leaf resting on the top of the head between the ears, tilted."""
-    leaf, dark = swatch_uv("leaf"), swatch_uv("leaf_dark")
-    top = head_point(Vector((0.0, -0.18, 0.98)))
-    rot = Matrix.Rotation(math.radians(-18), 3, "Z") @ Matrix.Rotation(math.radians(-24), 3, "X")
-    ellipsoid(bm, top + Vector((0.0, -0.01, 0.012)), (0.100, 0.052, 0.014), leaf, 16, 6, rot)
-    ellipsoid(bm, top + Vector((0.098, 0.010, 0.012)), (0.020, 0.012, 0.010), dark, 8, 4, rot)   # the stem
 
 
 ES = 12  # ear ring segments
@@ -296,15 +266,26 @@ def make_ear(bm, side):
 
 
 def make_scarf(bm):
+    """A teal scarf: a ring round the neck that sags a little in front (thinner at the back), a knot
+    at the front left and two ends hanging from it, the longer one a little out."""
     a, b = swatch_uv("scarf"), swatch_uv("scarf_dark")
-    c = Vector((0.0, -0.005, 0.528))
-    n = 20
-    ring = [c + Vector((0.222 * math.sin(2 * math.pi * i / n), -0.200 * math.cos(2 * math.pi * i / n), 0.0)) for i in range(n)]
-    ring.append(ring[0])
-    build_tube(bm, ring, [0.044] * len(ring), 10, lambda u, v: a, up_hint=Vector((0, 0, 1)), cap_start=False, cap_end=False)
-    rot = Matrix.Rotation(math.radians(-10), 3, "Y")   # the hanging end beside the knot
-    ellipsoid(bm, c + Vector((0.075, -0.205, -0.085)), (0.048, 0.022, 0.100), b, 10, 6, rot)
-    ellipsoid(bm, c + Vector((0.040, -0.215, -0.010)), (0.040, 0.030, 0.034), b, 8, 5)
+    c = Vector((0.0, -0.005, 0.532))
+    n = 24
+    ring, radii = [], []
+    for i in range(n):
+        t = 2 * math.pi * i / n
+        front = max(0.0, -math.cos(t))
+        ring.append(c + Vector((0.222 * math.sin(t), -0.200 * math.cos(t), -0.030 * front)))
+        radii.append(0.036 + 0.010 * front)
+    ring.append(ring[0]); radii.append(radii[0])
+    build_tube(bm, ring, radii, 10, lambda u, v: a, up_hint=Vector((0, 0, 1)))
+    k = c + Vector((0.085, -0.206, -0.030))
+    ellipsoid(bm, k, (0.046, 0.034, 0.040), b, 10, 6)   # the knot
+    for dx, ln, tilt in ((0.020, 0.150, -8.0), (-0.020, 0.100, 14.0)):   # the two ends
+        rot = Matrix.Rotation(math.radians(tilt), 3, "Y")
+        ellipsoid(bm, k + Vector((dx, -0.014, -ln * 0.78)), (0.036, 0.016, ln * 0.62), a, 10, 6, rot)
+    for dx in (0.020, -0.020):   # darker tips
+        ellipsoid(bm, k + Vector((dx, -0.016, -0.150 if dx > 0 else -0.108)), (0.037, 0.017, 0.016), b, 8, 4)
 
 
 def make_body(bm):
@@ -313,25 +294,21 @@ def make_body(bm):
     for s in (-1, 1):  # dark round feet poking out forward
         rot = Matrix.Rotation(s * math.radians(14), 3, "Z")
         ellipsoid(bm, Vector((s * 0.105, -0.085, 0.048)), (0.076, 0.105, 0.052), sock, 12, 7, rot)
-    if VARIANT["scarf"]:
-        make_scarf(bm)
+    make_scarf(bm)
     make_tail(bm)
 
 
 def make_tail(bm):
-    """A big bushy tail (VARIANT['tail'] scales its thickness and length): out of the back toward the
-    fox's left (+X), sweeping up; a cream tip."""
-    k = VARIANT["tail"]
+    """A big fluffy tail: out of the back toward the fox's left (+X), sweeping up, a rounded plume
+    that is thickest past the middle, a cream tip (painted)."""
     p0 = Vector((0.04, 0.160, 0.190))
-    pts = bezier(p0, Vector((0.20, 0.36, 0.10)), Vector((0.44 * k ** 0.5, 0.40 * k ** 0.5, 0.36 * k ** 0.5)),
-                 Vector((0.34 * k ** 0.5, 0.26, 0.45 + 0.20 * k)), 10)
-    base = 0.098 * k ** 0.8
+    pts = bezier(p0, Vector((0.20, 0.36, 0.10)), Vector((0.62, 0.55, 0.36)), Vector((0.48, 0.26, 0.73)), 16)
     radii = []
     for i in range(len(pts)):
         t = i / (len(pts) - 1)
-        radii.append(base * (0.62 + 0.52 * math.sin(math.pi * min(1.0, t * 1.15)) ** 0.8) * (1.0 - 0.45 * max(0.0, t - 0.7) / 0.3))
+        radii.append(0.082 + 0.058 * math.sin(math.pi * min(1.0, t * 1.05) ** 0.9) - 0.050 * t ** 3)
     pts, radii = capsule(pts, radii)
-    build_tube(bm, pts, radii, 12, lambda u, v: region_uv(R_TAIL, u, v), up_hint=Vector((0, -1, 0)))
+    build_tube(bm, pts, radii, 16, lambda u, v: region_uv(R_TAIL, u, v), up_hint=Vector((0, -1, 0)))
 
 
 # Short thick mitten arms (variant A of puppy.py): hanging along the sides, the paws dark socks.
@@ -478,7 +455,7 @@ def render_preview(path, size, turn=-28.0):
 
 def parse_args():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-    opts = {"out": None, "variant": "a", "preview": None, "size": "768"}
+    opts = {"out": None, "preview": None, "size": "768"}
     i = 0
     while i < len(argv):
         k = argv[i].lstrip("-")
@@ -491,10 +468,9 @@ def parse_args():
 
 if __name__ == "__main__":
     opts = parse_args()
-    set_variant(opts["variant"])
     bc.clear_scene()
     build()
-    print("FOX_STATS", opts["variant"], stats())
+    print("FOX_STATS", stats())
     if opts["out"]:
         bc.export_glb(opts["out"])
         print("FOX_EXPORTED", opts["out"])

@@ -874,7 +874,7 @@ func _check_art_atlases() -> void:
 	var problems := []
 	for path in ["res://assets/props/parcel_box_parcel_box_atlas.png", "res://assets/props/yarn_ball_yarn_ball_atlas.png",
 			"res://assets/characters/bread_cat_bread_cat_atlas.png", "res://assets/characters/dugi_dugi_atlas.png",
-			"res://assets/characters/puppy_puppy_atlas.png"]:
+			"res://assets/characters/puppy_puppy_atlas.png", "res://assets/characters/fox_fox_atlas.png"]:
 		var source := Image.load_from_file(ProjectSettings.globalize_path(path))
 		var imported := (load(path) as Texture2D).get_image()
 		imported.clear_mipmaps()
