@@ -1,4 +1,4 @@
-"""Fox island keeper (섬지기 여우) — the keeper of the second island 허턴섬 (issue #71, prototype looks),
+"""Fox island keeper (섬지기 여우) — the keeper of the second island 허턴섬 (issue #71),
 generated entirely in Blender Python.
 
 Run (headless):
@@ -12,7 +12,7 @@ chin and bib, dark "socks" on the paws and feet, a big bushy tail with a cream t
 shy: small bean eyes, a tiny closed smile, soft blush. Standing on its hind legs like Dugi/Puppy,
 arms hanging along the sides.
 
-The look (2026-11-06 user choice among three prototypes, issue #71): orange fur, a big fluffy tail with a
+The look (chosen 2026-11-06 from three drafts, issue #71): orange fur, a big fluffy tail with a
 cream tip, a teal scarf with a knot and two hanging ends. The fox's name is not decided yet.
 
 Blender: +Z up, the fox faces -Y; glTF/Godot: +Y up, faces +Z, left side = +X.
@@ -311,7 +311,7 @@ def make_tail(bm):
     build_tube(bm, pts, radii, 16, lambda u, v: region_uv(R_TAIL, u, v), up_hint=Vector((0, -1, 0)))
 
 
-# Short thick mitten arms (variant A of puppy.py): hanging along the sides, the paws dark socks.
+# Short thick mitten arms (the same shape as puppy.py's): hanging along the sides, the paws dark socks.
 SHOULDER = {1: Vector((0.180, 0.000, 0.465)), -1: Vector((-0.180, 0.000, 0.465))}
 HAND = {1: Vector((0.262, -0.030, 0.290)), -1: Vector((-0.262, -0.030, 0.290))}
 ARM_R = 0.056
@@ -352,7 +352,7 @@ def make_material(img):
     return mat
 
 
-SCALE = 1.0   # parts are authored at final size: ~1.30 m with the ears (Puppy 1.27 m with his hat)
+SCALE = 1.0   # no correction: parts are authored at final size: ~1.30 m with the ears (Puppy 1.27 m with his hat)
 
 
 def mesh_object(name, bm, pivot_world, parent, parent_pivot, mat):

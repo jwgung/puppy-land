@@ -1,5 +1,5 @@
-"""Fox island keeper's dialogue portraits (issue #71 prototype): transparent bust renders of the approved fox model (fox.py) in
-the same storybook look as dugi_portrait.py / puppy_portrait.py (same cel ramp, key sun, brown outline).
+"""Fox island keeper's dialogue portraits (issue #71): transparent bust renders of the fox model
+(fox.py) in the same storybook look as dugi_portrait.py / puppy_portrait.py (same cel ramp, key sun, brown outline).
 
 Run (headless, Blender 4.5):
     blender -b --factory-startup -P apps/lab3d/art_src/characters/fox_portrait.py -- \
