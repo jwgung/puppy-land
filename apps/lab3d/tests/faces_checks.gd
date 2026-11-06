@@ -224,8 +224,8 @@ func check_lab_faces() -> void:
 		await tree.process_frame
 		await tree.process_frame
 		# Dugi's introduction (its own face, kid.intro_face), then the question.
-		var intro_ok: bool = box.speaker == "dugi" and box.text == MissionRound.intro(screen.definition.raw)[0] \
-			and box.face == MissionRound.intro(screen.definition.raw)[1]
+		var intro_ok: bool = box.speaker == "dugi" and box.text == MissionRound.intro(screen.definition.raw).text \
+			and box.face == MissionRound.intro(screen.definition.raw).face
 		for k in 8:
 			if not box.active or box.hold:
 				break
@@ -287,13 +287,13 @@ func check_stage_says() -> void:
 		for k in stages.size() + 1:
 			screen.mission_round.stamps = k   # in memory only
 			screen.mission_round.judged_run = false
-			var want: Array = [str(stages[k].say), str(stages[k].say_face)] if k < stages.size() \
-				else [ExperimentRegistry.kid_text(definition, "say"), str(definition.kid.say_face)]
+			var want: Dictionary = MissionRound.dialogue_line(str(stages[k].say), str(stages[k].say_face)) if k < stages.size() \
+				else MissionRound.dialogue_line(ExperimentRegistry.kid_text(definition, "say"), str(definition.kid.say_face))
 			if str(screen.explain_say()) != str(want):
 				wrong.append("%s playing %d: %s" % [definition.id, k, str(screen.explain_say())])
 			if k > 0:
 				screen.mission_round.judged_run = true   # the stamp of stage k-1 just came: its say
-				if str(screen.explain_say()) != str([str(stages[k - 1].say), str(stages[k - 1].say_face)]):
+				if str(screen.explain_say()) != str(MissionRound.dialogue_line(str(stages[k - 1].say), str(stages[k - 1].say_face))):
 					wrong.append("%s cleared %d: %s" % [definition.id, k - 1, str(screen.explain_say())])
 		screen.mission_round.stamps = 0
 		await _free(screen)

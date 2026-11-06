@@ -189,7 +189,7 @@ func check_term_box() -> void:
 	if shown.any(func(l: String) -> bool: return l.count(TermMarks.MARK) % 2 == 1) or shown.filter(func(l: String) -> bool: return TermMarks.marked(l)).size() < 2:
 		problems.append("a term over a break is not closed and opened again: %s" % str(shown))
 	box.queue_free()
-	var intro: String = MissionRound.intro(ExperimentRegistry.find("incline-friction"))[0]
+	var intro: String = MissionRound.intro(ExperimentRegistry.find("incline-friction")).text
 	box = DialogueBox.new(intro)
 	host.add_child(box)
 	box.layout(Rect2(Vector2.ZERO, TABLET), TABLET.x - 200.0, 16.0)

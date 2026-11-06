@@ -99,6 +99,10 @@
 ##    child's launch (skipped by measurements, --experiment, --screen, resume), its buttons' ways
 ##    (prologue first time, map later, replay, settings and back), its layout; the dialogue's faces
 ##    per line (files, tags, no re-pop, stable box), Dugi's explanation per stage, Puppy's words.
+## 23a2. explanation pictures (tests/explain_picture_checks.gd, #73, 2026-11-06): a line's picture
+##    field is a known kind (registry, Story.validate), its card shows with that line only, in the
+##    middle of the view clear of the box and the chips (phone, tablet, zoomed phone), a tap on it turns
+##    the page, a story page's picture, the 4 pictures draw at 1x and 2x.
 ## 23b. the night map (tests/explore_checks.gd, 2026-10-28 "explore the night map in a fixed order"): the
 ##    order and the next spot, only the next and found spots open (a locked tap: Puppy's line, a shake),
 ##    names hidden until found, Puppy's riddle on open / after a flight / on a tap on him or 단서, the
@@ -437,6 +441,11 @@ func _run() -> void:
 	_expect(faces != null and faces.can_instantiate(), "faces checks compile", "")
 	if faces != null and faces.can_instantiate():
 		await faces.new(self, _expect).run()
+	print("== explanation pictures (#73): the picture field, the card in the middle, its layout and taps, the 4 pictures ==")
+	var pictures: GDScript = load("res://tests/explain_picture_checks.gd")
+	_expect(pictures != null and pictures.can_instantiate(), "explanation picture checks compile", "")
+	if pictures != null and pictures.can_instantiate():
+		await pictures.new(self, _expect).run()
 	print("== UI polish (2026-10-29): fixed sheet header, drag to scroll from controls, check boxes, start over, the map walk ==")
 	var polish: GDScript = load("res://tests/polish_checks.gd")
 	_expect(polish != null and polish.can_instantiate(), "polish checks compile", "")

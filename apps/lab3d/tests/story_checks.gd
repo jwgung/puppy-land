@@ -239,7 +239,7 @@ func check_clue() -> void:
 	await tree.process_frame
 	await tree.process_frame
 	# Dugi tells what the lab is and which force it shows (kid.intro, 2026-10-31), then asks.
-	var intro: String = MissionRound.intro(screen.definition.raw)[0]
+	var intro: String = MissionRound.intro(screen.definition.raw).text
 	var introduced: bool = box.active and box.speaker == "dugi" and not box.hold and box.text == intro and not screen._choices.visible
 	_tap_through(box)
 	await tree.process_frame

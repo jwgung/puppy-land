@@ -29,7 +29,9 @@ const SPEAKERS := {
 ## The portraits' expressions (2026-10-29 user request "대화시 표정을 좀 더 다양하게"), one picture per
 ## speaker and face (art_src/characters/*_portrait.py). Each line of the content may name its face
 ## (`face`, `say_face`, `clue_face`, `map_clue_face`, `question_face`, `map_wrong_face`); an untagged
-## line shows DEFAULT_FACE. explain = Dugi's pointing stick / Puppy's raised paw (telling).
+## line shows DEFAULT_FACE. Dugi's lines may also carry an explanation picture next to the
+## face (`picture`, `say_picture`, `intro_picture`, `reason_picture`, `bridge_picture`:
+## ExplainPictures). explain = Dugi's pointing stick / Puppy's raised paw (telling).
 const FACES := ["explain", "happy", "surprised", "thinking", "worried"]
 const DEFAULT_FACE := "explain"
 ## Dugi's face for the prediction's reason (told after the first run): a right guess is a happy
@@ -61,9 +63,43 @@ static var _content: Dictionary = {}
 static var _content_island := ""
 
 
-## The story's pages: "prologue" or "finale" -> [{who, face, text}, ...] (face optional).
+## The story's pages: "prologue" or "finale" -> [{who, face, text, picture}, ...] (face optional;
+## picture optional: an ExplainPictures kind on one of Dugi's pages, #73).
 static func pages(part: String) -> Array:
 	return _load().get(part, [])
+
+
+## The explanation picture a story page shows: its `picture` on Dugi's page, "" on anyone else's
+## (Puppy and the island keepers never explain science; Story.validate rejects such a page too).
+static func page_picture(entry: Dictionary) -> String:
+	return ExplainPictures.picture_or_none(entry.get("picture")) if str(entry.get("who", "dugi")) == "dugi" else ""
+
+
+## The problems of a story file's pages (`content`: the island's story, Story pages): every `who`
+## a speaker, every `face` one of FACES, every `picture` one of ExplainPictures.KINDS and only on
+## Dugi's pages (Puppy and the island keepers never explain science). Empty = valid.
+static func validate(content: Dictionary) -> PackedStringArray:
+	var problems := PackedStringArray()
+	for part in ["prologue", "finale"]:
+		var entries: Variant = content.get(part, [])
+		if not entries is Array:
+			problems.append("%s must list pages" % part)
+			continue
+		for i in entries.size():
+			var entry: Variant = entries[i]
+			if not entry is Dictionary:
+				problems.append("%s[%d] must be an object" % [part, i])
+				continue
+			var who := str(entry.get("who", "dugi"))
+			if not SPEAKERS.has(who):
+				problems.append("%s[%d].who must be one of Story.SPEAKERS" % [part, i])
+			if entry.has("face") and not entry.face in FACES:
+				problems.append("%s[%d].face must be one of Story.FACES" % [part, i])
+			var bad := ExplainPictures.check(entry, "picture", "%s[%d].picture" % [part, i])
+			problems.append_array(bad)
+			if entry.has("picture") and bad.is_empty() and who != "dugi":
+				problems.append("%s[%d].picture is Dugi's only (the page is %s's)" % [part, i, who])
+	return problems
 
 
 ## The story is read again on the next use (Locale.set_language: its words changed).
@@ -86,6 +122,9 @@ static func _load() -> Dictionary:
 		parsed = Locale.overlay(parsed, Locale.words("story/%s.json" % island)) if parsed is Dictionary else null
 		_content = parsed if parsed is Dictionary else {}
 		_content_island = island
+		var problems := validate(_content)
+		if not problems.is_empty():
+			push_error("Story: %s is invalid: %s" % [content_path(island), "; ".join(problems)])
 	return _content
 
 

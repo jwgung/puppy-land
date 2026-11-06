@@ -98,7 +98,7 @@ func check_clue_tap_anywhere() -> void:
 			break
 		await _tap(_empty(screen))
 	await _frames(3)
-	var intro_up: bool = box.active and box.speaker == "dugi" and box.text == MissionRound.intro(screen.definition.raw)[0]
+	var intro_up: bool = box.active and box.speaker == "dugi" and box.text == MissionRound.intro(screen.definition.raw).text
 	for i in 6:
 		if r.phase() == MissionRound.Phase.ASKING:
 			break
@@ -203,7 +203,7 @@ const INTRO_TERMS := {"buoyancy": "부력", "collision": "작용 반작용", "co
 func check_intro() -> void:
 	var missing := []
 	for definition in ExperimentRegistry.load_all():
-		var text: String = MissionRound.intro(definition)[0]
+		var text: String = MissionRound.intro(definition).text
 		if definition.has("missions") and (text.length() < 40 or not INTRO_TERMS.get(definition.id, "\n") in text):
 			missing.append(definition.id)
 	var was := Story.enabled
@@ -213,7 +213,7 @@ func check_intro() -> void:
 	var screen := await _open("spring", true)
 	await _frames(4)
 	var box: DialogueBox = screen.dialogue
-	var first: bool = box.active and box.speaker == "dugi" and box.text == MissionRound.intro(screen.definition.raw)[0] \
+	var first: bool = box.active and box.speaker == "dugi" and box.text == MissionRound.intro(screen.definition.raw).text \
 		and screen.mission_round.phase() == MissionRound.Phase.CLUE
 	var seen := "%s %s '%s' %s" % [box.active, box.speaker, box.text.left(20), screen.mission_round.phase()]
 	await _close(screen)

@@ -427,7 +427,7 @@ func check_projectile_explains() -> void:
 	expect.call(cast.explain_count == 1 and status in ["landed", "fence"] and lab.explain_point().distance_to(landing) < 1e-4 and aim < POINT_TOL_DEG,
 		"cast (projectile): after the throw lands Dugi points at the formula landing point (the end of the formula path)",
 		"status %s, %d explanations, point %s vs %s, aim %.3f deg" % [status, cast.explain_count, lab.explain_point(), landing, aim])
-	expect.call(box.visible and box.active and box.joined() == str(screen.explain_say()[0]) and box.name_label.text == "두기두기"
+	expect.call(box.visible and box.active and box.joined() == str(screen.explain_say().text) and box.name_label.text == "두기두기"
 		and box.label.get_parsed_text() != "" and TermMarks.plain(box.page_text(0)).begins_with(box.label.get_parsed_text()),   # (typing: the shown part)
 		"cast (projectile): the dialogue opens with Dugi's say for the stage exactly (only split into pages)", box.label.get_parsed_text())
 	screen.experiment_action("reset")

@@ -136,6 +136,7 @@ var _question_face := Story.DEFAULT_FACE
 var reason := ""
 var _bridge := ""
 var _bridge_face := Story.DEFAULT_FACE
+var _bridge_picture := ""
 var _announce := ""   # the mission Dugi tells next (announce())
 var _first_result := false
 var _armed := false
@@ -436,6 +437,7 @@ static func _validate_missions(missions: Variant, observations: Array, controls:
 			problems.append("missions.stages[%d].say must be a text" % i)
 		if stage is Dictionary and stage.has("say_face") and not stage.say_face in Story.FACES:
 			problems.append("missions.stages[%d].say_face must be one of Story.FACES" % i)
+		problems.append_array(ExplainPictures.check(stage, "say_picture", "missions.stages[%d].say_picture" % i))
 		# Puppy's short result lines (2026-10-29): what the win did, what to try after a miss; their faces.
 		if stage is Dictionary and missions.has("miss_on"):
 			for key in ["win", "miss"]:
@@ -528,7 +530,8 @@ static func _validate_conditions(conditions: Variant, controls: Array, i: int) -
 ## {"question": <text>, "choices": [{"id", "label", "picture": <PredictPictures kind>} x 2],
 ##  "answer": <a choice id>, "reason": <text>, "bridge"?: <Dugi's line from the answer to the mission>,
 ##  "stage"?: <the stage index whose result answers it, 0 by default: the reason comes after it>,
-##  "bridge_face"?: <Story.FACES>}.
+##  "question_face"?, "bridge_face"?: <Story.FACES>,
+##  "reason_picture"?, "bridge_picture"?: <ExplainPictures.KINDS (#73)>}.
 static func _validate_predict(predict: Variant, stage_count := ProgressStore.MAX_STAMPS) -> PackedStringArray:
 	var problems := PackedStringArray()
 	if predict == null:
@@ -546,6 +549,10 @@ static func _validate_predict(predict: Variant, stage_count := ProgressStore.MAX
 		problems.append("predict.bridge must be a text")
 	if predict.has("bridge_face") and not predict.bridge_face in Story.FACES:
 		problems.append("predict.bridge_face must be one of Story.FACES")
+	# Dugi's explanation pictures (#73, optional) on the reason and the bridge. The question has none:
+	# its two picture buttons stand in the middle of the view.
+	for key in ["reason_picture", "bridge_picture"]:
+		problems.append_array(ExplainPictures.check(predict, key, "predict." + key))
 	var choices: Variant = predict.get("choices")
 	var ids := []
 	if not (choices is Array and choices.size() == 2):
@@ -658,7 +665,7 @@ func open(dugi: bool) -> void:
 	if Story.enabled and not store.clue_seen(id):
 		_clue = Story.clue(definition)
 	if Story.enabled:
-		_intro = intro(definition)[0]
+		_intro = intro(definition).text
 	var question := predict(definition)
 	if question.is_empty():
 		predict_ended = true   # no question: the clue and the introduction alone, if any
@@ -682,17 +689,24 @@ func asking() -> bool:
 	return _asking
 
 
-## The next line before the question waits for its box [text, face, speaker]: Puppy's clue, then
-## Dugi's introduction ([] when there is none to open, or one is open).
-func clue_to_open() -> Array:
+## A line for Dugi's (or Puppy's) box: {"text", "face", "picture" (ExplainPictures, "" none),
+## "speaker" (Story.SPEAKERS)}. Every line the round hands the screen has this shape ({} for none).
+static func dialogue_line(text: String, face: String, picture := "", speaker := "dugi") -> Dictionary:
+	return {"text": text, "face": face, "picture": picture, "speaker": speaker}
+
+
+## The next line before the question waits for its box (dialogue_line()): Puppy's clue (no
+## picture), then Dugi's introduction ({} when there is none to open, or one is open).
+func clue_to_open() -> Dictionary:
 	if not _asking or _clue_open:
-		return []
+		return {}
 	if _clue != "":
-		return [_clue, Story.clue_face(definition), "puppy"]
+		return dialogue_line(_clue, Story.clue_face(definition), "", "puppy")
 	if _intro != "":
-		var line := intro(definition)
-		return [_intro, line[1], "dugi"]
-	return []
+		var told := intro(definition)
+		told.text = _intro
+		return told
+	return {}
 
 
 ## A line before the question (the clue or the introduction) is in the box now (not yet read).
@@ -719,17 +733,19 @@ func clue_read() -> void:
 		end_question()
 
 
-## Dugi's introduction of the lab [text, face] (kid.intro and kid.intro_face; text "" when it has none).
-static func intro(definition: Dictionary) -> Array:
+## Dugi's introduction of the lab (dialogue_line(): kid.intro, kid.intro_face, kid.intro_picture;
+## text "" when it has none, picture "" without one).
+static func intro(definition: Dictionary) -> Dictionary:
 	var kid: Variant = definition.get("kid")
 	if not kid is Dictionary:
-		return ["", Story.DEFAULT_FACE]
-	return [str(kid.get("intro", "")), Story.face_or_default(kid.get("intro_face"))]
+		return dialogue_line("", Story.DEFAULT_FACE)
+	return dialogue_line(str(kid.get("intro", "")), Story.face_or_default(kid.get("intro_face")), ExplainPictures.picture_or_none(kid.get("intro_picture")))
 
 
-## Dugi's question [text, face] (the text "" when the clue came alone).
-func question_line() -> Array:
-	return [_question, _question_face]
+## Dugi's question (dialogue_line(); the text "" when the clue came alone). It has no picture:
+## its two picture buttons stand in the middle of the view.
+func question_line() -> Dictionary:
+	return dialogue_line(_question, _question_face)
 
 
 ## The question's two picture choices ([] while only the clue is told).
@@ -754,6 +770,7 @@ func answer(choice_id: String) -> String:
 	if line != "" and stage() >= 0:
 		_bridge = "%s %s" % [line, mission_line(definition, stage())]
 		_bridge_face = Story.face_or_default(question.get("bridge_face"))
+		_bridge_picture = ExplainPictures.picture_or_none(question.get("bridge_picture"))
 	return picked
 
 
@@ -805,23 +822,23 @@ func announcing() -> bool:
 	return _announce != ""
 
 
-## What Dugi says when his box opens now [text, face], taken once: the bridge first (with the first
-## mission), else the next mission (announce()), else the prediction's reason after the first result
-## line of its stage, else [] (his explanation of the stage, stage_say()).
-func take_line() -> Array:
+## What Dugi says when his box opens now (dialogue_line()), taken once: the bridge first (with the
+## first mission), else the next mission (announce()), else the prediction's reason after the first result
+## line of its stage, else {} (his explanation of the stage, stage_say()).
+func take_line() -> Dictionary:
 	if _bridge != "":
-		var bridge := [_bridge, _bridge_face]
+		var bridge := dialogue_line(_bridge, _bridge_face, _bridge_picture)
 		_bridge = ""
 		return bridge
 	if _announce != "":
-		var told := [_announce, MISSION_FACE]
+		var told := dialogue_line(_announce, MISSION_FACE)
 		_announce = ""
 		return told
 	if reason != "" and _first_result:
-		var told := [reason, reason_face]
+		var told := dialogue_line(reason, reason_face, ExplainPictures.picture_or_none(predict(definition).get("reason_picture")))
 		reason = ""
 		return told
-	return []
+	return {}
 
 
 ## The stage Dugi's explanation is about: the one this attempt cleared (its stamp just came), else the
@@ -832,15 +849,16 @@ func say_stage() -> int:
 	return stage()
 
 
-## The say of say_stage() [text, face] (missions.stages[i].say), or [] when it has none (the lab's kid.say).
-func stage_say() -> Array:
+## The say of say_stage() (dialogue_line(): missions.stages[i].say, say_face, say_picture), or {}
+## when it has none (the lab's kid.say).
+func stage_say() -> Dictionary:
 	var s := say_stage()
 	if s < 0:
-		return []
+		return {}
 	var entry: Dictionary = missions(definition).get("stages", [])[s]
 	if str(entry.get("say", "")) == "":
-		return []
-	return [str(entry.say), Story.face_or_default(entry.get("say_face"))]
+		return {}
+	return dialogue_line(str(entry.say), Story.face_or_default(entry.get("say_face")), ExplainPictures.picture_or_none(entry.get("say_picture")))
 
 
 # --- attempts -----------------------------------------------------------------------------------
