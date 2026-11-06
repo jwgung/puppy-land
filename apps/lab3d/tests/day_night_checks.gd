@@ -416,8 +416,12 @@ func check_piece() -> void:
 	var game: DayNightGame = lab.game
 	var problems := []
 	var start: Vector3 = game.piece.global_position
-	if game.piece_state != "held" or not game.piece.visible or start.distance_to(lab.props.house.global_position) > 0.4:
+	if game.piece_state != "held" or not game.piece.visible or start.distance_to(lab.props.house.global_position) > 0.6:
 		problems.append("not in the crevice by the house at the start")
+	# The house's flag (Q10): on the house, standing out of the globe, always bright.
+	var flag: MeshInstance3D = lab.props.house.get_node_or_null("Flag")
+	if flag == null or flag.material_override != lab.props.bright_material or flag.get_aabb().end.y < DayNightProps.FLAG_POLE - 0.05:
+		problems.append("no bright flag on the house")
 	game.show_stage(1, 1, true)
 	game.show_stage(2, 2, true)
 	for i in 30:
@@ -441,7 +445,7 @@ func check_piece() -> void:
 	again.game.show_stage(-1, 3, false)
 	if (again.game as DayNightGame).take_piece() != null:
 		problems.append("a piece in a finished spot")
-	expect.call(problems.is_empty(), "day-night piece: in the rock's crevice by the house until the last stamp, then out of the globe onto the stage for the cat; none in a finished spot",
+	expect.call(problems.is_empty(), "day-night piece and flag: the house has a bright flag standing out of the globe; the piece is in the rock's crevice by the house until the last stamp, then out of the globe onto the stage for the cat; none in a finished spot",
 		"; ".join(problems))
 	lab.queue_free()
 	again.queue_free()

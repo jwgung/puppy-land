@@ -21,19 +21,19 @@
 class_name DayNightProps
 extends RefCounted
 
-const GLOBE_CENTER := Vector3(-0.9, 2.95, 0.0)
-const GLOBE_RADIUS := 1.5
-const SUN_CENTER := Vector3(5.0, 2.95, 0.0)
+const GLOBE_CENTER := Vector3(-0.3, 3.5, -0.8)
+const GLOBE_RADIUS := 2.3
+const SUN_CENTER := Vector3(5.6, 3.5, -0.8)
 const SUN_RADIUS := 0.8
 const SUN_SHADE := Color(1.0, 0.82, 0.6)   # the sun's far facets: warm, never blue
-const STAGE_CENTER := Vector3(1.6, 0.0, -0.2)
-const STAGE_RADIUS := 7.6
+const STAGE_CENTER := Vector3(1.6, 0.0, 0.0)
+const STAGE_RADIUS := 8.2
 ## The globe: RINGS x SIDES faces (faceted), the land's blobs [lon deg, lat deg, radius deg]
 ## (Hutton Island is the first: under the house), the ice caps beyond ICE_LAT.
 const RINGS := 18
 const SIDES := 36
 const ICE_LAT := 70.0
-const HUTTON_ISLAND_DEG := 11.0
+const HUTTON_ISLAND_DEG := 10.0
 const LANDS := [
 	[-62.0, 42.0, 22.0], [-95.0, 18.0, 14.0], [-75.0, -18.0, 17.0], [-60.0, -38.0, 11.0],
 	[20.0, -8.0, 21.0], [12.0, 22.0, 13.0], [55.0, 38.0, 18.0], [95.0, 44.0, 22.0], [120.0, 12.0, 9.0],
@@ -51,28 +51,34 @@ const NIGHT := Color("16205a")
 const TERMINATOR_SOFTNESS := 0.02
 ## The house on the globe (m, local: y up from the ground, -z east): scaled up from life to read on
 ## the globe from the front view.
-const HOUSE_SCALE := 1.4
+const HOUSE_SCALE := 2.0
 const WALL := Color("fff1d2")
 const ROOF := Color("e85a3c")
 const ROOF_TOP := Color("ff7a52")
 const DOOR := Color("8f5a2c")
 const WINDOW_LIT := Color("ffe36a")
+## The house's flag (#74 user decision: the child follows the house by eye): a pole standing out of
+## the globe beside the house (its top past the globe's rim when the house is at the edge), a bright
+## flag, always lit (it shows on the night side too).
+const FLAG_POLE := 0.95
+const FLAG_COLOR := Color("ff5a3c")
+const FLAG_POLE_COLOR := Color("fff1d2")
 const ROCK := Color("9aa3b5")
 const ROCK_TOP := Color("b8c0cf")
 ## The axis rod beyond the poles (m), its radius, the arrow round the north end: its radius, its tube,
 ## where it sits along the axis (m from the centre), the arc it covers (deg of turn), its colour.
-const ROD_OUT := 0.55
+const ROD_OUT := 0.6
 const ROD_RADIUS := 0.045
-const ARROW_RADIUS := 0.42
-const ARROW_TUBE := 0.05
-const ARROW_AT := GLOBE_RADIUS + 0.28
+const ARROW_RADIUS := 0.5
+const ARROW_TUBE := 0.06
+const ARROW_AT := GLOBE_RADIUS + 0.3
 const ARROW_FROM_DEG := -215.0
 const ARROW_TO_DEG := 15.0
 const ARROW_COLOR := Color("ff7a1a")
 const ARROW_TOP := Color("ff9440")
-const CAT_AT := Vector3(1.5, 0.0, 2.1)
+const CAT_AT := Vector3(-2.5, 0.0, 2.6)
 ## The yard window: its centre (world), the picture's size (m), the frame's border and depth.
-const WINDOW_CENTER := Vector3(-0.9, 0.62, 2.7)
+const WINDOW_CENTER := Vector3(1.9, 1.45, 2.4)
 const WINDOW_SIZE := Vector2(2.1, 1.0)
 const FRAME := 0.11
 const FRAME_DEPTH := 0.12
@@ -173,6 +179,9 @@ func build(lab: Node3D, latitude: float) -> void:
 	var home := ArtKit.instance(house_mesh(), globe_material)
 	home.name = "Home"
 	house.add_child(home)
+	var flag := ArtKit.instance(flag_mesh(), bright_material)
+	flag.name = "Flag"
+	house.add_child(flag)
 	var lights := ArtKit.instance(house_windows_mesh(), bright_material)
 	lights.name = "Windows"
 	house.add_child(lights)
@@ -331,6 +340,23 @@ static func house_mesh() -> Mesh:
 	# The tree on the west.
 	b.add_cylinder(Transform3D(Basis(), Vector3(-0.02, 0.0, 0.17) * s), 0.018 * s, 0.014 * s, 0.09 * s, 6, ArtPalette.TRUNK)
 	b.add_sphere(Transform3D(Basis(), Vector3(-0.02, 0.13, 0.17) * s), 0.065 * s, 3, 6, ArtPalette.LEAF_LIGHT)
+	return b.commit()
+
+
+## The house's flag: a pole on the house's north-west corner and a pennant towards the west (local:
+## y up, -z east, x south), always bright.
+static func flag_mesh() -> Mesh:
+	var b := ArtKit.builder()
+	b.ao_min = 1.0
+	var s := HOUSE_SCALE
+	var foot := Vector3(-0.09, 0.0, 0.1) * s
+	b.add_cylinder(Transform3D(Basis(), foot), 0.012 * s, 0.012 * s, FLAG_POLE, 6, FLAG_POLE_COLOR)
+	b.add_sphere(Transform3D(Basis(), foot + Vector3(0.0, FLAG_POLE, 0.0)), 0.025 * s, 3, 6, ArtPalette.YELLOW)
+	var top := foot + Vector3(0.0, FLAG_POLE - 0.02, 0.0)
+	var low := top + Vector3(0.0, -0.26, 0.0)
+	var tip := (top + low) * 0.5 + Vector3(0.0, 0.0, 0.42)
+	for facing: Vector3 in [Vector3.RIGHT, Vector3.LEFT]:
+		b.add_triangle([top, low, tip], [FLAG_COLOR, FLAG_COLOR, FLAG_COLOR], facing)
 	return b.commit()
 
 
