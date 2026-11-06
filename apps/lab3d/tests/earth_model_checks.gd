@@ -1,6 +1,6 @@
 ## The earth labs' base and their first model (#70, 2026-11-06): SunModel against the textbook values
 ## (tests/earth_textbook_values.json: one rotation 24 h, Seoul's noon sun at the solstices and the
-## equinoxes, the day lengths, the upright Earth's same noon sun all year, the shortest shadow at noon
+## equinoxes, the day lengths' order, the upright Earth's same noon sun all year, the shortest shadow at noon
 ## pointing north, sunrise in the east), EarthModel's glides and reset, and EarthLab with a stand-in
 ## lab: status / settled / observations / control_value are what MissionRound judges, the model is
 ## stepped only while it animates, and its knob is picked and dragged through the Manipulator.
@@ -137,21 +137,16 @@ func check_noon_altitude() -> void:
 	expect.call(problems.is_empty(), "earth model: Seoul's noon sun 75.9 / 29.0 / 52.4 deg at the solstices and equinoxes (±%s deg)" % block.tolerance_deg, "; ".join(problems))
 
 
-## Seoul's day lengths against the almanac, the geometric horizon a few minutes shorter, and the day
-## length the same as the minutes the model calls day.
+## Seoul's day lengths in the textbook's order (June solstice > equinox > December solstice), the
+## equinox day about 12 h, and the day length the same as the minutes the model calls day.
 func check_day_length() -> void:
 	var block: Dictionary = values.day_length
 	var problems := []
-	var shorter: Array = block.geometric_shorter_min
-	for case in block.cases:
+	var hours := []
+	for case in block.order:
 		var model := _seoul(float(case.orbit))
 		var got := model.day_hours()
-		if absf(got - float(case.hours)) * 60.0 > float(block.tolerance_min):
-			problems.append("%s %.3f h (want %.3f h)" % [case.name, got, case.hours])
-		var geometric := SunModel.day_length(model.input("latitude"), model.sun_declination(), 0.0)
-		var less := (got - geometric) * 60.0
-		if float(case.orbit) != 0.0 and (less < float(shorter[0]) or less > float(shorter[1])):
-			problems.append("%s geometric %.1f min shorter" % [case.name, less])
+		hours.append(got)
 		var day_minutes := 0
 		for minute in MINUTES_PER_DAY:
 			_at_minute(model, minute)
@@ -159,7 +154,12 @@ func check_day_length() -> void:
 				day_minutes += 1
 		if absf(day_minutes - got * 60.0) > 2.0:
 			problems.append("%s: %d day minutes, day length %.1f min" % [case.name, day_minutes, got * 60.0])
-	expect.call(problems.is_empty(), "earth model: Seoul's day 14 h 46 m / 9 h 34 m / 12 h 8 m (KASI, ±%s min)" % block.tolerance_min, "; ".join(problems))
+	if not (hours[0] > hours[1] and hours[1] > hours[2]):
+		problems.append("order %s" % str(hours))
+	if absf(float(hours[1]) - float(block.equinox_hours)) > float(block.equinox_tolerance_hours):
+		problems.append("equinox day %.3f h" % hours[1])
+	expect.call(problems.is_empty(), "earth model: Seoul's day longest at the June solstice, about 12 h at the equinox, shortest at the December solstice",
+		"%s; %s" % [str(hours), "; ".join(problems)])
 
 
 ## An upright Earth: the same noon sun and a 12-hour day all year (no seasons).
@@ -173,14 +173,14 @@ func check_upright() -> void:
 		model.set_input("rotation", SunModel.NOON_ROTATION)
 		lo = minf(lo, model.sun_altitude())
 		hi = maxf(hi, model.sun_altitude())
-		if absf(model.day_hours() - float(block.day_length_hours)) * 60.0 > float(block.day_length_tolerance_min):
+		if absf(model.day_hours() - float(block.day_length_hours)) > float(block.day_length_tolerance_hours):
 			problems.append("orbit %d day %.3f h" % [orbit, model.day_hours()])
 	if hi - lo > float(block.spread_max_deg) or absf(lo - float(block.noon_altitude)) > 0.05:
 		problems.append("noon %.3f..%.3f" % [lo, hi])
 	var tilted_spread := _seoul(90.0).noon_sun_altitude() - _seoul(270.0).noon_sun_altitude()
 	if tilted_spread < 46.0:
 		problems.append("tilted spread %.2f" % tilted_spread)
-	expect.call(problems.is_empty(), "earth model: upright Earth, the same noon sun %.2f deg all year (tilted: %.1f deg apart)" % [lo, tilted_spread], "; ".join(problems))
+	expect.call(problems.is_empty(), "earth model: upright Earth, the same noon sun %.2f deg and about 12 h of day all year (tilted: %.1f deg apart)" % [lo, tilted_spread], "; ".join(problems))
 
 
 ## The stick's shadow: shortest at local noon, pointing north then, away from the sun all day, the noon

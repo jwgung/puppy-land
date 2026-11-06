@@ -14,9 +14,9 @@
 ##   its declination is asin(sin tilt * sin orbit).
 ## - the sky frame of the place: x east, y up, z south (Godot's -z is north). Azimuth is degrees from
 ##   north towards east (N 0, E 90, S 180, W 270).
-## - day and night: the sun's centre above `horizon` (default SUNRISE_ALTITUDE, the almanac's sunrise:
-##   34' of refraction and the sun's 16' radius), so the day length is the almanac's (KASI). The
-##   geometric horizon (0 deg) makes a Seoul solstice day about 10 minutes shorter.
+## - day and night: the sun's centre above the geometric horizon (altitude > 0). No refraction and no
+##   sun's radius (2026-11-06 user decision: no almanac precision, no sunrise-time comparisons); the
+##   day length is that geometric one.
 ## - a shadow needs the sun's centre above the ground (altitude > 0); its length is the stick's
 ##   height / tan(altitude), pointing away from the sun.
 ## Angles are degrees and every number is a 64-bit float (Vector3 is only for drawing).
@@ -29,10 +29,8 @@ const DEG_PER_HOUR := 360.0 / HOURS_PER_ROTATION
 const EARTH_TILT := 23.44
 ## The upright Earth of the 계절 spot's "똑바로" condition.
 const UPRIGHT := 0.0
-## Hutton Island's stand-in place: Seoul (37 deg 34 min N, KASI's Seoul reference point).
+## Hutton Island's stand-in place: Seoul (37 deg 34 min N).
 const SEOUL_LATITUDE := 37.57
-## The almanac's sunrise and sunset: the sun's centre this far below the geometric horizon.
-const SUNRISE_ALTITUDE := -0.833
 ## The sun within this many degrees of the horizon is rising or setting ("sunrise" / "sunset"): a game
 ## band for the 낮과 밤 spot's morning stage (about 40 minutes at Seoul), revisited with its missions (#74).
 const EDGE_DEG := 7.5
@@ -42,9 +40,7 @@ const ORBIT_RATE := 60.0
 ## Rotation at local solar noon (0 = midnight).
 const NOON_ROTATION := 180.0
 
-## The sun's centre above this altitude is day (deg).
-var horizon := SUNRISE_ALTITUDE
-## The rising / setting band either side of the horizon (deg).
+## The rising / setting band either side of the geometric horizon (deg).
 var edge := EDGE_DEG
 
 
@@ -101,11 +97,12 @@ static func noon_altitude(latitude: float, decl: float) -> float:
 	return 90.0 - absf(latitude - decl)
 
 
-## Hours of the day the sun's centre is above `horizon_deg` (0 in a polar night, 24 in a polar day).
-static func day_length(latitude: float, decl: float, horizon_deg := SUNRISE_ALTITUDE) -> float:
+## Hours of the day the sun's centre is above the geometric horizon (0 in a polar night, 24 in a
+## polar day): cos H0 = -tan(latitude) tan(decl).
+static func day_length(latitude: float, decl: float) -> float:
 	var phi := deg_to_rad(latitude)
 	var d := deg_to_rad(decl)
-	var c := (sin(deg_to_rad(horizon_deg)) - sin(phi) * sin(d)) / (cos(phi) * cos(d))
+	var c := -sin(phi) * sin(d) / (cos(phi) * cos(d))
 	if c >= 1.0:
 		return 0.0
 	if c <= -1.0:
@@ -143,13 +140,13 @@ func noon_sun_altitude() -> float:
 	return noon_altitude(input("latitude"), sun_declination())
 
 
-## Hours of daylight of the day the orbit is at (the almanac's sunrise to sunset).
+## Hours of daylight of the day the orbit is at (sun's centre above the geometric horizon).
 func day_hours() -> float:
-	return day_length(input("latitude"), sun_declination(), horizon)
+	return day_length(input("latitude"), sun_declination())
 
 
 func is_day() -> bool:
-	return sun_altitude() > horizon
+	return sun_altitude() > 0.0
 
 
 ## Before local noon (the sun climbing): the morning side of the Earth.
@@ -193,9 +190,9 @@ func shadow_tip() -> Vector3:
 ## after), or "day".
 func status() -> String:
 	var alt := sun_altitude()
-	if absf(alt - horizon) <= edge:
+	if absf(alt) <= edge:
 		return "sunrise" if is_morning() else "sunset"
-	return "day" if alt > horizon else "night"
+	return "day" if alt > 0.0 else "night"
 
 
 ## hour (h), altitude, azimuth, noon_altitude, declination (deg), day_length (h), the inputs orbit,

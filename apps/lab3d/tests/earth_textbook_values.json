@@ -1,5 +1,5 @@
 {
-  "about": "Textbook values the earth labs' models must give (#70, 2026-11-06). tests/earth_model_checks.gd reads every entry. Each entry names its source and its tolerance. The sun model (experiments/earth_lab/sun_model.gd) has a circular orbit, local solar time and no equation of time, so it matches the almanac within minutes, not seconds.",
+  "about": "Textbook values the earth labs' models must give (#70, 2026-11-06). tests/earth_model_checks.gd reads every entry. Each entry names its source and its tolerance. The sun model (experiments/earth_lab/sun_model.gd) has a circular orbit, local solar time, no equation of time and a geometric horizon (no refraction): it gives the textbook's angles and relations, not almanac sunrise times (2026-11-06 user decision).",
   "place": {
     "name": "Seoul",
     "latitude": 37.57,
@@ -11,11 +11,11 @@
   },
   "rotation": {
     "hours_per_rotation": 24.0,
-    "source": "초등 과학 6-2 '지구와 달의 운동': 지구는 하루에 한 바퀴 자전한다 (one solar day = 24 h)"
+    "source": "초등·중학교 과학 교과 내용: 지구는 하루에 한 바퀴 자전한다 (one solar day = 24 h)"
   },
   "noon_altitude": {
     "tolerance_deg": 0.05,
-    "source": "중학교 과학 3 '태양의 남중 고도' = 90° − 위도 + 적위",
+    "source": "초등·중학교 과학 교과 내용: 태양의 남중 고도 = 90° − 위도 + 적위",
     "cases": [
       {"name": "June solstice", "orbit": 90.0, "deg": 75.87},
       {"name": "December solstice", "orbit": 270.0, "deg": 28.99},
@@ -24,23 +24,22 @@
     ]
   },
   "day_length": {
-    "tolerance_min": 5.0,
-    "source": "NOAA Solar Calculator algorithm (Meeus; https://gml.noaa.gov/grad/solcalc/calcdetails.html), computed 2026-11-06 for Seoul 37.5665°N 126.978°E, UTC+9: 06-21 05:11-19:57 (14h46m), 12-22 07:44-17:17 (9h34m), 03-20 06:36-18:43 (12h07m). Sunrise is the sun's centre at -0.833° (refraction and the upper limb), the model's default horizon. Not yet checked against KASI's almanac (astro.kasi.re.kr). The tolerance covers the year-to-year shift of the solstice day and the circular orbit.",
-    "geometric_note": "With the geometric horizon (centre at 0°) the solstice days at Seoul come out 8-12 minutes shorter (14 h 36 m, 9 h 24 m): the check below holds the model to that too, so a change of horizon is seen.",
-    "geometric_shorter_min": [7.0, 13.0],
-    "cases": [
-      {"name": "June solstice", "orbit": 90.0, "hours": 14.767},
-      {"name": "December solstice", "orbit": 270.0, "hours": 9.567},
-      {"name": "March equinox", "orbit": 0.0, "hours": 12.133}
-    ]
+    "source": "초등·중학교 과학 교과 내용: 낮의 길이는 여름(하지)에 가장 길고 겨울(동지)에 가장 짧으며 춘분·추분에는 약 12시간이다. Geometric horizon, no almanac precision.",
+    "order": [
+      {"name": "June solstice", "orbit": 90.0},
+      {"name": "March equinox", "orbit": 0.0},
+      {"name": "December solstice", "orbit": 270.0}
+    ],
+    "equinox_hours": 12.0,
+    "equinox_tolerance_hours": 0.25
   },
   "upright": {
     "tilt": 0.0,
     "noon_altitude": 52.43,
     "spread_max_deg": 0.01,
-    "day_length_hours": 12.14,
-    "day_length_tolerance_min": 2.0,
-    "source": "초등 과학 6-2 '계절의 변화': 자전축이 기울어지지 않으면 태양의 남중 고도가 일 년 내내 같아 계절이 생기지 않는다"
+    "day_length_hours": 12.0,
+    "day_length_tolerance_hours": 0.25,
+    "source": "초등·중학교 과학 교과 내용: 자전축이 기울어지지 않으면 태양의 남중 고도와 낮의 길이가 일 년 내내 같아 계절이 생기지 않는다"
   },
   "shadow": {
     "stick": 1.0,
@@ -52,7 +51,7 @@
       {"name": "December solstice", "orbit": 270.0, "m": 1.8048}
     ],
     "length_tolerance_m": 0.002,
-    "source": "초등 과학 3-1·5-1 '그림자': 그림자는 해의 반대쪽에 생기고 해가 높을수록 짧다; 북반구에서 한낮의 그림자는 북쪽을 가리킨다. Lengths: 1 m / tan(noon altitude)"
+    "source": "초등·중학교 과학 교과 내용: 그림자는 해의 반대쪽에 생기고 해가 높을수록 짧다; 북반구에서 한낮의 그림자는 북쪽을 가리킨다. Lengths: 1 m / tan(noon altitude)"
   },
   "sunrise": {
     "east_half_deg": [0.0, 180.0],
@@ -63,6 +62,6 @@
       {"name": "December solstice", "orbit": 270.0, "deg": 120.1}
     ],
     "solstice_tolerance_deg": 1.5,
-    "source": "초등 과학 '해는 동쪽에서 떠서 서쪽으로 진다'; sunrise azimuth cos A = sin(declination) / cos(latitude) at the geometric horizon (spherical astronomy), Seoul about 60° (June) and 120° (December)"
+    "source": "초등·중학교 과학 교과 내용: 해는 동쪽에서 떠서 서쪽으로 진다. Sunrise azimuth from cos A = sin(declination) / cos(latitude) at the geometric horizon: Seoul about 60° (June) and 120° (December)"
   }
 }
