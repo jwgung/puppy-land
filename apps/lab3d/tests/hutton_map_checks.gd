@@ -15,17 +15,27 @@ const ORDER := ["day-night", "shadow-clock", "seasons", "water-cycle", "dew-clou
 const ZONES := {"hill": "hill", "coast": "coast", "valley": "valley"}
 const LAB_VERTS_MAX := 30000   # lab_world_checks.VERTS_MAX
 ## The mechanics island's map and two of its lab worlds (built at the origin) as they were before the
-## hutton island (#72): vertex count and the md5 of the vertex positions. The hutton features add
-## nothing to an island without them; a change here must be intentional (update the pin with it).
-## The map's positions are hashed exactly; the lab worlds' snapped to PIN_SNAP m first: their last
-## float bits differ between machines (CI's md5 of the exact bytes differed from a desktop's with the
-## same vertex count, 2026-11-06).
-const MECHANICS_PIN := {
-	"map": [42426, "559a1fc33974ff848e90ad9c1883ed6d"],
-	"orbit": [27702, "181e7050cb7e3e4bb6932d427e2b3f41"],
-	"buoyancy": [29406, "d8c1c4f05814db0e3766a6a037a9b92c"],
+## hutton island (#72). The hutton features add nothing to an island without them; a change here must
+## be intentional (update the pin with it). Positions only: a colour change is not seen here.
+## The map: vertex count and the md5 of the exact position bytes (the same on CI).
+const MECHANICS_MAP_PIN := [42426, "559a1fc33974ff848e90ad9c1883ed6d"]
+## The lab worlds: their last float bits differ between machines (CI's md5 differed from a desktop's,
+## 2026-11-06; LabWorld finds its coast by bisection, so a last-bit difference moves it by ~1e-5 m).
+## So: vertex count exact, and per axis the sum of the coordinates, the sum of their squares and the
+## bounding box, each within a tolerance. Measured noise (the coast bisection run 24 steps instead
+## of 22, a few 1e-6 m): sums 0.007 m, squares 2.6 m2. Tolerances: LAB_SUM_TOL 0.5 m (about 1.7e-5 m
+## a vertex over ~28,000; a landmark of 50+ vertices moved 1 cm along an axis exceeds it), LAB_SQ_TOL
+## 50 m2 (about 20x the noise; such a move 30 m out changes it by 2 x 30 x 0.01 x 50 = 30 m2 or more,
+## a ground height change by far more), LAB_BOX_TOL 1e-3 m.
+const MECHANICS_LAB_PIN := {
+	"orbit": {"n": 27702, "sum": [-610410.9302, -6257.6841, -570453.7574], "sq": [162201220.400, 2391417.034, 137194002.678],
+		"lo": [-400.0, -65.7, -400.0], "hi": [400.0, 36.908, 400.0]},
+	"buoyancy": {"n": 29406, "sum": [-231850.2907, 127951.7308, -791260.2850], "sq": [140852911.084, 3090117.197, 149193259.448],
+		"lo": [-400.0, -60.6, -400.0], "hi": [400.0, 42.008, 400.0]},
 }
-const PIN_SNAP := 1e-4
+const LAB_SUM_TOL := 0.5
+const LAB_SQ_TOL := 50.0
+const LAB_BOX_TOL := 1e-3
 
 var tree: SceneTree
 var expect: Callable
@@ -143,41 +153,63 @@ func check_never_opens() -> void:
 		"; ".join(problems))
 
 
-## The mechanics map and lab worlds are what they were (MECHANICS_PIN).
+## The mechanics map and lab worlds are what they were (MECHANICS_MAP_PIN, MECHANICS_LAB_PIN).
 func check_mechanics_pinned() -> void:
-	var got := {}
+	var problems := []
 	Island.use_for_run("mechanics")
 	var screen := await _home(PHONE)
-	got["map"] = _pin(screen.find_child("Island", true, false))
+	var map := _pin(screen.find_child("Island", true, false))
+	if map != MECHANICS_MAP_PIN:
+		problems.append("map %s (pinned %s)" % [str(map), str(MECHANICS_MAP_PIN)])
 	await _free(screen)
-	for lab in ["orbit", "buoyancy"]:
+	for lab in MECHANICS_LAB_PIN:
 		var holder := Node3D.new()
 		tree.root.add_child(holder)
 		LabWorld.new(lab, Vector3.ZERO).build(holder)
-		got[lab] = _pin(holder.get_child(0), PIN_SNAP)
+		problems.append_array(_lab_pin_problems(lab, _lab_stats(holder.get_child(0)), MECHANICS_LAB_PIN[lab]))
 		holder.queue_free()
 		await tree.process_frame
 	Island.forget_current()
-	var changed := MECHANICS_PIN.keys().filter(func(k: String) -> bool: return got[k] != MECHANICS_PIN[k])
-	expect.call(changed.is_empty(), "mechanics island: its map and lab worlds are unchanged by the hutton features (vertex count and md5 pinned)",
-		"; ".join(changed.map(func(k: String) -> String: return "%s %s (pinned %s)" % [k, str(got[k]), str(MECHANICS_PIN[k])])))
+	expect.call(problems.is_empty(), "mechanics island: its map (exact position md5) and lab worlds (vertex count, coordinate sums, squares and bounds within tolerance) are unchanged by the hutton features",
+		"; ".join(problems))
 
 
-## [vertex count, md5 of the positions]: their exact bytes, or (snap > 0) each coordinate as the whole
-## number of `snap` m it rounds to.
-static func _pin(node: Node, snap := 0.0) -> Array:
+## [vertex count, md5 of the exact position bytes].
+static func _pin(node: Node) -> Array:
 	var verts: PackedVector3Array = (node as MeshInstance3D).mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
-	var bytes := verts.to_byte_array()
-	if snap > 0.0:
-		var steps := PackedInt32Array()
-		for v in verts:
-			for c in [v.x, v.y, v.z]:
-				steps.append(roundi(c / snap))
-		bytes = steps.to_byte_array()
 	var ctx := HashingContext.new()
 	ctx.start(HashingContext.HASH_MD5)
-	ctx.update(bytes)
+	ctx.update(verts.to_byte_array())
 	return [verts.size(), ctx.finish().hex_encode()]
+
+
+## A mesh's positions as {n, sum, sq, lo, hi}: per axis the sum of the coordinates and of their
+## squares (64-bit, in vertex order) and the bounding box.
+static func _lab_stats(node: Node) -> Dictionary:
+	var verts: PackedVector3Array = (node as MeshInstance3D).mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var sum := [0.0, 0.0, 0.0]
+	var sq := [0.0, 0.0, 0.0]
+	var lo := Vector3.INF
+	var hi := -Vector3.INF
+	for v in verts:
+		for a in 3:
+			sum[a] += v[a]
+			sq[a] += v[a] * v[a]
+		lo = lo.min(v)
+		hi = hi.max(v)
+	return {"n": verts.size(), "sum": sum, "sq": sq, "lo": [lo.x, lo.y, lo.z], "hi": [hi.x, hi.y, hi.z]}
+
+
+static func _lab_pin_problems(lab: String, got: Dictionary, pin: Dictionary) -> Array:
+	var out := []
+	if got.n != pin.n:
+		out.append("%s: %d vertices (pinned %d)" % [lab, got.n, pin.n])
+	for a in 3:
+		for check in [["sum", LAB_SUM_TOL], ["sq", LAB_SQ_TOL], ["lo", LAB_BOX_TOL], ["hi", LAB_BOX_TOL]]:
+			var diff := absf(float(got[check[0]][a]) - float(pin[check[0]][a]))
+			if diff > check[1]:
+				out.append("%s: %s[%d] %.4f (pinned %.4f, off %.4f > %s)" % [lab, check[0], a, got[check[0]][a], pin[check[0]][a], diff, str(check[1])])
+	return out
 
 
 ## The map (--island=hutton): one static island mesh and the sky within the mechanics map's vertices,
