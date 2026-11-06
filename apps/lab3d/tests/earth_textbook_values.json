@@ -1,0 +1,68 @@
+{
+  "about": "Textbook values the earth labs' models must give (#70, 2026-11-06). tests/earth_model_checks.gd reads every entry. Each entry names its source and its tolerance. The sun model (experiments/earth_lab/sun_model.gd) has a circular orbit, local solar time and no equation of time, so it matches the almanac within minutes, not seconds.",
+  "place": {
+    "name": "Seoul",
+    "latitude": 37.57,
+    "source": "KASI (한국천문연구원) Seoul reference point 37°34'N 126°58'E; Hutton Island's stand-in place (docs/islands/hutton.md)"
+  },
+  "tilt": {
+    "deg": 23.44,
+    "source": "IAU obliquity of the ecliptic, J2000.0: 23°26'21\" = 23.439°"
+  },
+  "rotation": {
+    "hours_per_rotation": 24.0,
+    "source": "초등 과학 6-2 '지구와 달의 운동': 지구는 하루에 한 바퀴 자전한다 (one solar day = 24 h)"
+  },
+  "noon_altitude": {
+    "tolerance_deg": 0.05,
+    "source": "중학교 과학 3 '태양의 남중 고도' = 90° − 위도 + 적위; KASI 남중고도 for Seoul",
+    "cases": [
+      {"name": "June solstice", "orbit": 90.0, "deg": 75.87},
+      {"name": "December solstice", "orbit": 270.0, "deg": 28.99},
+      {"name": "March equinox", "orbit": 0.0, "deg": 52.43},
+      {"name": "September equinox", "orbit": 180.0, "deg": 52.43}
+    ]
+  },
+  "day_length": {
+    "tolerance_min": 5.0,
+    "source": "KASI 천문우주지식정보 일출·일몰 시각 (astro.kasi.re.kr), Seoul 2026: 06-21 about 05:11-19:57, 12-22 about 07:43-17:17, 03-20 about 06:35-18:43. The almanac's sunrise is the sun's upper limb on the horizon with refraction (centre at -0.833°), the model's default horizon. The tolerance covers the year-to-year shift of the solstice day and the circular orbit.",
+    "geometric_note": "With the geometric horizon (centre at 0°) the solstice days at Seoul come out 8-12 minutes shorter (14 h 36 m, 9 h 24 m): the check below holds the model to that too, so a change of horizon is seen.",
+    "geometric_shorter_min": [7.0, 13.0],
+    "cases": [
+      {"name": "June solstice", "orbit": 90.0, "hours": 14.767},
+      {"name": "December solstice", "orbit": 270.0, "hours": 9.567},
+      {"name": "March equinox", "orbit": 0.0, "hours": 12.133}
+    ]
+  },
+  "upright": {
+    "tilt": 0.0,
+    "noon_altitude": 52.43,
+    "spread_max_deg": 0.01,
+    "day_length_hours": 12.14,
+    "day_length_tolerance_min": 2.0,
+    "source": "초등 과학 6-2 '계절의 변화': 자전축이 기울어지지 않으면 태양의 남중 고도가 일 년 내내 같아 계절이 생기지 않는다"
+  },
+  "shadow": {
+    "stick": 1.0,
+    "shortest_at_hour": 12.0,
+    "noon_azimuth_deg": 0.0,
+    "azimuth_tolerance_deg": 0.01,
+    "noon_length": [
+      {"name": "June solstice", "orbit": 90.0, "m": 0.2517},
+      {"name": "December solstice", "orbit": 270.0, "m": 1.8048}
+    ],
+    "length_tolerance_m": 0.002,
+    "source": "초등 과학 3-1·5-1 '그림자': 그림자는 해의 반대쪽에 생기고 해가 높을수록 짧다; 북반구에서 한낮의 그림자는 북쪽을 가리킨다. Lengths: 1 m / tan(noon altitude)"
+  },
+  "sunrise": {
+    "east_half_deg": [0.0, 180.0],
+    "equinox_azimuth_deg": 90.0,
+    "equinox_tolerance_deg": 1.5,
+    "solstice_azimuths": [
+      {"name": "June solstice", "orbit": 90.0, "deg": 59.9},
+      {"name": "December solstice", "orbit": 270.0, "deg": 120.1}
+    ],
+    "solstice_tolerance_deg": 1.5,
+    "source": "초등 과학 '해는 동쪽에서 떠서 서쪽으로 진다'; sunrise azimuth cos A = sin(declination) / cos(latitude) at the geometric horizon (spherical astronomy), Seoul about 60° (June) and 120° (December)"
+  }
+}

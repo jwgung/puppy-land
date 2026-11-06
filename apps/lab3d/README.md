@@ -43,6 +43,7 @@ apps/lab3d/
   experiments/rotation/               지렛대 실험(장면, LeverLabModel = 웹 LeverChallenge, LeverLabDriver = 막대·짐 구동, RotationProps 소품)
   experiments/pulley/                 도르래 실험(장면, PulleyLabModel = 웹 PulleyAdvantageChallenge, PulleyLabDriver = 짐 구동, PulleyProps 소품)
   experiments/manipulation_dev/       조작 확인용 개발 장면(목록에 없음, --experiment=manipulation-dev)
+  experiments/earth_lab/              지구과학 실험 기반 EarthLab(강체 없음: 순수 모델을 그리기만 함), EarthModel(입력·글라이드·reset), SunModel(태양 위치 모델: 낮과 밤·그림자 시계·계절, #70)
   content/experiments/                실험 정의 JSON(index.json + 실험별 파일: 데이터, 말은 content/locale)
   content/locale/<언어>/              글(ui.json: 코드의 글, experiments/·story/: 데이터 파일과 같은 모양의 말)
   assets/characters/                  빵고양이·두기두기·퍼피 glb + 텍스처 아틀라스(소스: art_src/characters/bread_cat.py, dugi.py, puppy.py, Blender 스크립트), 두기두기 대화창 초상화 portraits/(모델 렌더, dugi_portrait.py)
@@ -976,6 +977,17 @@ python3 -I apps/lab3d/tools/device_gesture.py orbit  # orbit | pinch | pinch-fix
 `ExperimentRegistry.validate()`가 필수 필드·카메라 모드·조건 형식·`manipulation`·`cast` 규칙을 검사하고, 잘못된 실험은 목록에서 빼고 오류를 남긴다.
 
 물체를 손으로 옮기게 하려면 JSON에 `manipulation`을 더하고 스크립트에 `manipulation_body`·`manipulation_surface`(필요하면 `manipulation_juice`·`placement_allowed`·`placements`)와 결과 통보를 구현한다(1절 "조작"). 목록에 내지 않을 장면은 `index.json`의 `hidden`에 둔다.
+
+### 지구과학 실험 추가: EarthLab (#70, 2026-11-06)
+
+허턴섬의 천문·온도 장소(낮과 밤, 그림자 시계, 계절, 물의 여행, 구름과 이슬, 바닷바람)는 강체가 없다. 모델이 상태를 계산하고 3D는 그리기만 한다([허턴섬 기획](../../docs/islands/hutton.md) "시뮬레이션", 이슈 #70 결정). 이런 실험은 `extends EarthLab`(`experiments/earth_lab/earth_lab.gd`)로 만든다. `ModelDrivenLab`은 강체를 구동하는 실험의 기반으로 그대로 둔다.
+
+- **모델**: `EarthModel`(`RefCounted`)을 잇는 순수 모델을 `_init()`이나 `_build_world()`에서 `model`에 둔다. 입력은 이름 붙은 64비트 숫자다. `define_input(id, 시작값, 속도, 주기)`로 선언하고(각도는 주기 360: [0, 360)에 두고 글라이드는 짧은 쪽으로 돈다), `set_input`은 바로, `glide_to`는 그 속도로 옮긴다. `set_start`는 조건이라 `reset()` 뒤에도 남는다. `status()`·`observations()`는 입력의 순수 함수다.
+- **기반이 하는 일**: `_physics_process`에서 모델이 글라이드 중일 때만 고정 스텝(1/60 s, `time_scale`만큼)으로 `step()`하고 다시 그린다. `status()`·`observations()`는 모델 값, `settled()`는 글라이드가 없고 손가락이 손잡이를 잡고 있지 않을 때 참이다(끄는 중에는 판정하지 않음). `set_control()`·`control_value()`는 값을 기억하고 `_apply_control()`로 모델에 넘긴 뒤 run을 다시 시작한다(입력과 같은 이름의 숫자 조건은 그 입력의 시작값, 선택지는 실험이 재정의). `reset_run()`·`처음으로`(`run_action("reset")`)는 모델 입력을 시작값으로 되돌린다. `MissionRound`는 그대로 쓴다(status·settled·observations·control_value만 읽음).
+- **손잡이**: `add_knob(id, 이름, 크기)`가 충돌하지 않는 `StaticBody3D`(레이어 2, mask 0, 그림 없음)를 만든다. 던지기 화살표 끝·도르래 줄 끝과 같은 방식이고, 셸의 `Manipulator`가 집고 끈다. JSON `manipulation.objects`에 그 id의 규칙(`surface`·`snap`, 손 안내 `guide`·`guide_to`)을 둔다. 실험은 `manipulation_surface()`(끄는 면), `_knob_inputs(id, 변환)`(손잡이 자리 → 모델 입력), `_knob_pose(id)`(모델 → 손잡이 자리. `Manipulator`는 몸체를 면에서 반 크기만큼 띄워 잡으므로 `KNOB_SIZE * 0.5` 위에 둔다)를 채운다. 잡는 동안 모델이 손잡이를 따라가고, 놓으면 그 자리가 모델 값이 되고(`placements()`로 화면 재구성 때 남음), 취소하면 손잡이와 모델이 함께 돌아간다. 잡지 않을 때는 손잡이가 모델이 말하는 자리에 선다.
+- **그리기**: `_redraw()`에서 모델 상태로 메시·하늘·그림자를 놓는다. 그림일 뿐 모델을 바꾸지 않는다.
+- **태양 위치 모델** `SunModel`(낮과 밤·그림자 시계·계절이 함께 씀): 입력 `rotation`(지구 자전 각, 0 = 자정, 180 = 한낮, 한 바퀴 = 24시간), `orbit`(공전 각, 0 = 춘분, 90 = 하지, 270 = 동지), `tilt`(자전축 기울기, 23.44° 또는 똑바로 0°), `latitude`(기본 서울 37.57°N), `stick`(막대 높이 m). 결과는 태양 고도·방위각(북 0°, 동 90°), 남중 고도, 적위, 낮 길이(일출·일몰 기준 −0.833°: 천문연구원 역서와 같음), 낮·밤과 상태(`night`·`sunrise`·`day`·`sunset`, 지평선 ±7.5° 띠는 해 뜨는·지는 중), 막대 그림자의 길이·방향(해가 땅 위일 때만). 공전은 원, 시각은 지방 태양시다(균시차 없음).
+- **교과서 값 시험**: `tests/earth_textbook_values.json`(출처를 단 기준값: 자전 24시간, 서울 한낮 해 높이 하지 75.9°·동지 29.0°·춘추분 52.4°, 낮 길이 하지 14시간 46분·동지 9시간 34분, 똑바로 선 지구는 일 년 내내 같은 한낮 높이, 그림자는 한낮에 가장 짧고 북쪽, 해는 동쪽에서 뜸)과 `tests/earth_model_checks.gd`. 새 모델은 기준값과 출처·허용 오차를 이 JSON에 더하고 같은 시험 파일에 검사를 더한다.
 
 ## 6. 한계
 
