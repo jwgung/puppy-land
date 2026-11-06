@@ -9,6 +9,11 @@
 ## the content tags each line); it never changes within one line (2026-10-27: a face changing every
 ## page was too busy), a line with the same face keeps the picture as it is (no re-pop), and a new face
 ## swaps in with a short soft pop (SWAP_S) that changes neither the box nor the portrait's rect.
+## A line may carry an explanation picture (#73, ExplainPictures: `picture` next to its `face` in the
+## data): its card stands in the middle of the view while that line is in the box (every page of it)
+## and goes with the next line or the close. A tap on the card turns the page like a tap on the box
+## (the card stands over the middle of the view, often over the lab's object: a tap there must not
+## grab it); it keeps clear of the box and of the rects in `card_avoid` (the lab's top chips).
 ##
 ## The words are the lab's observe text exactly (or, for one open, other words of Dugi's: the
 ## mission's question or the prediction's reason — Plan G4), only split into pages of at most
@@ -48,6 +53,10 @@ const MORE_ROOM := 30.0                     # right of the text: the ▼
 const SWAP_S := 0.16
 const SWAP_SCALE := 0.94
 const SWAP_ALPHA := 0.55
+## The explanation picture's card (#73: 384 x 256 UI units, scaled with the UI zoom like every panel).
+const CARD_SIZE := Vector2(384.0, 256.0)
+## Room kept between the card and the box or an avoided rect.
+const CARD_GAP := 12.0
 ## The highlight under a term when the theme has none (DialogueLabel's term_highlight).
 const TERM_HIGHLIGHT := Color("ffe066")
 static var _textures := {}
@@ -58,6 +67,13 @@ var speaker := "dugi"
 ## The face shown now (Story.FACES) and the face of the box's own words (set_words).
 var face := Story.DEFAULT_FACE
 var words_face := ""
+## The explanation picture of the line in the box (ExplainPictures.KINDS, "" none) and of the box's
+## own words (set_words).
+var picture := ""
+var words_picture := ""
+## Rects in the parent (the view) the card keeps clear of when it can (set before layout()).
+var card_avoid: Array[Rect2] = []
+var card: Control
 ## Portrait pictures swapped in (a new speaker or face; tests: a same-face line swaps nothing).
 var swaps := 0
 var _swap_t := -1.0
@@ -114,6 +130,17 @@ func _init(own_words: String) -> void:
 	name_label = Ui.label(Locale.t("speaker.dugi"), "DialogueNameLabel")
 	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	name_tag.add_child(name_label)
+	card = Control.new()
+	card.name = "PictureCard"
+	card.mouse_filter = Control.MOUSE_FILTER_STOP
+	card.visible = false
+	card.gui_input.connect(func(event: InputEvent) -> void:
+		if TapCatcher.is_tap(event) and active:
+			advance()
+			card.accept_event())
+	card.size = CARD_SIZE
+	card.draw.connect(func() -> void: ExplainPictures.draw_card(card, picture, Rect2(Vector2.ZERO, card.size)))
+	add_child(card)
 
 
 # --- pages ----------------------------------------------------------------------------------------
@@ -279,12 +306,39 @@ func layout(view: Rect2, right: float, margin: float) -> bool:
 	name_tag.position = Vector2(text_left - 4.0, box.position.y - NAME_LIFT)
 	label.size = Vector2(text_width, line_h * LINES)
 	name_tag.size = name_tag.get_combined_minimum_size()
+	_place_card(view)
 	if not is_equal_approx(text_width, _text_width):
 		_text_width = text_width
 		_pages = paginate(text, font, size_px, text_width, _bold())
 		page = mini(page, maxi(0, _pages.size() - 1))
 		_show_page(false)
 	return true
+
+
+## The card's place: the middle of `view`; up when it would come near the box (and its name tag).
+## Near an avoided rect it moves down below it while it stays above the box, else to its right
+## while it stays in the view (a narrow view: it stays and may overlap).
+func _place_card(view: Rect2) -> void:
+	var at := view.get_center() - CARD_SIZE / 2.0
+	var under := position.y + box.position.y - NAME_LIFT - CARD_GAP
+	at.y = minf(at.y, under - CARD_SIZE.y)
+	for avoid in card_avoid:
+		if not Rect2(at, CARD_SIZE).intersects(avoid.grow(CARD_GAP)):
+			continue
+		var below := avoid.end.y + CARD_GAP
+		var right := avoid.end.x + CARD_GAP
+		if below + CARD_SIZE.y <= under:
+			at.y = maxf(at.y, below)
+		elif right + CARD_SIZE.x <= view.end.x - CARD_GAP:
+			at.x = maxf(at.x, right)
+	at.y = maxf(at.y, view.position.y)
+	card.position = at - position
+	card.size = CARD_SIZE
+
+
+## The card's rect in the parent (the view; tests).
+func card_rect() -> Rect2:
+	return Rect2(position + card.position, card.size)
 
 
 ## The box's and the portrait's rects in the parent (the view), for the overlap rules (tests).
@@ -323,21 +377,26 @@ func set_speaker(who: String, new_face := "") -> void:
 
 
 ## Replaces the box's own words (the words of every later open without other words) and their face.
-func set_words(new_words: String, new_face := "") -> void:
+## `new_picture`: their explanation picture (ExplainPictures; "" none).
+func set_words(new_words: String, new_face := "", new_picture := "") -> void:
 	words = new_words
 	words_face = new_face
+	words_picture = ExplainPictures.picture_or_none(new_picture)
 	_set_text(new_words)
 
 
 ## Opens at the first page (laid out by the caller first). `once` (optional): other words for this
 ## open only (the prediction's question or reason, Plan G4), with `once_face` (optional: else the
-## face set before, set_speaker); the next open shows the box's own words (and their face) again.
-func open(once := "", once_face := "") -> void:
+## face set before, set_speaker) and `once_picture` (optional: its explanation picture); the next
+## open shows the box's own words (and their face and picture) again. Each open is a new line: its
+## own picture's card shows, or none.
+func open(once := "", once_face := "", once_picture := "") -> void:
 	if once == "":
 		set_speaker(speaker, words_face)
 	elif once_face != "":
 		set_speaker(speaker, once_face)
 	_set_text(once if once != "" else words)
+	_show_picture(words_picture if once == "" else ExplainPictures.picture_or_none(once_picture))
 	active = true
 	page = 0
 	_show_page(true)
@@ -357,10 +416,17 @@ func close(quiet := false) -> void:
 		return
 	active = false
 	visible = false
+	_show_picture("")
 	_swap_t = -1.0
 	_draw_swap()   # a pop cut short ends on the whole picture
 	if not quiet:
 		closed.emit()
+
+
+func _show_picture(kind: String) -> void:
+	picture = kind
+	card.visible = kind != ""
+	card.queue_redraw()
 
 
 ## The page is fully shown (the ▼ blinks).

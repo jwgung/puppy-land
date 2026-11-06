@@ -88,7 +88,7 @@ func check_clue_question_bridge() -> void:
 	var ended := []
 	round.question_ended.connect(func() -> void: ended.append(true))
 	var clue := round.clue_to_open()
-	expect.call(round.phase() == MissionRound.Phase.CLUE and round.asking() and clue.size() == 3 and clue[2] == "puppy"
+	expect.call(round.phase() == MissionRound.Phase.CLUE and round.asking() and clue.size() == 4 and clue[2] == "puppy"
 		and clue[0] == Story.clue(round.definition) and round.choices().size() == 2,
 		"round module: a first visit opens on Puppy's clue, the question waiting behind it", str(clue))
 	round.clue_opened()
@@ -98,7 +98,7 @@ func check_clue_question_bridge() -> void:
 	round.clue_read()
 	# Dugi's introduction of the lab next (2026-10-31), then his question.
 	var intro := round.clue_to_open()
-	var introduced: bool = round.phase() == MissionRound.Phase.CLUE and intro.size() == 3 and intro[2] == "dugi" \
+	var introduced: bool = round.phase() == MissionRound.Phase.CLUE and intro.size() == 4 and intro[2] == "dugi" \
 		and intro[0] == MissionRound.intro(round.definition)[0] and intro[0] != ""
 	round.clue_opened()
 	round.clue_read()
@@ -111,7 +111,7 @@ func check_clue_question_bridge() -> void:
 	expect.call(round.answer("far") == "" and round.pick == "near" and ended.size() == 1,
 		"round module: a second answer after the question changes nothing", round.pick)
 	var bridge := "%s %s" % [predict.bridge, MissionRound.mission_line(round.definition, 0)]
-	expect.call(round.bridge_line() == bridge and round.take_line() == [bridge, Story.face_or_default(predict.bridge_face)]
+	expect.call(round.bridge_line() == bridge and round.take_line() == [bridge, Story.face_or_default(predict.bridge_face), ""]
 		and round.take_line().is_empty() and round.reason == str(predict.reason),
 		"round module: the bridge comes first and once; the reason waits for the first result line", round.bridge_line())
 	var reopened := MissionRound.create(round.definition, _stand_in(round.definition), store)
@@ -119,7 +119,7 @@ func check_clue_question_bridge() -> void:
 	reopened.open(true)
 	Story.enabled = false
 	var again := reopened.clue_to_open()
-	expect.call(reopened.phase() == MissionRound.Phase.CLUE and again.size() == 3 and again[2] == "dugi",
+	expect.call(reopened.phase() == MissionRound.Phase.CLUE and again.size() == 4 and again[2] == "dugi",
 		"round module: the next visit has no clue: Dugi's introduction, then the question", str(again))
 
 
@@ -151,7 +151,7 @@ func check_stamps_and_reason() -> void:
 	order.clear()
 	round.judge_run()
 	expect.call(order.is_empty() and round.stamps == 1, "round module: the same attempt earns nothing more", str(order))
-	expect.call(round.take_line() == [round.definition.predict.reason, round.reason_face] and round.take_line().is_empty(),
+	expect.call(round.take_line() == [round.definition.predict.reason, round.reason_face, ""] and round.take_line().is_empty(),
 		"round module: Dugi tells the reason once, after the first result line", "")
 	expect.call(round.say_stage() == 0 and round.stage_say()[0] == MissionRound.missions(round.definition).stages[0].say,
 		"round module: Dugi explains the stage just cleared", str(round.say_stage()))

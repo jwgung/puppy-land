@@ -411,10 +411,10 @@ func _run_dialogue() -> void:
 		# explains only after a throw has ended (cast explain_on).
 		var line: Array = mission_round.take_line() if mission_round != null else []
 		if not line.is_empty():
-			dialogue.open(line[0], line[1])
+			dialogue.open(line[0], line[1], line[2])
 		else:
 			var say := explain_say()
-			dialogue.set_words(say[0], say[1])
+			dialogue.set_words(say[0], say[1], say[2])
 			dialogue.open()
 		dialogue.visible = true
 	elif not dugi.speaking():
@@ -434,10 +434,10 @@ func _run_question() -> void:
 			return   # (no question after it: question_ended has let the box go)
 		dialogue.hold = r.clue_to_open().is_empty()   # the question holds; another line before it turns on a tap
 	elif not r.clue_to_open().is_empty() and not dialogue.active and not is_sidebar_open() and _layout_dialogue():
-		var clue := r.clue_to_open()   # [text, face, speaker]: Puppy's clue, then Dugi's introduction
+		var clue := r.clue_to_open()   # [text, face, speaker, picture]: Puppy's clue, then Dugi's introduction
 		dialogue.set_speaker(str(clue[2]), clue[1])
 		dialogue.hold = false   # a tap closes it
-		dialogue.open(clue[0])
+		dialogue.open(clue[0], "", clue[3])
 		r.clue_opened()   # the clue is told once
 	var asking_now := r.phase() == MissionRound.Phase.ASKING
 	if asking_now and not dialogue.active and not is_sidebar_open() and _layout_dialogue():
@@ -460,7 +460,7 @@ func _asking() -> bool:
 	return mission_round != null and mission_round.asking()
 
 
-## Dugi's explanation now [words, face] (2026-10-29 user "목표마다 두기두기의 설명이 달라지면 좋겠어"):
+## Dugi's explanation now [words, face, picture] (2026-10-29 user "목표마다 두기두기의 설명이 달라지면 좋겠어"):
 ## the say of the stage it explains (MissionRound.stage_say), the lab's kid.say once every stage is
 ## done or without missions.
 func explain_say() -> Array:
@@ -468,7 +468,8 @@ func explain_say() -> Array:
 	if not say.is_empty():
 		return say
 	var kid: Variant = definition.raw.get("kid")
-	return [cast.text if cast != null else "", Story.face_or_default(kid.get("say_face") if kid is Dictionary else null)]
+	return [cast.text if cast != null else "", Story.face_or_default(kid.get("say_face") if kid is Dictionary else null),
+		ExplainPictures.picture_or_none(kid.get("say_picture") if kid is Dictionary else null)]
 
 
 ## Closes an open dialogue now; Dugi lowers his arm.
@@ -493,6 +494,12 @@ func _layout_dialogue() -> bool:
 		right = minf(right, _dialogue_right)
 	_dialogue_right = right if dialogue.active else NAN
 	_dialogue_right_for = view.size
+	# The explanation picture's card keeps clear of the top chips (title, key cards, stamps and the
+	# guess, the top buttons) and the picture buttons.
+	dialogue.card_avoid.clear()
+	for c: Control in [_title_bar, _key_row, _mission_pill, _mission_strip, _mission_text, _top_buttons, _picks_row]:
+		if c != null and c.visible:
+			dialogue.card_avoid.append(c.get_rect())
 	return dialogue.layout(view_rect, right, OVERLAY_MARGIN)
 
 

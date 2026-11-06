@@ -149,6 +149,7 @@ static func validate(definition: Dictionary) -> PackedStringArray:
 ## full texts and the formula labels):
 ##   "kid": {"title": <the title bar>, "place": <the map's spot name>, "say": <Dugi's dialogue>, "say_face": <its face>,
 ##           "intro": <Dugi's introduction of the lab before his question>, "intro_face": <its face>,
+##           "say_picture", "intro_picture": <their explanation pictures, ExplainPictures.KINDS (#73)>,
 ##           "tip": <the short gesture hint>, "card": <the one key observation shown as a card>,
 ##           "cards": {<observation id>: <its key card's caption>},
 ##           "states": {<a status text of the lab>: <its key card words>},
@@ -188,6 +189,9 @@ static func _validate_kid(kid: Variant, ids: Array) -> PackedStringArray:
 		elif key == "say_face" or key == "intro_face":
 			if not kid[key] in Story.FACES:
 				problems.append("kid.%s must be one of Story.FACES" % key)
+		elif key == "say_picture" or key == "intro_picture":
+			if ExplainPictures.problem(key, kid[key]) != "":
+				problems.append(ExplainPictures.problem("kid." + key, kid[key]))
 		elif key == "picks":
 			pass   # ConditionPicks.validate (it needs the controls and the missions)
 		elif key == "bars":
