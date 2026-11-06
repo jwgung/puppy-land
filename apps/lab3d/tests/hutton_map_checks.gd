@@ -17,11 +17,15 @@ const LAB_VERTS_MAX := 30000   # lab_world_checks.VERTS_MAX
 ## The mechanics island's map and two of its lab worlds (built at the origin) as they were before the
 ## hutton island (#72): vertex count and the md5 of the vertex positions. The hutton features add
 ## nothing to an island without them; a change here must be intentional (update the pin with it).
+## The map's positions are hashed exactly; the lab worlds' snapped to PIN_SNAP m first: their last
+## float bits differ between machines (CI's md5 of the exact bytes differed from a desktop's with the
+## same vertex count, 2026-11-06).
 const MECHANICS_PIN := {
 	"map": [42426, "559a1fc33974ff848e90ad9c1883ed6d"],
-	"orbit": [27702, "cf577bdf194109ce07eeeb95fb17b6ff"],
-	"buoyancy": [29406, "6ba7d0a6cff15096a76e379577f53fb9"],
+	"orbit": [27702, "181e7050cb7e3e4bb6932d427e2b3f41"],
+	"buoyancy": [29406, "d8c1c4f05814db0e3766a6a037a9b92c"],
 }
+const PIN_SNAP := 1e-4
 
 var tree: SceneTree
 var expect: Callable
@@ -150,7 +154,7 @@ func check_mechanics_pinned() -> void:
 		var holder := Node3D.new()
 		tree.root.add_child(holder)
 		LabWorld.new(lab, Vector3.ZERO).build(holder)
-		got[lab] = _pin(holder.get_child(0))
+		got[lab] = _pin(holder.get_child(0), PIN_SNAP)
 		holder.queue_free()
 		await tree.process_frame
 	Island.forget_current()
@@ -159,11 +163,20 @@ func check_mechanics_pinned() -> void:
 		"; ".join(changed.map(func(k: String) -> String: return "%s %s (pinned %s)" % [k, str(got[k]), str(MECHANICS_PIN[k])])))
 
 
-static func _pin(node: Node) -> Array:
+## [vertex count, md5 of the positions]: their exact bytes, or (snap > 0) each coordinate as the whole
+## number of `snap` m it rounds to.
+static func _pin(node: Node, snap := 0.0) -> Array:
 	var verts: PackedVector3Array = (node as MeshInstance3D).mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var bytes := verts.to_byte_array()
+	if snap > 0.0:
+		var steps := PackedInt32Array()
+		for v in verts:
+			for c in [v.x, v.y, v.z]:
+				steps.append(roundi(c / snap))
+		bytes = steps.to_byte_array()
 	var ctx := HashingContext.new()
 	ctx.start(HashingContext.HASH_MD5)
-	ctx.update(verts.to_byte_array())
+	ctx.update(bytes)
 	return [verts.size(), ctx.finish().hex_encode()]
 
 
