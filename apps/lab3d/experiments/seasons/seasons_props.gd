@@ -3,13 +3,15 @@
 ## - a deep blue round stage (ArtPalette.SPACE) with star dots,
 ## - the sun in the middle on its pedestal, always bright, with rays,
 ## - the Earth's path round it: a ring of light dashes at the Earth's height, with an orange arrow on
-##   its far side the way the Earth really goes (counter-clockwise seen from above the north pole),
+##   its far right the way the Earth really goes (counter-clockwise seen from above the north pole),
 ## - the Earth on the path: the 낮과 밤 globe (DayNightProps.globe_mesh, the fox's house with its bright
 ##   flag on Hutton Island, turned to face the camera so the island is always in view), lit by the sun
 ##   from where it is (the half towards the sun is day), and its axis as a thick rod with the red north
-##   end. Tilted, the axis leans the same way all year (towards the screen's left: the June solstice
-##   is on the right of the sun, where the north end leans towards it; the December solstice on the
-##   left); upright, it stands straight,
+##   end. The March equinox (the start) is behind the sun, the September one in front; the axis leans
+##   the same way all year, towards the screen's right: the June solstice is on the left of the sun,
+##   where the north end leans towards it, the December solstice on the right. Upright, it stands
+##   straight. (#87 Q13, 2026-11-07: the globe 1.65 times the first one's, the start far from the
+##   camera so the big globe opens clear of the dialogue box.)
 ## - the yard window, high on the right: the sky over Hutton Island at noon. The sun stands as high as
 ##   the noon sun (a dashed arc is its day's path: wide and high in summer, short and low in winter),
 ##   a thick bar beside the picture fills with the sun's height, and the day bar under it is as long
@@ -20,46 +22,47 @@
 class_name SeasonsProps
 extends RefCounted
 
-const SUN_CENTER := Vector3(0.0, 2.7, -1.6)
-const SUN_RADIUS := 1.05
+const SUN_CENTER := Vector3(0.0, 3.6, -1.6)
+const SUN_RADIUS := 0.8
 const SUN_SHADE := Color(1.0, 0.82, 0.6)
 ## The Earth's path round the sun (m) and the globe on it (m).
-const ORBIT_RADIUS := 5.2
-const GLOBE_RADIUS := 1.7
+const ORBIT_RADIUS := 6.3
+const GLOBE_RADIUS := 2.8
 ## The house on the globe drawn this much bigger than the 낮과 밤 globe's (its flag reads from afar).
-const HOUSE_GROW := 2.0
-## The house's meridian turned this far from the camera towards the screen's right about the axis:
-## the house sits near the globe's right rim, its flag standing out against the sky.
-const HOUSE_TURN_DEG := 50.0
+const HOUSE_GROW := 1.4
+## The house's meridian turned this far from the camera about the axis (negative: towards the
+## screen's left, against the axis's lean): the house and its flag stay on the globe's face, the flag
+## never out past the screen's edge when the Earth is at the December solstice on the right.
+const HOUSE_TURN_DEG := -30.0
 ## The stage: a low round podium (it covers the lab corner's rocks and flowers under it) round the
 ## sun. The lab's corner of the island is centred at WORLD_CENTER, where its trees stand clear of
 ## the podium and the window (ArtKit.TREES round it).
 const STAGE_CENTER := Vector3(0.0, 0.0, -1.2)
-const STAGE_RADIUS := 8.0
+const STAGE_RADIUS := 9.6
 const STAGE_TOP := 0.7
-const WORLD_CENTER := Vector3(-1.0, 0.0, -6.0)
+const WORLD_CENTER := Vector3(-1.2, 0.0, -7.4)
 ## The path's dashes: how many, their width and thickness; the arrow on the far side (deg of the path, as
 ## path_point: 90 = straight behind the sun) and its look.
 const DASHES := 72
 const DASH_WIDTH := 0.09
 const DASH_THICK := 0.06
 const PATH_COLOR := Color("fff1b0")
-const ARROW_FROM_DEG := 62.0
-const ARROW_TO_DEG := 118.0
+const ARROW_FROM_DEG := 18.0
+const ARROW_TO_DEG := 66.0
 const ARROW_TUBE := 0.085
 const ARROW_COLOR := Color("ff7a1a")
 const ARROW_TOP := Color("ff9440")
 ## The axis rod beyond the poles (m) and its radius.
-const ROD_OUT := 0.75
-const ROD_RADIUS := 0.075
+const ROD_OUT := 1.1
+const ROD_RADIUS := 0.12
 const NIGHT := Color("2a3a86")   # the globe's night side: a dusk blue (the lands still read)
-const CAT_AT := Vector3(-5.2, STAGE_TOP, 3.6)
+const CAT_AT := Vector3(-5.6, STAGE_TOP, 6.4)
 ## The yard window: its centre (world), the picture's size (m), the frame, the height bar beside the
 ## picture and the day bar under it (m).
-const WINDOW_CENTER := Vector3(9.8, 6.9, -4.8)
+const WINDOW_CENTER := Vector3(8.4, 9.0, -7.5)
 const WINDOW_TURN_DEG := -24.0
 ## The whole window drawn this much bigger than its picture's metres (the bars read on a phone).
-const WINDOW_SCALE := 1.3
+const WINDOW_SCALE := 1.15
 const WINDOW_SIZE := Vector2(3.2, 1.9)
 const FRAME := 0.14
 const FRAME_DEPTH := 0.14
@@ -107,10 +110,10 @@ var shown_day := 0.0
 var shown_snow := 0.0
 
 
-## The Earth's centre on its path at orbit angle `orbit` (deg, SunModel's: 0 = the March equinox, in
-## front of the sun; 90 the June solstice, on the right; 270 the December solstice, on the left).
+## The Earth's centre on its path at orbit angle `orbit` (deg, SunModel's: 0 = the March equinox,
+## behind the sun; 90 the June solstice, on the left; 270 the December solstice, on the right).
 static func earth_center(orbit: float) -> Vector3:
-	return SUN_CENTER + path_point(orbit - 90.0, ORBIT_RADIUS)
+	return SUN_CENTER + path_point(orbit + 90.0, ORBIT_RADIUS)
 
 
 ## A point of a circle round the sun's height (deg from +x, counter-clockwise seen from above).
@@ -122,18 +125,18 @@ static func path_point(deg: float, radius: float) -> Vector3:
 ## The orbit angle (deg, 0..360) of a world point on the path's plane (the knob's place).
 static func orbit_of(point: Vector3) -> float:
 	var d := point - SUN_CENTER
-	return fposmod(rad_to_deg(atan2(-d.z, d.x)) + 90.0, 360.0)
+	return fposmod(rad_to_deg(atan2(-d.z, d.x)) - 90.0, 360.0)
 
 
-## The north end's direction for an axis tilt of `tilt` deg (leaning towards -x).
+## The north end's direction for an axis tilt of `tilt` deg (leaning towards +x, the screen's right).
 static func north(tilt: float) -> Vector3:
 	var e := deg_to_rad(tilt)
-	return Vector3(-sin(e), cos(e), 0.0)
+	return Vector3(sin(e), cos(e), 0.0)
 
 
 ## The globe's basis: its own frame (north +y, the house's meridian +x: DayNightProps.globe_mesh) put
 ## on the leaning axis with the house's meridian towards the camera (+z), turned HOUSE_TURN_DEG
-## to the right about the axis (it never spins: the window shows the noon).
+## about the axis (it never spins: the window shows the noon).
 static func globe_basis(tilt: float) -> Basis:
 	var n := north(tilt)
 	var front := Vector3.BACK

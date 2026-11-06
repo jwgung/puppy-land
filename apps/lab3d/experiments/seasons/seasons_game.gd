@@ -8,9 +8,12 @@
 class_name SeasonsGame
 extends LabGame
 
-## Inside the path, on the podium: the bud on the summer side (right), the snowman on the winter side.
-const BUD_AT := Vector3(2.5, SeasonsProps.STAGE_TOP, 0.1)
-const SNOWMAN_AT := Vector3(-2.5, SeasonsProps.STAGE_TOP, 0.1)
+## Inside the path, on the podium: the bud on the summer side (left), the snowman on the winter side (right).
+## Behind the sun's foot, between the sun and the Earth's path (#87 Q13: the low camera sees the
+## podium's back half clear of the dialogue box), drawn PROP_SIZE times their meshes.
+const BUD_AT := Vector3(-2.0, SeasonsProps.STAGE_TOP, -3.4)
+const SNOWMAN_AT := Vector3(2.0, SeasonsProps.STAGE_TOP, -3.4)
+const PROP_SIZE := 1.5
 const STEM := 0.9
 const PETALS := 6
 const PETAL := Vector3(0.2, 0.42, 0.09)   # a petal's half sizes (across, up, thick)
@@ -57,6 +60,7 @@ func build() -> void:
 	bud = Node3D.new()
 	bud.name = "Bud"
 	bud.position = BUD_AT
+	bud.scale = Vector3.ONE * PROP_SIZE
 	add_child(bud)
 	bud.add_child(ArtKit.instance(_stem_mesh()))
 	for i in PETALS:
@@ -71,7 +75,7 @@ func build() -> void:
 	_ice = ArtKit.instance(_ice_mesh())
 	_ice.name = "Ice"
 	bud.add_child(_ice)
-	make_piece(BUD_AT + Vector3(0.0, STEM + PETAL.y * 1.55, 0.0), HIDDEN_SIZE)
+	make_piece(BUD_AT + Vector3(0.0, (STEM + PETAL.y * 1.55) * PROP_SIZE, 0.0), HIDDEN_SIZE * PROP_SIZE)
 	snowman = ArtKit.instance(_snowman_mesh())
 	snowman.name = "Snowman"
 	snowman.position = SNOWMAN_AT
@@ -108,14 +112,14 @@ func _cleared(stage_index: int, last: bool) -> void:
 
 func _jump(stamps: int) -> void:
 	snowman.visible = stamps >= 1
-	snowman.scale = Vector3.ONE
+	snowman.scale = Vector3.ONE * PROP_SIZE
 	_set_bloom(1.0 if stamps >= stages else 0.0)
 	_grow_at = -10.0
 	_bloom_at = -10.0
 
 
 func highlight_radius() -> float:
-	return HIGHLIGHT_R
+	return HIGHLIGHT_R * PROP_SIZE
 
 
 ## The bud is open (the round's last stamp).
@@ -140,7 +144,7 @@ func _process(delta: float) -> void:
 			_launched = true
 			_launch()
 	elif piece_state in ["flying", "out"]:
-		var grow := PIECE_SIZE / HIDDEN_SIZE
+		var grow := PIECE_SIZE / (HIDDEN_SIZE * PROP_SIZE)
 		piece.scale = piece.scale.lerp(Vector3.ONE * grow, clampf(delta * GROW_RATE, 0.0, 1.0))
 
 
@@ -156,10 +160,10 @@ func _run_snow() -> void:
 	if _grow_at > 0.0 and _t >= _grow_at:
 		snowman.visible = true
 		var g := clampf((_t - _grow_at) / GROW_S, 0.0, 1.0)
-		snowman.scale = Vector3.ONE * maxf(0.001, (1.0 - pow(1.0 - g, 3.0)) * (1.0 + 0.15 * sin(g * PI)))
+		snowman.scale = Vector3.ONE * PROP_SIZE * maxf(0.001, (1.0 - pow(1.0 - g, 3.0)) * (1.0 + 0.15 * sin(g * PI)))
 		if g >= 1.0:
 			_grow_at = -10.0
-			snowman.scale = Vector3.ONE
+			snowman.scale = Vector3.ONE * PROP_SIZE
 
 
 ## Out of the open flower: up on an arc (the lab's gravity) that lands on the stage beside the cat.
@@ -244,6 +248,6 @@ static func _flake_mesh() -> Mesh:
 	for i in FLAKES:
 		var r := 4.5 * sqrt((i + 0.5) / FLAKES)
 		var a := i * 2.399963
-		var p := Vector3(-2.5 + cos(a) * r * 0.6, SNOW_TOP + fposmod(i * 0.618, 1.0) * 2.5, 0.5 + sin(a) * r * 0.5)
+		var p := Vector3(SNOWMAN_AT.x + cos(a) * r * 0.6, SNOW_TOP + fposmod(i * 0.618, 1.0) * 2.5, SNOWMAN_AT.z + sin(a) * r * 0.5)
 		b.add_sphere(Transform3D(Basis(), p), 0.07 + 0.03 * (i % 3), 2, 6, Color.WHITE)
 	return b.commit()

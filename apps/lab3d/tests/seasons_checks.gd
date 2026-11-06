@@ -17,8 +17,9 @@
 ##   the run over;
 ## - no number on the screen: the observations are words, no units, the card is the season; the
 ##   window's sun and day bar follow the model (higher and longer in summer, the same all round upright);
-## - what matters is in view: the Earth all round its path, its axis and the house's flag, and the yard
-##   window inside the phone's and the tablet's view, clear of the bottom (the dialogue box, the buttons);
+## - what matters is big and in view: the Earth at the start and at the solstices with the house's flag,
+##   big, between the top band and the bottom (the dialogue box, the buttons), the path across the
+##   phone, the yard window inside and above the December Earth;
 ## - the spot: the hutton map's seasons spot is this experiment, the island is still not playable;
 ## - the opening (the fox first on a first visit), the hand (the Earth follows the finger round its
 ##   path, a put-down keeps it, a cancel puts it back) and the piece (in the frozen bud until the last
@@ -38,7 +39,13 @@ const EDGE := 0.03
 const BOTTOM_FREE := 0.8
 ## The Earth also keeps under the top band (the title, the key card and the mission strip under it).
 const TOP_FREE := 0.33
+## A solstice's globe at least this share of the view's height; the path at least this share of the
+## phone's width (#87 Q13).
+const GOAL_MIN := 0.35
+const PATH_SPAN := 0.58
 const LINE_MAX := 24
+## How far (deg) the Earth may land from the finger's 50 deg in the drag check (the camera assist).
+const DRAG_SLACK := 10.0
 
 var tree: SceneTree
 var expect: Callable
@@ -364,8 +371,8 @@ func check_condition_button() -> void:
 		var groups := ConditionPicks.groups(definition, i)
 		if groups.size() != 1 or groups[0].control != "tilt" or groups[0].presets.size() != 2:
 			problems.append("stage %d buttons %s" % [i + 1, str(groups)])
-	if lab.control_value("tilt") != "tilted" or absf(lab.props.axis.basis.y.angle_to(Vector3.UP) - deg_to_rad(SunModel.EARTH_TILT)) > 1e-4 or lab.props.axis.basis.y.x >= 0.0:
-		problems.append("the start is not the tilted axis (leaning left)")
+	if lab.control_value("tilt") != "tilted" or absf(lab.props.axis.basis.y.angle_to(Vector3.UP) - deg_to_rad(SunModel.EARTH_TILT)) > 1e-4 or lab.props.axis.basis.y.x <= 0.0:
+		problems.append("the start is not the tilted axis (leaning right)")
 	lab.model.set_input("orbit", 200.0)
 	var resets := lab.reset_count
 	lab.set_control("tilt", "upright")
@@ -378,7 +385,7 @@ func check_condition_button() -> void:
 	lab.set_control("tilt", "tilted")
 	if lab.model.input("tilt") != SunModel.EARTH_TILT:
 		problems.append("tilted again: %.2f" % lab.model.input("tilt"))
-	expect.call(problems.is_empty(), "seasons condition button: 기울어짐 / 똑바로 on every stage; the axis leans by the Earth's tilt (to the left) or stands straight, a new choice starts the run over, 다시 keeps it",
+	expect.call(problems.is_empty(), "seasons condition button: 기울어짐 / 똑바로 on every stage; the axis leans by the Earth's tilt (to the right) or stands straight, a new choice starts the run over, 다시 keeps it",
 		"; ".join(problems))
 	lab.queue_free()
 	await tree.process_frame
@@ -431,15 +438,20 @@ func check_no_numbers() -> void:
 
 # --- in view --------------------------------------------------------------------------------------
 
-## The Earth (its whole globe, all round its path), its flag and the window's corners project inside
-## the phone's and the tablet's front view, clear of the bottom (the dialogue box, the buttons) and the
-## sides; the globe is big on the screen.
+## What matters is big and in the clear on the phone's and the tablet's front view (#87 Q13: the
+## globe 1.65 times bigger, the path across the screen): the Earth at the start (the March equinox,
+## behind the sun: the first dialogue box opens over the stage, not over it) and on the back half of
+## its path, the two solstices of the stages included, with the house's flag, stays between the top
+## band (TOP_FREE: the title, the card and the mission strip) and the bottom (BOTTOM_FREE: the dialogue
+## box, the buttons) and inside the sides; only the near half (the September side, passed on the way
+## round) may dip under the bottom. A solstice's globe is GOAL_MIN of the height or more, the path
+## spans PATH_SPAN of the phone's width or more, and the yard window is inside the view, above the
+## December globe and its flag (the window never hides behind the Earth). The start Earth, behind the
+## sun, shows its upper half above the sun and its rays.
 func check_in_view() -> void:
 	var problems := []
 	var seen := []
 	for size: Vector2 in [PHONE, TABLET]:
-		var lowest := 0.0
-		var highest := 1.0
 		var host := Control.new()
 		host.size = size
 		tree.root.add_child(host)
@@ -452,32 +464,51 @@ func check_in_view() -> void:
 		for i in 2:
 			await tree.process_frame
 		var per_unit := Vector2(view.viewport.size) / view.size
-		var inside := func(world: Vector3, what: String, top := EDGE) -> float:
-			var p: Vector2 = view.rig.unproject_position(world) / per_unit / size
+		var at := func(world: Vector3) -> Vector2: return view.rig.unproject_position(world) / per_unit / size
+		var inside := func(p: Vector2, what: String, top: float) -> void:
 			if p.x < EDGE or p.x > 1.0 - EDGE or p.y < top or p.y > BOTTOM_FREE:
 				problems.append("%s: %s at %s" % [str(size), what, str(p)])
-			return p.y
-		for orbit: float in [0.0, 45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0]:
+		var span := Vector2(1.0, 0.0)
+		var goal := 1.0
+		var flag_top := 1.0
+		for orbit: float in [0.0, 30.0, 60.0, 90.0, 270.0, 300.0, 330.0]:
 			lab.model.set_input("orbit", orbit)
 			lab._show()
 			var c := SeasonsProps.earth_center(orbit)
+			var box := []
 			for d: Vector3 in [Vector3.UP, Vector3.DOWN, Vector3.LEFT, Vector3.RIGHT]:
-				var y: float = inside.call(c + d * SeasonsProps.GLOBE_RADIUS, "globe at %.0f" % orbit, TOP_FREE)
-				lowest = maxf(lowest, y)
-				highest = minf(highest, y)
-			inside.call((lab.props.house.get_node("Flag") as MeshInstance3D).global_transform * Vector3(0.0, DayNightProps.FLAG_POLE, 0.0), "flag at %.0f" % orbit, TOP_FREE)
+				var p: Vector2 = at.call(c + d * SeasonsProps.GLOBE_RADIUS)
+				inside.call(p, "globe at %.0f" % orbit, TOP_FREE)
+				box.append(p)
+			var flag: Vector2 = at.call((lab.props.house.get_node("Flag") as MeshInstance3D).global_transform * Vector3(0.0, DayNightProps.FLAG_POLE, 0.0))
+			inside.call(flag, "flag at %.0f" % orbit, TOP_FREE)
+			span = Vector2(minf(span.x, box[2].x), maxf(span.y, box[3].x))
+			if orbit in [90.0, 270.0]:
+				goal = minf(goal, box[1].y - box[0].y)
+			if orbit == 270.0:
+				flag_top = minf(box[0].y, flag.y)
+		# The start Earth (behind the sun) shows its upper half over the sun and its rays.
+		var sun_top: Vector2 = at.call(SeasonsProps.SUN_CENTER + Vector3.UP * SeasonsProps.SUN_RADIUS * 1.55)
+		var start: Vector2 = at.call(SeasonsProps.earth_center(SeasonsModel.START_ORBIT))
+		if sun_top.y <= start.y:
+			problems.append("%s: the sun (top %.2f) covers the start Earth's middle (%.2f)" % [str(size), sun_top.y, start.y])
 		var window: Node3D = lab.props.window
 		var half := SeasonsProps.WINDOW_SIZE * 0.5 + Vector2(0.5, 0.65)   # (window local: its scale is the node's)
+		var low := 0.0
 		for corner: Vector2 in [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]:
-			inside.call(window.global_transform * Vector3(corner.x * half.x, corner.y * half.y, 0.0), "window corner")
-		var top: Vector2 = view.rig.unproject_position(SeasonsProps.earth_center(0.0) + Vector3.UP * SeasonsProps.GLOBE_RADIUS) / per_unit
-		var bottom: Vector2 = view.rig.unproject_position(SeasonsProps.earth_center(0.0) + Vector3.DOWN * SeasonsProps.GLOBE_RADIUS) / per_unit
-		if (bottom.y - top.y) / size.y < 0.2:
-			problems.append("%s: the near globe is only %.2f of the height" % [str(size), (bottom.y - top.y) / size.y])
-		seen.append("%s globe %.2f..%.2f, near %.2f" % [str(size), highest, lowest, (bottom.y - top.y) / size.y])
+			var p: Vector2 = at.call(window.global_transform * Vector3(corner.x * half.x, corner.y * half.y, 0.0))
+			inside.call(p, "window corner", EDGE)
+			low = maxf(low, p.y)
+		if low >= flag_top:
+			problems.append("%s: the window (to %.2f) comes down over the December Earth (%.2f)" % [str(size), low, flag_top])
+		if goal < GOAL_MIN:
+			problems.append("%s: a solstice's globe is only %.2f of the height" % [str(size), goal])
+		if size == PHONE and span.y - span.x < PATH_SPAN:
+			problems.append("the path spans %.2f of the phone's width" % (span.y - span.x))
+		seen.append("%s solstice globe %.2f, path %.2f..%.2f, window to %.2f" % [str(size), goal, span.x, span.y, low])
 		host.queue_free()
 		await tree.process_frame
-	expect.call(problems.is_empty(), "seasons in view: the whole globe all round its path and its flag between the top band (%.0f%%) and the bottom %.0f%% (the dialogue box, the buttons), the yard window inside, on the phone's and the tablet's front view; the near globe a fifth of the height or more" % [TOP_FREE * 100.0, (1.0 - BOTTOM_FREE) * 100.0],
+	expect.call(problems.is_empty(), "seasons in view: the Earth at the start and round the back half of its path (the solstices) with its flag between the top band (%.0f%%) and the bottom %.0f%%, a solstice's globe %.0f%% of the height or more, the path across %.0f%% of the phone's width or more, the start Earth's upper half over the sun, the yard window inside and above the December Earth (phone and tablet)" % [TOP_FREE * 100.0, (1.0 - BOTTOM_FREE) * 100.0, GOAL_MIN * 100.0, PATH_SPAN * 100.0],
 		"; ".join(problems.slice(0, 4) + seen))
 
 
@@ -559,14 +590,17 @@ func check_drag() -> void:
 	m.handle_pointer("move", at + shift * 0.5)
 	m.handle_pointer("move", at + shift)
 	await tree.process_frame
+	# (The flat front view looks along the path's plane: the shell's drag assist tips the camera to it
+	# while the finger holds, so the same finger point lands a little farther round: DRAG_SLACK.)
 	var held := wrapf(lab.model.input("orbit") - start, -180.0, 180.0)
-	if absf(held - 50.0) > 3.0 or lab.settled():
+	if absf(held - 50.0) > DRAG_SLACK or lab.settled():
 		problems.append("held: %.2f deg (want 50)" % held)
+	m.handle_pointer("release", at + shift)
+	var placed := wrapf(lab.model.input("orbit") - start, -180.0, 180.0)
 	for i in 10:
 		await tree.physics_frame
-	if absf(wrapf(lab.model.input("orbit") - start, -180.0, 180.0) - held) > 1e-9:
-		problems.append("it went on moving")
-	m.handle_pointer("release", at + shift)
+	if absf(wrapf(lab.model.input("orbit") - start, -180.0, 180.0) - placed) > 1e-9:
+		problems.append("it went on moving after the finger left")
 	if lab.holding != "" or not lab.settled() or not lab.placements().has(SeasonsLab.KNOB_ID) \
 			or lab.props.earth.position.distance_to(SeasonsProps.earth_center(lab.model.input("orbit"))) > 1e-4:
 		problems.append("put down: holding '%s'" % lab.holding)
@@ -590,7 +624,7 @@ func check_drag() -> void:
 	var guide := m.guide()
 	if guide.get("kind", "") != "drag" or guide.get("id", "") != SeasonsLab.KNOB_ID:
 		problems.append("hand guide %s" % str(guide))
-	expect.call(problems.is_empty(), "seasons hand: a press on the globe picks the Earth, it follows the finger round its path (50 deg), no motion after the finger stops, a put-down keeps (and restores) it, a cancel puts it back; the hand guide drags it",
+	expect.call(problems.is_empty(), "seasons hand: a press on the globe picks the Earth, it follows the finger round its path (50 deg), no motion after the finger leaves, a put-down keeps (and restores) it, a cancel puts it back; the hand guide drags it",
 		"; ".join(problems))
 	host.queue_free()
 	await tree.process_frame
@@ -605,7 +639,7 @@ func check_piece() -> void:
 	var game: SeasonsGame = lab.game
 	var problems := []
 	var start: Vector3 = game.piece.global_position
-	if game.piece_state != "held" or not game.piece.visible or start.distance_to(game.bud.global_position) > 1.6 or game.snowman.visible or game.bloomed():
+	if game.piece_state != "held" or not game.piece.visible or start.distance_to(game.bud.global_position) > 2.6 or game.snowman.visible or game.bloomed():
 		problems.append("not in the closed bud at the start (or a snowman already)")
 	var flag: MeshInstance3D = lab.props.house.get_node_or_null("Flag")
 	if flag == null or flag.material_override != lab.props.bright_material:

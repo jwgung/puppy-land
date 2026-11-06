@@ -6,19 +6,19 @@
   "scene": "res://experiments/seasons/seasons.gd",
   "bench_id": "SE",
   "camera": {
-    "target": [1.0, 4.0, 0.2],
-    "distance": 17.4,
-    "distance_range": [9.0, 30.0],
+    "target": [0.6, 6.0, 0.0],
+    "distance": 13.0,
+    "distance_range": [7.0, 30.0],
     "yaw_range_deg": [-100.0, 100.0],
     "pitch_range_deg": [-89.0, -2.0],
     "pan_radius": 7.0,
     "default_mode": "front",
     "views": {
-      "front": { "yaw_deg": 0.0, "pitch_deg": -25.0 },
-      "three_quarter": { "yaw_deg": 24.0, "pitch_deg": -28.0 },
-      "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 22.0 },
-      "side": { "yaw_deg": 90.0, "pitch_deg": -12.0, "distance": 19.0 },
-      "follow": { "yaw_deg": 0.0, "pitch_deg": -30.0, "distance": 14.0, "target": [1.0, 4.0, 0.2] }
+      "front": { "yaw_deg": 0.0, "pitch_deg": -18.0 },
+      "three_quarter": { "yaw_deg": 24.0, "pitch_deg": -22.0 },
+      "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 26.0 },
+      "side": { "yaw_deg": 90.0, "pitch_deg": -12.0, "distance": 24.0 },
+      "follow": { "yaw_deg": 0.0, "pitch_deg": -18.0, "distance": 13.0, "target": [0.6, 6.0, 0.0] }
     }
   },
   "controls": [
@@ -102,12 +102,12 @@
   },
   "cast": {
     "dugi": {
-      "at": [7.6, 2.6],
+      "at": [9.6, 3.8],
       "explain_on": ["winter", "summer", "loop"],
       "delay_s": 0.6
     },
     "puppy": {
-      "at": [-8.6, 1.2]
+      "at": [-9.8, 3.5]
     }
   },
   "observations": [
@@ -118,7 +118,7 @@
   "manipulation": {
     "grab_radius": 72.0,
     "objects": [
-      { "id": "earth", "surface": "path", "snap": 0.0, "height": false, "marker": false, "guide_to": "max" }
+      { "id": "earth", "surface": "path", "snap": 0.0, "height": false, "marker": false, "guide_to": "min" }
     ]
   },
   "graph": {

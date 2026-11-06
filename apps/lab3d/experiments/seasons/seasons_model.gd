@@ -32,7 +32,7 @@ const MARCH := 0.0
 const JUNE := 90.0
 const SEPTEMBER := 180.0
 const DECEMBER := 270.0
-## The start: the March equinox (spring; the Earth on the near side of its path, in front of the sun).
+## The start: the March equinox (spring; SeasonsProps draws it behind the sun).
 const START_ORBIT := MARCH
 ## The noon sun's height and the day's length shown as bars (0..1 of these: full at the sun straight
 ## overhead, at a whole day of daylight).
