@@ -23,7 +23,10 @@ const WATER := Color("7fb8e0")
 const STEEL := Color("9aa7b0")
 const BALL_BLUE := Color("2d7cf6")
 const CRATE := Color("5b4636")
-const CAT := Color("f2a64a")             # the bread cat riding the barrel (drum_floats / drum_sinks)
+const CAT := Color("f2a64a")
+const SUN := Color("f2c14e")             # the star (orbit_*) and the sun (sun_moves / earth_spins)
+const LAND := Color("4fbf3b")            # the Earth's land (sun_moves / earth_spins)
+const NIGHT_SHADE := Color(0.1, 0.14, 0.35, 0.55)   # the Earth's far half (the night)             # the bread cat riding the barrel (drum_floats / drum_sinks)
 
 
 ## Draws `kind` filling `canvas` (an unknown kind draws the ground only).
@@ -230,7 +233,7 @@ static func _lever(canvas: Control, r: Rect2, less: bool) -> void:
 ## The star and the planet's path: off the picture ("orbit_leave") or a closed loop ("orbit_stay").
 static func _orbit(canvas: Control, r: Rect2, leave: bool) -> void:
 	var star := Vector2(r.position.x + r.size.x * 0.38, r.get_center().y)
-	canvas.draw_circle(star, 14.0, Color("f2c14e"))
+	canvas.draw_circle(star, 14.0, SUN)
 	var points := PackedVector2Array()
 	if leave:
 		for i in 17:   # from under the star, round its right side and away (an opening spiral)
@@ -469,15 +472,15 @@ static func _day_night(canvas: Control, r: Rect2, sun_moves: bool) -> void:
 	for k in 8:   # the sun's rays
 		var a := TAU * k / 8.0
 		var d := Vector2(cos(a), sin(a))
-		canvas.draw_line(sun + d * 15.0, sun + d * 21.0, Color("f2c14e"), 3.0, true)
-	canvas.draw_circle(sun, 12.0, Color("f2c14e"))
+		canvas.draw_line(sun + d * 15.0, sun + d * 21.0, SUN, 3.0, true)
+	canvas.draw_circle(sun, 12.0, SUN)
 	canvas.draw_circle(earth, radius, WATER)
-	canvas.draw_circle(earth + Vector2(-radius * 0.3, -radius * 0.2), radius * 0.35, Color("4fbf3b"))
+	canvas.draw_circle(earth + Vector2(-radius * 0.3, -radius * 0.2), radius * 0.35, LAND)
 	var night := PackedVector2Array()   # the half away from the sun
 	for k in 17:
 		var a := -PI * 0.5 + PI * k / 16.0
 		night.append(earth + Vector2(cos(a), sin(a)) * radius)
-	canvas.draw_colored_polygon(night, Color(0.1, 0.14, 0.35, 0.55))
+	canvas.draw_colored_polygon(night, NIGHT_SHADE)
 	if sun_moves:
 		var arc := PackedVector2Array()   # over the Earth from the sun's side round to its far side
 		var mid := (sun + earth) * 0.5 + Vector2(r.size.x * 0.12, 0.0)

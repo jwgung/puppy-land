@@ -57,6 +57,7 @@ func run() -> void:
 	check_hutton_data()
 	check_features_checked()
 	check_never_opens()
+	check_paid_before_playable()
 	await check_mechanics_pinned()
 	await check_hutton_map()
 	await check_hutton_labs()
@@ -121,6 +122,17 @@ func check_features_checked() -> void:
 		problems.append("the square as the mechanics lookout: %s" % Island.from_data(on_square).problem)
 	expect.call(problems.is_empty(), "hutton island: a lookout that is not a spot or the square, a broken feature, a zone with no spots or a coast without its radius say what is wrong (never complete or playable)",
 		"; ".join(problems))
+
+
+## ADR 0005: every island after the first is paid. An island with `opens_after` that is playable
+## (every spot a lab, so it opens) must name its product: until the payment (#77) sets hutton's
+## product, making the hutton island playable fails here instead of opening it for free.
+func check_paid_before_playable() -> void:
+	var problems := []
+	for entry: Dictionary in Island.index():
+		if str(entry.get("opens_after", "")) != "" and Island.by_id(str(entry.id)).playable() and str(entry.get("product", "")) == "":
+			problems.append("%s is playable with no product (#77)" % entry.id)
+	expect.call(problems.is_empty(), "islands: a later island (opens_after) is playable only with its product set (ADR 0005, the payment #77)", "; ".join(problems))
 
 
 ## Not every spot is an experiment yet (only EXPERIMENTS): the island is not playable and never

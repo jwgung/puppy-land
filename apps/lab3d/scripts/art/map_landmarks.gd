@@ -319,18 +319,20 @@ static func sundial(b: ArtMeshBuilder, xf: Transform3D) -> void:
 	_wedge(b, xf * Transform3D(Basis(Vector3.UP, PI * 0.5), Vector3(0.0, 0.53, -0.12)), Vector2(0.3, 0.025), SUNDIAL_HEIGHT - 0.54, ArtPalette.YELLOW, ArtPalette.YELLOW_TOP)
 
 
-# --- helpers ---------------------------------------------------------------------------------
+## The globe landmark's lands [direction from its centre, radius] (a few big blobs that read at
+## the map's distance; not the lab's continents, DayNightProps.LANDS, which are too small here).
+const LAND_BLOBS := [[Vector3(0.6, 0.5, 0.62), 0.24], [Vector3(-0.7, 0.2, 0.7), 0.2], [Vector3(0.2, -0.6, 0.8), 0.18], [Vector3(0.9, 0.1, -0.4), 0.2]]
 
-## A plain box: a bevel (108 triangles instead of 12) does not show at the map's distance.
+
 ## The hutton island's 낮과 밤 (#74, "커다란 지구본이 있는 곳"): a big globe on a wooden stand, its
 ## axis a leaning rod with the red north end, green lands on the blue sea.
 static func _globe(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	b.add_cylinder(xf, 0.42, 0.36, 0.14, 8, ArtPalette.WOOD_GRAIN, true, ArtPalette.WOOD)
 	_rod(b, xf, Vector3(0.0, 0.1, 0.0), Vector3(0.0, 0.62, 0.0), 0.07, ArtPalette.WOOD_GRAIN)
 	var center := Vector3(0.0, 1.15, 0.0)
-	var axis := Vector3(0.0, cos(deg_to_rad(23.44)), sin(deg_to_rad(23.44)))
+	var axis := Vector3(0.0, cos(deg_to_rad(SunModel.EARTH_TILT)), sin(deg_to_rad(SunModel.EARTH_TILT)))
 	_ball(b, xf, center, 0.5, ArtPalette.BLUE)
-	for land: Array in [[Vector3(0.6, 0.5, 0.62), 0.24], [Vector3(-0.7, 0.2, 0.7), 0.2], [Vector3(0.2, -0.6, 0.8), 0.18], [Vector3(0.9, 0.1, -0.4), 0.2]]:
+	for land: Array in LAND_BLOBS:
 		var dir: Vector3 = (land[0] as Vector3).normalized()
 		b.add_sphere(xf * Transform3D(_along(dir).scaled_local(Vector3(1.0, 0.35, 1.0)), center + dir * 0.47), float(land[1]), 3, 6, ArtPalette.GRASS)
 	_rod(b, xf, center - axis * 0.62, center + axis * 0.66, 0.035, ArtPalette.STEEL_SHINE)
@@ -338,6 +340,9 @@ static func _globe(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	return 1.9
 
 
+# --- helpers ---------------------------------------------------------------------------------
+
+## A plain box: a bevel (108 triangles instead of 12) does not show at the map's distance.
 static func _box(b: ArtMeshBuilder, xf: Transform3D, at: Vector3, size: Vector3, color: Color, top: Variant = null) -> void:
 	b.add_rounded_box(xf * Transform3D(Basis(), at), size, 0.0, 0, color, top)
 

@@ -22,8 +22,8 @@ const CONTENT_ROOT := "res://content/story"
 const SPEAKERS := {
 	"dugi": ["speaker.dugi", "res://assets/characters/portraits/dugi_%s.webp"],
 	"puppy": ["speaker.puppy", "res://assets/characters/portraits/puppy_%s.webp"],
-	# The second island's keeper (#71, 2026-11-06 look chosen by the user). The name is not decided: the tag
-	# The fox is 여우친구 / "Fox Friend" (ui.json speaker.fox, named by the user 2026-11-06).
+	# The second island's keeper (#71, 2026-11-06 look chosen by the user), named 여우친구 / "Fox Friend"
+	# by the user on 2026-11-06 (its tag: ui.json speaker.fox).
 	"fox": ["speaker.fox", "res://assets/characters/portraits/fox_%s.webp"],
 }
 ## The island keeper who speaks a spot's first line on Hutton Island (#74: story.keeper, before Puppy's
