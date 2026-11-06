@@ -23,6 +23,15 @@ const INSET := 9.0           # the paper border around the scene panel
 const LIP := 5.0             # the darker bottom edge, like the dialogue box
 const PANEL_RADIUS := 12.0
 const CARD_RADIUS := 20.0
+## Every arrow (Pen.arrow): shaft width, its tail's share of it, the head's length and width as times
+## the shaft width, the halo and the dark edge (DESIGN units), the corners' rounding.
+const ARROW_WIDTH := 7.0
+const ARROW_TAIL_SHARE := 0.72
+const ARROW_HEAD_LENGTH := 2.5
+const ARROW_HEAD_WIDTH := 2.5
+const ARROW_HALO := 3.0
+const ARROW_EDGE := 1.1
+const ARROW_ROUND := 0.9
 
 const PAPER := UiTheme.DIALOGUE_PAPER
 const OUT := UiTheme.DIALOGUE_LINE
@@ -103,7 +112,7 @@ static func _axis(p: Pen) -> void:
 		p.ellipse(knob, 6.5, 6.5, ORG)
 		p.ring(knob, 6.5, 6.5, OUT, 2.0)
 		p.ellipse(knob - Vector2(2, 2), 2.0, 2.0, Color(1, 1, 1, 0.8))
-	p.arrow(arc_points(c, ring.x, ring.y, 168.0, 12.0, tilt), ORG, 8.0, 26.0)
+	p.arrow(arc_points(c, ring.x, ring.y, 168.0, 12.0, tilt, 120), ORG)
 
 
 ## The Earth from above the north pole with the Sun on the right: the lit day half, the night half,
@@ -146,8 +155,8 @@ static func _morning_evening(p: Pen) -> void:
 	p.ellipse(c, 5, 5, PAPER)
 	p.ring(c, 5, 5, OUT, 1.5)
 	var big := r + 20.0
-	p.arrow(arc_points(c, big, big, -118.0, -238.0, 0.0, 40), ORG, 7.0, 22.0)
-	p.arrow(arc_points(c, big, big, 62.0, -12.0, 0.0, 40), ORG, 7.0, 22.0)
+	p.arrow(arc_points(c, big, big, -118.0, -238.0, 0.0, 80), ORG)
+	p.arrow(arc_points(c, big, big, 62.0, -12.0, 0.0, 80), ORG)
 	for y in [c.y - r, c.y + r]:
 		p.ellipse(Vector2(c.x, y), 6.5, 6.5, PAPER)
 		p.ring(Vector2(c.x, y), 6.5, 6.5, OUT, 2.0)
@@ -206,14 +215,19 @@ static func _sea_breeze(p: Pen) -> void:
 	var right := 292.0
 	var bottom := surf - 24.0
 	var rc := 24.0
-	p.bend(arc_points(Vector2(right - rc, bottom - rc), rc, rc, 90, 0, 0.0, 16), warm)
-	p.bend(arc_points(Vector2(right - rc, top + rc), rc, rc, 0, -90, 0.0, 16), aloft)
-	p.bend(arc_points(Vector2(left + rc, top + rc), rc, rc, -90, -180, 0.0, 16), cool)
-	p.bend(arc_points(Vector2(left + rc, bottom - rc), rc, rc, 180, 90, 0.0, 16), cool)
-	p.arrow(PackedVector2Array([Vector2(left + rc, bottom), Vector2(right - rc + 6, bottom)]), cool, 7.0, 22.0)
-	p.arrow(PackedVector2Array([Vector2(right, bottom - rc), Vector2(right, top + rc + 6)]), warm, 7.0, 22.0)
-	p.arrow(PackedVector2Array([Vector2(right - rc, top), Vector2(left + rc - 6, top)]), aloft, 7.0, 22.0)
-	p.arrow(PackedVector2Array([Vector2(left, top + rc), Vector2(left, bottom - rc + 6)]), cool, 7.0, 22.0)
+	# Each side is one arrow from the corner before it, its tip short of the next corner.
+	var gap := 9.0
+	p.arrow(_corner_then(arc_points(Vector2(left + rc, bottom - rc), rc, rc, 180, 90, 0.0, 24), Vector2(right - rc - gap, bottom)), cool)
+	p.arrow(_corner_then(arc_points(Vector2(right - rc, bottom - rc), rc, rc, 90, 0, 0.0, 24), Vector2(right, top + rc + gap)), warm)
+	p.arrow(_corner_then(arc_points(Vector2(right - rc, top + rc), rc, rc, 0, -90, 0.0, 24), Vector2(left + rc + gap, top)), aloft)
+	p.arrow(_corner_then(arc_points(Vector2(left + rc, top + rc), rc, rc, -90, -180, 0.0, 24), Vector2(left, bottom - rc - gap)), cool)
+
+
+## `corner` and then a straight run to `to`.
+static func _corner_then(corner: PackedVector2Array, to: Vector2) -> PackedVector2Array:
+	var out := corner.duplicate()
+	out.append(to)
+	return out
 
 
 ## A bend of a river seen from above: the fast water on the outside (a long arrow) wears the bank
@@ -258,9 +272,10 @@ static func _river(p: Pen) -> void:
 	for ripple in [Vector2(200, mid - 12), Vector2(250, mid + 16), Vector2(300, mid - 14), Vector2(330, mid + 14)]:
 		p.line(arc_points(c, ripple.y, ripple.y, ripple.x, ripple.x + 16, 0.0, 8), Color(1, 1, 1, 0.8), 2.0)
 	var fast := PackedVector2Array([c + Vector2(-mid - 14, 62), c + Vector2(-mid - 14, 0)])
-	fast.append_array(arc_points(c, mid + 14, mid + 14, 180, 332, 0.0, 50).slice(1))
-	p.arrow(fast, ORG, 8.0, 26.0)
-	p.arrow(arc_points(c, mid - 16, mid - 16, 230, 290, 0.0, 16), WHITE, 5.0, 16.0, Color8(150, 190, 220), Color8(90, 150, 200))
+	fast.append_array(arc_points(c, mid + 14, mid + 14, 180, 332, 0.0, 120).slice(1))
+	p.arrow(fast, ORG)
+	# The slow water inside: a shorter, thinner arrow.
+	p.arrow(arc_points(c, mid - 16, mid - 16, 228, 292, 0.0, 40), WHITE, ARROW_WIDTH * 0.7, Color8(120, 166, 204), Color8(70, 130, 186))
 
 
 # --- shapes ---------------------------------------------------------------------------------------
@@ -306,6 +321,72 @@ static func blob(c: Vector2, rx: float, ry: float, seed: int, n := 14, jitter :=
 		var a := TAU * i / (n * 4)
 		var k := 1.0 + jitter * (sin(2 * a + ph[0]) * 0.5 + sin(3 * a + ph[1]) * 0.35 + sin(5 * a + ph[2]) * 0.2)
 		out.append(c + Vector2(rx * k * cos(a), ry * k * sin(a)))
+	return out
+
+
+## An arrow's shape along `path` of shaft `width`: [its outline (one simple polygon: the round
+## tail, the tapering shaft, the head), the shaft's spine, its normals, its half widths].
+static func arrow_shape(path: PackedVector2Array, width: float) -> Array:
+	var points := resample(path, 1.5)
+	var head_length := width * ARROW_HEAD_LENGTH
+	# The head's base: on the path, head_length back from the tip along it.
+	var tip := points[-1]
+	var left := head_length
+	var k := points.size() - 1
+	while k > 0 and left > points[k].distance_to(points[k - 1]):
+		left -= points[k].distance_to(points[k - 1])
+		k -= 1
+	var base := points[k].lerp(points[maxi(k - 1, 0)], left / maxf(points[k].distance_to(points[maxi(k - 1, 0)]), 0.001)) if k > 0 else points[0]
+	var spine := points.slice(0, k)
+	spine.append(base)
+	if spine.size() < 2:
+		spine = PackedVector2Array([base - (tip - base).normalized(), base])
+	var dir := (tip - base).normalized()   # the head lies along the path over its own length
+	var total := 0.0
+	var at := PackedFloat32Array([0.0])
+	for i in range(1, spine.size()):
+		total += spine[i].distance_to(spine[i - 1])
+		at.append(total)
+	var normals := PackedVector2Array()
+	var halves := PackedFloat32Array()
+	for i in spine.size():
+		var t := (spine[mini(i + 1, spine.size() - 1)] - spine[maxi(i - 1, 0)]).normalized()
+		if i == spine.size() - 1:
+			t = (t + dir).normalized()   # the shaft meets the head square
+		normals.append(Vector2(-t.y, t.x))
+		halves.append(width * 0.5 * lerpf(ARROW_TAIL_SHARE, 1.0, at[i] / maxf(total, 0.001)))
+	var side := Vector2(-dir.y, dir.x)
+	var half_head := width * ARROW_HEAD_WIDTH * 0.5
+	var outline := PackedVector2Array()
+	for i in spine.size():
+		outline.append(spine[i] + normals[i] * halves[i])
+	outline.append(base + side * half_head)
+	outline.append(tip)
+	outline.append(base - side * half_head)
+	for i in range(spine.size() - 1, -1, -1):
+		outline.append(spine[i] - normals[i] * halves[i])
+	# The round tail: from the right side round the back to the left side.
+	var back := -normals[0]
+	for j in range(1, 12):
+		outline.append(spine[0] + back.rotated(-PI * j / 12.0) * halves[0])
+	# Slightly rounded corners (the tip and the head's wings).
+	var rounded := Geometry2D.offset_polygon(outline, -ARROW_ROUND)
+	if rounded.size() == 1:
+		var grown := Geometry2D.offset_polygon(rounded[0], ARROW_ROUND, Geometry2D.JOIN_ROUND)
+		if grown.size() == 1:
+			outline = grown[0]
+	return [outline, spine, normals, halves]
+
+
+## `path` with its points every `step` (or closer) along it.
+static func resample(path: PackedVector2Array, step: float) -> PackedVector2Array:
+	var out := PackedVector2Array([path[0]])
+	for i in range(1, path.size()):
+		var a := path[i - 1]
+		var b := path[i]
+		var n := maxi(1, ceili(a.distance_to(b) / step))
+		for j in range(1, n + 1):
+			out.append(a.lerp(b, float(j) / n))
 	return out
 
 
@@ -471,39 +552,34 @@ class Pen:
 			fill(hl, Color(1, 1, 1, 0.3 if k == 0 else 0.15))
 		ring(c, r, r, ExplainPictures.OUT, 3.0)
 
-	## An arrow along `points` with a cream halo, a darker lower edge and a light upper edge; its
-	## head at the end.
-	func arrow(points: PackedVector2Array, color: Color, width := 7.0, head := 22.0, dark := Color(0, 0, 0, 0), halo := ExplainPictures.PAPER) -> void:
+	## An arrow along `path` (#73 2026-11-06: the user found the first arrows clumsy): one silhouette (the
+	## shaft along the finely resampled path, tapering from TAIL_SHARE of `width` at its round tail to
+	## `width` at the head, then a triangle head ARROW_HEAD_LENGTH x ARROW_HEAD_WIDTH times the width,
+	## its tip at the path's end and its base on the path, along the path over the head's length), its
+	## corners slightly rounded. Drawn as an even `halo` all round (the silhouette grown), a thin
+	## `dark` edge, the colour, and a soft light stripe along the shaft.
+	func arrow(path: PackedVector2Array, color: Color, width := ExplainPictures.ARROW_WIDTH, dark := Color(0, 0, 0, 0), halo := ExplainPictures.PAPER) -> void:
 		if dark.a == 0.0:
-			dark = color.lerp(Color.BLACK, 0.3)
-		var tip := points[-1]
-		var dir := (tip - points[-2]).normalized()
-		var side := Vector2(dir.y, -dir.x)
-		var base := tip - dir * head * 0.55
-		var shaft := points.slice(0, points.size() - 1)
-		shaft.append(base)
-		var head_at := func(grow: float, shift: Vector2) -> PackedVector2Array:
-			var w := head * 0.62 + grow
-			return PackedVector2Array([tip + dir * grow + shift, base + side * w + shift, base - side * w + shift])
-		line(shaft, halo, width + 6.0)
-		fill(head_at.call(3.0, Vector2.ZERO), halo)
-		line(_moved(shaft, Vector2(0, 1.2)), dark, width)
-		fill(head_at.call(0.0, Vector2(0, 1.2)), dark)
-		line(shaft, color, width)
-		fill(head_at.call(0.0, Vector2.ZERO), color)
-		line(_moved(shaft, Vector2(0, -width * 0.22)), color.lerp(Color.WHITE, 0.4), maxf(1.5, width * 0.22))
-
-	func _moved(points: PackedVector2Array, by: Vector2) -> PackedVector2Array:
-		var out := PackedVector2Array()
-		for v in points:
-			out.append(v + by)
-		return out
-
-	## A rounded corner of the air loop.
-	func bend(points: PackedVector2Array, color: Color) -> void:
-		line(points, ExplainPictures.PAPER, 13.0)
-		line(points, color.lerp(Color.BLACK, 0.3), 7.0)
-		line(_moved(points, Vector2(0, -1)), color, 7.0)
+			dark = color.lerp(Color.BLACK, 0.35)
+		var shape := ExplainPictures.arrow_shape(path, width)
+		var outline: PackedVector2Array = shape[0]
+		for part in Geometry2D.offset_polygon(outline, ExplainPictures.ARROW_HALO, Geometry2D.JOIN_ROUND):
+			fill(part, halo)
+		fill(outline, dark)
+		for part in Geometry2D.offset_polygon(outline, -ExplainPictures.ARROW_EDGE, Geometry2D.JOIN_ROUND):
+			fill(part, color)
+		# The light stripe: the shaft's middle nudged towards the light (top left), fading out at both ends.
+		var spine: PackedVector2Array = shape[1]
+		var normals: PackedVector2Array = shape[2]
+		var halves: PackedFloat32Array = shape[3]
+		var stripe := PackedVector2Array()
+		var light := Vector2(-0.6, -0.8)
+		var from := int(spine.size() * 0.12)
+		var to := int(spine.size() * 0.9)
+		for i in range(from, to):
+			stripe.append(spine[i] + normals[i] * normals[i].dot(light) * halves[i] * 0.42)
+		if stripe.size() >= 2:
+			canvas.draw_polyline(stripe, Color(color.lerp(Color.WHITE, 0.5), 0.7), maxf(1.2, width * 0.2), true)
 
 	## The badge of a morning or an evening: a sun half over a line, with an arrow up (rising) or
 	## down (setting), on a small cream tag.
