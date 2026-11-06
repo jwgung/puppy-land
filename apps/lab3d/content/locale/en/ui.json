@@ -57,6 +57,15 @@
   "incline-friction.status.left": "Left the slope",
   "incline-friction.status.ready": "Not let go yet",
   "incline-friction.status.sliding": "Sliding",
+  "island.hutton.about": "Land, water and weather",
+  "island.hutton.name": "Hutton Island",
+  "island.mechanics.about": "Forces and motion",
+  "island.mechanics.name": "Newton Island",
+  "islands.again": "Play again",
+  "islands.back": "← Back",
+  "islands.continue": "Continue",
+  "islands.locked": "Opens when every piece of %s is found",
+  "islands.next": "Next island",
   "kid.units": {
     "": ["", ""],
     "m": ["", " meters"],
@@ -162,7 +171,7 @@
   "settings.ui_size_note": "The size of words and buttons. Auto makes them bigger on a small screen.",
   "settings.ui_sizes": { "auto": "Auto", "normal": "Normal", "large": "Large", "extra_large": "Extra large" },
   "speaker.dugi": "Dugidugi",
-  "speaker.fox": "Fox",
+  "speaker.fox": "Fox Friend",
   "speaker.puppy": "Puppy",
   "spring.reach_wait": "Shows when it swings",
   "spring.status.held": "Pulling the ball",
@@ -185,5 +194,6 @@
     "weigh"
   ],
   "story.skip": "Skip",
+  "title.islands": "Islands",
   "title.start": "Start"
 }

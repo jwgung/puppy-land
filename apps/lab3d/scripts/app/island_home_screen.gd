@@ -145,11 +145,7 @@ func _ready() -> void:
 	env = MapIsland.make_environment()
 	view.viewport.add_child(env)
 	map = MapIsland.new(island)
-	var spots := []
-	for zone in island.zones:
-		for spot in island.zones[zone].spots:
-			spots.append([spot[0], Vector2(spot[1][0], spot[1][1]), spot[2]])
-	var built := map.build(world, spots)
+	var built := map.build(world, island.map_spots())
 	cat = CatActor.new(BreadCat.new())
 	world.add_child(cat)
 	dugi = DugiActor.new()

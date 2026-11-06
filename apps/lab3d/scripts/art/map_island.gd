@@ -274,6 +274,11 @@ static func material() -> ShaderMaterial:
 	return _material
 
 
+## The day look of the map's material: no spot lit (the night map lights the found ones).
+static func light_no_spots() -> void:
+	material().set_shader_parameter("lit_mask", 0)
+
+
 static var _sky_material: ShaderMaterial
 
 

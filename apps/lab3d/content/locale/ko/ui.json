@@ -50,6 +50,15 @@
   "incline-friction.status.left": "빗면을 벗어남",
   "incline-friction.status.ready": "놓기 전",
   "incline-friction.status.sliding": "미끄러지는 중",
+  "island.hutton.about": "땅과 물과 날씨",
+  "island.hutton.name": "허턴섬",
+  "island.mechanics.about": "힘과 움직임",
+  "island.mechanics.name": "뉴턴섬",
+  "islands.again": "다시 가기",
+  "islands.back": "← 돌아가기",
+  "islands.continue": "이어서 하기",
+  "islands.locked": "%s 조각을 다 모으면 열려요",
+  "islands.next": "다음 섬",
   "kid.units": {
     "": ["", ""],
     "m": ["", "미터"],
@@ -157,7 +166,7 @@
   "settings.ui_size_note": "글자와 단추의 크기예요. 자동은 작은 화면에서 크게 보여 줘요.",
   "settings.ui_sizes": { "auto": "자동", "normal": "보통", "large": "크게", "extra_large": "아주 크게" },
   "speaker.dugi": "두기두기",
-  "speaker.fox": "여우",
+  "speaker.fox": "여우친구",
   "speaker.puppy": "퍼피",
   "spring.reach_wait": "흔들면 보여요",
   "spring.status.held": "공을 당기는 중",
@@ -188,5 +197,6 @@
     "떨어진대"
   ],
   "story.skip": "건너뛰기",
+  "title.islands": "섬 고르기",
   "title.start": "시작하기"
 }

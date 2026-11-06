@@ -1,0 +1,24 @@
+{
+  "voyage": [
+    { "text": "The guiding star is shining in the sky again." },
+    { "text": "Now the boats won't get lost!" },
+    { "text": "Today let's sail to the island across the sea. It's Hutton Island." },
+    { "text": "Huh? Look at that island!" },
+    { "text": "It was bright, then dark… Now it's bright again!" },
+    { "text": "…W-who are you?" }
+  ],
+  "prologue": [
+    { "text": "Don't be scared. We're from Puppy Land. Who are you?" },
+    { "text": "I'm… the keeper of this island." },
+    { "text": "The island is acting strange. The sun comes up and goes right back down. The rain suddenly turns to snow." },
+    { "text": "Look over there. The big sundial in the middle of the island is broken." },
+    { "text": "A sundial tells the time with the sun's shadow. When it broke, the island's time got all mixed up." },
+    { "text": "The pieces flew to the hills, the beach and the valley." },
+    { "text": "So that's why the island is so strange… You must have been really worried." },
+    { "text": "But why did the sundial break?" },
+    { "text": "I don't know. One night I heard a big BOOM, and it was broken." },
+    { "text": "A big boom… That's strange." },
+    { "text": "Don't worry. We'll find all the pieces. And we'll find out why it broke!" },
+    { "text": "…Really? Thank you. I'll show you the way." }
+  ]
+}

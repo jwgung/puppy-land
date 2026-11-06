@@ -46,7 +46,7 @@ apps/lab3d/
   experiments/earth_lab/              지구과학 실험 기반 EarthLab(강체 없음: 순수 모델을 그리기만 함), EarthModel(입력·글라이드·reset), SunModel(태양 위치 모델: 낮과 밤·그림자 시계·계절, #70)
   content/experiments/                실험 정의 JSON(index.json + 실험별 파일: 데이터, 말은 content/locale)
   content/locale/<언어>/              글(ui.json: 코드의 글, experiments/·story/: 데이터 파일과 같은 모양의 말)
-  assets/characters/                  빵고양이·두기두기·퍼피·섬지기 여우(둘째 섬 허턴섬, 이름 미정) glb + 텍스처 아틀라스(소스: art_src/characters/bread_cat.py, dugi.py, puppy.py, fox.py, Blender 스크립트), 대화창 초상화 portraits/(모델 렌더, dugi_portrait.py, puppy_portrait.py, fox_portrait.py)
+  assets/characters/                  빵고양이·두기두기·퍼피·섬지기 여우친구(둘째 섬 허턴섬) glb + 텍스처 아틀라스(소스: art_src/characters/bread_cat.py, dugi.py, puppy.py, fox.py, Blender 스크립트), 대화창 초상화 portraits/(모델 렌더, dugi_portrait.py, puppy_portrait.py, fox_portrait.py)
   assets/props/                       털실 공·택배 박스 glb + 텍스처(소스: art_src/props/yarn_ball.py, parcel_box.py)
   assets/ui/                          손 안내의 빵고양이 앞발 그림 guide_paw.png(소스: tools/render_guide_paw.gd, 빵고양이 모델을 게임 재질로 렌더함, 젤리 없음)
   art_src/                            캐릭터·소품 생성 Blender 스크립트(외부 .blend 없음)
@@ -367,8 +367,21 @@ Android 뒤로가기 한 번이 두 번 오는 문제(2026-10-29, SM-X115 Androi
 - **가운데**: 부트 스플래시와 같은 로고(`assets/icon/splash.png`: 세 얼굴 + 빨간 리본 "빵고양이 과학섬", 화면 폭의 56 %, 320–660 단위)가 0.45 Hz로 7 단위 위아래로 흔들린다. 그 아래 큰 `시작하기`(리본 빨강 `#e2483c`, 크림 굵은 글자 36, 갈색 테두리·아랫단, 300 × 92 이상), 그 아래 작게 `이야기 다시 보기`·`설정`(대화창 크림 종이, 글자 20). 단추 소리는 다른 단추와 같은 톡(`tap`), 배경 음악은 지도 음악.
 - **가는 곳**(`App.show_title`): `시작하기` = 처음이면(첫 이야기를 아직 안 봄) 첫 이야기, 그 뒤로는 지도. `이야기 다시 보기` = 설정의 같은 항목처럼 첫 이야기를 다시. `설정` = 설정, 닫거나 뒤로가기면 타이틀로. 타이틀에서 뒤로가기 = 앱 종료. 지도에서 뒤로가기 = 타이틀(2026-10-29 결정, 예전에는 종료).
 - **건너뜀**(`App.title_on_launch`): 측정·확인 실행(`Story.measurement_run`: `--progress=bench`, `--auto-*`, `--demo-celebrate`, `--demo-flag`, `--sound=0`), `--demo-story`, `--experiment`, `--screen`, 설정의 렌더러 재시작(`RESUME_PATH`)은 예전과 같은 화면으로 바로 연다(측정·화면 찍기는 그대로). `--demo-title`은 측정 인자가 있어도 타이틀을 보이고 진행은 `progress-bench.cfg`만 쓴다(화면 찍기·fps).
+- **섬 고르기**(#75): 배 장면을 본 뒤 작은 단추 줄에 `섬 고르기`가 더해진다(아래 "배 타고 다음 섬으로·섬 고르기").
 - **성능**: 지도와 같은 섬 메시 하나 + 하늘, 2D는 로고 한 장과 단추 3개. SM-X115(high, 2026-10-29): 타이틀 61.2 fps(최소 60.1, p95 ≤ 19.9 ms, 54초), 같은 날 지도 61.1 fps.
 - 시험: `tests/title_checks.gd`(켤 때 타이틀·측정 이름 `title`, 버튼마다 가는 곳(처음 첫 이야기·나중 지도·다시 보기·설정과 뒤로), 측정·`--experiment`·`--screen`·재시작은 건너뜀, `--demo-title`은 bench 저장소, 폰·태블릿에서 로고·단추가 화면 안·겹침 없음, 섬이 혼자 돌고 입력·이름표 없음, 로고 흔들림).
+
+### 배 타고 다음 섬으로·섬 고르기 (#75, 2026-11-06)
+
+사용자가 목업에서 고름(배 장면 A1 짧은 3D 장면, 섬 고르기 B1 섬 카드, 2026-11-06).
+
+- **배 장면** (`VoyageScreen`, `scripts/app/voyage_screen.gd`): 첫 섬의 끝 이야기 뒤, 다음 섬(지금은 허턴섬)이 열려 있으면 한 번 나온다(`Story.voyage_due`: 다음 섬 = `opens_after`가 지금 섬인 섬, `Island.is_open`, 지금 섬의 끝 이야기를 봄, 그 섬의 배 장면을 아직 안 봄). 끝 이야기가 끝날 때(`StoryDirector.ended("finale")`)와 지도를 열 때(`App.show_list`) 본다. 말은 다음 섬 이야기 파일의 `voyage` 쪽(`content/story/hutton.json`, 말은 `content/locale/<언어>/story/hutton.json`, 대사 1~6)이고 쪽마다 `shot`(`Story.VOYAGE_SHOTS`)이 카메라와 배의 자리를 정한다: `depart` 뉴턴섬 바닷가에서 출발(하늘의 길잡이 별), `sea` 바다 위에서 앞의 허턴섬, `flicker` 허턴섬만 어두워졌다 밝아짐(그 섬 재질의 `own_tint`, 1.6초 주기), `arrive` 허턴섬 바닷가에 닿고 섬지기(`fox` 모델, 말 이름표는 `speaker.fox`)가 기다림. 한 쪽마다 배가 4초 동안 제 구간을 미끄러진다. 탭 = 다음 쪽, `건너뛰기`·뒤로가기 = 끝으로. 끝나면 그 섬의 배 장면을 본 것으로 저장(`STORY` 절 `hutton.voyage`)하고 그 섬을 지금 섬으로 저장한 뒤 그 섬 지도를 열어 첫 이야기(대사 7~18, `prologue`)를 잇는다. 배 장면만의 작은 세계: 두 섬의 지도 섬(`MapIsland`, 다음 섬은 −z 110 m, 하늘은 하나), 바다(`MapSea`), 지도 배를 1.7배 키운 배와 그 위의 지도 크기 셋, 섬지기.
+- **다른 섬의 첫 이야기**(`StoryDirector`): 첫 섬이 아닌 섬의 `prologue`는 그 섬 광장(해시계)을 몇 각도에서 번갈아 보며 말만 잇고, 마지막 쪽에 지도의 밤으로 간다. 수수께끼·틀린 장소 말이 없는 섬(만드는 중인 섬)에서는 퍼피 상자를 열지 않는다.
+- **이야기 다시 보기**: 첫 섬이 아닌 섬에서는 배 장면부터 다시, 그다음 그 섬 첫 이야기.
+- **섬 고르기** (`IslandCards`, `scripts/app/island_cards.gd`): 배 장면을 하나라도 본 뒤(`Story.any_voyage_seen`) 타이틀에 `섬 고르기` 단추(작은 단추 줄, 빨간 글자)가 생긴다. 누르면 돌아가는 섬 위에 카드가 뜬다(로고·단추는 숨김): 섬마다 한 장(섬 지도를 타이틀과 같은 3/4 시점으로 한 번 그린 그림, 이름 `island.<id>.name`, 부제 `island.<id>.about`, 찾은 별 조각 `StarEmblem`, 조각이 남았으면 `이어서 하기`·다 찾았으면 `다시 가기`, 지금 섬은 금색 테두리)과 마지막에 이름 없는 `다음 섬`. 열리지 않은 섬은 회색 그림 + 자물쇠 + "<앞 섬> 조각을 다 모으면 열려요"이고 단추가 없다. 카드 단추 = 그 섬을 지금 섬으로 저장하고 지도로. `← 돌아가기`·뒤로가기 = 카드 닫기. `시작하기`는 예전처럼 지금 섬(마지막 섬)으로 바로 간다. 결제 안내는 #77.
+- **배 모양**: 지도 배(`BoatArt`, `scripts/art/boat_art.gd`)를 동화책 범선으로 바꿨다(앞이 들린 선체, 크림 띠·둥근 창, 나무 갑판, 부푼 크림 돛·앞돛, 금색 깃발). 지도의 배 3척도 같은 모델이다(아트 디렉션 5절).
+- **개발 스위치** `--islands=open`(`Quality.DEV_KEYS`, Play 빌드에서 무시): 이번 실행에서 목록의 모든 섬이 열린다(`Island.set_dev_open`, 만드는 중인 허턴섬도). 화면 찍기 `--demo-story=voyage`(첫 섬을 다 찾고 끝 이야기를 본 bench 저장소: 배 장면 → 허턴섬 지도와 첫 이야기)와 `--demo-story=islands`(배 장면도 본 뒤: 타이틀과 섬 카드)도 Play 빌드가 아닐 때만 다음 섬을 연다.
+- 시험: `tests/voyage_checks.gd`(개발 스위치는 Play에서 무시, 허턴섬 이야기 파일의 배 장면·첫 이야기·두 언어 말, 배 장면이 나오는 조건(만드는 중인 섬에서는 안 나옴, 한 번만), 쪽마다 장면·별·섬지기·배 움직임·깜박임, 끝나면 허턴섬 지도·지금 섬 저장·첫 이야기 12쪽, 끝 이야기 끝에서 배 장면으로, 건너뛰기·뒤로가기·다시 보기, 섬 고르기는 배 장면 뒤에만·카드·자물쇠·조건·단추·뒤로·시작하기, 폰·태블릿·폰 확대에서 화면 안·겹침 없음).
 
 ### 대화 표정 (2026-10-29)
 
