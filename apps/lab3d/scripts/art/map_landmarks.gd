@@ -347,7 +347,7 @@ static func _globe(b: ArtMeshBuilder, xf: Transform3D) -> float:
 static func _shadow_stick(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	_rod(b, xf, Vector3.ZERO, Vector3(0.0, 1.0, 0.0), 0.06, ArtPalette.WOOD)
 	_ball(b, xf, Vector3(0.0, 1.05, 0.0), 0.12, ArtPalette.RED)
-	_box(b, xf, Vector3(-0.45, 0.012, 0.25), Vector3(0.9, 0.025, 0.16), Color("434a86"))
+	_box(b, xf, Vector3(-0.45, 0.012, 0.25), Vector3(0.9, 0.025, 0.16), ArtPalette.CAST_SHADOW)
 	b.add_cylinder(xf * Transform3D(Basis(), Vector3(-0.95, 0.0, 0.5)), 0.24, 0.22, 0.07, 8, ArtPalette.ROCK)
 	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.6, 0.0, 0.35)), 0.2, 0.2, 0.05, 8, ArtPalette.SOIL)
 	_ball(b, xf, Vector3(0.6, 0.12, 0.35), 0.08, ArtPalette.PINK)

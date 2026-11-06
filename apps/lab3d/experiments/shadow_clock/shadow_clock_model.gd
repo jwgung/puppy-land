@@ -46,6 +46,11 @@ const PATH_MIN_ALTITUDE := 12.0
 const START_HOURS := -3.0
 
 
+## Whether a stick `height` m tall is the long one (nearer the long stick than the short one).
+static func is_long(height: float) -> bool:
+	return height > (SHORT_STICK + LONG_STICK) * 0.5
+
+
 func _init() -> void:
 	super()   # SunModel declares the inputs
 	set_start("orbit", EQUINOX_ORBIT)

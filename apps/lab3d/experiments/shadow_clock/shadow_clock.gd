@@ -41,7 +41,7 @@ const GRAPH_STEP_DEG := 2.0
 
 var props := ShadowClockProps.new()
 var _surface: ManipSurface
-var _curves: Array[PackedVector2Array] = []
+var _curves := {}   # "short" / "long": the shadow length against the sun height, built once
 var _graph_key := Vector2(NAN, NAN)
 var _graph_revision := 0
 
@@ -167,14 +167,15 @@ func observations() -> Dictionary:
 func graph_series() -> Dictionary:
 	var sun := model as ShadowClockModel
 	if _curves.is_empty():
-		for stick: float in [ShadowClockModel.SHORT_STICK, ShadowClockModel.LONG_STICK]:
+		for pair: Array in [["short", ShadowClockModel.SHORT_STICK], ["long", ShadowClockModel.LONG_STICK]]:
+			var stick: float = pair[1]
 			var curve := PackedVector2Array()
 			var alt := ShadowClockModel.PATH_MIN_ALTITUDE
 			while alt <= sun.noon_sun_altitude() + 1e-9:
 				curve.append(Vector2(alt, SunModel.shadow_length_of(stick, alt)))
 				alt += GRAPH_STEP_DEG
-			_curves.append(curve)
-	return {"short": _curves[0], "long": _curves[1], "now": PackedVector2Array([Vector2(sun.sun_altitude(), sun.shadow_length())])}
+			_curves[pair[0]] = curve
+	return {"short": _curves["short"], "long": _curves["long"], "now": PackedVector2Array([Vector2(sun.sun_altitude(), sun.shadow_length())])}
 
 
 func graph_revision() -> int:

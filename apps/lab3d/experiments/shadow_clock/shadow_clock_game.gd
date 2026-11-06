@@ -11,6 +11,12 @@ extends LabGame
 const BOX := Vector3(0.62, 0.22, 0.5)
 const BARS_H := 0.42
 const BAR_R := 0.022
+## The bars stand on a grid of fractions of the box (x, z in -0.5..0.5), inset BAR_INSET from its edge;
+## the front has four, the back only its corners, the sides one in the middle.
+const BAR_INSET := 0.06
+const BAR_EDGE := 0.5
+const BAR_INNER := 0.17
+const BAR_SIDES := 6
 const LID := Vector3(0.62, 0.3, 0.5)
 const GOLD := Color("ffc61a")
 const PIECE_SCALE := 0.55
@@ -69,14 +75,14 @@ static func cage_mesh() -> Mesh:
 	b.add_rounded_box(Transform3D(Basis(), Vector3(0.0, BOX.y * 0.5, 0.0)), BOX, 0.03, 1, CHEST_WOOD, CHEST_WOOD.lightened(0.12))
 	b.add_rounded_box(Transform3D(Basis(), Vector3(0.0, BOX.y * 0.5, BOX.z * 0.5 + 0.005)), Vector3(BOX.x * 0.9, BOX.y * 0.25, 0.012), 0.0, 1, CHEST_DARK)
 	b.ao_min = 1.0
-	var xs := [-0.5, -0.17, 0.17, 0.5]
-	for z: float in [-0.5, 0.5]:
-		for x: float in xs:
-			if z < 0.0 and absf(x) < 0.4:
-				continue   # the back has only its corners (the piece reads from the front)
-			b.add_cylinder(Transform3D(Basis(), Vector3(x * (BOX.x - 0.06), BOX.y, z * (BOX.z - 0.06))), BAR_R, BAR_R, BARS_H, 6, GOLD)
-	for x: float in [-0.5, 0.5]:
-		b.add_cylinder(Transform3D(Basis(), Vector3(x * (BOX.x - 0.06), BOX.y, 0.0)), BAR_R, BAR_R, BARS_H, 6, GOLD)
+	var xs: Array[float] = [-BAR_EDGE, -BAR_INNER, BAR_INNER, BAR_EDGE]
+	var spots: Array[Vector2] = [Vector2(-BAR_EDGE, -BAR_EDGE), Vector2(BAR_EDGE, -BAR_EDGE)]   # the back's corners
+	for x in xs:
+		spots.append(Vector2(x, BAR_EDGE))   # the front
+	spots.append(Vector2(-BAR_EDGE, 0.0))   # the sides' middles
+	spots.append(Vector2(BAR_EDGE, 0.0))
+	for spot in spots:
+		b.add_cylinder(Transform3D(Basis(), Vector3(spot.x * (BOX.x - BAR_INSET), BOX.y, spot.y * (BOX.z - BAR_INSET))), BAR_R, BAR_R, BARS_H, BAR_SIDES, GOLD)
 	return b.commit()
 
 

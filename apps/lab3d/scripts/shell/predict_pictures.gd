@@ -28,10 +28,10 @@ const CRATE := Color("5b4636")
 const CAT := Color("f2a64a")
 const SUN := Color("f2c14e")             # the star (orbit_*) and the sun (sun_moves / earth_spins)
 const LAND := Color("4fbf3b")            # the Earth's land (sun_moves / earth_spins)
-const SHADOW := Color("434a86")          # the stick, its cap and its shadow (shadow_short / shadow_long)
+const SHADOW := ArtPalette.CAST_SHADOW  # the stick, its cap and its shadow (shadow_short / shadow_long)
 const STICK := Color("c98d4f")
 const CAP := Color("ff3b3b")
-const NIGHT_SHADE := Color(0.1, 0.14, 0.35, 0.55)   # the Earth's far half (the night)             # the bread cat riding the barrel (drum_floats / drum_sinks)
+const NIGHT_SHADE := Color(0.1, 0.14, 0.35, 0.55)   # the Earth's far half (the night)
 
 
 ## Draws `kind` filling `canvas` (an unknown kind draws the ground only).

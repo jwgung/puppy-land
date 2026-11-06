@@ -86,6 +86,17 @@ func check_tags() -> void:
 	var found := ExperimentRegistry.validate(bad)
 	expect.call(Array(found).any(func(p: String) -> bool: return p.contains("say_face")) and Array(found).any(func(p: String) -> bool: return p.contains("clue_face")),
 		"faces: the registry rejects an unknown face tag", str(found))
+	var reply := ExperimentRegistry.find("shadow-clock").duplicate(true)
+	reply.story.keeper_reply_face = "angry"
+	var bad_face := ExperimentRegistry.validate(reply)
+	expect.call(Array(bad_face).any(func(p: String) -> bool: return p.contains("keeper_reply_face")),
+		"faces: the registry rejects an unknown keeper_reply_face", str(bad_face))
+	for value: Variant in [7, ""]:
+		var text := ExperimentRegistry.find("shadow-clock").duplicate(true)
+		text.story.keeper_reply = value
+		var bad_text := ExperimentRegistry.validate(text)
+		expect.call(Array(bad_text).any(func(p: String) -> bool: return p.contains("story.keeper_reply must be a text")),
+			"faces: the registry rejects a keeper_reply that is %s" % ("empty" if value is String else "not a string"), str(bad_text))
 
 
 ## Puppy gives clues and story lines only; the science is Dugi's (2026-10-29 user).

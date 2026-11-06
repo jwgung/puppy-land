@@ -38,7 +38,7 @@ const STICK_WOOD := Color("b5793e")
 const STICK_TOP := Color("cf9152")
 ## The shadow: its colour (a deep blue-violet, the style's never-black), its band's half width, the
 ## tip's radius, how far over what it lies on (m), its strip's pieces, and how far it may reach.
-const SHADOW := Color("434a86")
+const SHADOW := ArtPalette.CAST_SHADOW
 const SHADOW_HALF := 0.14
 const TIP_RADIUS := 0.3
 const SHADOW_LIFT := 0.018
@@ -54,8 +54,8 @@ const FLOWER_COLORS := [Color("ff4fa3"), Color("ffc61a"), Color("ffffff"), Color
 ## The far stone: a flat stone (radius, top), the ring where the tip lands (lit when it is there).
 const STONE_RADIUS := 0.85
 const STONE_TOP := 0.13
-const STONE := Color("9aa3b5")
-const STONE_FACE := Color("b8c0cf")
+const STONE := DayNightProps.ROCK
+const STONE_FACE := DayNightProps.ROCK_TOP
 const RING_COLOR := Color("fff3c4")
 const RING_LIT := Color("ffd23a")
 const RING_RADIUS := 0.32
@@ -74,7 +74,7 @@ var _short: MeshInstance3D
 var _long: MeshInstance3D
 var _shadow: MeshInstance3D
 var _ring: MeshInstance3D
-var _key := []
+var _key: Array = []
 var bright_material: ShaderMaterial
 
 
@@ -85,7 +85,7 @@ func build(lab: Node3D, bed: Vector3, stone: Vector3, path: PackedVector3Array) 
 	stone_at = Vector3(stone.x, 0.0, stone.z)
 	ArtKit.add_world(lab, Vector3(0.0, 0.0, -0.5), null, 0.0)
 	bright_material = DayNightProps.lit_towards(Vector3.BACK, Color.WHITE, Color.WHITE)
-	var yard := ArtKit.instance(_yard_mesh(path))
+	var yard := ArtKit.instance(_yard_mesh())
 	yard.name = "Yard"
 	lab.add_child(yard)
 	var dots := ArtKit.instance(_path_mesh(path), bright_material)
@@ -124,7 +124,7 @@ func build(lab: Node3D, bed: Vector3, stone: Vector3, path: PackedVector3Array) 
 ## the stick's foot without a shadow), the ring lit while the status is "stone".
 func show(sun_at: Vector3, height: float, tip: Vector3, status: String) -> void:
 	sun.position = sun_at
-	var long := height > (ShadowClockModel.SHORT_STICK + ShadowClockModel.LONG_STICK) * 0.5
+	var long := ShadowClockModel.is_long(height)
 	_short.visible = not long
 	_long.visible = long
 	var key := [snappedf(tip.x, 0.001), snappedf(tip.z, 0.001), status == "stone"]
@@ -211,7 +211,7 @@ func _path_mesh(path: PackedVector3Array) -> Mesh:
 
 
 ## The sand yard, the flower bed and the stone (the stone's ring is _ring_mesh).
-func _yard_mesh(_path: PackedVector3Array) -> Mesh:
+func _yard_mesh() -> Mesh:
 	var b := ArtKit.builder()
 	b.ao_min = 0.95
 	b.ao_height = 0.2
