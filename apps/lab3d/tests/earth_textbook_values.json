@@ -3,7 +3,7 @@
   "place": {
     "name": "Seoul",
     "latitude": 37.57,
-    "source": "KASI (한국천문연구원) Seoul reference point 37°34'N 126°58'E; Hutton Island's stand-in place (docs/islands/hutton.md)"
+    "source": "Seoul (city hall about 37°34'N 126°58'E); Hutton Island's stand-in place (docs/islands/hutton.md)"
   },
   "tilt": {
     "deg": 23.44,
@@ -15,7 +15,7 @@
   },
   "noon_altitude": {
     "tolerance_deg": 0.05,
-    "source": "중학교 과학 3 '태양의 남중 고도' = 90° − 위도 + 적위; KASI 남중고도 for Seoul",
+    "source": "중학교 과학 3 '태양의 남중 고도' = 90° − 위도 + 적위",
     "cases": [
       {"name": "June solstice", "orbit": 90.0, "deg": 75.87},
       {"name": "December solstice", "orbit": 270.0, "deg": 28.99},
@@ -25,7 +25,7 @@
   },
   "day_length": {
     "tolerance_min": 5.0,
-    "source": "KASI 천문우주지식정보 일출·일몰 시각 (astro.kasi.re.kr), Seoul 2026: 06-21 about 05:11-19:57, 12-22 about 07:43-17:17, 03-20 about 06:35-18:43. The almanac's sunrise is the sun's upper limb on the horizon with refraction (centre at -0.833°), the model's default horizon. The tolerance covers the year-to-year shift of the solstice day and the circular orbit.",
+    "source": "NOAA Solar Calculator algorithm (Meeus; https://gml.noaa.gov/grad/solcalc/calcdetails.html), computed 2026-11-06 for Seoul 37.5665°N 126.978°E, UTC+9: 06-21 05:11-19:57 (14h46m), 12-22 07:44-17:17 (9h34m), 03-20 06:36-18:43 (12h07m). Sunrise is the sun's centre at -0.833° (refraction and the upper limb), the model's default horizon. Not yet checked against KASI's almanac (astro.kasi.re.kr). The tolerance covers the year-to-year shift of the solstice day and the circular orbit.",
     "geometric_note": "With the geometric horizon (centre at 0°) the solstice days at Seoul come out 8-12 minutes shorter (14 h 36 m, 9 h 24 m): the check below holds the model to that too, so a change of horizon is seen.",
     "geometric_shorter_min": [7.0, 13.0],
     "cases": [
