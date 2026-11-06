@@ -116,6 +116,11 @@
 ##    first), the island in use saved and opened again, an island open when every spot of the one before
 ##    is complete, the island-level saves keyed by island (an old save is the first island's), no
 ##    experiment on two islands, the island's story file.
+## 22c. the hutton island's map (tests/hutton_map_checks.gd, #72 2026-11-06): content/islands/hutton.json
+##    (11 spots once in the order, the lookout on the square, the features checked), never open while its
+##    spots are not experiments, its map (one mesh within the mechanics map's vertices; coast sand, valley,
+##    volcano, river to the sea, lighthouse, sundial clear of the spots and the three), a tap opens
+##    nothing, its coast and valley labs' ground.
 ## 23c. UI polish (tests/polish_checks.gd, 2026-10-29): 자세히's header (닫기) stays above the scrolled
 ##    note; a vertical drag from a button, check box or slider scrolls the settings and the note
 ##    (DragScroll) and presses nothing; check boxes instead of switches; 처음부터 다시 하기 asks first and
@@ -313,6 +318,11 @@ func _run() -> void:
 	_expect(islands != null and islands.can_instantiate(), "island list checks compile", "")
 	if islands != null and islands.can_instantiate():
 		await islands.new(self, _expect).run()
+	print("== the hutton island's map (#72: its layout, grounds and features, never open while in the making) ==")
+	var hutton: GDScript = load("res://tests/hutton_map_checks.gd")
+	_expect(hutton != null and hutton.can_instantiate(), "hutton map checks compile", "")
+	if hutton != null and hutton.can_instantiate():
+		await hutton.new(self, _expect).run()
 	print("== game G3: the slingshot (pull = angle / speed, big readout, no path, formula stamp) ==")
 	var slingshot: GDScript = load("res://tests/slingshot_checks.gd")
 	_expect(slingshot != null and slingshot.can_instantiate(), "slingshot checks compile", "")

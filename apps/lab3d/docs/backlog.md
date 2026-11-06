@@ -34,4 +34,4 @@
 
 ## 도구
 
-- 다 깬 상태로 보기: `adb shell am start -n org.puppyland.lab3d/com.godot.game.GodotAppLauncher --es opargs "--progress=complete"`(PR #39). 처음부터는 설정 → 처음부터 다시 하기.
+- 다 깬 상태로 보기: `adb shell am start -n org.puppyland.lab3d/com.godot.game.GodotAppLauncher --es opargs "--progress=complete"`(PR #39, Play 빌드에서는 무시: `Quality.DEV_KEYS`). 처음부터는 설정 → 처음부터 다시 하기.

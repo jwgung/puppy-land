@@ -915,12 +915,18 @@ func _make_label(spot: Dictionary) -> Control:
 	box.name = "SpotLabel_%s" % spot.id
 	box.theme_type_variation = "SpotPanel"
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var label := Ui.label(_spot_name(spot.definition), "SpotLabel")
+	var label := Ui.label(str(spot.id) if in_making(spot) else _spot_name(spot.definition), "SpotLabel")
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(label)
 	add_child(box)
 	move_child(box, view.get_index() + 1)   # under the map buttons
 	return box
+
+
+## A spot of an island in the making (--island, #72): a place on the map with no experiment yet. Its
+## name is its id and a tap only shakes its model.
+static func in_making(spot: Dictionary) -> bool:
+	return (spot.definition as Dictionary).is_empty()
 
 
 ## A short name for the spot (the labs' own titles are long questions): the experiment's kid
@@ -1033,6 +1039,10 @@ func _puppy_at(position: Vector2) -> bool:
 ## the night map a locked spot does not open: Puppy says it is not here and the landmark shakes.
 func _walk_to_spot(index: int) -> void:
 	if index < 0 or _walking:
+		return
+	if in_making(_spots[index]):
+		shake_spot(index)
+		SoundBoard.play(&"stop")
 		return
 	if story != null and story.locked(_spots[index].id):
 		story.say_wrong()
