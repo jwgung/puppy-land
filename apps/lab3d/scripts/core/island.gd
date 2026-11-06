@@ -8,15 +8,24 @@
 ## layout file, the island it opens after (every spot of that one complete, computed from the stamps:
 ## nothing is saved for it) and its product (ADR 0005; nothing reads it yet: the payment, #77). `current()` is the island in use: the one
 ## saved in the progress ([map] island), else the first.
+##
+## An island in the making (#72, 2026-11-06: the hutton island's map before its experiments): its spots
+## are laid out but not every spot is an experiment yet (`playable()` false). It never opens in the
+## child's app (is_open), whatever the island before it; a developer sees its map with
+## --island=<id> (App: this run only, nothing saved, no story, the bench store; never in the Play
+## build). Before such an island becomes playable its `product` must be set (the payment, #77): until
+## then it would open for free.
 class_name Island
 extends RefCounted
 
 const ROOT := "res://content/islands"
 const INDEX_PATH := "res://content/islands/index.json"
-const GROUNDS := ["meadow", "hill", "yard", "pond"]
+const GROUNDS := ["meadow", "hill", "yard", "pond", "coast", "valley"]
+## The lookout may be the cat's square instead of a spot (the hutton island's sundial, #72).
+const HOME := "home"
 
-## Zone id -> {ground, look (the lab ground's look; default the ground), at [x, z], radius or
-## size [w, d], height (hills), spots [[experiment id, [x, z], landmark yaw deg], ...]}, in the
+## Zone id -> {ground (GROUNDS: the hutton island adds coast and valley, #72), look (the lab ground's look; default the ground), at [x, z], radius or
+## size [w, d], height (hills; the valley's rise), spots [[experiment id, [x, z], landmark yaw deg], ...]}, in the
 ## map's order.
 var zones: Dictionary = {}
 var home := Vector2.ZERO
@@ -32,7 +41,13 @@ var clouds: Array = []       # [x, y, z, size]
 var far_clouds: Array = []   # [angle deg, distance, height, size]
 var sea_waves: Array = []    # [angle deg, distance, size]
 var lab_facing: Dictionary = {}   # experiment id -> map angle deg of the lab's front
+## Where the story's pieces gather: a spot id, or HOME (the square).
 var lookout := ""
+## The island's own landforms and buildings (#72), each optional: volcano {at [x, z], radius, height}
+## (a cone, the valley's ground rising to it), river [[x, z], ...] (from its source to past the coast),
+## lighthouse [x, z], sundial true (on the square). Read by MapIsland and LabWorld; {} on the
+## mechanics island.
+var features: Dictionary = {}
 ## The island's id in the list ("" for an island read straight from data).
 var id := ""
 var order: Array = []
@@ -110,15 +125,21 @@ static func set_current(island_id: String) -> void:
 	ProgressStore.set_current_island(island_id)
 
 
+## A developer's look at `island_id` (--island=<id>, captures, tests): the island in use for this run
+## only, nothing saved (the child's island stays as it was).
+static func use_for_run(island_id: String) -> void:
+	_current_id = island_id
+
+
 ## The island in use is read from the progress again on the next use (tests, a reset progress).
 static func forget_current() -> void:
 	_current_id = ""
 
 
-## `island_id` is open: the first island always; another when every spot of the island it opens
-## after is complete. An unknown island never is.
+## `island_id` is open when it is playable (every spot an experiment): the first island then always;
+## another when every spot of the island it opens after is complete. An unknown island never is.
 static func is_open(island_id: String, progress: Dictionary) -> bool:
-	if entry(island_id).is_empty():
+	if entry(island_id).is_empty() or not by_id(island_id).playable():
 		return false
 	var after := str(entry(island_id).get("opens_after", ""))
 	return after == "" or by_id(after).complete(progress)
@@ -147,9 +168,21 @@ static func from_data(data: Dictionary) -> Island:
 	island.sea_waves = _array(data.get("sea_waves"))
 	island.lab_facing = _dict(data.get("lab_facing"))
 	island.lookout = str(data.get("lookout", ""))
+	island.features = _dict(data.get("features"))
 	island.order = _array(data.get("order")).filter(func(id: Variant) -> bool: return id is String)
 	island.problem = island._check()
 	return island
+
+
+## The island has the sundial on its square (features.sundial).
+func has_sundial() -> bool:
+	return features.get("sundial", false) == true
+
+
+## Every spot is an experiment (ExperimentRegistry): false for an island in the making, whose
+## spots are only places on its map (#72).
+func playable() -> bool:
+	return problem == "" and spots().all(func(spot: String) -> bool: return not ExperimentRegistry.find(spot).is_empty())
 
 
 ## The spot ids in the map's order (zone by zone).
@@ -192,18 +225,45 @@ func _check() -> String:
 		if not spec is Dictionary or str(spec.get("ground", "")) not in GROUNDS or _array(spec.get("at")).size() != 2 \
 				or not spec.get("spots") is Array:
 			return "zone %s: ground, at or spots" % zone
+		if (spec.spots as Array).is_empty():   # else complete() and playable() would hold for nothing
+			return "zone %s has no spots" % zone
+		if spec.ground in ["coast", "valley"] and float(spec.get("radius", 0.0)) <= 0.0:
+			return "zone %s: a %s needs its radius" % [zone, spec.ground]
 		for spot: Variant in spec.spots:
 			if not spot is Array or spot.size() != 3 or not spot[0] is String or _array(spot[1]).size() != 2:
 				return "zone %s: a spot is not [id, [x, z], yaw]" % zone
 	var ids := spots()
-	if lookout not in ids:
-		return "lookout %s is not a spot" % lookout
+	if lookout not in ids and lookout != HOME:
+		return "lookout %s is not a spot or the square" % lookout
 	var sorted_order := order.duplicate()
 	sorted_order.sort()
 	var sorted_ids := ids.duplicate()
 	sorted_ids.sort()
 	if sorted_order != sorted_ids:
 		return "order is not every spot once"
+	return _check_features()
+
+
+## What is wrong with `features` ("" when nothing): known keys only, each in its shape.
+func _check_features() -> String:
+	for key in features:
+		var v: Variant = features[key]
+		match key:
+			"volcano":
+				if not v is Dictionary or _array(v.get("at")).size() != 2 or float(v.get("radius", 0.0)) <= 0.0 \
+						or float(v.get("height", 0.0)) <= 0.0:
+					return "features.volcano: at [x, z], radius and height"
+			"river":
+				if not v is Array or v.size() < 2 or not v.all(func(p: Variant) -> bool: return _array(p).size() == 2):
+					return "features.river: two or more [x, z] points"
+			"lighthouse":
+				if _array(v).size() != 2:
+					return "features.lighthouse: [x, z]"
+			"sundial":
+				if not v is bool:
+					return "features.sundial: true or false"
+			_:
+				return "features.%s is not a feature" % key
 	return ""
 
 

@@ -477,6 +477,8 @@ func play_finale() -> void:
 
 
 func _lookout() -> Dictionary:
+	if home.island.lookout == Island.HOME:   # the square's sundial (the hutton island, #72)
+		return home.map.home_lookout()
 	for spot in home._spots:
 		if spot.id == home.island.lookout:
 			return spot

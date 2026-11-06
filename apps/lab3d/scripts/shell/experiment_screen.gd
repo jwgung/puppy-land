@@ -103,7 +103,7 @@ var web_handler: Callable = func(text: String) -> void: ScienceNote.open_web_ai(
 var _web_button: Button = null
 ## A measurement or a device check (Story.measurement_run): the note has no ask button, unless the
 ## device check of the button itself asks for it (--ask=show, with --progress=bench,--sound=0).
-var measurement := Story.measurement_run(Quality.all_args()) and Quality.cmdline_value("ask") != "show"
+var measurement := Story.measurement_run(Quality.all_args()) and Quality.dev_value("ask") != "show"
 var _ask_button: Button = null
 var _ask_status: Label = null           # "질문을 복사했어요..." when the text went to the clipboard
 var refresh_count := 0                  # full panel refreshes so far (tests)
@@ -2156,7 +2156,7 @@ func _build_sidebar() -> void:
 	# Last: the question for an AI app (or any app), never in a measurement; off unless turned on
 	# (ScienceNote.enabled, or the button's own device check --ask=show; the Play build (feature "play")
 	# ignores the switch, so a launch intent cannot turn the button on for a child).
-	var ask_switch := not OS.has_feature("play") and Quality.cmdline_value("ask") == "show"
+	var ask_switch := Quality.dev_value("ask") == "show"   # Quality.DEV_KEYS: off in the Play build
 	if not measurement and (ScienceNote.enabled or ask_switch):
 		_sections["ask"] = _build_ask()
 		_sections.ask.name = "Note_ask"
