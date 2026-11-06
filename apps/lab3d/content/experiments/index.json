@@ -18,7 +18,8 @@
   ],
   "islands": {
     "hutton": [
-      "day-night.json"
+      "day-night.json",
+      "seasons.json"
     ]
   }
 }

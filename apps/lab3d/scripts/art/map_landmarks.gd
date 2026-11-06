@@ -50,6 +50,8 @@ static func add(b: ArtMeshBuilder, id: String, xf: Transform3D) -> float:
 			return _star(b, xf)
 		"day-night":
 			return _globe(b, xf)
+		"seasons":
+			return _orrery(b, xf)
 	_rod(b, xf, Vector3.ZERO, Vector3(0.0, 1.0, 0.0), 0.08, ArtPalette.BLUE)
 	_ball(b, xf, Vector3(0.0, 1.15, 0.0), 0.2, ArtPalette.WHITE)
 	return 1.35
@@ -338,6 +340,25 @@ static func _globe(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	_rod(b, xf, center - axis * 0.62, center + axis * 0.66, 0.035, ArtPalette.STEEL_SHINE)
 	_ball(b, xf, center + axis * 0.68, 0.07, ArtPalette.RED)
 	return 1.9
+
+
+## The hutton island's 계절 (#87, "해 둘레에 길이 있는 곳"): the sun on a post in the middle of a ring
+## (the Earth's path) and a small tilted globe on the ring.
+static func _orrery(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.add_cylinder(xf, 0.5, 0.42, 0.12, 10, ArtPalette.WOOD_GRAIN, true, ArtPalette.WOOD)
+	_rod(b, xf, Vector3(0.0, 0.1, 0.0), Vector3(0.0, 0.85, 0.0), 0.06, ArtPalette.WOOD_GRAIN)
+	var center := Vector3(0.0, 1.05, 0.0)
+	_ball(b, xf, center, 0.26, ArtPalette.YELLOW)
+	for i in 16:
+		var a := TAU * i / 16.0
+		var a1 := TAU * (i + 1) / 16.0
+		_rod(b, xf, center + Vector3(cos(a), 0.0, sin(a)) * 0.62, center + Vector3(cos(a1), 0.0, sin(a1)) * 0.62, 0.025, ArtPalette.STEEL_SHINE)
+	var earth := center + Vector3(0.44, 0.0, 0.44)
+	var axis := Vector3(-sin(deg_to_rad(SunModel.EARTH_TILT)), cos(deg_to_rad(SunModel.EARTH_TILT)), 0.0)
+	_ball(b, xf, earth, 0.2, ArtPalette.BLUE)
+	_rod(b, xf, earth - axis * 0.3, earth + axis * 0.32, 0.025, ArtPalette.STEEL_SHINE)
+	_ball(b, xf, earth + axis * 0.33, 0.045, ArtPalette.RED)
+	return 1.6
 
 
 # --- helpers ---------------------------------------------------------------------------------
