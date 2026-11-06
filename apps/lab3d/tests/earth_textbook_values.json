@@ -1,5 +1,5 @@
 {
-  "about": "Textbook values the earth labs' models must give (#70, 2026-11-06). tests/earth_model_checks.gd reads every entry. Each entry names its source and its tolerance. The sun model (experiments/earth_lab/sun_model.gd) has a circular orbit, local solar time, no equation of time and a geometric horizon (no refraction): it gives the textbook's angles and relations, not almanac sunrise times (2026-11-06 user decision).",
+  "about": "Textbook values the earth labs' models must give (#70, 2026-11-06). tests/earth_model_checks.gd reads every entry but `tilt` (the model's EARTH_TILT is checked against it in the test of the noon altitudes). Each entry names its source and its tolerance. The numbers are the relations taught in school science worked out for Seoul's latitude and the Earth's tilt, not numbers printed in a textbook. The sun model (experiments/earth_lab/sun_model.gd) has a circular orbit, local solar time, no equation of time and a geometric horizon (no refraction): it gives the textbook's angles and relations, not almanac sunrise times (2026-11-06 user decision).",
   "place": {
     "name": "Seoul",
     "latitude": 37.57,

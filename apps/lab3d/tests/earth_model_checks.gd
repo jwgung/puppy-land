@@ -121,6 +121,8 @@ func check_rotation() -> void:
 func check_noon_altitude() -> void:
 	var block: Dictionary = values.noon_altitude
 	var problems := []
+	if absf(SunModel.EARTH_TILT - float(values.tilt.deg)) > 0.001:
+		problems.append("the model's tilt %.3f (want %.2f)" % [SunModel.EARTH_TILT, float(values.tilt.deg)])
 	for case in block.cases:
 		var model := _seoul(float(case.orbit))
 		model.set_input("rotation", SunModel.NOON_ROTATION)

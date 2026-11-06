@@ -44,11 +44,6 @@ func input(id: String) -> float:
 	return float(_values.get(id, 0.0))
 
 
-## The start value of input `id` (where reset() puts it).
-func start_of(id: String) -> float:
-	return float(_starts.get(id, 0.0))
-
-
 ## Sets input `id` now (a glide on it stops).
 func set_input(id: String, value: float) -> void:
 	if not has_input(id):

@@ -1,8 +1,8 @@
 ## Base of the earth labs (#70, 2026-11-06; Hutton Island's sky and weather spots, docs/islands/hutton.md
 ## "시뮬레이션"): a pure model (EarthModel) holds the state and the 3D only draws it. No rigid body, no
 ## formula corrector, no engine physics: the lab steps the model at the fixed step while it is
-## animating (a glide), draws it, and answers status(), observations() and settled() from it, which is
-## all MissionRound reads. ModelDrivenLab stays the base of the labs whose engine bodies follow a
+## animating (a glide), draws it, and answers status(), observations(), settled() and control_value(),
+## which is all MissionRound reads. ModelDrivenLab stays the base of the labs whose engine bodies follow a
 ## formula model; this base has no body to drive.
 ##
 ## The hand (2026-11-06 decision, issue #70): the child drags a knob, a pickable StaticBody3D that
@@ -50,7 +50,7 @@ var _pace := 0.0
 
 func _ready() -> void:
 	_build_world()
-	begin_batch()   # the defaults restart the run once, not once per control
+	begin_batch()   # the defaults restart the run once, not once per control (as ModelDrivenLab._ready)
 	for control in definition.controls():
 		set_control(control.id, control.default)
 	end_batch()
@@ -214,7 +214,6 @@ func placements() -> Dictionary:
 	return out
 
 
+## The camera follows the first knob added (the lab's main handle), else the lab.
 func follow_point() -> Vector3:
-	for id in knobs:
-		return knobs[id].global_position
-	return global_position
+	return (knobs.values()[0] as Node3D).global_position if not knobs.is_empty() else global_position

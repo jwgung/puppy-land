@@ -40,8 +40,6 @@ const ORBIT_RATE := 60.0
 ## Rotation at local solar noon (0 = midnight).
 const NOON_ROTATION := 180.0
 
-## The rising / setting band either side of the geometric horizon (deg).
-var edge := EDGE_DEG
 
 
 func _init() -> void:
@@ -154,9 +152,9 @@ func is_morning() -> bool:
 	return hour_angle(input("rotation")) < 0.0
 
 
-## The stick casts a shadow (the sun's centre above the ground).
+## The stick casts a shadow: while it is day (the sun's centre above the ground).
 func has_shadow() -> bool:
-	return sun_altitude() > 0.0
+	return is_day()
 
 
 ## The stick's shadow length (m; INF without a shadow).
@@ -186,11 +184,11 @@ func shadow_tip() -> Vector3:
 	return Vector3(length * sin(az), 0.0, -length * cos(az))
 
 
-## "night", "sunrise" / "sunset" (the sun within `edge` of the horizon, rising before noon, setting
+## "night", "sunrise" / "sunset" (the sun within EDGE_DEG of the horizon, rising before noon, setting
 ## after), or "day".
 func status() -> String:
 	var alt := sun_altitude()
-	if absf(alt) <= edge:
+	if absf(alt) <= EDGE_DEG:
 		return "sunrise" if is_morning() else "sunset"
 	return "day" if alt > 0.0 else "night"
 
