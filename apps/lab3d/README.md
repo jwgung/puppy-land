@@ -45,7 +45,7 @@ apps/lab3d/
   experiments/manipulation_dev/       조작 확인용 개발 장면(목록에 없음, --experiment=manipulation-dev)
   content/experiments/                실험 정의 JSON(index.json + 실험별 파일: 데이터, 말은 content/locale)
   content/locale/<언어>/              글(ui.json: 코드의 글, experiments/·story/: 데이터 파일과 같은 모양의 말)
-  assets/characters/                  빵고양이·두기두기·퍼피 glb + 텍스처 아틀라스(소스: art_src/characters/bread_cat.py, dugi.py, puppy.py, Blender 스크립트), 두기두기 대화창 초상화 portraits/(모델 렌더, dugi_portrait.py)
+  assets/characters/                  빵고양이·두기두기·퍼피·섬지기 여우(둘째 섬 허턴섬, 이름 미정) glb + 텍스처 아틀라스(소스: art_src/characters/bread_cat.py, dugi.py, puppy.py, fox.py, Blender 스크립트), 대화창 초상화 portraits/(모델 렌더, dugi_portrait.py, puppy_portrait.py, fox_portrait.py)
   assets/props/                       털실 공·택배 박스 glb + 텍스처(소스: art_src/props/yarn_ball.py, parcel_box.py)
   assets/ui/                          손 안내의 빵고양이 앞발 그림 guide_paw.png(소스: tools/render_guide_paw.gd, 빵고양이 모델을 게임 재질로 렌더함, 젤리 없음)
   art_src/                            캐릭터·소품 생성 Blender 스크립트(외부 .blend 없음)
@@ -371,7 +371,7 @@ Android 뒤로가기 한 번이 두 번 오는 문제(2026-10-29, SM-X115 Androi
 
 ### 대화 표정 (2026-10-29)
 
-사용자 요청 "대화시 표정을 좀 더 다양하게". 초상화가 말하는 사람마다 한 장이던 것을 줄마다 표정 다섯 가지로 바꿨다(`Story.FACES`): `explain` 설명(두기두기 막대 가리키기, 퍼피 손 들어 알려 주기, 기본), `happy` 기쁨, `surprised` 놀람, `thinking` 생각, `worried` 걱정. 그림은 `assets/characters/portraits/{dugi,puppy}_<표정>.webp`(아트 디렉션 12절).
+사용자 요청 "대화시 표정을 좀 더 다양하게". 초상화가 말하는 사람마다 한 장이던 것을 줄마다 표정 다섯 가지로 바꿨다(`Story.FACES`): `explain` 설명(두기두기 막대 가리키기, 퍼피 손 들어 알려 주기, 기본), `happy` 기쁨, `surprised` 놀람, `thinking` 생각, `worried` 걱정. 그림은 `assets/characters/portraits/{dugi,puppy,fox}_<표정>.webp`(아트 디렉션 12절).
 
 - **표시**: 콘텐츠의 줄마다 표정 이름을 붙인다(옆 필드라 글 시험은 그대로): `story/<섬>.json` 쪽마다 `face`, `map_wrong_face`; 실험 JSON `story.clue_face`·`story.map_clue_face`, `predict.question_face`, `kid.say_face`, `kid.intro_face`, `missions.stages[i].say_face`. 예측 이유는 코드가 정한다: 맞히면 `happy`, 틀리면 `thinking`(`Story.REASON_FACE`, 틀려도 실패가 아님). 붙이지 않은 줄은 `explain`.
 - **대화창**(`DialogueBox.set_speaker(who, face)`, `open(words, face)`): 같은 사람·같은 표정이면 아무것도 바꾸지 않는다(다시 튀지 않음). 표정이 바뀌면 그림만 0.16초 동안 0.94배·반투명에서 제자리로 부드럽게 들어온다(그리기만, 상자·초상화의 자리와 크기는 그대로). 한 줄 안에서는 바뀌지 않는다.
@@ -385,7 +385,7 @@ Android 뒤로가기 한 번이 두 번 오는 문제(2026-10-29, SM-X115 Androi
 - 33문장 전체는 언어 폴더의 실험 말 파일(`content/locale/ko/experiments/<id>.json`)에 있다. 물리·미션·문턱은 바꾸지 않았다.
 - **용어 강조**(2026-11-03 시연 피드백, 사용자 결정 "굵게 + 노란 형광 배경"): 두기두기가 과학 낱말을 처음 알려 주는 자리(`kid.intro`와 그 낱말을 소개하는 단계 `say`, 예 "이 힘을 **마찰력**이라고 해요.")에만 낱말을 `**`로 감싼다(`TermMarks`, `scripts/core/term_marks.gd`). 대화창(`DialogueBox`, RichTextLabel)은 그 낱말을 굵게, 형광 노랑(`UiTheme.DIALOGUE_TERM` `#ffe066`, 크림 종이 위 남색 글씨) 바탕으로 그린다. 줄 나눔은 굵은 글꼴 폭으로 재고(한 낱말이 줄을 넘으면 줄마다 다시 감쌈), 타자기는 보인 글자까지만 넣어 바탕도 글자와 함께 자란다. `text`·`joined()`는 표시 그대로(표시 포함)이고, 다른 데서 읽을 때는 `TermMarks.plain()`(과학 노트의 AI 질문). 표시는 ko·en 같은 자리에 둔다. 시험: `tests/kid_words_checks.gd`(`check_term_content`·`check_term_box`).
 - **조건 그림 단추**: 대화창(설명·단서·질문)이 열려 있는 동안 숨고 닫히면 제자리로 돌아온다(2026-10-29 사용자 "좌측 버튼이 딸려 오네", 예전에는 대화창 위로 올라갔다). 대화창은 움직이지 않는다.
-- 시험: `tests/faces_checks.gd`(표정 그림 10장, 콘텐츠의 모든 표정 이름이 알려진 것·잘못된 이름은 등록에서 거부, 대화창이 사람×표정을 보이고 같은 표정은 다시 튀지 않고 새 표정은 부드럽게 들어오며 상자·초상화 자리·크기가 그대로, 표정 없는 줄 = 설명, 첫 이야기 8쪽·수수께끼·"여긴 아닌" 줄의 표정, 실험에서 단서(놀람)·질문(생각)·이유(맞힘 기쁨/틀림 생각)·단계 설명의 표정, 11개 실험에서 설명이 단계를 따름, 모든 설명·질문·이유·단서가 폰·태블릿에서 2쪽 안, 퍼피 줄에 과학 낱말 없음), `tests/easy_controls_checks.gd`(대화 중 단추 숨김·닫히면 제자리).
+- 시험: `tests/faces_checks.gd`(표정 그림 15장: 말하는 사람 3명 × 표정 5, 콘텐츠의 모든 표정 이름이 알려진 것·잘못된 이름은 등록에서 거부, 대화창이 사람×표정을 보이고 같은 표정은 다시 튀지 않고 새 표정은 부드럽게 들어오며 상자·초상화 자리·크기가 그대로, 표정 없는 줄 = 설명, 첫 이야기 8쪽·수수께끼·"여긴 아닌" 줄의 표정, 실험에서 단서(놀람)·질문(생각)·이유(맞힘 기쁨/틀림 생각)·단계 설명의 표정, 11개 실험에서 설명이 단계를 따름, 모든 설명·질문·이유·단서가 폰·태블릿에서 2쪽 안, 퍼피 줄에 과학 낱말 없음), `tests/easy_controls_checks.gd`(대화 중 단추 숨김·닫히면 제자리).
 
 ### 조각 꺼내기 게임 (2026-10-29, 묶음 A 6개 + 묶음 B 5개: 11개 실험 모두)
 

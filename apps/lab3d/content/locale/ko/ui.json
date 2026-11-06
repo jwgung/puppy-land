@@ -151,6 +151,7 @@
   "settings.ui_size_note": "글자와 단추의 크기예요. 자동은 작은 화면에서 크게 보여 줘요.",
   "settings.ui_sizes": { "auto": "자동", "normal": "보통", "large": "크게", "extra_large": "아주 크게" },
   "speaker.dugi": "두기두기",
+  "speaker.fox": "여우",
   "speaker.puppy": "퍼피",
   "spring.reach_wait": "흔들면 보여요",
   "spring.status.held": "공을 당기는 중",

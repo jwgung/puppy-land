@@ -23,7 +23,7 @@ Phase 1 Task 2c에서 정한 3D 앱의 시각 기준이다. 사용자가 시안 
 
 - 보이는 것만 바꾼다. 물리 바디·충돌 모양·공식 보정·표시 수치는 아트와 무관하다. 소품은 바디 아래의 `MeshInstance3D`이고, 연출은 그 메시의 `scale`·`position`만 바꾼다. 헤드리스 테스트가 확인한다(5절 끝).
 - 엔진 조명·실시간 그림자를 쓰지 않는다. 밝기는 셰이더의 색 램프, 접촉감은 정점 AO와 블롭 그림자로 낸다. 그래서 low(Compatibility)와 high(Mobile)가 같은 모습이다.
-- 외부 에셋 없이 코드로 만든다. 정적인 것은 메시 하나로 합친다(드로우콜 예산, 8절). 예외: 캐릭터(빵고양이·두기두기·퍼피)는 저장소 안 Blender 스크립트(`art_src/characters/*.py`)가 만든 glb다(11·12절, 2026-10-23·24 사용자 선택). 소리는 CC0 파일이다(14절, 2026-10-28 사용자 결정).
+- 외부 에셋 없이 코드로 만든다. 정적인 것은 메시 하나로 합친다(드로우콜 예산, 8절). 예외: 캐릭터(빵고양이·두기두기·퍼피·여우)는 저장소 안 Blender 스크립트(`art_src/characters/*.py`)가 만든 glb다(11·12절, 2026-10-23·24 사용자 선택). 소리는 CC0 파일이다(14절, 2026-10-28 사용자 결정).
 - 전체 화면을 덮는 반투명 레이어를 만들지 않는다. SM-P200은 원본 해상도 전체 화면 레이어 하나로 60 fps를 잃는다([UI 해상도 결정](ui-resolution.md)).
 
 ## 2. 팔레트
@@ -421,11 +421,13 @@ Blender 참고 그림(갈색 외곽선 + 한 단계 셀 셰이딩)과 같은 동
 | 메시 · 정점 · 삼각형 | 7 · 3,050 · 5,626 | 8 · 3,199 · 5,756 |
 | 기본 옵션 | 팔 변형 A(옆구리에 붙어 아래로), 벙어리장갑 팔, 외눈 안경 켬, 막대 켬 | 서 있음, 깃발 "과학섬", 외눈 안경 끔(두기두기 상징) |
 
-- 빌드: `blender -b --factory-startup -P apps/lab3d/art_src/characters/<이름>.py -- --out apps/lab3d/assets/characters/<이름>.glb`(Blender 4.5.15). 세 스크립트는 같은 폴더의 `bread_cat.py` 도우미를 `import`한다(환경 변수 없음). 저장소 사본으로 두 번 빌드해 세 glb 모두 바이트가 같았다(결정적).
+- 빌드: `blender -b --factory-startup -P apps/lab3d/art_src/characters/<이름>.py -- --out apps/lab3d/assets/characters/<이름>.glb`(Blender 4.5.15). 네 스크립트는 같은 폴더의 `bread_cat.py` 도우미를 `import`한다(환경 변수 없음). 저장소 사본으로 두 번 빌드해 세 glb 모두 바이트가 같았다(결정적).
 - `bread_cat.py`는 얼굴에 칠한 입체감(`paint_volume`: 얼굴 아래 가장자리와 주둥이 아래의 부드러운 따뜻한 그늘, 밝은 주둥이 가운데)을 더했다. 앱이 읽는 값(어깨·손·봉투 크기)은 그대로다.
-- 외곽선 메시 계약(11절)은 세 모델 모두 지킨다: 같은 위치 법선 차이 0.5° 이하(실측 0°), 닫힌 껍질(열린 모서리 0), 안쪽을 향한 껍질 0. 확인: `blender -b --factory-startup -P apps/lab3d/tools/mesh_contract.py -- apps/lab3d/assets/characters/*.glb`(어기면 종료 코드 1). 같은 계약을 헤드리스 시험이 가져온 메시로도 확인한다(CI에 Blender 없음).
+- 외곽선 메시 계약(11절)은 네 모델 모두 지킨다: 같은 위치 법선 차이 0.5° 이하(실측 0°), 닫힌 껍질(열린 모서리 0), 안쪽을 향한 껍질 0. 확인: `blender -b --factory-startup -P apps/lab3d/tools/mesh_contract.py -- apps/lab3d/assets/characters/*.glb`(어기면 종료 코드 1). 같은 계약을 헤드리스 시험이 가져온 메시로도 확인한다(CI에 Blender 없음).
 - 깃발 글자 "과학섬"은 Noto Sans CJK Bold(`/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc`, SIL OFL 1.1)로 Blender가 그린 글리프를 아틀라스에 구운 그림이다. 글꼴 파일은 앱에 들어가지 않는다. OFL은 글꼴로 만든 결과물(그림·문서)에 제한을 두지 않는다. 다시 빌드하려면 `fonts-noto-cjk`가 필요하다.
 - 아틀라스 임포트는 다른 캐릭터와 같이 `process/fix_alpha_border=false`다(알파 없음, RGB 그대로: `run_tests.gd` 아틀라스 시험).
+
+**섬지기 여우**(둘째 섬 허턴섬, 이슈 #71, 2026-11-06 사용자가 시안 3개에서 고름: 주황 털 + 큰 복슬 꼬리 + 청록 목도리). 이름은 아직 없다(말 이름표 `speaker.fox` = "여우" / "Fox"는 자리 표시, 사용자가 정한다). 같은 동화책 모습과 비율이다. 소스 `art_src/characters/fox.py`(`blender -b --factory-startup -P apps/lab3d/art_src/characters/fox.py -- --out apps/lab3d/assets/characters/fox.glb`) → `assets/characters/fox.glb` + 아틀라스 1024 px(`fox_fox_atlas.png`, 임포트는 위와 같음). 키 약 1.30 m(귀 포함), 노드 `Fox > Body > Head > EarL, EarR; ArmL > HandL; ArmR > HandR`(꼬리·목도리는 `Body`), 메시 6개, 삼각형 약 5.4천. 뾰족한 귀(끝 짙은 갈색, 안쪽 크림), 크림 뺨·주둥이·턱·배, 짙은 갈색 양말, 꼬리 끝 크림, 작고 차분한 콩 눈과 작은 미소, 수줍은 볼 연지. 초상화는 `fox_portrait.py`(같은 명령, 퍼피와 같은 `portraits/` 폴더, 512 px 무손실 WebP) → `fox_{explain,happy,surprised,thinking,worried}.webp`. 얼굴은 `face_kit.py`를 두기두기·퍼피와 함께 쓰고, 귀는 걱정할 때 살짝 처진다. `Story.SPEAKERS`의 `fox`로 말한다.
 
 ### 재질·노드·예산
 
@@ -489,7 +491,7 @@ Blender 참고 그림(갈색 외곽선 + 한 단계 셀 셰이딩)과 같은 동
 
 ### 대화 표정 (2026-10-29)
 
-사용자 요청 "대화시 표정을 좀 더 다양하게". 두기두기·퍼피 초상화마다 표정 다섯 가지(`Story.FACES`)를 그리고, 콘텐츠가 줄마다 표정을 붙인다(앱 README "대화 표정").
+사용자 요청 "대화시 표정을 좀 더 다양하게". 두기두기·퍼피·여우 초상화마다 표정 다섯 가지(`Story.FACES`)를 그리고, 콘텐츠가 줄마다 표정을 붙인다(앱 README "대화 표정").
 
 | 표정 | 얼굴 | 몸 (두기두기 / 퍼피) |
 |---|---|---|
@@ -502,7 +504,7 @@ Blender 참고 그림(갈색 외곽선 + 한 단계 셀 셰이딩)과 같은 동
 - **만드는 법**: 두 모델에는 얼굴 리그가 없다(셰이프 키·뼈 없음, 얼굴은 텍스처 아틀라스에 numpy SDF로 칠함, 노드는 머리·귀·팔·깃발). 그래서 표정은 (1) 아틀라스 얼굴을 다시 칠한 사본(`art_src/characters/face_kit.py`: 눈·눈썹·입·볼, 모델과 같은 SDF 붓·색·선 굵기, 눈썹은 두기두기 액자 갈색 `#7a4a2e`, 퍼피 귀 끝 갈색을 조금 어둡게)과 (2) 있는 노드의 자세(머리 기울임·끄덕임, 귀, 팔 `pose_point`, 퍼피 깃발 `pose_flag`)로 만든다. 표정을 넘기지 않으면 아틀라스는 예전과 바이트까지 같다(Blender에서 비교, 2026-10-29). 게임 속 3D 모델(`dugi.glb`·`puppy.glb`)은 다시 굽지 않았다.
 - **언제 어떤 표정**(콘텐츠 태그, 없으면 `explain`): 두기두기 설명(`kid.say`, 단계 `say`) = 대부분 `explain`, 목표를 깼을 때 보이는 기쁜 사실(같이 닿음, 가벼운 공이 쌩, 멀리 누르면 살살)은 `happy`, 놀라운 결과(목성에서 아주 빨리, 별을 떠남, 달·긴 줄의 아주 느린 흔들림)는 `surprised`, 조건을 바꿔 보게 하는 말(각도·더 기울이기·작은 통)은 `thinking`, 힘든 쪽(받침 가까이·줄 하나)은 `worried`. 예측 질문 = `thinking`. 예측 이유 = 맞히면 `happy`, 틀리면 `thinking`(코드). 퍼피 단서·수수께끼 = 무언가 발견한 말("걸렸어!", "날아갔어!")은 `surprised`, 길 안내는 `explain`, 마지막 장소는 `happy`, "여긴 아닌 것 같아" = `thinking`. 이야기: 1쪽 두기두기 `happy`, 별이 깨짐(퍼피) `surprised`, 별빛 없는 밤바다(두기두기) `worried`, "같이 가자!"·끝 이야기 1·2쪽 `happy`, 3쪽 새총 설명(두기두기) `explain`, 별이 다시 내려왔을 때(두기두기 "더 세게") `thinking`(2026-11-01).
 - **바꾸기**: 같은 사람·같은 표정의 다음 줄은 그림을 그대로 둔다(다시 튀지 않음). 표정이 바뀌면 그림만 0.16초에 0.94배·알파 0.55에서 제자리로(아래 가운데 기준, `DialogueBox.SWAP_S`). 상자·초상화의 자리와 크기는 어느 표정이든 같다(시험).
-- **비용**: 그림 10장(약 0.8 MB, 압축 없는 무손실), 처음 쓸 때 한 번 읽어 둔다. 노드·셰이더 추가 없음.
+- **비용**: 그림 15장(약 1.2 MB, 압축 없는 무손실; 여우 5장은 #71에서 더함), 처음 쓸 때 한 번 읽어 둔다. 노드·셰이더 추가 없음.
 
 ### 앱 아이콘 (2026-10-27)
 

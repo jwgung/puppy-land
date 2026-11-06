@@ -44,6 +44,7 @@ const UiScale := preload("res://tests/ui_scale_checks.gd")   # PHONE_ZOOMED (화
 const POINT_TOL_DEG := 1.0
 const DUGI_VERTS_MAX := 3300        # 3,050 model vertices + the shadow
 const PUPPY_VERTS_MAX := 3450       # 3,199 + the shadow
+const FOX_VERTS_MAX := 3150         # 2,866 (the island keeper, #71: no actor yet, the model only)
 const TRIS_MAX := 6000
 const CELL := 0.25                  # m: apparatus meshes are voxelised at this size
 const CLEARANCE := 0.2              # m: cast bounds grown by this must touch no apparatus cell
@@ -237,7 +238,8 @@ func _motion(screen: Control) -> Array:
 
 func check_models() -> void:
 	for spec in [["res://assets/characters/dugi.glb", "Dugi", ["Body", "Body/ArmL/HandL", "Body/ArmR/HandR", "Body/ArmR/Pointer/PointerTip", "Body/Head/EarL", "Body/Head/EarR"], DUGI_VERTS_MAX],
-			["res://assets/characters/puppy.glb", "Puppy", ["Body", "Body/ArmL/HandL", "Body/ArmR/HandR", "Body/ArmR/Flag/FlagCloth", "Body/Head/EarL", "Body/Head/EarR"], PUPPY_VERTS_MAX]]:
+			["res://assets/characters/puppy.glb", "Puppy", ["Body", "Body/ArmL/HandL", "Body/ArmR/HandR", "Body/ArmR/Flag/FlagCloth", "Body/Head/EarL", "Body/Head/EarR"], PUPPY_VERTS_MAX],
+			["res://assets/characters/fox.glb", "Fox", ["Body", "Body/ArmL/HandL", "Body/ArmR/HandR", "Body/Head/EarL", "Body/Head/EarR"], FOX_VERTS_MAX]]:
 		var model: Node = (load(spec[0]) as PackedScene).instantiate()
 		var root := model.get_node(spec[1])
 		var missing := []
