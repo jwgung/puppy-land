@@ -115,6 +115,13 @@ func check_open_after_previous() -> void:
 		problems.append("hutton closed with every mechanics spot complete")
 	if Island.is_open("nowhere", full):
 		problems.append("an unknown island is open")
+	if Island.from_data({}).complete(full):
+		problems.append("a broken island (no spots) counts as complete")
+	ProgressStore.set_current_island("hutton")
+	Island.set_current("hutton")
+	ProgressStore.reset_all()
+	if Island.current_id() != "mechanics":
+		problems.append("after a reset the island in use is %s" % Island.current_id())
 	if mechanics.complete(one_short) or not mechanics.complete(full):
 		problems.append("complete(): one short %s, full %s" % [mechanics.complete(one_short), mechanics.complete(full)])
 	expect.call(problems.is_empty(), "islands: an island opens when every spot of the one before is complete (computed from the stamps)",

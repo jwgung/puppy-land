@@ -207,3 +207,4 @@ static func set_current_island(island: String) -> void:
 static func reset_all() -> void:
 	if FileAccess.file_exists(path):
 		DirAccess.remove_absolute(path)
+	Island.forget_current()   # the saved island went with the file: the first island again

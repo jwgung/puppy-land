@@ -6,7 +6,7 @@
 ##
 ## The islands are listed in content/islands/index.json (#69, 2026-11-06): in order, each with its
 ## layout file, the island it opens after (every spot of that one complete, computed from the stamps:
-## nothing is saved for it) and its product (ADR 0005). `current()` is the island in use: the one
+## nothing is saved for it) and its product (ADR 0005; nothing reads it yet: the payment, #77). `current()` is the island in use: the one
 ## saved in the progress ([map] island), else the first.
 class_name Island
 extends RefCounted
@@ -82,11 +82,11 @@ static func entry(island_id: String) -> Dictionary:
 ## The island `island_id` (read once; an unknown id reads as an island with a problem).
 static func by_id(island_id: String) -> Island:
 	if not _islands.has(island_id):
-		var path := ROOT.path_join(str(entry(island_id).get("file", "")))
-		var island := load_file(path) if entry(island_id).has("file") else from_data({})
+		var e := entry(island_id)
+		var island := load_file(ROOT.path_join(str(e.file))) if e.has("file") else from_data({})
 		island.id = island_id
 		if island.problem != "":
-			push_error("Island %s (%s): %s" % [island_id, path, island.problem])
+			push_error("Island %s: %s" % [island_id, island.problem])
 		_islands[island_id] = island
 	return _islands[island_id]
 
@@ -161,9 +161,10 @@ func spots() -> Array:
 	return out
 
 
-## Every spot's stages are stamped (its piece found; an old save counts too).
+## Every spot's stages are stamped (its piece found; an old save counts too). A broken island (no
+## spots) never is: the island after it stays closed.
 func complete(progress: Dictionary) -> bool:
-	return found(progress).size() == spots().size()
+	return problem == "" and found(progress).size() == spots().size()
 
 
 ## The spots whose every stage is stamped.
@@ -173,13 +174,14 @@ func found(progress: Dictionary) -> Array:
 		return not stages.is_empty() and ProgressStore.stamps(progress, spot) >= stages.size())
 
 
-## The lab ground's look of `zone`: its `look`, else its ground.
+## The lab ground's look of `zone`: its `look`, else its ground. The look of a zone may also be
+## "lookout" (LabWorld's railing over the sea).
 func look_of(zone: String) -> String:
 	var spec: Dictionary = zones.get(zone, {})
 	return str(spec.get("look", spec.get("ground", "")))
 
 
-## The look of a zone may also be "lookout" (LabWorld's railing over the sea).
+## What is wrong with the data ("" when nothing).
 func _check() -> String:
 	if zones.is_empty():
 		return "no zones"

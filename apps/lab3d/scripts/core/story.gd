@@ -68,6 +68,7 @@ static func pages(part: String) -> Array:
 ## app_may_enable: a language picked in the settings switched the story off, 2026-11-02.)
 static func forget_loaded() -> void:
 	_content = {}
+	_content_island = ""
 
 
 ## The story file of `island`.

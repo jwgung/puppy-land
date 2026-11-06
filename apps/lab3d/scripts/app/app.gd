@@ -244,6 +244,7 @@ func _demo_story(value: String) -> Dictionary:
 	var id := value.get_slice(":", 1) if ":" in value else ""
 	var config := ConfigFile.new()   # a fresh bench store
 	config.save(ProgressStore.path)
+	Island.forget_current()   # the fresh store's island: the first
 	if kind != "prologue":
 		Story.mark_seen("prologue")
 	var store := {}
