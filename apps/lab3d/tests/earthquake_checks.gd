@@ -21,6 +21,9 @@
 ##   LabWorld places it) is where the stripes come from, on the right of the screen;
 ## - the stripes: ripple bands run out from the volcano's side while shaking, the crack grows on the
 ##   strongest shake only and stays until 다시;
+## - the pull's word (the slingshot readout) on the real screen: clear of the house (its roof swaying
+##   either way) and inside the view on the phone, desktop and tablet; the mechanics labs' readout
+##   stays where it was (the view's top middle);
 ## - the spot, the opening, the slingshot (a pull to the left is the level, a tap is nothing) and the
 ##   piece (lamps per stamp, the piece hops down at the last).
 extends RefCounted
@@ -29,6 +32,8 @@ const ID := "earthquake"
 const LINES_PATH := "res://../../docs/islands/hutton-lines.md"
 const VIEW_3D := "res://scripts/shell/view_3d.gd"
 const VIEW_SIZE := Vector2(1152, 720)
+const UI_THEME := "res://scripts/app/ui_theme.gd"
+const EXPERIMENT_SCREEN := "res://scripts/shell/experiment_screen.gd"
 const PHONE := Vector2(1560, 720)
 const TABLET := Vector2(1152, 720)
 const DESKTOP := Vector2(1280, 720)
@@ -69,6 +74,7 @@ func run() -> void:
 	await check_pictures()
 	check_opening()
 	await check_slingshot()
+	await check_readout()
 	await check_piece()
 	if Locale.lang != lang:
 		Locale.set_language(lang)
@@ -685,6 +691,58 @@ func check_slingshot() -> void:
 		"; ".join(problems))
 	host.queue_free()
 	await tree.process_frame
+
+
+# --- the pull's word ------------------------------------------------------------------------------
+
+func _open(id: String, size: Vector2) -> Control:
+	var host := Control.new()
+	host.theme = load(UI_THEME).build()
+	host.size = size
+	tree.root.add_child(host)
+	var screen: Control = load(EXPERIMENT_SCREEN).new()
+	screen.setup(ExperimentRegistry.find(id))
+	host.add_child(screen)
+	for i in 4:
+		await tree.process_frame
+	return screen
+
+
+## The readout (the longest word, the full pull) on the real screen stays off the house: the house's
+## box with the roof swaying either way (sand's swing) and the knob at rest, on the phone, desktop and
+## tablet, and inside the view; the collision lab's readout is still centred under the top band.
+func check_readout() -> void:
+	var problems := []
+	var seen := []
+	for size: Vector2 in [PHONE, DESKTOP, TABLET]:
+		var screen := await _open(ID, size)
+		screen._on_slingshot("pull", Vector2(1.0, 0.0))
+		await tree.process_frame
+		var hud: Label = screen._slingshot_hud
+		var box: Rect2 = hud.get_rect()
+		var swing := EarthquakeModel.SWING_MAX * 2.0
+		var foot := EarthquakeProps.house_foot(0.0)
+		var house: Rect2 = screen.view_rect_of(AABB(foot + Vector3(-EarthquakeProps.ROOF.x * 0.5 - swing, 0.0, -0.7), Vector3(EarthquakeProps.ROOF.x + swing * 2.0, EarthquakeProps.ROOF_BASE + EarthquakeProps.ROOF.y + 0.2, 1.4)))
+		var knob: Vector2 = screen.view_point(EarthquakeProps.knob_at(0.0))
+		var view_box := Rect2(Vector2.ZERO, screen.view.size)
+		if not hud.visible or hud.text != Locale.t("earthquake.pull.biggest") or house.has_area() == false \
+				or box.intersects(house) or box.has_point(knob) or not view_box.encloses(box):
+			problems.append("%s: the word %s, the house %s" % [str(size), str(box), str(house)])
+		seen.append("%s word %s house %s" % [str(size), str(box), str(house)])
+		screen._on_slingshot("cancel", Vector2(1.0, 0.0))
+		screen.get_parent().queue_free()
+		await tree.process_frame
+	var other := await _open("collision", TABLET)
+	other._on_slingshot("pull", Vector2(3.0, 0.0))
+	await tree.process_frame
+	var centred: Label = other._slingshot_hud
+	if absf(centred.position.x + centred.size.x * 0.5 - other.view.size.x * 0.5) > 1.0:
+		problems.append("the collision lab's word moved to %s" % str(centred.get_rect()))
+	other._on_slingshot("cancel", Vector2(3.0, 0.0))
+	other.get_parent().queue_free()
+	await tree.process_frame
+	expect.call(problems.is_empty(), "earthquake pull's word: off the house (its roof swaying either way) and the knob, inside the view on the phone, desktop and tablet (slingshot_setup readout_at); the collision lab's word still in the top middle",
+		"; ".join(problems + seen))
 
 
 # --- the piece ------------------------------------------------------------------------------------

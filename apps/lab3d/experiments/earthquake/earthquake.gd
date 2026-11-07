@@ -32,6 +32,8 @@ const DENSITY := 300.0
 const SEED := 97
 const KICK := 1.1
 const SPIN := 2.2
+## The pull's word (the slingshot readout) from the knob: over the middle of the full pull, up high.
+const READOUT_FROM_KNOB := Vector3(-1.6, 2.4, 0.0)
 ## The graph samples every GRAPH_EVERY steps of a run.
 const GRAPH_EVERY := 3
 
@@ -292,7 +294,13 @@ func slingshot_setup() -> Dictionary:
 	return {"object": KNOB_ID, "surface": _surface, "launch": func() -> Vector3: return EarthquakeProps.knob_at(0.0),
 		"controls": ["pull"], "value": func(p: Vector2) -> Vector2: return Vector2(pull_level(p.x), 0.0),
 		"readout": func(value: Vector2) -> String: return Locale.t("earthquake.pull." + shake_word(value.x)),
-		"demo": [Vector2(-120.0, 0.0), Vector2(-200.0, 0.0)]}
+		"demo": [Vector2(-120.0, 0.0), Vector2(-200.0, 0.0)], "readout_at": readout_point}
+
+
+## Where the pull's word stands: over the pull, left of the house and above the knob (the screen's
+## default spot, the view's top middle, is over the house's roof the child watches).
+static func readout_point() -> Vector3:
+	return EarthquakeProps.knob_at(0.0) + READOUT_FROM_KNOB
 
 
 ## The pull's value while a finger holds the knob (INF when the pull ends): the deck slides back.
