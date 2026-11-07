@@ -54,6 +54,8 @@ static func add(b: ArtMeshBuilder, id: String, xf: Transform3D) -> float:
 			return _shadow_stick(b, xf)
 		"seasons":
 			return _orrery(b, xf)
+		"sea-breeze":
+			return _pinwheel(b, xf)
 	_rod(b, xf, Vector3.ZERO, Vector3(0.0, 1.0, 0.0), 0.08, ArtPalette.BLUE)
 	_ball(b, xf, Vector3(0.0, 1.15, 0.0), 0.2, ArtPalette.WHITE)
 	return 1.35
@@ -376,6 +378,25 @@ static func _orrery(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	_ball(b, xf, earth, 0.2, ArtPalette.BLUE)
 	_rod(b, xf, earth - axis * 0.3, earth + axis * 0.32, 0.025, ArtPalette.STEEL_SHINE)
 	_ball(b, xf, earth + axis * 0.33, 0.045, ArtPalette.RED)
+	return 1.6
+
+
+## The hutton island's 바닷바람 (#93, "바람개비가 서 있는 곳"): a pinwheel on a pole, four coloured blades
+## round a white hub facing the front.
+static func _pinwheel(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.add_cylinder(xf, 0.34, 0.3, 0.1, 10, ArtPalette.WOOD_GRAIN, true, ArtPalette.WOOD)
+	_rod(b, xf, Vector3(0.0, 0.1, 0.0), Vector3(0.0, 1.1, 0.0), 0.05, ArtPalette.WOOD)
+	var hub := Vector3(0.0, 1.15, 0.08)
+	var colors := [ArtPalette.RED, ArtPalette.YELLOW, ArtPalette.BLUE, ArtPalette.GRASS]
+	for i in 4:
+		var a := TAU * i / 4.0 + 0.4
+		var out := Vector3(cos(a), sin(a), 0.0)
+		var side := Vector3(-sin(a), cos(a), 0.0)
+		var c: Color = colors[i]
+		var p := [xf * hub, xf * (hub + out * 0.45), xf * (hub + out * 0.25 + side * 0.24 + Vector3(0.0, 0.0, 0.08))]
+		b.add_triangle(p, [c, c, c.lightened(0.2)], xf.basis * Vector3.BACK)
+		b.add_triangle([p[0], p[2], p[1]], [c, c, c], xf.basis * Vector3.FORWARD)
+	_ball(b, xf, hub + Vector3(0.0, 0.0, 0.04), 0.07, ArtPalette.WHITE)
 	return 1.6
 
 

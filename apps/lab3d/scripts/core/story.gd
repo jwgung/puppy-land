@@ -204,6 +204,16 @@ static func keeper_face(definition: Dictionary) -> String:
 	return face_or_default(_story_text(definition, "keeper_face"))
 
 
+## Puppy's second line right after his clue on the first visit ("" when it has none). #93: Puppy
+## says what the piece needs (the wind towards the shore) before the keeper's answer, if any.
+static func clue_more(definition: Dictionary) -> String:
+	return _story_text(definition, "clue_more")
+
+
+static func clue_more_face(definition: Dictionary) -> String:
+	return face_or_default(_story_text(definition, "clue_more_face"))
+
+
 ## The keeper's answer after Puppy's clue on the first visit ("" when it has none). #86: the fox tells
 ## how the piece's lid opens.
 static func keeper_reply(definition: Dictionary) -> String:
