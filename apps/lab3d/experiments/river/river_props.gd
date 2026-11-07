@@ -17,8 +17,8 @@
 ##   RiverGame); on its inner side a sand bar grows (inner_bar());
 ## - the sea (left) with its beach: where the river meets it the sand bar grows (mouth_bar()), or,
 ##   on the steep land, a muddy plume goes out to sea (washed());
-## - the bread cat behind the bend's right end (between it and the mountain), watching the bank; Puppy
-##   stands at the bend's left, so the two have room.
+## - the bread cat on the bank's top near its right end (cat_at), facing the camera; Puppy stands at
+##   the bend's left, so the two have room.
 ## No number anywhere. Visual only: no body, nothing the model reads.
 class_name RiverProps
 extends RefCounted
@@ -75,7 +75,7 @@ const RIVER_SAND := Color("e8d29a")
 ## (at the model's whole side_power, the most at the bend's middle).
 const BEND_Z := -1.2
 const BANK_HEIGHT := 1.0
-const BANK_DEPTH := 1.0
+const BANK_DEPTH := 1.3
 const BANK_RETREAT := 0.9
 const BANK_SOIL := Color("b8743f")
 const BANK_STRIPE := Color("cf9152")
@@ -103,7 +103,11 @@ const FLOW_AFTER_S := 1.2
 const STREAK := Color("eaf7ff")
 ## The lab's corner of the island: its trees stand clear of the mountain and the sea.
 const WORLD_CENTER := Vector3(-0.6, 0.0, -9.0)
-const CAT_AT := Vector3(1.4, 0.0, -2.6)
+## The bread cat stands on the bank's top (2026-11-07 user): at bend sample CAT_SAMPLE (near the bank's
+## right end, where the face is cut least, clear of the piece in the middle), CAT_BACK m in from the
+## top's back edge, so the cut face never reaches its feet (cat_at).
+const CAT_SAMPLE := 2
+const CAT_BACK := 0.4
 
 var cat: CatActor
 var cloud: Node3D
@@ -202,8 +206,8 @@ func build(lab: Node3D) -> void:
 	cat = CatActor.new(BreadCat.new())
 	cat.name = "Cat"
 	lab.add_child(cat)
-	cat.look_target = bank
-	cat.stand(CAT_AT)
+	cat.look_target = null   # it faces the camera (CatActor.stand)
+	cat.stand(cat_at())
 	cat.advance(0.0)
 
 
@@ -453,6 +457,21 @@ static func bend_samples(line: PackedVector2Array) -> Array:
 static func outward(line: PackedVector2Array, i: int) -> Vector2:
 	var s := side_at(line, i)
 	return s if s.y < 0.0 else -s
+
+
+## A point on the bank's top at bend sample `k` (an index into bend_samples), `back` m in from the top's
+## back edge (the face side is the one the river cuts).
+static func bank_top(k: int, back: float) -> Vector3:
+	var line := river_line()
+	var samples := bend_samples(line)
+	var i: int = samples[clampi(k, 0, samples.size() - 1)]
+	var p := line[i] + outward(line, i) * (half_width(line, i) + EDGE_WIDTH * 0.5 + BANK_DEPTH - back)
+	return Vector3(p.x, BANK_HEIGHT, p.y)
+
+
+## Where the bread cat stands: on the bank's top (CAT_SAMPLE, CAT_BACK).
+static func cat_at() -> Vector3:
+	return bank_top(CAT_SAMPLE, CAT_BACK)
 
 
 ## The bend's middle (its farthest point back) and the bank's face there for a cut `retreat` m back:

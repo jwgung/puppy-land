@@ -46,6 +46,10 @@ const CLOUD_MIN := 45.0
 const BANK_MIN := 60.0
 const BEND_MIN := 48.0
 const VALLEY_MIN := 260.0
+## The bread cat on the bank's top: this much of the top (m) left in front of its middle at the deepest
+## cut, and this far (UI units) from the piece on the screen.
+const CAT_FOOT := 0.3
+const CAT_PIECE_GAP := 90.0
 ## A spot must be this far inside the view's edges and clear of the boxes (UI units, its half size).
 const SPOT := 14.0
 const EDGE := 8.0
@@ -471,6 +475,8 @@ func check_view(size: Vector2) -> void:
 		"bank's top": RiverProps.bank_face(0.0) + Vector3.UP * RiverProps.BANK_HEIGHT,
 		"inner bar": inner,
 		"mouth": Vector3(mouth.x, 0.0, mouth.y),
+		"cat's feet": RiverProps.cat_at(),
+		"cat's middle": RiverProps.cat_at() + Vector3.UP * 0.45,
 	}
 	var at := func(world: Vector3) -> Vector2: return view.rig.unproject_position(world) / per_unit
 	var view_rect := Rect2(Vector2.ZERO, view.size).grow(-EDGE)
@@ -524,6 +530,18 @@ func check_view(size: Vector2) -> void:
 		var p: Vector2 = at.call(bend_points[n])
 		if card.intersects(Rect2(p - Vector2(SPOT, SPOT), Vector2(SPOT, SPOT) * 2.0)):
 			problems.append("card %s on the %s at %s" % [str(card), n, str(p)])
+	# The bread cat stands on the bank's top (2026-11-07 user): there, facing the camera, off the
+	# piece on the screen, on ground the deepest cut never reaches.
+	var cat: CatActor = lab.props.cat
+	var bs := RiverProps.bend_samples(line)
+	var ci: int = bs[RiverProps.CAT_SAMPLE]
+	var share := sin(PI * (RiverProps.CAT_SAMPLE + 0.5) / bs.size())
+	var deepest := maxf(1.0 - pow(sin(deg_to_rad(RiverModel.GENTLE_DEG)) / sin(deg_to_rad(RiverModel.STEEP_DEG)), 1.0), RiverModel.SIDE_LEAST) * RiverProps.BANK_RETREAT
+	var ground_left := RiverProps.BANK_DEPTH - RiverProps.CAT_BACK - deepest * share
+	var piece_gap := (at.call(RiverProps.cat_at() + Vector3.UP * 0.45) as Vector2).distance_to(at.call(points["bank's face (the piece)"]))
+	if cat.position.distance_to(RiverProps.cat_at()) > 1e-4 or absf(cat.position.y - RiverProps.BANK_HEIGHT) > 1e-4 or absf(cat.rotation.y) > 1e-3 \
+			or ground_left < CAT_FOOT or piece_gap < CAT_PIECE_GAP:
+		problems.append("cat at %s (rot %.2f), %.2f m of top left at the deepest cut, %.0f units from the piece" % [str(cat.position), cat.rotation.y, ground_left, piece_gap])
 	var c: Vector2 = at.call(RiverProps.CLOUD_AT)
 	var e: Vector2 = at.call(RiverProps.CLOUD_AT + Vector3.RIGHT * RiverProps.CLOUD_RADIUS)
 	if c.distance_to(e) < CLOUD_MIN:
@@ -535,7 +553,7 @@ func check_view(size: Vector2) -> void:
 	if bank_h < BANK_MIN or bend < BEND_MIN or valley < VALLEY_MIN:
 		problems.append("small: the bank %.0f, the bend %.0f, the valley %.0f units" % [bank_h, bend, valley])
 	var name: String = {PHONE: "phone", DESKTOP: "desktop", TABLET: "tablet"}.get(size, str(size))
-	expect.call(asked and problems.is_empty(), "river view (%s): the cloud (big), the steep mountain's channel, the heap, the bank's face with the piece and its top, the inner bar and the mouth are on the view, clear of the dialogue box, the top band and the buttons, at the question and in play; the bend's bank, its inner bar and the valley are big; Dugi's bent-river card stands clear of the bend, the top chips and the box" % name,
+	expect.call(asked and problems.is_empty(), "river view (%s): the cloud (big), the steep mountain's channel, the heap, the bank's face with the piece and its top, the inner bar and the mouth are on the view, clear of the dialogue box, the top band and the buttons, at the question and in play; the bend's bank, its inner bar and the valley are big; Dugi's bent-river card stands clear of the bend, the top chips and the box; the bread cat stands on the bank's top facing the camera, off the piece and on ground the cut never reaches" % name,
 		"asked %s; cloud %.0f units; bank %.0f bend %.0f valley %.0f; %s" % [asked, c.distance_to(e), bank_h, bend, valley, "; ".join(problems.slice(0, 6))])
 	host.queue_free()
 	for i in 3:
@@ -709,7 +727,7 @@ func check_piece() -> void:
 		await tree.process_frame
 		frames += 1
 	var rest: Vector3 = game.piece.global_position
-	if game.piece_state != "out" or absf(rest.y - LabGame.PIECE_SIZE) > 0.12 or rest.distance_to(cut) < 1.0:
+	if game.piece_state != "out" or absf(rest.y - (RiverProps.BANK_HEIGHT + LabGame.PIECE_SIZE)) > 0.12 or rest.distance_to(cut) < 1.0:
 		problems.append("after the last stamp: %s at %s" % [game.piece_state, str(rest)])
 	if not game.take_piece() is Vector3:
 		problems.append("not taken")
@@ -720,7 +738,7 @@ func check_piece() -> void:
 	var done: RiverGame = again.game
 	if done.take_piece() != null or not done.turtle_out() or not done.heap_gone():
 		problems.append("a finished spot: a piece, no turtle or a heap")
-	expect.call(problems.is_empty(), "river piece: buried in the bend's outer bank (it comes out with the cut face) until the last stamp, then it jumps out onto the plain for the cat; the heap washes away at the first stamp, the turtle comes at the second; a finished spot shows them, no piece",
+	expect.call(problems.is_empty(), "river piece: buried in the bend's outer bank (it comes out with the cut face) until the last stamp, then it jumps out onto the bank's top beside the cat; the heap washes away at the first stamp, the turtle comes at the second; a finished spot shows them, no piece",
 		"; ".join(problems))
 	lab.queue_free()
 	again.queue_free()

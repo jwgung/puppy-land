@@ -6,7 +6,7 @@
   "scene": "res://experiments/river/river.gd",
   "bench_id": "RV",
   "camera": {
-    "target": [0.1, 1.2, -0.6],
+    "target": [-0.1, 1.2, -0.6],
     "distance": 8.0,
     "distance_range": [5.0, 26.0],
     "yaw_range_deg": [-100.0, 100.0],
@@ -18,7 +18,7 @@
       "three_quarter": { "yaw_deg": 24.0, "pitch_deg": -28.0 },
       "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 18.0 },
       "side": { "yaw_deg": 90.0, "pitch_deg": -14.0, "distance": 16.0 },
-      "follow": { "yaw_deg": 0.0, "pitch_deg": -32.0, "distance": 8.0, "target": [0.1, 1.2, -0.6] }
+      "follow": { "yaw_deg": 0.0, "pitch_deg": -32.0, "distance": 8.0, "target": [-0.1, 1.2, -0.6] }
     }
   },
   "controls": [
