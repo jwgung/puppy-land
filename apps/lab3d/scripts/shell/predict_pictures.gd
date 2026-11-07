@@ -19,7 +19,9 @@ const KINDS := ["long_arc", "same_arc", "fall_together", "fall_heavy_first", "li
 	# #86 (그림자 시계): with the sun high, does the stick's shadow get shorter or longer?
 	"shadow_short", "shadow_long",
 	# #87 (계절): would an upright Earth have seasons?
-	"seasons_change", "seasons_same"]
+	"seasons_change", "seasons_same",
+	# #91 (물의 여행): does warmed seawater rise into the sky, or stay in the sea?
+	"water_rises", "water_stays"]
 const STRONG := Color("e2683c")
 const PALE := Color("c9b892")
 const GROUND := Color("8a6a46")
@@ -88,6 +90,8 @@ static func draw(canvas: Control, kind: String) -> void:
 			_shadow(canvas, r, kind == "shadow_short")
 		"seasons_change", "seasons_same":
 			_seasons(canvas, r, kind == "seasons_change")
+		"water_rises", "water_stays":
+			_water(canvas, r, kind == "water_rises")
 		_:
 			_ground(canvas, r)
 
@@ -603,3 +607,40 @@ static func _sprout(canvas: Control, at: Vector2, color: Color, k := 1.0) -> voi
 			var t := 1.0 - float(n) / 8.0
 			leaf.append(at + Vector2(side * 8.0 * t, -3.0 + 2.0 * sin(t * PI) - 2.0 * t) * k)
 		canvas.draw_colored_polygon(leaf, color)
+
+
+## The sun over the sea (a wavy blue band at the bottom), warming it: wavy arrows of vapour rise from
+## the sea into a cloud ("water_rises", orange, thick), or the water stays in the sea, its surface
+## outlined orange, under an empty sky with only pale short wisps ("water_stays").
+static func _water(canvas: Control, r: Rect2, rises: bool) -> void:
+	var sea_top := r.end.y - r.size.y * 0.26
+	var surface := PackedVector2Array()
+	for k in 25:
+		var x := lerpf(r.position.x, r.end.x, k / 24.0)
+		surface.append(Vector2(x, sea_top + 2.5 * sin(k * 1.3)))
+	var sea := surface.duplicate()
+	sea.append(r.end)
+	sea.append(Vector2(r.position.x, r.end.y))
+	canvas.draw_colored_polygon(sea, WATER)
+	canvas.draw_polyline(surface, PALE if rises else STRONG, 2.0 if rises else 4.0, true)
+	var sun := Vector2(r.position.x + 16.0, r.position.y + 14.0)
+	for k in 8:
+		var a := TAU * k / 8.0
+		var d := Vector2(cos(a), sin(a))
+		canvas.draw_line(sun + d * 11.0, sun + d * 15.0, SUN, 3.0, true)
+	canvas.draw_circle(sun, 8.0, SUN)
+	var cloud := Vector2(r.position.x + r.size.x * 0.68, r.position.y + 14.0)
+	if rises:
+		for blob: Array in [[Vector2(-12, 2), 8.0], [Vector2(0, -3), 10.0], [Vector2(12, 2), 8.0], [Vector2(2, 5), 8.0]]:
+			canvas.draw_circle(cloud + blob[0], blob[1], Color.WHITE)
+		canvas.draw_arc(cloud + Vector2(0, -3), 10.0, PI, TAU, 12, PALE, 1.5, true)
+	for i in 3:   # wisps of vapour from the sea
+		var x := r.position.x + r.size.x * (0.5 + 0.17 * i)
+		var top := cloud.y + 14.0 if rises else sea_top - r.size.y * 0.22
+		var wisp := PackedVector2Array()
+		for k in 9:
+			var t := k / 8.0
+			wisp.append(Vector2(x + 3.5 * sin(t * TAU * 1.5), lerpf(sea_top - 3.0, top, t)))
+		canvas.draw_polyline(wisp, STRONG if rises else PALE, 3.0 if rises else 2.0, true)
+		if rises:
+			_arrow(canvas, wisp[-2], wisp[-1], STRONG, 3.0)

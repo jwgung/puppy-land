@@ -151,6 +151,10 @@
 ##    docs/islands/hutton-lines.md 3, the seasons and the upright loop, the judging of the three stages
 ##    (the wrong axis's line), the tilt button, no number on the screen, the Earth and the window in view,
 ##    the spot, the opening lines (the fox first), the hand (round the path) and the piece.
+## 24d. 물의 여행 (tests/water_cycle_checks.gd, #91 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 4, the water's rules (the day's cap), the judging of the three stages
+##    (the wrong sun's line), the sun button, no number on the screen, the hold, what matters in view,
+##    the spot, the opening lines (the fox, Puppy's two lines) and the piece.
 ## Times are engine fixed steps (60 Hz), independent of rendering FPS.
 extends SceneTree
 
@@ -374,6 +378,11 @@ func _run() -> void:
 	_expect(seasons != null and seasons.can_instantiate(), "seasons checks compile", "")
 	if seasons != null and seasons.can_instantiate():
 		await seasons.new(self, _expect).run()
+	print("== 물의 여행 (#91): Hutton Island's water cycle lab, its lines, rules, judging, sun button, hold, view and piece ==")
+	var water_cycle: GDScript = load("res://tests/water_cycle_checks.gd")
+	_expect(water_cycle != null and water_cycle.can_instantiate(), "water-cycle checks compile", "")
+	if water_cycle != null and water_cycle.can_instantiate():
+		await water_cycle.new(self, _expect).run()
 	print("== the hand guide (2026-10-30: the gesture on the lab's object, once and after a quiet while; the map's tap) ==")
 	var hand: GDScript = load("res://tests/hand_guide_checks.gd")
 	_expect(hand != null and hand.can_instantiate(), "hand guide checks compile", "")
