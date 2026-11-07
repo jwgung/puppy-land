@@ -47,7 +47,9 @@ const HEAP_HEIGHT := 0.55
 ## The cloud over the mountain's top (its middle, its size) and the rain under it (drops in a box).
 const CLOUD_AT := Vector3(3.7, 4.35, -0.6)
 const CLOUD_RADIUS := 0.85
-const CLOUD_SHADE := Color("d6e4f5")
+## The cloud bobs gently up and down (m, s a bob), visual only (the knob stays at CLOUD_AT).
+const CLOUD_BOB := 0.07
+const CLOUD_BOB_S := 3.6
 const DROPS := 46
 const RAIN_TOP := 3.75
 const RAIN_SPAN := Vector2(1.5, 0.6)   # half extents in x and z under the cloud
@@ -127,6 +129,7 @@ var _flow_speed := 1.0
 var _flow_s := 0.0
 var _flow_left := 0.0
 var _rain_s := 0.0
+var _bob_s := 0.0
 var _drops: Array[MeshInstance3D] = []
 var _key := []
 
@@ -169,7 +172,7 @@ func build(lab: Node3D) -> void:
 	cloud.name = "Cloud"
 	cloud.position = CLOUD_AT
 	lab.add_child(cloud)
-	cloud_body = ArtKit.instance(cloud_mesh(CLOUD_RADIUS), bright_material)
+	cloud_body = ArtKit.instance(cloud_mesh(CLOUD_RADIUS), MapIsland.cloud_material())
 	cloud_body.name = "Puffs"
 	cloud.add_child(cloud_body)
 	rain = Node3D.new()
@@ -237,6 +240,8 @@ func set_raining(on: bool) -> void:
 
 ## The rain and the flow streaks move (the lab's _process).
 func animate(delta: float) -> void:
+	_bob_s += delta
+	cloud_body.position = Vector3.UP * CLOUD_BOB * sin(TAU * _bob_s / CLOUD_BOB_S)
 	if raining:
 		_rain_s = fposmod(_rain_s + RAIN_SPEED * delta, RAIN_TOP)
 		for i in _drops.size():
@@ -636,17 +641,10 @@ static func _sea_mesh() -> Mesh:
 
 # --- the cloud and the rain -----------------------------------------------------------------------
 
-## A fluffy cloud of `radius` (its middle at the origin): puffs round a big one, a flat light-blue
-## underside.
+## A fluffy cloud of `radius` (its middle at the origin; about 3.7 * radius wide): the sky clouds' round
+## puffs and soft light (MapIsland.cloud_mesh, 2026-11-07 user).
 static func cloud_mesh(radius: float) -> Mesh:
-	var b := ArtKit.builder()
-	b.ao_min = 1.0
-	b.add_sphere(Transform3D(Basis.from_scale(Vector3(1.0, 0.82, 0.8)), Vector3(0.0, 0.1, 0.0) * radius), radius, 6, 14, ArtPalette.CLOUD)
-	for puff: Array in [[Vector3(-0.95, -0.1, 0.05), 0.62], [Vector3(0.95, -0.12, 0.0), 0.6], [Vector3(-0.45, 0.35, 0.25), 0.55],
-			[Vector3(0.5, 0.3, 0.2), 0.58], [Vector3(-1.45, -0.28, 0.0), 0.38], [Vector3(1.45, -0.3, -0.05), 0.36]]:
-		b.add_sphere(Transform3D(Basis(), (puff[0] as Vector3) * radius), float(puff[1]) * radius, 5, 12, ArtPalette.CLOUD)
-	b.add_sphere(Transform3D(Basis.from_scale(Vector3(1.0, 0.25, 0.62)), Vector3(0.0, -0.42, 0.0) * radius), radius * 1.55, 4, 16, CLOUD_SHADE)
-	return b.commit()
+	return MapIsland.cloud_mesh(radius)
 
 
 ## Drop `i` of the rain `fallen` m into its fall: scattered under the cloud (a golden-ratio spread),

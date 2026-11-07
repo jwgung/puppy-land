@@ -960,11 +960,54 @@ const CLOUD_SIDES := 12
 ## The labs' clouds are coarser (their world mesh has a 30,000 vertex budget, lab_world_checks).
 const LAB_CLOUD_RINGS := 4
 const LAB_CLOUD_SIDES := 8
+## The sky clouds' shading (smooth, b.flat = false): their base darkened to CLOUD_AO, fading out over
+## CLOUD_AO_HEIGHT of a puff's unit (0.6 m at the lab sky's size 4.5).
+const CLOUD_AO := 0.85
+const CLOUD_AO_HEIGHT := 0.13
+## A spot's near cloud (cloud_mesh): finer balls than the sky's far ones and a softer light ramp, so
+## the light rolls round it instead of showing its triangles close up.
+const NEAR_CLOUD_RINGS := 8
+const NEAR_CLOUD_SIDES := 16
+const NEAR_CLOUD_SOFTNESS := 0.16
+
+static var _cloud_material: ShaderMaterial
+
+
+## One cloud of round puffs (CLOUD_PUFFS) into `b`: its middle at `at`, the puffs spread along `side`
+## (unit, across the view), `size` times the puffs' units (about 3.7 * size wide), squashed to 0.8 tall.
+## The one cloud shape of the map's far clouds, the lab's sky (LabWorld) and the spots' clouds
+## (cloud_mesh, 2026-11-07 user: the spots' clouds look like the sky's). The builder's flat and AO
+## settings stay the caller's.
+static func add_cloud(b: ArtMeshBuilder, at: Vector3, side: Vector3, size: float, color: Color, rings := LAB_CLOUD_RINGS, sides := LAB_CLOUD_SIDES) -> void:
+	for puff in CLOUD_PUFFS:
+		b.add_sphere(Transform3D(Basis().scaled(Vector3(1.0, 0.8, 1.0)), at + side * puff[0] * size + Vector3.UP * puff[1] * size),
+			puff[2] * size, rings, sides, color)
+
+
+## A spot's cloud (a mesh round the origin, spread along x, about 3.7 * size wide) in the sky clouds'
+## look: add_cloud, smooth shading, their base shade, the finer balls of a near cloud. Draw it with
+## cloud_material() (or a copy of it with a `tint`).
+static func cloud_mesh(size: float, color := ArtPalette.CLOUD) -> Mesh:
+	var b := ArtKit.builder()
+	b.flat = false
+	b.ao_min = CLOUD_AO
+	b.ao_height = CLOUD_AO_HEIGHT * size
+	add_cloud(b, Vector3.ZERO, Vector3.RIGHT, size, color, NEAR_CLOUD_RINGS, NEAR_CLOUD_SIDES)
+	return b.commit()
+
+
+## The spots' clouds' material: the props' light (ArtKit.lit_material, the sky clouds' sun and colours)
+## with a softer ramp (NEAR_CLOUD_SOFTNESS). Shared; duplicate it to tint one cloud.
+static func cloud_material() -> ShaderMaterial:
+	if _cloud_material == null:
+		_cloud_material = ArtKit.lit_material().duplicate()
+		_cloud_material.set_shader_parameter("softness", NEAR_CLOUD_SOFTNESS)
+	return _cloud_material
 
 
 ## A few clouds far around the island (the low views see them; the top view does not).
 func _add_clouds(b: ArtMeshBuilder) -> void:
-	b.ao_min = 0.85
+	b.ao_min = CLOUD_AO
 	b.ao_height = 0.6
 	var was_flat := b.flat
 	b.flat = false   # smooth shading: soft round puffs, not facets (2026-10-31 user)
@@ -974,10 +1017,8 @@ func _add_clouds(b: ArtMeshBuilder) -> void:
 			b.add_sphere(_at(c[0] + puff[0] * k, c[1] + puff[1] * k, c[2]), puff[2] * k, CLOUD_RINGS, CLOUD_SIDES, ArtPalette.CLOUD)
 	for c in island.far_clouds:
 		var at := Vector3(cos(deg_to_rad(c[0])), 0.0, sin(deg_to_rad(c[0]))) * float(c[1]) + Vector3.UP * float(c[2])
-		var k: float = c[3]
-		for puff in CLOUD_PUFFS:
-			var side := Vector3(-sin(deg_to_rad(c[0])), 0.0, cos(deg_to_rad(c[0])))   # spread across the view
-			b.add_sphere(Transform3D(Basis().scaled(Vector3(1.0, 0.8, 1.0)), at + side * puff[0] * k + Vector3.UP * puff[1] * k), puff[2] * k, CLOUD_RINGS, CLOUD_SIDES, ArtPalette.CLOUD)
+		var side := Vector3(-sin(deg_to_rad(c[0])), 0.0, cos(deg_to_rad(c[0])))   # spread across the view
+		add_cloud(b, at, side, c[3], ArtPalette.CLOUD, CLOUD_RINGS, CLOUD_SIDES)
 	b.flat = was_flat
 
 

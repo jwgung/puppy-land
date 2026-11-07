@@ -29,6 +29,9 @@ const DROOP := 1.25
 const CAP_SIZE := 0.95
 const CAP_OVER := 1.1
 const CAP_FROM := Vector3(1.6, -0.3, 0.0)
+## The cap bobs gently once it has settled (m, s a bob), visual only.
+const CAP_BOB := 0.06
+const CAP_BOB_S := 3.6
 const RAIN := Color("8fd3ff")
 const STREAKS := 34
 const RAIN_DROP := 1.6
@@ -74,7 +77,7 @@ func build() -> void:
 	_dust.name = "Dust"
 	_dust.position = PIECE_AT
 	add_child(_dust)
-	cap = ArtKit.instance(DewCloudProps.cloud_mesh(CAP_SIZE))
+	cap = ArtKit.instance(DewCloudProps.cloud_mesh(CAP_SIZE), MapIsland.cloud_material())
 	cap.name = "Cap"
 	cap.position = Vector3(0.0, CAP_OVER, 0.0)
 	add_child(cap)
@@ -138,6 +141,8 @@ func _process(delta: float) -> void:
 	if piece != null and piece_state == "held":
 		piece.scale = Vector3.ONE * (1.0 + GLINT_SWELL * pulse(_glint_at, GLINT_S))
 	if not running(_rain_at):
+		if cap.visible:
+			cap.position = Vector3(0.0, CAP_OVER + CAP_BOB * sin(TAU * _t / CAP_BOB_S), 0.0)
 		return
 	var k := progress(_rain_at, CAP_S)
 	cap.position = Vector3(0.0, CAP_OVER, 0.0) + CAP_FROM * (1.0 - smooth(k))

@@ -73,8 +73,7 @@ const PARCEL_R := 0.72
 const PARCEL_OFF := 1.0
 const PARCEL_WARM := Color("ffe4c8")
 const PARCEL_COOL := Color("b7dbff")
-const CLOUD := Color("ffffff")
-const CLOUD_SHADE := Color("cfdcef")
+const CLOUD := ArtPalette.CLOUD
 ## The way up: a dot every WAY_STEP of it, its colour, the arrow at its top.
 const WAY_DOTS := 26
 const WAY_COLOR := Color("fff1b8")
@@ -212,7 +211,7 @@ func build(lab: Node3D) -> void:
 	_puff.name = "Puff"
 	_puff.material_override = ArtKit.lit_material()
 	parcel.add_child(_puff)
-	_cloud = ArtKit.instance(cloud_mesh(PARCEL_R))
+	_cloud = ArtKit.instance(cloud_mesh(PARCEL_R), MapIsland.cloud_material())
 	_cloud.name = "Cloud"
 	parcel.add_child(_cloud)
 	cat = CatActor.new(BreadCat.new())
@@ -459,13 +458,7 @@ func _puff_mesh(cool: float, humid: bool) -> Mesh:
 	return b.commit()
 
 
-## A white cloud of about `size` (m) round the origin: puffy balls, a flatter grey-blue base.
+## A white cloud of about `size` (m; about 3.7 * size wide) round the origin: the sky clouds' round
+## puffs and soft light (MapIsland.cloud_mesh, 2026-11-07 user).
 static func cloud_mesh(size: float) -> Mesh:
-	var b := ArtKit.builder()
-	b.flat = false
-	b.ao_min = 0.82
-	b.ao_height = size
-	for ball: Array in [[Vector3(0.0, 0.1, 0.0), 1.0], [Vector3(-0.8, -0.1, 0.05), 0.75], [Vector3(0.85, -0.12, 0.0), 0.78], [Vector3(-0.35, 0.55, -0.1), 0.7], [Vector3(0.42, 0.5, -0.05), 0.66], [Vector3(-1.35, -0.3, 0.0), 0.5], [Vector3(1.4, -0.32, 0.0), 0.5]]:
-		b.add_sphere(Transform3D(Basis(), (ball[0] as Vector3) * size), size * float(ball[1]), 5, 12, CLOUD)
-	b.add_sphere(Transform3D(Basis.from_scale(Vector3(1.0, 0.35, 0.7)), Vector3(0.0, -0.35, 0.0) * size), size * 1.7, 4, 14, CLOUD_SHADE)
-	return b.commit()
+	return MapIsland.cloud_mesh(size, CLOUD)

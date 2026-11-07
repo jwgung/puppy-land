@@ -65,6 +65,9 @@ const CLOUD_WHITE := Color("ffffff")
 const CLOUD_GREY := Color("b3bfd1")
 ## The strong sun's two more clouds (from the main one) when it rains.
 const MORE_CLOUDS := [Vector3(-2.1, -0.3, -0.6), Vector3(2.1, -0.2, -0.5)]
+## The clouds bob gently up and down (m, s a bob; each one a little out of step), visual only.
+const CLOUD_BOB := 0.07
+const CLOUD_BOB_S := 3.6
 ## The rain: drop columns under the cloud (x spread round the pond's middle), the rows' gap, the fall
 ## speed; a weak sun's rain has every other column.
 const RAIN_COLUMNS := 14
@@ -168,14 +171,14 @@ func build(lab: Node3D) -> void:
 	cloud.name = "Cloud"
 	cloud.position = CLOUD_AT
 	lab.add_child(cloud)
-	_white_cloud = ArtKit.instance(cloud_mesh(CLOUD_WHITE), bright_material)
+	_white_cloud = ArtKit.instance(cloud_mesh(CLOUD_WHITE), MapIsland.cloud_material())
 	_white_cloud.name = "WhiteCloud"
 	cloud.add_child(_white_cloud)
-	_grey_cloud = ArtKit.instance(cloud_mesh(CLOUD_GREY), bright_material)
+	_grey_cloud = ArtKit.instance(cloud_mesh(CLOUD_GREY), MapIsland.cloud_material())
 	_grey_cloud.name = "RainCloud"
 	cloud.add_child(_grey_cloud)
 	for i in MORE_CLOUDS.size():
-		var more := ArtKit.instance(cloud_mesh(CLOUD_GREY.lightened(0.15)), bright_material)
+		var more := ArtKit.instance(cloud_mesh(CLOUD_GREY.lightened(0.15)), MapIsland.cloud_material())
 		more.name = "MoreCloud%d" % i
 		more.position = MORE_CLOUDS[i]
 		more.scale = Vector3.ONE * 0.62
@@ -256,6 +259,11 @@ func animate(delta: float) -> void:
 		var u := fposmod(_t / WISP_S + float(i) / float(shown), 1.0)
 		w.position = wisp_point(i, u)
 		w.scale = Vector3.ONE * (1.0 + 1.0 * sin(PI * u))
+	var bob := Vector3.UP * CLOUD_BOB * sin(TAU * _t / CLOUD_BOB_S)
+	_white_cloud.position = bob
+	_grey_cloud.position = bob
+	for i in _more_clouds.size():
+		_more_clouds[i].position = MORE_CLOUDS[i] + Vector3.UP * CLOUD_BOB * sin(TAU * _t / CLOUD_BOB_S + 2.0 + 2.0 * i)
 
 
 ## Where wisp `i` is at `u` (0 on the sea .. 1 at the cloud): up from its spot on the sea, then
@@ -389,15 +397,10 @@ static func _strip(b: ArtMeshBuilder, from: Vector3, to: Vector3, width: float, 
 
 # --- the cloud, the rain and the vapour --------------------------------------------------------------
 
-## A puffy cloud at the origin (about 3.6 m wide): round puffs on a flat bottom.
+## A puffy cloud at the origin (about 3.7 m wide) in `color`: the sky clouds' round puffs and soft light
+## (MapIsland.cloud_mesh, 2026-11-07 user).
 static func cloud_mesh(color: Color) -> Mesh:
-	var b := ArtKit.builder()
-	b.ao_min = 1.0
-	var puffs := [[Vector3(-1.2, 0.0, 0.0), 0.75], [Vector3(-0.3, 0.35, 0.05), 1.0], [Vector3(0.75, 0.15, 0.0), 0.85],
-		[Vector3(1.5, -0.1, -0.05), 0.6], [Vector3(0.2, -0.2, 0.35), 0.75], [Vector3(-0.8, -0.25, 0.3), 0.6]]
-	for p: Array in puffs:
-		b.add_sphere(Transform3D(Basis.from_scale(Vector3(1.0, 0.82, 0.8)), p[0]), p[1], 5, 12, color)
-	return b.commit()
+	return MapIsland.cloud_mesh(1.0, color)
 
 
 ## The rain: drop columns from the cloud's underside down past the pond's bottom, rows RAIN_GAP apart

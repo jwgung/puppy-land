@@ -300,19 +300,25 @@ class Cloud:
 	const SMALL_R := 0.75
 	const RAIN_R := 1.45
 	const SWIRL_R := 2.8
+	## The puffs' size for radius 1 (MapIsland.cloud_mesh is about 3.7 * size wide).
+	const PUFF_SIZE := 0.55
 	const ARMS := 3
 	## The eye's radius (a share of the spiral's).
 	const EYE := 0.22
 	## How fast a full typhoon turns (rad/s; counter-clockwise from above, as in the north).
 	const SPIN := 1.2
 	const RAIN_FALL_S := 0.5
+	## The puffs bob gently up and down (m at radius 1, s a bob), visual only.
+	const BOB := 0.06
+	const BOB_S := 3.6
 
 	var puffs: MeshInstance3D
 	var swirl: MeshInstance3D
 	var rain: MeshInstance3D
 	var foam: MeshInstance3D
 	var shadow: MeshInstance3D
-	var material: ShaderMaterial
+	var material: ShaderMaterial        # the spiral's
+	var puff_material: ShaderMaterial   # the puffs': the sky clouds' light, tinted white to rain grey
 	var size := TyphoonModel.SMALL
 	var _t := 0.0
 	## What shows now (tests): the puffs' radius, the spiral's, raining.
@@ -322,7 +328,8 @@ class Cloud:
 
 	func build() -> void:
 		material = DayNightProps.lit_towards(Vector3(-0.3, 0.8, 0.5), PUFF_COLOR, LIGHT_SHADE, 0.2)
-		puffs = ArtKit.instance(_puff_mesh(), material)
+		puff_material = MapIsland.cloud_material().duplicate()
+		puffs = ArtKit.instance(_puff_mesh(), puff_material)
 		puffs.name = "Puffs"
 		add_child(puffs)
 		swirl = ArtKit.instance(_swirl_mesh(), material)
@@ -360,6 +367,7 @@ class Cloud:
 		var dark := clampf((s - TyphoonModel.SMALL) / (TyphoonModel.RAIN - TyphoonModel.SMALL), 0.0, 1.0)
 		material.set_shader_parameter("lit_color", PUFF_COLOR.lerp(RAIN_GREY, dark * (1.0 - 0.45 * storm)))
 		material.set_shader_parameter("shade_color", LIGHT_SHADE.lerp(RAIN_SHADE, dark))
+		puff_material.set_shader_parameter("tint", PUFF_COLOR.lerp(RAIN_GREY, dark * (1.0 - 0.45 * storm)))
 		raining = s >= TyphoonModel.RAIN
 		rain.visible = raining
 		var spread := maxf(puff_radius, swirl_radius * 0.7)
@@ -379,6 +387,7 @@ class Cloud:
 		swirl.rotation.y += SPIN * storm * delta
 		foam.rotation.y += SPIN * 0.5 * storm * delta
 		puffs.rotation.y += SPIN * 0.4 * storm * delta
+		puffs.position.y = BOB * puff_radius * sin(TAU * _t / BOB_S)
 		rain.position.y = -fposmod(_t / RAIN_FALL_S, 1.0) * 0.6
 
 	## The cloud's shadow on the sea (radius 1): a round patch, darkest in the middle, fading to nothing
@@ -407,18 +416,10 @@ class Cloud:
 				b.add_triangle([i0, o1, o0], [c0, c1, c1])
 		return b.commit()
 
-	## The puffs (radius 1): a round heap of balls, the top ones bigger.
+	## The puffs (radius 1: about 2 wide): the sky clouds' round puffs and soft light (MapIsland.cloud_mesh,
+	## 2026-11-07 user), white (the material's tint greys them).
 	static func _puff_mesh() -> Mesh:
-		var b := ArtKit.builder()
-		b.flat = false
-		b.ao_min = 0.9
-		b.ao_height = 0.6
-		var balls := [[Vector3(0.0, 0.1, 0.0), 0.62], [Vector3(-0.5, -0.05, 0.12), 0.46], [Vector3(0.52, -0.04, 0.05), 0.48],
-			[Vector3(0.12, -0.08, 0.45), 0.42], [Vector3(-0.15, -0.06, -0.45), 0.44], [Vector3(0.38, 0.22, -0.28), 0.4],
-			[Vector3(-0.32, 0.3, 0.22), 0.38]]
-		for ball: Array in balls:
-			b.add_sphere(Transform3D(Basis(), ball[0]), float(ball[1]), 5, 10, Color.WHITE)
-		return b.commit()
+		return MapIsland.cloud_mesh(PUFF_SIZE)
 
 	## The spiral (radius 1, flat): ARMS arms of flattened puffs on a widening spiral round an empty eye.
 	static func _swirl_mesh() -> Mesh:
