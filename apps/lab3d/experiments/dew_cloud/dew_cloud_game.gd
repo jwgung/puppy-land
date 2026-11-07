@@ -77,7 +77,7 @@ func build() -> void:
 	_dust.name = "Dust"
 	_dust.position = PIECE_AT
 	add_child(_dust)
-	cap = ArtKit.instance(DewCloudProps.cloud_mesh(CAP_SIZE), MapIsland.cloud_material())
+	cap = ArtKit.instance(MapIsland.cloud_mesh(CAP_SIZE, DewCloudProps.CLOUD), MapIsland.cloud_material())
 	cap.name = "Cap"
 	cap.position = Vector3(0.0, CAP_OVER, 0.0)
 	add_child(cap)

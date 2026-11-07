@@ -171,14 +171,14 @@ func build(lab: Node3D) -> void:
 	cloud.name = "Cloud"
 	cloud.position = CLOUD_AT
 	lab.add_child(cloud)
-	_white_cloud = ArtKit.instance(cloud_mesh(CLOUD_WHITE), MapIsland.cloud_material())
+	_white_cloud = ArtKit.instance(MapIsland.cloud_mesh(1.0, CLOUD_WHITE), MapIsland.cloud_material())
 	_white_cloud.name = "WhiteCloud"
 	cloud.add_child(_white_cloud)
-	_grey_cloud = ArtKit.instance(cloud_mesh(CLOUD_GREY), MapIsland.cloud_material())
+	_grey_cloud = ArtKit.instance(MapIsland.cloud_mesh(1.0, CLOUD_GREY), MapIsland.cloud_material())
 	_grey_cloud.name = "RainCloud"
 	cloud.add_child(_grey_cloud)
 	for i in MORE_CLOUDS.size():
-		var more := ArtKit.instance(cloud_mesh(CLOUD_GREY.lightened(0.15)), MapIsland.cloud_material())
+		var more := ArtKit.instance(MapIsland.cloud_mesh(1.0, CLOUD_GREY.lightened(0.15)), MapIsland.cloud_material())
 		more.name = "MoreCloud%d" % i
 		more.position = MORE_CLOUDS[i]
 		more.scale = Vector3.ONE * 0.62
@@ -396,12 +396,6 @@ static func _strip(b: ArtMeshBuilder, from: Vector3, to: Vector3, width: float, 
 
 
 # --- the cloud, the rain and the vapour --------------------------------------------------------------
-
-## A puffy cloud at the origin (about 3.7 m wide) in `color`: the sky clouds' round puffs and soft light
-## (MapIsland.cloud_mesh, 2026-11-07 user).
-static func cloud_mesh(color: Color) -> Mesh:
-	return MapIsland.cloud_mesh(1.0, color)
-
 
 ## The rain: drop columns from the cloud's underside down past the pond's bottom, rows RAIN_GAP apart
 ## (the node slides them down by up to one gap: an endless fall).

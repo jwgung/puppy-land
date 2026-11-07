@@ -126,11 +126,12 @@ var predict_ended := false
 
 var _asking := false
 ## The lines before the question still to open (dialogue_line() each): on the spot's first visit the
-## island keeper's line (story.keeper, #74) and Puppy's clue (story.clue), then Dugi's introduction
+## island keeper's line (story.keeper, #74), Puppy's clue (story.clue), the lines after it (story.more)
+## and the keeper's answer (story.keeper_reply), then Dugi's introduction
 ## (kid.intro and kid.intro_more, 2026-10-31 user: "처음에 이 실험이 무슨 실험인지, 어떤 힘을 보고 싶은
 ## 건지": every visit while stages are left, with the story). The first is in the box while _clue_open.
 var _opening: Array = []
-## How many of them are the first visit's (the keeper's and the clue): told once (store.mark_clue).
+## How many of them are the first visit's (keeper, clue, story.more and keeper_reply): told once (store.mark_clue).
 var _first_visit := 0
 var _clue_open := false
 var _question := ""
@@ -701,7 +702,7 @@ static func dialogue_line(text: String, face: String, picture := "", speaker := 
 
 
 ## The next line before the question waits for its box (dialogue_line()): on the first visit the
-## keeper's line and Puppy's clue (no picture), then Dugi's introduction ({} when there is none to
+## keeper's line, Puppy's clue, story.more and the keeper's reply (no picture), then Dugi's introduction ({} when there is none to
 ## open, or one is open).
 func clue_to_open() -> Dictionary:
 	if not _asking or _clue_open or _opening.is_empty():
@@ -709,7 +710,7 @@ func clue_to_open() -> Dictionary:
 	return _opening[0]
 
 
-## A line before the question (the keeper's, the clue or the introduction) is in the box now (not yet read).
+## A line before the question (a first-visit line or the introduction) is in the box now (not yet read).
 func clue_open() -> bool:
 	return _asking and not _opening.is_empty() and _clue_open
 

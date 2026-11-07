@@ -178,7 +178,7 @@ func build(lab: Node3D) -> void:
 	cloud.name = "Cloud"
 	cloud.position = CLOUD_AT
 	lab.add_child(cloud)
-	cloud_body = ArtKit.instance(cloud_mesh(CLOUD_RADIUS), MapIsland.cloud_material())
+	cloud_body = ArtKit.instance(MapIsland.cloud_mesh(CLOUD_RADIUS), MapIsland.cloud_material())
 	cloud_body.name = "Puffs"
 	cloud.add_child(cloud_body)
 	rain = Node3D.new()
@@ -646,11 +646,6 @@ static func _sea_mesh() -> Mesh:
 
 
 # --- the cloud and the rain -----------------------------------------------------------------------
-
-## A fluffy cloud of `radius` (its middle at the origin; about 3.7 * radius wide): the sky clouds' round
-## puffs and soft light (MapIsland.cloud_mesh, 2026-11-07 user).
-static func cloud_mesh(radius: float) -> Mesh:
-	return MapIsland.cloud_mesh(radius)
 
 
 ## Drop `i` of the rain `fallen` m into its fall: scattered under the cloud (a golden-ratio spread),

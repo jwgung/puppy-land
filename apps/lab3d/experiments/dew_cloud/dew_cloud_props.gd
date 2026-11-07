@@ -211,7 +211,7 @@ func build(lab: Node3D) -> void:
 	_puff.name = "Puff"
 	_puff.material_override = ArtKit.lit_material()
 	parcel.add_child(_puff)
-	_cloud = ArtKit.instance(cloud_mesh(PARCEL_R), MapIsland.cloud_material())
+	_cloud = ArtKit.instance(MapIsland.cloud_mesh(PARCEL_R, CLOUD), MapIsland.cloud_material())
 	_cloud.name = "Cloud"
 	parcel.add_child(_cloud)
 	cat = CatActor.new(BreadCat.new())
@@ -458,7 +458,3 @@ func _puff_mesh(cool: float, humid: bool) -> Mesh:
 	return b.commit()
 
 
-## A white cloud of about `size` (m; about 3.7 * size wide) round the origin: the sky clouds' round
-## puffs and soft light (MapIsland.cloud_mesh, 2026-11-07 user).
-static func cloud_mesh(size: float) -> Mesh:
-	return MapIsland.cloud_mesh(size, CLOUD)
