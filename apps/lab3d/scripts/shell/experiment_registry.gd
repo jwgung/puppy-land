@@ -68,6 +68,16 @@ static func island_labs(island_id: String) -> Array[Dictionary]:
 	return out
 
 
+## The later island that lists `id` (index.json `islands`), "" for the first island's labs and an
+## unknown id (PieceArt: the piece the lab gives).
+static func island_of(id: String) -> String:
+	load_all()
+	for island_id: String in _island_ids:
+		if id in (_island_ids[island_id] as Array):
+			return island_id
+	return ""
+
+
 ## The definitions are read again on the next load_all (Locale.set_language: their words changed).
 ## (Not "reload": that is Script.reload, which recompiles the script and resets its static vars.)
 static func forget_loaded() -> void:

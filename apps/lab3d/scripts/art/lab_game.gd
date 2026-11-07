@@ -69,14 +69,20 @@ func lab_g() -> float:
 	return float(l.g) if l != null and "g" in l else 9.81
 
 
+## The kind of piece this lab gives (PieceArt): its island's; the star for a lab with no definition.
+func piece_kind() -> String:
+	return PieceArt.of_experiment(lab.definition.id()) if lab != null else PieceArt.STAR
+
+
 ## Builds the object and the piece (subclasses; called once from the lab's _build_world).
 func build() -> void:
 	pass
 
 
-## The piece in its object: a cute star of PIECE_SIZE (or `size`) at `at` (local to the game).
+## The piece in its object: a cute piece of PIECE_SIZE (or `size`) at `at` (local to the game): the
+## lab's island's (PieceArt, #101: the star, or the hutton island's sundial wedge).
 func make_piece(at: Vector3, size := PIECE_SIZE) -> Node3D:
-	piece = StarArt.make(true, size)
+	piece = PieceArt.make(piece_kind(), size)
 	piece_size = size
 	_grow_from = 0.0
 	piece.name = "Piece"
