@@ -580,6 +580,24 @@ static func _sand(b: ArtMeshBuilder, at: Vector2, radius: float, size: float, ta
 	b.add_sphere(Transform3D(Basis.from_scale(Vector3(0.7, (0.3 * size + 0.04) * tall, 0.7)), Vector3(at.x, 0.03, at.y)), r * 0.8, 3, 10, SAND_TOP)
 
 
+## The top of the inner sand bar's middle mound for a bar of `size` (0..1; the plain beside the water
+## when there is no sand yet): where the piece lands when the bank crumbles (RiverGame).
+static func bar_top(size: float) -> Vector3:
+	var line := river_line()
+	var samples := bend_samples(line)
+	var n := samples.size()
+	var j := n / 2 if (n / 2) % 2 == 1 else n / 2 - 1
+	var i: int = samples[j]
+	var share := sin(PI * (j + 0.5) / n)
+	var s := size * share
+	var p := line[i] - outward(line, i) * (half_width(line, i) + 0.12 + INNER_OUT * s)
+	var y := 0.0
+	if s >= 0.02:
+		var r := INNER_R * share * (0.35 + 0.65 * s)
+		y = maxf(0.02 + r * (0.28 * s + 0.04) * INNER_TALL, 0.03 + r * 0.8 * (0.3 * s + 0.04) * INNER_TALL)
+	return Vector3(p.x, y, p.y)
+
+
 ## The bend's inner sand bar (`size` 0..1): mounds along the inside of the bend.
 func _inner_bar_mesh(size: float) -> Mesh:
 	var b := ArtKit.builder()

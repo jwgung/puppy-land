@@ -4,8 +4,8 @@
 ## Stage 1 ("새 물길이 생겼어! 콸콸!"): the water bursts through the heap of fallen earth at the
 ## mountain's foot (a splash) and the heap washes away for good. Stage 2 ("모래톱이 생겼어! 거북이다!"):
 ## a turtle climbs onto a sand nest at the river's mouth and lays its eggs (they stay). Stage 3 (the
-## outer bank cut): earth flies off the face and the piece jumps out onto the bank's top beside the bread
-## cat, growing to the round's size on the way; the screen then flies it to the cat. Visual only.
+## outer bank cut): earth flies off the face and the piece drops out of it down onto the inner sand bar
+## under the bank, growing to the round's size on the way; the screen then flies it to the cat. Visual only.
 class_name RiverGame
 extends LabGame
 
@@ -28,11 +28,10 @@ const SHELL := Color("3f9a52")
 const SHELL_TOP := Color("6cc46a")
 const SKIN := Color("9ad07a")
 const EGG := Color("fff8ec")
-## The bank's crumble (stage 3) and the piece's jump to the cat.
+## The bank's crumble (stage 3) and the piece's fall from the face down onto the inner sand bar
+## (RiverProps.bar_top; 2026-11-07 user: under the cut bank, where the cat's box never hides it).
 const CRUMBLE_S := 0.5
 const FLIGHT_S := 1.0
-## The piece lands on the bank's top beside the cat, this many bend samples towards the bend's middle.
-const LAND_SAMPLES := 3
 const HIGHLIGHT_R := 0.7
 const VALLEY_STAGE := 0
 const BAR_STAGE := 1
@@ -161,7 +160,8 @@ func _process(delta: float) -> void:
 		if c >= 1.0:
 			_crumble_at = NEVER
 			piece.scale = Vector3.ONE
-			launch_to(RiverProps.bank_top(RiverProps.CAT_SAMPLE + LAND_SAMPLES, RiverProps.CAT_BACK), FLIGHT_S, RiverProps.BANK_HEIGHT, true)
+			var land := RiverProps.bar_top(p.shown_inner)
+			launch_to(land, FLIGHT_S, land.y, true)
 
 
 # --- the meshes -----------------------------------------------------------------------------------

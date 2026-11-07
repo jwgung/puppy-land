@@ -474,6 +474,7 @@ func check_view(size: Vector2) -> void:
 		"bank's face (the piece)": RiverProps.bank_face(0.0) + Vector3.UP * RiverGame.PIECE_UP,
 		"bank's top": RiverProps.bank_face(0.0) + Vector3.UP * RiverProps.BANK_HEIGHT,
 		"inner bar": inner,
+		"landed piece": RiverProps.bar_top(1.0) + Vector3.UP * LabGame.PIECE_SIZE * 2.0,
 		"mouth": Vector3(mouth.x, 0.0, mouth.y),
 		"cat's feet": RiverProps.cat_at(),
 		"cat's middle": RiverProps.cat_at() + Vector3.UP * 0.45,
@@ -538,10 +539,14 @@ func check_view(size: Vector2) -> void:
 	var share := sin(PI * (RiverProps.CAT_SAMPLE + 0.5) / bs.size())
 	var deepest := maxf(1.0 - pow(sin(deg_to_rad(RiverModel.GENTLE_DEG)) / sin(deg_to_rad(RiverModel.STEEP_DEG)), 1.0), RiverModel.SIDE_LEAST) * RiverProps.BANK_RETREAT
 	var ground_left := RiverProps.BANK_DEPTH - RiverProps.CAT_BACK - deepest * share
-	var piece_gap := (at.call(RiverProps.cat_at() + Vector3.UP * 0.45) as Vector2).distance_to(at.call(points["bank's face (the piece)"]))
+	var cat_mid: Vector2 = at.call(RiverProps.cat_at() + Vector3.UP * 0.45)
+	var piece_gap := cat_mid.distance_to(at.call(points["bank's face (the piece)"]))
+	# The landed piece (stage 3's win; 2026-11-07 user: down under the cut bank) too: on the inner
+	# sand bar, far enough from the cat on the screen.
+	var land_gap := cat_mid.distance_to(at.call(RiverProps.bar_top(1.0) + Vector3.UP * LabGame.PIECE_SIZE))
 	if cat.position.distance_to(RiverProps.cat_at()) > 1e-4 or absf(cat.position.y - RiverProps.BANK_HEIGHT) > 1e-4 or absf(cat.rotation.y) > 1e-3 \
-			or ground_left < CAT_FOOT or piece_gap < CAT_PIECE_GAP:
-		problems.append("cat at %s (rot %.2f), %.2f m of top left at the deepest cut, %.0f units from the piece" % [str(cat.position), cat.rotation.y, ground_left, piece_gap])
+			or ground_left < CAT_FOOT or piece_gap < CAT_PIECE_GAP or land_gap < CAT_PIECE_GAP:
+		problems.append("cat at %s (rot %.2f), %.2f m of top left at the deepest cut, %.0f units from the piece; the landed piece %.0f units from it" % [str(cat.position), cat.rotation.y, ground_left, piece_gap, land_gap])
 	var c: Vector2 = at.call(RiverProps.CLOUD_AT)
 	var e: Vector2 = at.call(RiverProps.CLOUD_AT + Vector3.RIGHT * RiverProps.CLOUD_RADIUS)
 	if c.distance_to(e) < CLOUD_MIN:
@@ -727,8 +732,10 @@ func check_piece() -> void:
 		await tree.process_frame
 		frames += 1
 	var rest: Vector3 = game.piece.global_position
-	if game.piece_state != "out" or absf(rest.y - (RiverProps.BANK_HEIGHT + LabGame.PIECE_SIZE)) > 0.12 or rest.distance_to(cut) < 1.0:
-		problems.append("after the last stamp: %s at %s" % [game.piece_state, str(rest)])
+	var bar := RiverProps.bar_top(lab.props.shown_inner)
+	if game.piece_state != "out" or absf(rest.y - (bar.y + LabGame.PIECE_SIZE)) > 0.05 \
+			or Vector2(rest.x - bar.x, rest.z - bar.z).length() > 0.35 or rest.distance_to(cut) < 1.0:
+		problems.append("after the last stamp: %s at %s (the bar %s)" % [game.piece_state, str(rest), str(bar)])
 	if not game.take_piece() is Vector3:
 		problems.append("not taken")
 	var again := _lab()
@@ -738,7 +745,7 @@ func check_piece() -> void:
 	var done: RiverGame = again.game
 	if done.take_piece() != null or not done.turtle_out() or not done.heap_gone():
 		problems.append("a finished spot: a piece, no turtle or a heap")
-	expect.call(problems.is_empty(), "river piece: buried in the bend's outer bank (it comes out with the cut face) until the last stamp, then it jumps out onto the bank's top beside the cat; the heap washes away at the first stamp, the turtle comes at the second; a finished spot shows them, no piece",
+	expect.call(problems.is_empty(), "river piece: buried in the bend's outer bank (it comes out with the cut face) until the last stamp, then it drops down onto the inner sand bar under the bank; the heap washes away at the first stamp, the turtle comes at the second; a finished spot shows them, no piece",
 		"; ".join(problems))
 	lab.queue_free()
 	again.queue_free()
