@@ -212,5 +212,15 @@
   ],
   "story.skip": "Skip",
   "title.islands": "Islands",
-  "title.start": "Start"
+  "title.start": "Start",
+  "water_cycle.day.on": "Sun is up",
+  "water_cycle.day.over": "Sun has set",
+  "water_cycle.pond.dry": "Dry",
+  "water_cycle.pond.full": "Full",
+  "water_cycle.pond.some": "Some water",
+  "water_cycle.status.cloud": "A cloud",
+  "water_cycle.status.full": "Pond full",
+  "water_cycle.status.rain": "Raining",
+  "water_cycle.status.ready": "Cool sea",
+  "water_cycle.status.vapour": "Vapor rising"
 }

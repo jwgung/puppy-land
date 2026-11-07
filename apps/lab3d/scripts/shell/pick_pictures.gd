@@ -4,7 +4,8 @@
 ## the moon and Jupiter, a light or a heavy box, a steel, wooden or rubber slide, a planet near or far
 ## from its star, a gentle or a steep slope, one, two or four ropes, the hand near or far on the lever,
 ## a small or a big ball (blue, orange, the free fall's red), a big or a small drum, a weight, a short
-## or a long string, a short or a long stick (#86), the Earth with its axis tilted or upright (#87).
+## or a long string, a short or a long stick (#86), the Earth with its axis tilted or upright (#87), a weak
+## or a strong sun (#91).
 ## `size` (0..1) and `count` say how much the drawing shows (kid.picks entries). The words under the
 ## picture say the same thing.
 ## A mass's picture (a ball, a box, a weight) is drawn like the lab draws the body (2026-10-28,
@@ -16,7 +17,7 @@ extends RefCounted
 
 const KINDS := ["earth", "moon", "jupiter", "box", "slide_steel", "slide_wood", "slide_rubber", "orbit",
 	"slope", "pulley", "lever", "ball_blue", "ball_orange", "ball_red", "drum_big", "drum_small", "weight", "rope",
-	"stick", "earth_tilted", "earth_upright"]
+	"stick", "earth_tilted", "earth_upright", "sun_weak", "sun_strong"]
 const OUTLINE := Color("8a6a46")   # PredictPictures.GROUND: the brown of the storybook lines
 const STEEL := ArtPalette.STEEL
 
@@ -123,6 +124,8 @@ static func draw(canvas: Control, kind: String, size := 0.5, count := 1) -> void
 			canvas.draw_line(top, bob, Color("ffffff"), 3.0)
 			canvas.draw_line(top, bob, OUTLINE, 1.0)
 			canvas.draw_circle(bob, 8.0, ArtPalette.BLUE)
+		"sun_weak", "sun_strong":   # #91 (물의 여행): a small pale sun with short rays, or a big deep one with long rays
+			_sun(canvas, c, r.size.y, kind == "sun_strong")
 		"stick":   # #86 (그림자 시계): the yard's stick, `size` of the picture's height (short / long)
 			_ground(canvas, r)
 			var foot := Vector2(c.x, r.end.y - 2.0)
@@ -130,6 +133,19 @@ static func draw(canvas: Control, kind: String, size := 0.5, count := 1) -> void
 			canvas.draw_line(foot, top, ArtPalette.WOOD_GRAIN, 7.0, true)
 			canvas.draw_line(foot, top, ArtPalette.WOOD, 4.0, true)
 			canvas.draw_circle(top, 6.0, ArtPalette.RED)
+
+
+## The sun at `c` in a picture `height` tall: weak (small, pale, eight short rays) or strong (big,
+## deep yellow, twelve long orange rays).
+static func _sun(canvas: Control, c: Vector2, height: float, strong: bool) -> void:
+	var radius := height * (0.24 if strong else 0.17)
+	var rays := 12 if strong else 8
+	var reach := radius * (0.85 if strong else 0.4)
+	for k in rays:
+		var d := Vector2.from_angle(TAU * k / rays)
+		canvas.draw_line(c + d * (radius + 3.0), c + d * (radius + 3.0 + reach * (1.0 if k % 2 == 0 else 0.7)), ArtPalette.ORANGE if strong else ArtPalette.YELLOW_TOP, 4.0 if strong else 3.0, true)
+	canvas.draw_circle(c, radius, ArtPalette.YELLOW if strong else ArtPalette.YELLOW_TOP.lightened(0.35))
+	canvas.draw_arc(c, radius, 0.0, TAU, 32, OUTLINE, 2.0, true)
 
 
 ## The Earth (as "earth") with its axis through it, leaning `tilt` deg to the left (the 계절 lab's

@@ -54,6 +54,8 @@ static func add(b: ArtMeshBuilder, id: String, xf: Transform3D) -> float:
 			return _shadow_stick(b, xf)
 		"seasons":
 			return _orrery(b, xf)
+		"water-cycle":
+			return _rain_pond(b, xf)
 	_rod(b, xf, Vector3.ZERO, Vector3(0.0, 1.0, 0.0), 0.08, ArtPalette.BLUE)
 	_ball(b, xf, Vector3(0.0, 1.15, 0.0), 0.2, ArtPalette.WHITE)
 	return 1.35
@@ -377,6 +379,20 @@ static func _orrery(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	_rod(b, xf, earth - axis * 0.3, earth + axis * 0.32, 0.025, ArtPalette.STEEL_SHINE)
 	_ball(b, xf, earth + axis * 0.33, 0.045, ArtPalette.RED)
 	return 1.6
+
+
+## The hutton island's 물의 여행 (#91, "바닷가, 마른 연못이 있는 곳"): a little pond in a ring of stones, a
+## rain cloud over it on a post with drops falling, a small sun beside it.
+static func _rain_pond(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.add_cylinder(xf, 0.55, 0.5, 0.1, 12, ArtPalette.ROCK, true, ArtPalette.STEEL_SHINE)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, 0.1, 0.0)), 0.42, 0.42, 0.03, 12, ArtPalette.POND)
+	_rod(b, xf, Vector3(-0.45, 0.1, -0.2), Vector3(-0.45, 1.25, -0.2), 0.04, ArtPalette.WOOD_GRAIN)
+	for puff: Array in [[Vector3(-0.22, 1.35, 0.0), 0.22], [Vector3(0.05, 1.45, 0.0), 0.27], [Vector3(0.3, 1.35, 0.0), 0.2]]:
+		_ball(b, xf, puff[0], puff[1], ArtPalette.WHITE)
+	for drop: Vector3 in [Vector3(-0.15, 0.9, 0.05), Vector3(0.1, 0.7, 0.0), Vector3(0.3, 0.95, -0.05), Vector3(-0.05, 0.5, 0.1)]:
+		_rod(b, xf, drop, drop + Vector3(0.0, -0.14, 0.0), 0.03, ArtPalette.BLUE)
+	_ball(b, xf, Vector3(0.55, 1.05, -0.15), 0.14, ArtPalette.YELLOW)
+	return 1.75
 
 
 # --- helpers ---------------------------------------------------------------------------------

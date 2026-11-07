@@ -215,5 +215,15 @@
   ],
   "story.skip": "건너뛰기",
   "title.islands": "섬 고르기",
-  "title.start": "시작하기"
+  "title.start": "시작하기",
+  "water_cycle.day.on": "해가 떠 있어요",
+  "water_cycle.day.over": "해가 졌어요",
+  "water_cycle.pond.dry": "말랐어요",
+  "water_cycle.pond.full": "가득 찼어요",
+  "water_cycle.pond.some": "물이 고였어요",
+  "water_cycle.status.cloud": "구름이 생겼어요",
+  "water_cycle.status.full": "연못이 가득",
+  "water_cycle.status.rain": "비가 내려요",
+  "water_cycle.status.ready": "바다가 차가워요",
+  "water_cycle.status.vapour": "수증기가 올라가요"
 }
