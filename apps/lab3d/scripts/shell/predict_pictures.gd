@@ -19,7 +19,9 @@ const KINDS := ["long_arc", "same_arc", "fall_together", "fall_heavy_first", "li
 	# #86 (그림자 시계): with the sun high, does the stick's shadow get shorter or longer?
 	"shadow_short", "shadow_long",
 	# #87 (계절): would an upright Earth have seasons?
-	"seasons_change", "seasons_same"]
+	"seasons_change", "seasons_same",
+	# #94 (태풍·비구름): does a rain cloud grow over a cold sea?
+	"cloud_grows", "cloud_stays"]
 const STRONG := Color("e2683c")
 const PALE := Color("c9b892")
 const GROUND := Color("8a6a46")
@@ -88,6 +90,8 @@ static func draw(canvas: Control, kind: String) -> void:
 			_shadow(canvas, r, kind == "shadow_short")
 		"seasons_change", "seasons_same":
 			_seasons(canvas, r, kind == "seasons_change")
+		"cloud_grows", "cloud_stays":
+			_cold_cloud(canvas, r, kind == "cloud_grows")
 		_:
 			_ground(canvas, r)
 
@@ -603,3 +607,37 @@ static func _sprout(canvas: Control, at: Vector2, color: Color, k := 1.0) -> voi
 			var t := 1.0 - float(n) / 8.0
 			leaf.append(at + Vector2(side * 8.0 * t, -3.0 + 2.0 * sin(t * PI) - 2.0 * t) * k)
 		canvas.draw_colored_polygon(leaf, color)
+
+
+## A small cloud over a cold sea (an ice floe on it), an arrow to what it becomes: a big dark rain
+## cloud with rain ("cloud_grows"), or the same small cloud ("cloud_stays"); the choice's arrow orange.
+static func _cold_cloud(canvas: Control, r: Rect2, grows: bool) -> void:
+	var top := r.position.y + r.size.y * 0.74
+	canvas.draw_rect(Rect2(Vector2(r.position.x, top), Vector2(r.size.x, r.end.y - top)), TyphoonProps.COLD_SEA)
+	canvas.draw_line(Vector2(r.position.x, top), Vector2(r.end.x, top), TyphoonProps.COLD_SEA_TOP, 2.0)
+	for x: float in [0.3, 0.8]:
+		var floe := Vector2(r.position.x + r.size.x * x, top + (r.end.y - top) * 0.5)
+		canvas.draw_set_transform(floe, 0.0, Vector2(1.0, 0.35))
+		canvas.draw_circle(Vector2.ZERO, r.size.y * 0.13, Color.WHITE)
+		canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	var y := r.position.y + r.size.y * 0.36
+	var left := Vector2(r.position.x + r.size.x * 0.2, y)
+	var right := Vector2(r.position.x + r.size.x * 0.76, y)
+	_puff(canvas, left, r.size.y * 0.13, Color.WHITE, PALE)
+	_arrow(canvas, left + Vector2(r.size.y * 0.3, 0.0), right - Vector2(r.size.y * (0.38 if grows else 0.26), 0.0), STRONG, 4.0)
+	if grows:
+		for k in 5:
+			var x := right.x + (k - 2) * r.size.y * 0.1
+			canvas.draw_line(Vector2(x, y + r.size.y * 0.2), Vector2(x - 3.0, y + r.size.y * 0.34), WATER, 2.5, true)
+		_puff(canvas, right, r.size.y * 0.24, Color("97a3b8"), Color("5d6a86"))
+	else:
+		_puff(canvas, right, r.size.y * 0.13, Color.WHITE, PALE)
+
+
+## A cloud of three round puffs centred at `at` (`radius`: the middle puff's), outlined.
+static func _puff(canvas: Control, at: Vector2, radius: float, fill: Color, line: Color) -> void:
+	var balls := [[Vector2(-0.8, 0.25), 0.7], [Vector2(0.8, 0.25), 0.7], [Vector2(0.0, 0.0), 1.0]]
+	for ball: Array in balls:
+		canvas.draw_circle(at + (ball[0] as Vector2) * radius, float(ball[1]) * radius + 1.5, line)
+	for ball: Array in balls:
+		canvas.draw_circle(at + (ball[0] as Vector2) * radius, float(ball[1]) * radius, fill)

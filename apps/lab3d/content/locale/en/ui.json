@@ -212,5 +212,16 @@
   ],
   "story.skip": "Skip",
   "title.islands": "Islands",
-  "title.start": "Start"
+  "title.start": "Start",
+  "typhoon.cloud.rain": "Rain cloud",
+  "typhoon.cloud.small": "Small cloud",
+  "typhoon.cloud.typhoon": "Typhoon",
+  "typhoon.cloud.weak": "Weakened typhoon",
+  "typhoon.under.cold": "Cold sea",
+  "typhoon.under.hot": "Very warm sea",
+  "typhoon.under.land": "Land",
+  "typhoon.under.warm": "Warm sea",
+  "typhoon.vapor.lots": "Lots",
+  "typhoon.vapor.none": "Hardly any",
+  "typhoon.vapor.some": "Some"
 }

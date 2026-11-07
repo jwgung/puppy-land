@@ -215,5 +215,16 @@
   ],
   "story.skip": "건너뛰기",
   "title.islands": "섬 고르기",
-  "title.start": "시작하기"
+  "title.start": "시작하기",
+  "typhoon.cloud.rain": "비구름",
+  "typhoon.cloud.small": "작은 구름",
+  "typhoon.cloud.typhoon": "태풍",
+  "typhoon.cloud.weak": "힘이 빠진 태풍",
+  "typhoon.under.cold": "차가운 바다",
+  "typhoon.under.hot": "아주 따뜻한 바다",
+  "typhoon.under.land": "땅",
+  "typhoon.under.warm": "따뜻한 바다",
+  "typhoon.vapor.lots": "아주 많이 올라와요",
+  "typhoon.vapor.none": "거의 없어요",
+  "typhoon.vapor.some": "올라와요"
 }
