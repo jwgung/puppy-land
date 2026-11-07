@@ -216,6 +216,23 @@ static func shadow_alpha(scale := 1.0) -> float:
 	return ArtPalette.SHADOW_ALPHA * scale
 
 
+## A flat round patch facing the camera (+z) at `c`, radius `r`: a sun, a tree's
+## crown, a rock, a bar's end.
+static func disc(b: ArtMeshBuilder, c: Vector3, r: float, color: Color, sides := 12) -> void:
+	for i in sides:
+		var a0 := TAU * i / sides
+		var a1 := TAU * (i + 1) / sides
+		b.add_triangle([c, c + Vector3(cos(a0), sin(a0), 0.0) * r, c + Vector3(cos(a1), sin(a1), 0.0) * r], [color, color, color], Vector3.BACK)
+
+
+## A flat round patch lying on the ground (facing up, +y) at `c`, radius `r`: a shadow's tip, a spot.
+static func flat_disc(b: ArtMeshBuilder, c: Vector3, r: float, color: Color, sides := 12) -> void:
+	for i in sides:
+		var a0 := TAU * i / sides
+		var a1 := TAU * (i + 1) / sides
+		b.add_triangle([c, c + Vector3(cos(a1), 0.0, sin(a1)) * r, c + Vector3(cos(a0), 0.0, sin(a0)) * r], [color, color, color], Vector3.UP)
+
+
 static func instance(mesh: Mesh, material: Material = null) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh

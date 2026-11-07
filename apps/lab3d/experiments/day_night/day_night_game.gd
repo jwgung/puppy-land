@@ -18,10 +18,9 @@ const GLINT_SWELL := 0.8
 ## The rock's halves part by OPEN_ANGLE (rad, each about its hinge) in OPEN_S.
 const OPEN_S := 0.5
 const OPEN_ANGLE := 0.5
-## The warm flash round the crevice at the last stamp (s), and how fast the flying piece grows to the
-## round's size (1/s, the lerp's rate).
+## The warm flash round the crevice at the last stamp (s); the flying piece grows to the round's
+## size on the way (launch_to, LabGame.GROW_RATE).
 const FLASH_S := 1.2
-const GROW_RATE := 6.0
 ## The crevice's halo while Puppy tells the clue (m: the house is small on the globe).
 const HIGHLIGHT_R := 0.3
 const FLASH_R := 0.32
@@ -31,10 +30,10 @@ const LAND_FROM_CAT := Vector3(-0.8, 0.0, 0.3)
 
 var _halves: Array[Node3D] = []
 var _glow: ClueGlow
-var _glint_at := -10.0
-var _open_at := -10.0
+var _glint_at := NEVER
+var _open_at := NEVER
 var _open := false
-var _flash_until := -10.0
+var _flash_until := NEVER
 
 
 func build() -> void:
@@ -72,9 +71,7 @@ func _set_open(amount: float) -> void:
 
 func _cleared(_stage_index: int, last: bool) -> void:
 	_glint_at = _t
-	var cat: CatActor = (host().props as DayNightProps).cat
-	if cat != null:
-		cat.cheer(true, 2 if last else 1)
+	cheer_cat(last)
 	if last:
 		_open_at = _t
 		_flash_until = _t + FLASH_S
@@ -83,7 +80,7 @@ func _cleared(_stage_index: int, last: bool) -> void:
 
 func _jump(stamps: int) -> void:
 	_open = stamps >= stages
-	_open_at = -10.0
+	_open_at = NEVER
 	_set_open(1.0 if _open else 0.0)
 
 
@@ -94,31 +91,17 @@ func highlight_radius() -> float:
 
 func _process(delta: float) -> void:
 	super(delta)
-	if _glow != null and _flash_until > 0.0 and _t > _flash_until:
-		_flash_until = -10.0
+	if _glow != null and due(_flash_until):
+		_flash_until = NEVER
 		_glow.set_on(false)
-	if piece == null:
+	if piece == null or piece_state != "held":
 		return
-	if piece_state == "held":
-		var k := (_t - _glint_at) / GLINT_S
-		piece.scale = Vector3.ONE * (1.0 + GLINT_SWELL * sin(PI * clampf(k, 0.0, 1.0)))
-		if _open_at > 0.0:
-			var o := smooth((_t - _open_at) / OPEN_S)
-			_set_open(o)
-			if o >= 1.0:
-				_open = true
-				_launch()
-	elif piece_state in ["flying", "out"]:
-		var grow := PIECE_SIZE / HIDDEN_SIZE
-		piece.scale = piece.scale.lerp(Vector3.ONE * grow, clampf(delta * GROW_RATE, 0.0, 1.0))
-
-
-## Out of the crevice: up from the globe's surface on an arc (the lab's gravity) that lands on the
-## stage beside the bread cat in FLIGHT_S.
-func _launch() -> void:
-	piece_size = PIECE_SIZE   # it lands at the round's size (it grows on the way)
-	var from := piece.global_position
-	var land := (host().props as DayNightProps).cat.global_position + LAND_FROM_CAT + Vector3.UP * piece_size
-	var g := lab_g()
-	var v := (land - from) / FLIGHT_S + Vector3.UP * 0.5 * g * FLIGHT_S
-	launch_piece(v, g, 0.0)
+	piece.scale = Vector3.ONE * (1.0 + GLINT_SWELL * pulse(_glint_at, GLINT_S))
+	if running(_open_at):
+		var o := eased(_open_at, OPEN_S)
+		_set_open(o)
+		if o >= 1.0:
+			_open = true
+			# Out of the crevice: up from the globe's surface on an arc that lands on the stage beside
+			# the bread cat, at the round's size.
+			launch_to(lab_cat().global_position + LAND_FROM_CAT, FLIGHT_S, 0.0, true)

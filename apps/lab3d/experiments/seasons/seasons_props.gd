@@ -285,15 +285,8 @@ func _axis_mesh() -> Mesh:
 # --- the yard window ------------------------------------------------------------------------------
 
 func _add_window_stand(b: ArtMeshBuilder) -> void:
-	b.ao_min = 0.8
-	b.ao_height = 0.4
-	var turn := Basis(Vector3.UP, deg_to_rad(WINDOW_TURN_DEG))
 	var bottom := WINDOW_CENTER.y - (WINDOW_SIZE.y * 0.5 + FRAME + DAY_BAR.y + BAR_GAP * 2.0) * WINDOW_SCALE
-	for side: float in [-1.0, 1.0]:
-		var foot := WINDOW_CENTER + turn * Vector3(side * WINDOW_SIZE.x * 0.34 * WINDOW_SCALE, 0.0, -0.1 * WINDOW_SCALE)
-		foot.y = 0.0
-		b.add_cylinder(Transform3D(Basis(), foot), 0.07, 0.055, bottom + 0.05, 6, ArtPalette.WOOD_GRAIN)
-		b.add_rounded_box(Transform3D(turn, foot + Vector3(0.0, 0.04, 0.0)), Vector3(0.42, 0.08, 0.3), 0.02, 1, ArtPalette.WOOD_GRAIN)
+	WindowArt.add_stand(b, WINDOW_CENTER, bottom, WINDOW_SIZE.x * 0.34 * WINDOW_SCALE, 0.1 * WINDOW_SCALE, WINDOW_TURN_DEG, Vector2(0.07, 0.055), Vector3(0.42, 0.08, 0.3))
 
 
 ## The window's frame (the picture, the height bar on its left, the day bar under it), the sky, the
@@ -307,15 +300,8 @@ func _build_window(lab: Node3D) -> void:
 	lab.add_child(window)
 	var b := ArtKit.builder()
 	b.ao_min = 1.0
-	var inner := _inner_rect()
-	var w := inner.size.x + FRAME * 2.0
-	var h := inner.size.y + FRAME * 2.0
-	var c := inner.get_center()
-	for side: float in [-1.0, 1.0]:
-		b.add_rounded_box(Transform3D(Basis(), Vector3(c.x, c.y + side * (h - FRAME) * 0.5, 0.0)), Vector3(w, FRAME, FRAME_DEPTH), 0.03, 1, FRAME_COLOR, FRAME_TOP)
-		b.add_rounded_box(Transform3D(Basis(), Vector3(c.x + side * (w - FRAME) * 0.5, c.y, 0.0)), Vector3(FRAME, h - FRAME * 2.0 + 0.002, FRAME_DEPTH), 0.03, 1, FRAME_COLOR, FRAME_TOP)
-	# The board behind (it shows between the picture and the bars) and the bars' dividers.
-	b.add_rounded_box(Transform3D(Basis(), Vector3(c.x, c.y, -FRAME_DEPTH * 0.5 + 0.01)), Vector3(w - 0.02, h - 0.02, 0.02), 0.0, 1, FRAME_COLOR.darkened(0.15))
+	# The frame round the picture and its bars, the board behind showing between them.
+	WindowArt.add_frame(b, _inner_rect(), FRAME, FRAME_DEPTH, 0.03, 0.15, FRAME_COLOR, FRAME_TOP)
 	var frame := ArtKit.instance(b.commit())
 	frame.name = "Frame"
 	window.add_child(frame)
@@ -325,13 +311,13 @@ func _build_window(lab: Node3D) -> void:
 	_pill(tracks, _day_rect(), 0.012, BAR_TRACK)
 	# The day bar's ends: a sun on its left (day), a moon on its right (night).
 	var day := _day_rect()
-	_disc(tracks, Vector3(day.position.x - 0.0, day.get_center().y, 0.05), DAY_BAR.y * 0.62, DAY_FILL_TOP)
+	ArtKit.disc(tracks, Vector3(day.position.x - 0.0, day.get_center().y, 0.05), DAY_BAR.y * 0.62, DAY_FILL_TOP, 14)
 	var moon_at := Vector3(day.end.x, day.get_center().y, 0.05)
-	_disc(tracks, moon_at, DAY_BAR.y * 0.55, Color("f4f1d0"))
-	_disc(tracks, moon_at + Vector3(DAY_BAR.y * 0.22, DAY_BAR.y * 0.12, 0.003), DAY_BAR.y * 0.45, FRAME_COLOR.darkened(0.15))
+	ArtKit.disc(tracks, moon_at, DAY_BAR.y * 0.55, Color("f4f1d0"), 14)
+	ArtKit.disc(tracks, moon_at + Vector3(DAY_BAR.y * 0.22, DAY_BAR.y * 0.12, 0.003), DAY_BAR.y * 0.45, FRAME_COLOR.darkened(0.15), 14)
 	# The height bar's top: a little sun (straight overhead).
 	var hb := _height_rect()
-	_disc(tracks, Vector3(hb.get_center().x, hb.end.y + 0.02, 0.05), HEIGHT_BAR.x * 0.75, DAY_FILL_TOP)
+	ArtKit.disc(tracks, Vector3(hb.get_center().x, hb.end.y + 0.02, 0.05), HEIGHT_BAR.x * 0.75, DAY_FILL_TOP, 14)
 	var track := ArtKit.instance(tracks.commit(), bright_material)
 	track.name = "BarTracks"
 	window.add_child(track)
@@ -345,8 +331,8 @@ func _build_window(lab: Node3D) -> void:
 	window.add_child(_day_path)
 	var disc := ArtKit.builder()
 	disc.ao_min = 1.0
-	_disc(disc, Vector3.ZERO, PICTURE_SUN * 1.45, ArtPalette.YELLOW.lightened(0.5), 20)
-	_disc(disc, Vector3(0.0, 0.0, 0.004), PICTURE_SUN, ArtPalette.YELLOW, 20)
+	ArtKit.disc(disc, Vector3.ZERO, PICTURE_SUN * 1.45, ArtPalette.YELLOW.lightened(0.5), 20)
+	ArtKit.disc(disc, Vector3(0.0, 0.0, 0.004), PICTURE_SUN, ArtPalette.YELLOW, 20)
 	_sun_disc = ArtKit.instance(disc.commit(), bright_material)
 	_sun_disc.name = "SkySun"
 	window.add_child(_sun_disc)
@@ -387,7 +373,7 @@ func _inner_rect() -> Rect2:
 
 
 func _horizon_y() -> float:
-	return -WINDOW_SIZE.y * 0.5 + WINDOW_SIZE.y * YARD_SHARE
+	return WindowArt.horizon_y(WINDOW_SIZE, YARD_SHARE)
 
 
 ## The window for the noon sun at `height` (0..1), the day `day` (0..1), the noon altitude (deg).
@@ -401,7 +387,7 @@ func _show_window(height: float, day: float, noon_altitude: float) -> void:
 	shown_snow = clampf((SNOW_TO_DEG - noon_altitude) / (SNOW_TO_DEG - SNOW_FROM_DEG), 0.0, 1.0)
 	var p := _picture_rect()
 	var hy := _horizon_y()
-	_sky.mesh = _sky_mesh(SKY_TOP.lerp(SKY_COLD_TOP, shown_snow), SKY_LOW.lerp(SKY_COLD_LOW, shown_snow))
+	_sky.mesh = WindowArt.sky_mesh(WINDOW_SIZE, SKY_TOP.lerp(SKY_COLD_TOP, shown_snow), SKY_LOW.lerp(SKY_COLD_LOW, shown_snow))
 	# The noon sun over the middle of the yard (the window looks south), as high as its share of the
 	# sky (the top of the picture is straight overhead).
 	var top := p.end.y - PICTURE_SUN * 1.2
@@ -472,17 +458,7 @@ func _yard_mesh(snow: float) -> Mesh:
 	b.add_rounded_box(Transform3D(Basis(), Vector3(hx, hy + 0.06, 0.057)), Vector3(0.09, 0.14, 0.004), 0.0, 1, DayNightProps.DOOR)
 	var tx := -half.x * 0.6
 	b.add_rounded_box(Transform3D(Basis(), Vector3(tx, hy + 0.09, 0.045)), Vector3(0.04, 0.2, 0.01), 0.0, 1, ArtPalette.TRUNK)
-	_disc(b, Vector3(tx, hy + 0.27, 0.05), 0.15, ArtPalette.LEAF_LIGHT.lerp(SNOW, snow * 0.7))
-	return b.commit()
-
-
-static func _sky_mesh(top: Color, low: Color) -> Mesh:
-	var b := ArtKit.builder()
-	b.ao_min = 1.0
-	var half := WINDOW_SIZE * 0.5
-	var corners: Array[Vector3] = [Vector3(-half.x, -half.y, 0.0), Vector3(half.x, -half.y, 0.0), Vector3(half.x, half.y, 0.0), Vector3(-half.x, half.y, 0.0)]
-	b.add_triangle([corners[0], corners[1], corners[2]], [low, low, top], Vector3.BACK)
-	b.add_triangle([corners[0], corners[2], corners[3]], [low, top, top], Vector3.BACK)
+	ArtKit.disc(b, Vector3(tx, hy + 0.27, 0.05), 0.15, ArtPalette.LEAF_LIGHT.lerp(SNOW, snow * 0.7), 14)
 	return b.commit()
 
 
@@ -502,10 +478,3 @@ static func _pill(b: ArtMeshBuilder, r: Rect2, z: float, color: Color) -> void:
 		var p0 := poly[i]
 		var p1 := poly[(i + 1) % poly.size()]
 		b.add_triangle([Vector3(c.x, c.y, z), Vector3(p0.x, p0.y, z), Vector3(p1.x, p1.y, z)], [color, color, color], Vector3.BACK)
-
-
-static func _disc(b: ArtMeshBuilder, c: Vector3, r: float, color: Color, sides := 14) -> void:
-	for i in sides:
-		var a0 := TAU * i / sides
-		var a1 := TAU * (i + 1) / sides
-		b.add_triangle([c, c + Vector3(cos(a0), sin(a0), 0.0) * r, c + Vector3(cos(a1), sin(a1), 0.0) * r], [color, color, color], Vector3.BACK)

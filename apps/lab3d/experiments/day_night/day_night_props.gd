@@ -455,13 +455,7 @@ static func _turn_tangent(a: float) -> Vector3:
 # --- the yard window ------------------------------------------------------------------------------
 
 func _add_window_stand(b: ArtMeshBuilder) -> void:
-	b.ao_min = 0.8
-	b.ao_height = 0.4
-	var bottom := WINDOW_CENTER.y - WINDOW_SIZE.y * 0.5 - FRAME
-	for side: float in [-1.0, 1.0]:
-		var x := WINDOW_CENTER.x + side * WINDOW_SIZE.x * 0.36
-		b.add_cylinder(Transform3D(Basis(), Vector3(x, 0.0, WINDOW_CENTER.z - 0.05)), 0.05, 0.04, bottom + 0.05, 6, ArtPalette.WOOD_GRAIN)
-		b.add_rounded_box(Transform3D(Basis(), Vector3(x, 0.03, WINDOW_CENTER.z - 0.05)), Vector3(0.32, 0.06, 0.24), 0.02, 1, ArtPalette.WOOD_GRAIN)
+	WindowArt.add_stand(b, WINDOW_CENTER, WINDOW_CENTER.y - WINDOW_SIZE.y * 0.5 - FRAME, WINDOW_SIZE.x * 0.36)
 
 
 func _build_window(lab: Node3D) -> void:
@@ -471,12 +465,7 @@ func _build_window(lab: Node3D) -> void:
 	lab.add_child(window)
 	var b := ArtKit.builder()
 	b.ao_min = 1.0
-	var w := WINDOW_SIZE.x + FRAME * 2.0
-	var h := WINDOW_SIZE.y + FRAME * 2.0
-	for side: float in [-1.0, 1.0]:
-		b.add_rounded_box(Transform3D(Basis(), Vector3(0.0, side * (h - FRAME) * 0.5, 0.0)), Vector3(w, FRAME, FRAME_DEPTH), 0.025, 1, FRAME_COLOR, FRAME_TOP)
-		b.add_rounded_box(Transform3D(Basis(), Vector3(side * (w - FRAME) * 0.5, 0.0, 0.0)), Vector3(FRAME, h - FRAME * 2.0 + 0.002, FRAME_DEPTH), 0.025, 1, FRAME_COLOR, FRAME_TOP)
-	b.add_rounded_box(Transform3D(Basis(), Vector3(0.0, 0.0, -FRAME_DEPTH * 0.5 + 0.01)), Vector3(w - 0.02, h - 0.02, 0.02), 0.0, 1, FRAME_COLOR.darkened(0.3))
+	WindowArt.add_frame(b, Rect2(-WINDOW_SIZE * 0.5, WINDOW_SIZE), FRAME, FRAME_DEPTH, 0.025, 0.3, FRAME_COLOR, FRAME_TOP)
 	var frame := ArtKit.instance(b.commit())
 	frame.name = "Frame"
 	window.add_child(frame)
@@ -509,7 +498,7 @@ func _build_window(lab: Node3D) -> void:
 
 ## The picture's horizon (window local y).
 func _horizon_y() -> float:
-	return -WINDOW_SIZE.y * 0.5 + WINDOW_SIZE.y * YARD_SHARE
+	return WindowArt.horizon_y(WINDOW_SIZE, YARD_SHARE)
 
 
 ## The yard in the picture: a green hill along the bottom (in front of the sun: a rising sun is half
@@ -535,17 +524,10 @@ func _yard_mesh() -> Mesh:
 	b.add_triangle([Vector3(hx - 0.17, hy + 0.185, 0.045), Vector3(hx + 0.17, hy + 0.185, 0.045), Vector3(hx, hy + 0.33, 0.045)], [ROOF, ROOF, ROOF_TOP], Vector3.BACK)
 	b.add_rounded_box(Transform3D(Basis(), Vector3(hx - 0.0, hy + 0.04, 0.046)), Vector3(0.06, 0.1, 0.004), 0.0, 1, DOOR)
 	b.add_rounded_box(Transform3D(Basis(), Vector3(hx + 0.29, hy + 0.06, 0.035)), Vector3(0.025, 0.14, 0.01), 0.0, 1, ArtPalette.TRUNK)
-	_disc(b, Vector3(hx + 0.29, hy + 0.17, 0.04), 0.09, ArtPalette.LEAF_LIGHT)
-	_disc(b, Vector3(hx - 0.3, hy + 0.025, 0.05), 0.06, ROCK)
-	_disc(b, Vector3(hx - 0.26, hy + 0.02, 0.052), 0.04, ROCK_TOP)
+	ArtKit.disc(b, Vector3(hx + 0.29, hy + 0.17, 0.04), 0.09, ArtPalette.LEAF_LIGHT, 10)
+	ArtKit.disc(b, Vector3(hx - 0.3, hy + 0.025, 0.05), 0.06, ROCK, 10)
+	ArtKit.disc(b, Vector3(hx - 0.26, hy + 0.02, 0.052), 0.04, ROCK_TOP, 10)
 	return b.commit()
-
-
-static func _disc(b: ArtMeshBuilder, c: Vector3, r: float, color: Color, sides := 10) -> void:
-	for i in sides:
-		var a0 := TAU * i / sides
-		var a1 := TAU * (i + 1) / sides
-		b.add_triangle([c, c + Vector3(cos(a0), sin(a0), 0.0) * r, c + Vector3(cos(a1), sin(a1), 0.0) * r], [color, color, color], Vector3.BACK)
 
 
 func _stars_mesh() -> Mesh:
@@ -578,7 +560,7 @@ func _show_sky(altitude: float, azimuth: float) -> void:
 	var dawn := clampf(1.0 - absf(altitude) / DAWN_WIDTH, 0.0, 1.0)
 	var top := (SKY_NIGHT[0] as Color).lerp(SKY_DAY[0], day).lerp(SKY_DAWN[0], dawn * 0.55)
 	var low := (SKY_NIGHT[1] as Color).lerp(SKY_DAY[1], day).lerp(SKY_DAWN[1], dawn * 0.9)
-	_sky.mesh = _sky_mesh(top, low)
+	_sky.mesh = WindowArt.sky_mesh(WINDOW_SIZE, top, low)
 	_stars.visible = altitude < -TWILIGHT * 0.6
 	var light := lerpf(0.32, 1.0, day)
 	_yard_material.set_shader_parameter("tint", Color(light, light, lerpf(0.55, 1.0, day)))
@@ -589,13 +571,3 @@ func _show_sky(altitude: float, azimuth: float) -> void:
 	var y := hy + clampf(altitude / 60.0, -0.5, 1.0) * (half.y - PICTURE_SUN * 1.5 - hy)
 	_sun_disc.position = Vector3(x, y, 0.012)
 	_sun_disc.visible = altitude > -PICTURE_SUN * 30.0
-
-
-static func _sky_mesh(top: Color, low: Color) -> Mesh:
-	var b := ArtKit.builder()
-	b.ao_min = 1.0
-	var half := WINDOW_SIZE * 0.5
-	var corners := [Vector3(-half.x, -half.y, 0.0), Vector3(half.x, -half.y, 0.0), Vector3(half.x, half.y, 0.0), Vector3(-half.x, half.y, 0.0)]
-	b.add_triangle([corners[0], corners[1], corners[2]], [low, low, top], Vector3.BACK)
-	b.add_triangle([corners[0], corners[2], corners[3]], [low, top, top], Vector3.BACK)
-	return b.commit()

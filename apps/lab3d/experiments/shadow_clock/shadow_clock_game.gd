@@ -36,9 +36,9 @@ const LAND_FROM_STONE := Vector3(1.2, 0.0, 1.2)
 var _lid: Node3D
 var _lamps: MeshInstance3D
 var _glow: ClueGlow
-var _glint_at := -10.0
-var _open_at := -10.0
-var _flash_until := -10.0
+var _glint_at := NEVER
+var _open_at := NEVER
+var _flash_until := NEVER
 
 
 func _props() -> ShadowClockProps:
@@ -101,9 +101,7 @@ func _cleared(stage_index: int, last: bool) -> void:
 	_glint_at = _t
 	_lamps.mesh = lamps_mesh(stage_index + 1)
 	SoundBoard.play(&"glint")
-	var cat := _props().cat
-	if cat != null:
-		cat.cheer(true, 2 if last else 1)
+	cheer_cat(last)
 	if last:
 		_open_at = _t
 		_flash_until = _t + FLASH_S
@@ -112,7 +110,7 @@ func _cleared(stage_index: int, last: bool) -> void:
 
 func _jump(stamps: int) -> void:
 	_lamps.mesh = lamps_mesh(mini(stamps, stages))
-	_open_at = -10.0
+	_open_at = NEVER
 	_set_open(1.0 if stamps >= stages else 0.0)
 
 
@@ -122,25 +120,16 @@ func highlight_radius() -> float:
 
 func _process(delta: float) -> void:
 	super(delta)
-	if _glow != null and _flash_until > 0.0 and _t > _flash_until:
-		_flash_until = -10.0
+	if _glow != null and due(_flash_until):
+		_flash_until = NEVER
 		_glow.set_on(false)
 	if piece == null or piece_state != "held":
 		return
-	var k := (_t - _glint_at) / GLINT_S
-	piece.scale = Vector3.ONE * (1.0 + GLINT_SWELL * sin(PI * clampf(k, 0.0, 1.0)))
-	if _open_at > 0.0:
-		var o := smooth((_t - _open_at) / OPEN_S)
+	piece.scale = Vector3.ONE * (1.0 + GLINT_SWELL * pulse(_glint_at, GLINT_S))
+	if running(_open_at):
+		var o := eased(_open_at, OPEN_S)
 		_set_open(o)
 		if o >= 1.0:
-			_open_at = -10.0
-			_launch()
-
-
-## Out of the open cage: up and over onto the yard in front of the stone in FLIGHT_S (the lab's g).
-func _launch() -> void:
-	var land := _props().stone_at + LAND_FROM_STONE + Vector3.UP * piece_size
-	var from := piece.global_position
-	var g := lab_g()
-	var v := (land - from) / FLIGHT_S + Vector3.UP * 0.5 * g * FLIGHT_S
-	launch_piece(v, g, 0.0)
+			_open_at = NEVER
+			# Out of the open cage: up and over onto the yard in front of the stone.
+			launch_to(_props().stone_at + LAND_FROM_STONE, FLIGHT_S)

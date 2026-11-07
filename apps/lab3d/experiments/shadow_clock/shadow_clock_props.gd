@@ -171,7 +171,7 @@ func shadow_mesh(tip: Vector3) -> Mesh:
 		b.add_triangle([a0 - side, e0 + side, e0 - side], c, Vector3.UP)
 		b.add_triangle([a0 - side, a0 + side, e0 + side], c, Vector3.UP)
 	if length <= SHADOW_MAX:
-		_flat_disc(b, Vector3(tip.x, ground_at(tip.x, tip.z) + SHADOW_LIFT * 1.5, tip.z), TIP_RADIUS, SHADOW, 16)
+		ArtKit.flat_disc(b, Vector3(tip.x, ground_at(tip.x, tip.z) + SHADOW_LIFT * 1.5, tip.z), TIP_RADIUS, SHADOW, 16)
 	return b.commit()
 
 
@@ -249,10 +249,3 @@ func _ring_mesh(lit: bool) -> Mesh:
 		b.add_triangle([c + d0 * inner, c + d1 * outer, c + d0 * outer], [color, color, color], Vector3.UP)
 		b.add_triangle([c + d0 * inner, c + d1 * inner, c + d1 * outer], [color, color, color], Vector3.UP)
 	return b.commit()
-
-
-static func _flat_disc(b: ArtMeshBuilder, c: Vector3, r: float, color: Color, sides := 12) -> void:
-	for i in sides:
-		var a0 := TAU * i / sides
-		var a1 := TAU * (i + 1) / sides
-		b.add_triangle([c, c + Vector3(cos(a1), 0.0, sin(a1)) * r, c + Vector3(cos(a0), 0.0, sin(a0)) * r], [color, color, color], Vector3.UP)

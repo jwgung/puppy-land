@@ -20,6 +20,11 @@ const CHEST_DARK := Color("8f5a2c")
 const CHEST_GOLD := Color("ffc61a")
 const LAMP_OFF := Color("6b7a90")
 const LAMP_ON := Color("ffe14a")
+## A piece that hides small in its object (make_piece with a smaller size) and is launched with
+## `grow` (launch_to) grows back to PIECE_SIZE on its flight at this rate (1/s, the lerp's rate).
+const GROW_RATE := 6.0
+## A game timer that is not running (an "at" or "until" time; see running, progress, due).
+const NEVER := -10.0
 
 var lab: Experiment
 ## The stages of the round (the missions' stage count) and the stamps the screen showed last.
@@ -40,6 +45,7 @@ var _fly_g := 9.81
 var _fly_t := 0.0
 var _hops := 0
 var _rest_at := Vector3.ZERO
+var _grow_from := 0.0                      # the hidden size a launch_to(grow) piece grows from (0: none)
 ## The clue's faint glow (2026-10-29 user "해당 포인트를 희미하게 강조"): while Puppy says the lab's
 ## clue, the object holding the piece glows (ClueGlow, built on the first clue; none in a bench run,
 ## which has no story). [glow, spot index] pairs following highlight_spots().
@@ -176,6 +182,24 @@ func launch_piece(v: Vector3, g: float, ground := 0.0) -> void:
 	SoundBoard.play(&"glint")
 
 
+## Releases the piece on an arc (the lab's gravity, lab_g) that lands on `spot` in `flight_s` seconds:
+## the piece rests on its point there (its centre piece_size above `spot`), the floor at `ground`.
+## `grow`: a piece hidden small in its object (make_piece with a smaller size) lands at PIECE_SIZE,
+## growing on the way (GROW_RATE). The usual spot is beside the bread cat: lab_cat().global_position
+## + an offset.
+func launch_to(spot: Vector3, flight_s: float, ground := 0.0, grow := false) -> void:
+	if piece == null:
+		return
+	if grow:
+		_grow_from = piece_size
+		piece_size = PIECE_SIZE
+	var land := spot + Vector3.UP * piece_size
+	var from := piece.global_position
+	var g := lab_g()
+	var v := (land - from) / flight_s + Vector3.UP * 0.5 * g * flight_s
+	launch_piece(v, g, ground)
+
+
 ## Where the released piece is `t` seconds after its launch (the uniform-gravity formula).
 static func fly_point(from: Vector3, v: Vector3, g: float, t: float) -> Vector3:
 	return from + v * t + Vector3.DOWN * 0.5 * g * t * t
@@ -226,10 +250,61 @@ func _process(delta: float) -> void:
 		"out":
 			piece.global_position = _rest_at + Vector3.UP * 0.05 * absf(sin(_t * 3.0))
 			piece.rotation.y = sin(_t * PIECE_SPIN) * 0.6
+	if _grow_from > 0.0 and piece_state in ["flying", "out"]:
+		piece.scale = piece.scale.lerp(Vector3.ONE * (PIECE_SIZE / _grow_from), clampf(delta * GROW_RATE, 0.0, 1.0))
 
 
 func fly_velocity_y() -> float:
 	return _fly_v.y - _fly_g * _fly_t
+
+
+# --- the bread cat ---------------------------------------------------------------------------------
+
+## The lab's bread cat (its props' `cat`), or null when the lab has none (a bench run, no props).
+func lab_cat() -> CatActor:
+	var l: Variant = host()
+	if l == null or not ("props" in l) or l.props == null or not ("cat" in l.props):
+		return null
+	return l.props.cat as CatActor
+
+
+## The bread cat cheers a stamp (a bigger cheer for the round's `last` one), if the lab has one.
+func cheer_cat(last: bool) -> void:
+	var cat := lab_cat()
+	if cat != null:
+		cat.cheer(true, 2 if last else 1)
+
+
+# --- timers -----------------------------------------------------------------------------------------
+# A game keeps its animations as start times on the game clock (`_t`, seconds since the game was
+# built): `var _open_at := NEVER`, `_open_at = _t` in _cleared, `_open_at = NEVER` in _jump, and in
+# _process `if running(_open_at): var o := eased(_open_at, OPEN_S)`. An end time works the same way
+# (`_flash_until = _t + FLASH_S`, `if due(_flash_until): …`).
+
+## The timer started at `at` is running (not NEVER).
+func running(at: float) -> bool:
+	return at > 0.0
+
+
+## The share of `duration` gone since `at` (not clamped: past 1 when over, very large for NEVER).
+func progress(at: float, duration: float) -> float:
+	return (_t - at) / duration
+
+
+## progress() eased 0..1 (smooth): an opening lid, petals, a rock's halves.
+func eased(at: float, duration: float) -> float:
+	return smooth(progress(at, duration))
+
+
+## A swell 0 → 1 → 0 over `duration` since `at` (0 before and after): a glint's
+## `piece.scale = Vector3.ONE * (1.0 + SWELL * pulse(_glint_at, GLINT_S))`.
+func pulse(at: float, duration: float) -> float:
+	return sin(PI * clampf(progress(at, duration), 0.0, 1.0))
+
+
+## The end time `until` is set and passed now (then reset it to NEVER).
+func due(until: float) -> bool:
+	return running(until) and _t > until
 
 
 # --- small shared pieces of the objects ------------------------------------------------------------
