@@ -4,8 +4,9 @@
 ## the moon and Jupiter, a light or a heavy box, a steel, wooden or rubber slide, a planet near or far
 ## from its star, a gentle or a steep slope, one, two or four ropes, the hand near or far on the lever,
 ## a small or a big ball (blue, orange, the free fall's red), a big or a small drum, a weight, a short
-## or a long string, the Earth with its axis tilted or upright (#87). `size` (0..1) and `count` say how
-## much the drawing shows (kid.picks entries). The words under the picture say the same thing.
+## or a long string, a short or a long stick (#86), the Earth with its axis tilted or upright (#87).
+## `size` (0..1) and `count` say how much the drawing shows (kid.picks entries). The words under the
+## picture say the same thing.
 ## A mass's picture (a ball, a box, a weight) is drawn like the lab draws the body (2026-10-28,
 ## MassLook): `size` is its share of the biggest one, the cube root of the mass over the lab's
 ## heaviest button (tests/easy_controls_checks.gd checks the definitions), so equal masses draw equal
@@ -15,7 +16,7 @@ extends RefCounted
 
 const KINDS := ["earth", "moon", "jupiter", "box", "slide_steel", "slide_wood", "slide_rubber", "orbit",
 	"slope", "pulley", "lever", "ball_blue", "ball_orange", "ball_red", "drum_big", "drum_small", "weight", "rope",
-	"earth_tilted", "earth_upright"]
+	"stick", "earth_tilted", "earth_upright"]
 const OUTLINE := Color("8a6a46")   # PredictPictures.GROUND: the brown of the storybook lines
 const STEEL := ArtPalette.STEEL
 
@@ -122,6 +123,13 @@ static func draw(canvas: Control, kind: String, size := 0.5, count := 1) -> void
 			canvas.draw_line(top, bob, Color("ffffff"), 3.0)
 			canvas.draw_line(top, bob, OUTLINE, 1.0)
 			canvas.draw_circle(bob, 8.0, ArtPalette.BLUE)
+		"stick":   # #86 (그림자 시계): the yard's stick, `size` of the picture's height (short / long)
+			_ground(canvas, r)
+			var foot := Vector2(c.x, r.end.y - 2.0)
+			var top := foot - Vector2(0.0, lerpf(10.0, r.size.y - 10.0, size))
+			canvas.draw_line(foot, top, ArtPalette.WOOD_GRAIN, 7.0, true)
+			canvas.draw_line(foot, top, ArtPalette.WOOD, 4.0, true)
+			canvas.draw_circle(top, 6.0, ArtPalette.RED)
 
 
 ## The Earth (as "earth") with its axis through it, leaning `tilt` deg to the left (the 계절 lab's

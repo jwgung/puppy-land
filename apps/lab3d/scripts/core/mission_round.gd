@@ -734,7 +734,8 @@ func clue_read() -> void:
 
 
 ## The lines of a spot's first visit (dialogue_line() each): the island keeper's (story.keeper, #74:
-## the fox tells what is wrong there) and Puppy's clue (story.clue); [] without them.
+## the fox tells what is wrong there), Puppy's clue (story.clue) and the keeper's answer to it
+## (story.keeper_reply, #86); [] without them.
 static func first_visit_lines(definition: Dictionary) -> Array:
 	var out := []
 	var keeper := Story.keeper(definition)
@@ -743,6 +744,9 @@ static func first_visit_lines(definition: Dictionary) -> Array:
 	var clue := Story.clue(definition)
 	if clue != "":
 		out.append(dialogue_line(clue, Story.clue_face(definition), "", "puppy"))
+	var reply := Story.keeper_reply(definition)
+	if reply != "":
+		out.append(dialogue_line(reply, Story.keeper_reply_face(definition), "", Story.KEEPER))
 	return out
 
 
