@@ -38,6 +38,11 @@ const TABLET := Vector2(1152, 720)
 const EDGE := 0.03
 const TOP_FREE := 0.2
 const BOTTOM_FREE := 0.8
+## The mission strip at the top left (under the title and the card; #94 review: the stage 3 typhoon
+## and its weakening cloud hid under it): what matters keeps out of it, its right end is this many UI
+## units from the left (the longest mission line), its bottom this share of the height.
+const STRIP_RIGHT := 720.0
+const STRIP_BOTTOM := 0.34
 ## The typhoon at least this share of the view's width (it reads as big on a phone).
 const STORM_MIN := 0.2
 const LINE_MAX := 24
@@ -510,6 +515,8 @@ func check_in_view() -> void:
 			var p: Vector2 = at.call(world)
 			if p.x < EDGE or p.x > 1.0 - EDGE or p.y < TOP_FREE or p.y > BOTTOM_FREE:
 				problems.append("%s: %s at %s" % [str(size), what, str(p)])
+			elif p.x < STRIP_RIGHT / size.x and p.y < STRIP_BOTTOM:
+				problems.append("%s: %s under the mission strip at %s" % [str(size), what, str(p)])
 		var cloud := func(xz: Vector2, radius: float, what: String) -> void:
 			var c := TyphoonProps.cloud_point(xz.x, xz.y)
 			for d: Vector3 in [Vector3.ZERO, Vector3.LEFT, Vector3.RIGHT, Vector3.FORWARD, Vector3.BACK]:
@@ -520,7 +527,6 @@ func check_in_view() -> void:
 		cloud.call(Vector2(to.x, to.z), TyphoonProps.Cloud.RAIN_R, "the stage 1 guide's end")
 		if TyphoonModel.place_at(to.x, to.z) != "sea":
 			problems.append("%s: the stage 1 guide ends on %s" % [str(size), TyphoonModel.place_at(to.x, to.z)])
-		cloud.call(COLD, TyphoonProps.Cloud.SMALL_R, "the cold strip")
 		inside.call(Vector3(TyphoonModel.ISLAND_CENTER.x, TyphoonProps.ISLAND_TOP, TyphoonModel.ISLAND_CENTER.y), "the island")
 		lab.set_game_stage(TyphoonLab.STORM_STAGE, 2, false)
 		cloud.call(TyphoonModel.STORM_START, TyphoonProps.Cloud.SWIRL_R, "the typhoon")
@@ -530,13 +536,25 @@ func check_in_view() -> void:
 			problems.append("%s: the typhoon spans %.2f of the width" % [str(size), width])
 		guide = m.guide()
 		to = guide.get("to", Vector3.ZERO)
-		cloud.call(Vector2(to.x, to.z), TyphoonProps.Cloud.SMALL_R, "the stage 3 guide's end")
+		# The cloud weakens there: from a rain cloud's size down to a small one, clear of the strip.
+		cloud.call(Vector2(to.x, to.z), TyphoonProps.Cloud.RAIN_R, "the stage 3 guide's end")
 		if TyphoonModel.place_at(to.x, to.z) != "cold":
 			problems.append("%s: the stage 3 guide ends on %s" % [str(size), TyphoonModel.place_at(to.x, to.z)])
+		# The rainbow of the last stamp rises clear of the weakened cloud there.
+		var bow := TyphoonGame.rainbow_at(to.x)
+		var arch := Rect2(at.call(bow + Vector3.LEFT * TyphoonGame.RAINBOW_R), Vector2.ZERO)
+		for p: Vector3 in [Vector3.RIGHT * TyphoonGame.RAINBOW_R, Vector3.UP * TyphoonGame.RAINBOW_R]:
+			arch = arch.expand(at.call(bow + p))
+		var weak := TyphoonProps.cloud_point(to.x, to.z)
+		var puff := Rect2(at.call(weak + Vector3.LEFT * TyphoonProps.Cloud.SMALL_R), Vector2.ZERO)
+		for d: Vector3 in [Vector3.RIGHT, Vector3.UP, Vector3.DOWN]:
+			puff = puff.expand(at.call(weak + d * TyphoonProps.Cloud.SMALL_R))
+		if arch.intersects(puff):
+			problems.append("%s: the rainbow %s meets the weakened cloud %s" % [str(size), str(arch), str(puff)])
 		seen.append("%s typhoon %.2f wide" % [str(size), width])
 		host.queue_free()
 		await tree.process_frame
-	expect.call(problems.is_empty(), "typhoon in view: the small cloud's start and the stage 1 guide's end (open sea), the typhoon (%.0f%% of the width or more) and the stage 3 guide's end (cold strip), the cold strip and the island between the top band (%.0f%%) and the bottom %.0f%% (phone, desktop and tablet)" % [STORM_MIN * 100.0, TOP_FREE * 100.0, (1.0 - BOTTOM_FREE) * 100.0],
+	expect.call(problems.is_empty(), "typhoon in view: the small cloud's start and the stage 1 guide's end (open sea), the typhoon (%.0f%% of the width or more) and the stage 3 guide's end (cold strip) and the island between the top band (%.0f%%) and the bottom %.0f%%, none under the mission strip; the last rainbow clear of the weakened cloud (phone, desktop and tablet)" % [STORM_MIN * 100.0, TOP_FREE * 100.0, (1.0 - BOTTOM_FREE) * 100.0],
 		"; ".join(problems.slice(0, 5) + seen))
 
 

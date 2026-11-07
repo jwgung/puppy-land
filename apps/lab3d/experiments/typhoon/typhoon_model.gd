@@ -45,11 +45,11 @@ const BASIN_RADIUS := 8.8
 const COLD_Z := -2.6
 const ISLAND_CENTER := Vector2(4.6, 0.6)
 const ISLAND_RADII := Vector2(2.4, 1.8)
-const REACH_MIN := Vector2(-7.0, -5.2)
+const REACH_MIN := Vector2(-7.0, -5.6)
 const REACH_MAX := Vector2(7.0, 3.2)
 ## The starts: the small cloud on the island's beach; the typhoon out at sea (the last stage).
 const CLOUD_START := Vector2(3.4, 1.0)
-const STORM_START := Vector2(-4.6, -0.4)
+const STORM_START := Vector2(-5.4, 1.3)
 ## A change of strength this small has arrived.
 const ARRIVED_SIZE := 1e-6
 

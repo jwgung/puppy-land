@@ -46,8 +46,8 @@ const WISP_RISE := 1.5
 const WISP_S := 2.4
 const WISPS_WARM := 7
 ## The way to the island (last stage): from the typhoon's edge to the beach.
-const WAY_FROM := Vector3(-1.2, SEA_Y + 0.05, 0.0)
-const WAY_TO := Vector3(2.0, SEA_Y + 0.05, 0.7)
+const WAY_FROM := Vector3(-2.3, SEA_Y + 0.05, 1.2)
+const WAY_TO := Vector3(2.0, SEA_Y + 0.05, 0.9)
 const WAY_COLOR := Color("ff7a1a")
 
 var cat: CatActor
@@ -299,7 +299,7 @@ class Cloud:
 	## The puffs' radius at a small cloud and at a full rain cloud (m), the spiral's at a full typhoon.
 	const SMALL_R := 0.75
 	const RAIN_R := 1.45
-	const SWIRL_R := 3.2
+	const SWIRL_R := 2.8
 	const ARMS := 3
 	## The eye's radius (a share of the spiral's).
 	const EYE := 0.22
@@ -335,9 +335,9 @@ class Cloud:
 		foam.name = "Foam"
 		foam.position = Vector3(0.0, -CLOUD_HEIGHT + 0.02, 0.0)
 		add_child(foam)
-		var blob := ArtKit.shadow_builder()
-		blob.add_blob(Transform3D(), 1.0, ArtKit.shadow_alpha(1.3))
-		shadow = ArtKit.instance(blob.commit(), ArtKit.shadow_material())
+		# A round soft shadow (radius 1): the builder's blob is a rounded square, which read as a grey
+		# square on the pale cold strip under a far, high cloud (#94 review).
+		shadow = ArtKit.instance(_shadow_mesh(), ArtKit.shadow_material())
 		shadow.name = "Shadow"
 		shadow.position = Vector3(0.0, -CLOUD_HEIGHT + 0.03, 0.0)
 		add_child(shadow)
@@ -368,6 +368,9 @@ class Cloud:
 		foam.scale = Vector3.ONE * maxf(0.001, swirl_radius)
 		var shade := maxf(puff_radius, swirl_radius) * 1.1
 		shadow.scale = Vector3(shade, 1.0, shade)
+		# Only under a rain cloud or a typhoon, joined to the sea by its rain: under a small or a weakened
+		# cloud high over the far sea it floated apart from it as a grey patch (#94 review).
+		shadow.visible = raining
 
 	## The spiral and the foam turn (faster the stronger), the rain falls.
 	func animate(delta: float) -> void:
@@ -377,6 +380,32 @@ class Cloud:
 		foam.rotation.y += SPIN * 0.5 * storm * delta
 		puffs.rotation.y += SPIN * 0.4 * storm * delta
 		rain.position.y = -fposmod(_t / RAIN_FALL_S, 1.0) * 0.6
+
+	## The cloud's shadow on the sea (radius 1): a round patch, darkest in the middle, fading to nothing
+	## at its rim.
+	static func _shadow_mesh() -> Mesh:
+		var b := ArtKit.shadow_builder()
+		var alpha := ArtKit.shadow_alpha()
+		var rings: Array[Vector2] = [Vector2(0.0, alpha), Vector2(0.55, alpha * 0.8), Vector2(1.0, 0.0)]
+		var c := ArtPalette.SHADOW
+		var sides := 24
+		for ring in rings.size() - 1:
+			var r0: float = rings[ring].x
+			var r1: float = rings[ring + 1].x
+			var c0 := Color(c.r, c.g, c.b, rings[ring].y)
+			var c1 := Color(c.r, c.g, c.b, rings[ring + 1].y)
+			for k in sides:
+				var a0 := TAU * k / sides
+				var a1 := TAU * (k + 1) / sides
+				var i0 := Vector3(cos(a0), 0.0, sin(a0)) * r0
+				var i1 := Vector3(cos(a1), 0.0, sin(a1)) * r0
+				var o0 := Vector3(cos(a0), 0.0, sin(a0)) * r1
+				var o1 := Vector3(cos(a1), 0.0, sin(a1)) * r1
+				# (Wound to face up, as ArtKit.flat_disc: the material culls back faces.)
+				if r0 > 0.0:
+					b.add_triangle([i0, i1, o1], [c0, c0, c1])
+				b.add_triangle([i0, o1, o0], [c0, c1, c1])
+		return b.commit()
 
 	## The puffs (radius 1): a round heap of balls, the top ones bigger.
 	static func _puff_mesh() -> Mesh:

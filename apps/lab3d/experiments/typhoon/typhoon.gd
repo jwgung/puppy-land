@@ -26,6 +26,10 @@ const KNOB_ID := "cloud"
 const KNOB_BOX := 2.4
 ## The stage (0-based) that starts from the typhoon at sea.
 const STORM_STAGE := 2
+## The last stage's region reaches this far right (world x, past the basin: the shore is land) so the
+## hand guide's corner takes the typhoon up and right, to the cold strip right of the mission strip
+## at the top left (#94 review: it hid the weakening cloud on the tablet).
+const STORM_REACH_X := 11.5
 ## The size graph ("자세히"): one point per this many seconds, at most GRAPH_POINTS.
 const GRAPH_EVERY := 0.25
 const GRAPH_POINTS := 160
@@ -114,7 +118,7 @@ func manipulation_surface(_surface_id: String) -> ManipSurface:
 	if storm_run():
 		# Turned a quarter the other way: plane x = world z, plane z = world -x.
 		var back := Basis(Vector3.UP, -PI * 0.5)
-		return ManipSurface.new(Transform3D(back, Vector3(0.0, y, 0.0)), Vector2(lo.y, -hi.x), Vector2(hi.y, -lo.x))
+		return ManipSurface.new(Transform3D(back, Vector3(0.0, y, 0.0)), Vector2(lo.y, -STORM_REACH_X), Vector2(hi.y, -lo.x))
 	# Turned a quarter about y: plane x = world -z, plane z = world x.
 	var turn := Basis(Vector3.UP, PI * 0.5)
 	return ManipSurface.new(Transform3D(turn, Vector3(0.0, y, 0.0)), Vector2(-hi.y, lo.x), Vector2(-lo.y, hi.x))

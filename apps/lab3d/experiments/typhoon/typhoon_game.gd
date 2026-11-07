@@ -17,9 +17,12 @@ const GLINT_SWELL := 1.2
 ## The jump out (the last stage): FLIGHT_S onto the island's beach, beside the cat.
 const FLIGHT_S := 1.1
 const LAND_AT := Vector3(3.9, TyphoonProps.ISLAND_TOP, 0.9)
-## The rainbow over the calm sea: its middle, radius (m) and the time it takes to rise.
-const RAINBOW_AT := Vector3(-1.5, TyphoonProps.SEA_Y, -6.5)
-const RAINBOW_R := 4.2
+## The rainbow over the calm sea, on the far shore: its middle RAINBOW_SIDE left or right of the
+## basin's middle, on the side away from the weakened cloud (#94 review: it rose behind the cloud),
+## its radius (m) and the time it takes to rise.
+const RAINBOW_Z := -6.8
+const RAINBOW_SIDE := 3.6
+const RAINBOW_R := 3.4
 const RAINBOW_S := 1.4
 const RAINBOW := [Color("ff5a4f"), Color("ff9440"), Color("ffd84a"), Color("5fd04a"), Color("4aa8f5"), Color("7a5cf0")]
 const HIGHLIGHT_R := 1.6
@@ -40,7 +43,7 @@ func build() -> void:
 	storm.position = TyphoonProps.cloud_point(TyphoonModel.STORM_START.x, TyphoonModel.STORM_START.y)
 	rainbow = ArtKit.instance(_rainbow_mesh())
 	rainbow.name = "Rainbow"
-	rainbow.position = RAINBOW_AT
+	rainbow.position = rainbow_at(0.0)
 	add_child(rainbow)
 	make_piece(_eye(), HIDDEN_SIZE)
 	_jump(0)
@@ -65,6 +68,7 @@ func _cleared(_stage_index: int, last: bool) -> void:
 	_glint_at = _t
 	if last:
 		_rainbow_at = _t
+		rainbow.position = rainbow_at((host().props.cloud as Node3D).position.x)
 		rainbow.visible = true
 		# Out of the weakened cloud: up on an arc onto the island beside the cat, at the round's size.
 		launch_to(LAND_AT, FLIGHT_S, TyphoonProps.ISLAND_TOP, true)
@@ -75,6 +79,12 @@ func _jump(stamps: int) -> void:
 	_rainbow_at = NEVER
 	rainbow.visible = stamps >= stages
 	rainbow.scale = Vector3.ONE
+
+
+## Where the rainbow stands for a weakened cloud at world x `cloud_x`: on the far side of the basin,
+## left of its middle for a cloud on the right, else right.
+static func rainbow_at(cloud_x: float) -> Vector3:
+	return Vector3(-RAINBOW_SIDE if cloud_x > TyphoonModel.BASIN_CENTER.x - 1.0 else RAINBOW_SIDE, TyphoonProps.SEA_Y, RAINBOW_Z)
 
 
 func highlight_radius() -> float:
