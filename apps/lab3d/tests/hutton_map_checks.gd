@@ -14,8 +14,8 @@ const PHONE := Vector2(1560, 720)
 const ORDER := ["day-night", "shadow-clock", "seasons", "water-cycle", "dew-cloud", "sea-breeze", "typhoon",
 	"river", "strata", "earthquake", "volcano"]
 const ZONES := {"hill": "hill", "coast": "coast", "valley": "valley"}
-## The hutton spots that are experiments so far (#74, #86, #87, #91, #92, #93, #94, #95, #96); the island opens when all are.
-const EXPERIMENTS := ["day-night", "shadow-clock", "seasons", "water-cycle", "dew-cloud", "sea-breeze", "typhoon", "river", "strata"]
+## The hutton spots that are experiments so far (#74, #86, #87, #91, #92, #93, #94, #95, #96, #97); the island opens when all are.
+const EXPERIMENTS := ["day-night", "shadow-clock", "seasons", "water-cycle", "dew-cloud", "sea-breeze", "typhoon", "river", "strata", "earthquake"]
 const LAB_VERTS_MAX := 30000   # lab_world_checks.VERTS_MAX
 ## The mechanics island's map and two of its lab worlds (built at the origin) as they were before the
 ## hutton island (#72). The hutton features add nothing to an island without them; a change here must

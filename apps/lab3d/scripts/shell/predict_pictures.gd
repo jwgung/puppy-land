@@ -31,7 +31,9 @@ const KINDS := ["long_arc", "same_arc", "fall_together", "fall_heavy_first", "li
 	# #95 (강물이 깎고 쌓기): where does the water cut the land most, the steep land or the flat land?
 	"cut_steep", "cut_flat",
 	# #96 (지층 쌓기): which layer is the oldest, the bottom one or the top one?
-	"strata_bottom", "strata_top"]
+	"strata_bottom", "strata_top",
+	# #97 (지진): which ground shakes more, rock or sand?
+	"quake_rock", "quake_sand"]
 const STRONG := Color("e2683c")
 const PALE := Color("c9b892")
 const GROUND := Color("8a6a46")
@@ -112,6 +114,8 @@ static func draw(canvas: Control, kind: String) -> void:
 			_cuts(canvas, r, kind == "cut_steep")
 		"strata_bottom", "strata_top":
 			_strata(canvas, r, kind == "strata_bottom")
+		"quake_rock", "quake_sand":
+			_quake(canvas, r, kind == "quake_sand")
 		_:
 			_ground(canvas, r)
 
@@ -561,6 +565,42 @@ static func _shadow(canvas: Control, r: Rect2, short: bool) -> void:
 		arrow.append(from.lerp(sun + Vector2(-16.0, 4.0), t) + Vector2(0.0, -sin(PI * t) * 6.0))
 	canvas.draw_polyline(arrow, STRONG, 3.0, true)
 	_arrow(canvas, arrow[-2], arrow[-1], STRONG, 3.0)
+
+
+## Grey rock (left) and yellow sand (right), a little house on each: the one the choice says shakes
+## big (orange wiggles either side of its house, the house leaning), the other only a little (pale).
+static func _quake(canvas: Control, r: Rect2, sand: bool) -> void:
+	var ground := r.end.y - r.size.y * 0.22
+	for side in 2:
+		var is_sand := side == 1
+		var mid := r.position.x + r.size.x * (0.26 if side == 0 else 0.74)
+		var w := r.size.x * 0.4
+		var slab := Rect2(mid - w * 0.5, ground, w, r.size.y * 0.2)
+		if is_sand:
+			canvas.draw_rect(slab, Color("f3d88c"))
+			canvas.draw_line(Vector2(slab.position.x + 6.0, ground + 6.0), Vector2(slab.end.x - 6.0, ground + 6.0), Color("d9ae4e"), 2.0, true)
+		else:
+			canvas.draw_rect(slab, STEEL)
+			canvas.draw_rect(Rect2(slab.position + Vector2(w * 0.2, 4.0), Vector2(w * 0.2, 4.0)), Color("c3cad6"))
+		var big := is_sand == sand
+		var lean := 0.22 if big else 0.0
+		var hw := w * 0.22
+		var hh := r.size.y * 0.3
+		var foot := Vector2(mid, ground)
+		var up := Vector2(sin(lean), -cos(lean))
+		var across := Vector2(cos(lean), sin(lean))
+		var body := PackedVector2Array([foot - across * hw, foot + across * hw, foot + across * hw + up * hh, foot - across * hw + up * hh])
+		canvas.draw_colored_polygon(body, Color("fbf4e2"))
+		canvas.draw_polyline(PackedVector2Array([body[0], body[1], body[2], body[3], body[0]]), GROUND, 1.5, true)
+		var roof := PackedVector2Array([body[3] - across * 4.0, body[2] + across * 4.0, foot + up * (hh + r.size.y * 0.17)])
+		canvas.draw_colored_polygon(roof, Color("ff5a4f"))
+		var color := STRONG if big else PALE
+		var reach := w * (0.45 if big else 0.32)
+		for s: float in [-1.0, 1.0]:   # the wiggles either side of the house
+			var wig := PackedVector2Array()
+			for k in 7:
+				wig.append(Vector2(mid + s * reach + (3.5 if k % 2 == 0 else -3.5) * (1.6 if big else 0.8), ground - 4.0 - k * hh * 0.14))
+			canvas.draw_polyline(wig, color, 3.0 if big else 2.0, true)
 
 
 ## The sun (middle) and an upright Earth on either side of its path: over the two Earths a snowflake

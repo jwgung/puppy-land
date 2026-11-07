@@ -26,7 +26,8 @@
       "sea-breeze.json",
       "typhoon.json",
       "river.json",
-      "strata.json"
+      "strata.json",
+      "earthquake.json"
     ]
   }
 }

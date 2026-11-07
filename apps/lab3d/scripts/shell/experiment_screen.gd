@@ -651,6 +651,12 @@ func _fit_slingshot_hud() -> void:
 	if _mission_pill != null:
 		top = maxf(top, _mission_pill.get_rect().end.y)
 	_slingshot_hud.position = Vector2((view.size.x - _slingshot_hud.size.x) * 0.5, top + 16.0)
+	# #97: a lab whose middle the readout would hide names its own spot (slingshot_setup `readout_at`:
+	# () -> a world point): centred there, kept inside the view and under the top band.
+	var spot: Callable = _slingshot_spec.get("readout_at", Callable())
+	if spot.is_valid():
+		var at := view_point(spot.call()) - _slingshot_hud.size * 0.5
+		_slingshot_hud.position = Vector2(clampf(at.x, 16.0, maxf(16.0, view.size.x - _slingshot_hud.size.x - 16.0)), maxf(at.y, top + 16.0))
 
 
 ## Manipulator.slingshot: "rearm" resets a finished run (the next shot), "pull" moves the readout
