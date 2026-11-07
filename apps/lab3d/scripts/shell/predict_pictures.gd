@@ -23,7 +23,9 @@ const KINDS := ["long_arc", "same_arc", "fall_together", "fall_heavy_first", "li
 	# #91 (물의 여행): does warmed seawater rise into the sky, or stay in the sea?
 	"water_rises", "water_stays",
 	# #92 (구름과 이슬): the drops on a cold cup, from the air or from inside?
-	"dew_from_air", "dew_from_inside"]
+	"dew_from_air", "dew_from_inside",
+	# #93 (바닷바람): on a sunny day, does the wind blow from the sea or from the land?
+	"breeze_from_sea", "breeze_from_land"]
 const STRONG := Color("e2683c")
 const PALE := Color("c9b892")
 const GROUND := Color("8a6a46")
@@ -96,6 +98,8 @@ static func draw(canvas: Control, kind: String) -> void:
 			_water(canvas, r, kind == "water_rises")
 		"dew_from_air", "dew_from_inside":
 			_dew(canvas, r, kind == "dew_from_air")
+		"breeze_from_sea", "breeze_from_land":
+			_breeze(canvas, r, kind == "breeze_from_sea")
 		_:
 			_ground(canvas, r)
 
@@ -680,3 +684,32 @@ static func _dew(canvas: Control, r: Rect2, from_air: bool) -> void:
 		for side: float in [-1.0, 1.0]:
 			var from := c + Vector2(side * 4.0, -h * 0.4)
 			_arrow(canvas, from, from + Vector2(side * (bottom + 14.0), -2.0), STRONG, 3.0)
+
+## A sunny coast as the 바닷바람 lab draws it (#93): the land on the left with a little house, the sea
+## on the right with waves, the sun over the land, and a big orange wind arrow low over the shore,
+## from the sea to the land ("breeze_from_sea") or from the land to the sea ("breeze_from_land").
+static func _breeze(canvas: Control, r: Rect2, from_sea: bool) -> void:
+	var shore := r.position.x + r.size.x * 0.5
+	var top := r.end.y - r.size.y * 0.24
+	canvas.draw_rect(Rect2(r.position.x, top, shore - r.position.x, r.end.y - top), Color("f3d88c"))
+	canvas.draw_rect(Rect2(r.position.x, top, shore - r.position.x, 4.0), LAND)
+	canvas.draw_rect(Rect2(shore, top + 5.0, r.end.x - shore, r.end.y - top - 5.0), WATER)
+	for k in 3:
+		var w := Vector2(shore + 12.0 + k * 20.0, top + 13.0 + (k % 2) * 5.0)
+		canvas.draw_arc(w, 5.0, PI * 1.1, PI * 1.9, 8, Color.WHITE, 2.0, true)
+	var house := Vector2(r.position.x + r.size.x * 0.2, top)
+	canvas.draw_rect(Rect2(house.x - 9.0, house.y - 13.0, 18.0, 13.0), Color("fff1d2"))
+	canvas.draw_colored_polygon(PackedVector2Array([house + Vector2(-12.0, -12.0), house + Vector2(0.0, -23.0), house + Vector2(12.0, -12.0)]), Color("e85a3c"))
+	_ground(canvas, r)
+	var sun := Vector2(r.position.x + r.size.x * 0.24, r.position.y + 14.0)
+	for k in 8:
+		var d := Vector2.from_angle(TAU * k / 8.0)
+		canvas.draw_line(sun + d * 13.0, sun + d * 18.0, SUN, 3.0, true)
+	canvas.draw_circle(sun, 10.0, SUN)
+	var y := top - r.size.y * 0.24
+	var sea_end := Vector2(r.end.x - 12.0, y)
+	var land_end := Vector2(r.position.x + r.size.x * 0.34, y)
+	if from_sea:
+		_arrow(canvas, sea_end, land_end, STRONG, 6.0)
+	else:
+		_arrow(canvas, land_end, sea_end, STRONG, 6.0)

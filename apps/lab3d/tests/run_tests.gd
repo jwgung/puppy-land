@@ -159,6 +159,11 @@
 ##    docs/islands/hutton-lines.md 5, the dew point against the textbook values, the cubes each day
 ##    needs and the parcel's cloud, the judging (the wrong day's line), the day button, no number on the
 ##    screen, the cup, the summit and the parcel in view, the spot, the opening, the hands and the piece.
+## 24f. 바닷바람 (tests/sea_breeze_checks.gd, #93 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 6, the land warming and cooling faster than the sea, the wind from the
+##    cooler side, the night's land breeze, the judging of the three stages (the wrong time's line), the
+##    hold on the sun, the day / night button, no number on the screen, the sun and the props in view,
+##    the spot, the opening lines (the fox, Puppy's two) and the piece.
 ## Times are engine fixed steps (60 Hz), independent of rendering FPS.
 extends SceneTree
 
@@ -392,6 +397,11 @@ func _run() -> void:
 	_expect(dew_cloud != null and dew_cloud.can_instantiate(), "dew-cloud checks compile", "")
 	if dew_cloud != null and dew_cloud.can_instantiate():
 		await dew_cloud.new(self, _expect).run()
+	print("== 바닷바람 (#93): Hutton Island's sea breeze lab, its lines, model, judging, hold, time button, view and piece ==")
+	var sea_breeze: GDScript = load("res://tests/sea_breeze_checks.gd")
+	_expect(sea_breeze != null and sea_breeze.can_instantiate(), "sea breeze checks compile", "")
+	if sea_breeze != null and sea_breeze.can_instantiate():
+		await sea_breeze.new(self, _expect).run()
 	print("== the hand guide (2026-10-30: the gesture on the lab's object, once and after a quiet while; the map's tap) ==")
 	var hand: GDScript = load("res://tests/hand_guide_checks.gd")
 	_expect(hand != null and hand.can_instantiate(), "hand guide checks compile", "")

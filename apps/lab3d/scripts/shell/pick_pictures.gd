@@ -17,7 +17,8 @@ extends RefCounted
 
 const KINDS := ["earth", "moon", "jupiter", "box", "slide_steel", "slide_wood", "slide_rubber", "orbit",
 	"slope", "pulley", "lever", "ball_blue", "ball_orange", "ball_red", "drum_big", "drum_small", "weight", "rope",
-	"stick", "earth_tilted", "earth_upright", "sun_weak", "sun_strong", "air_humid", "air_dry"]
+	"stick", "earth_tilted", "earth_upright", "sun_weak", "sun_strong", "air_humid", "air_dry",
+	"coast_day", "coast_night"]
 const OUTLINE := Color("8a6a46")   # PredictPictures.GROUND: the brown of the storybook lines
 const STEEL := ArtPalette.STEEL
 
@@ -128,6 +129,8 @@ static func draw(canvas: Control, kind: String, size := 0.5, count := 1) -> void
 			canvas.draw_circle(bob, 8.0, ArtPalette.BLUE)
 		"sun_weak", "sun_strong":   # #91 (물의 여행): a small pale sun with short rays, or a big deep one with long rays
 			_sun(canvas, c, r.size.y, kind == "sun_strong")
+		"coast_day", "coast_night":   # #93 (바닷바람): the coast under the sun, or under the moon and stars
+			_coast(canvas, r, kind == "coast_night")
 		"stick":   # #86 (그림자 시계): the yard's stick, `size` of the picture's height (short / long)
 			_ground(canvas, r)
 			var foot := Vector2(c.x, r.end.y - 2.0)
@@ -148,6 +151,33 @@ static func _sun(canvas: Control, c: Vector2, height: float, strong: bool) -> vo
 		canvas.draw_line(c + d * (radius + 3.0), c + d * (radius + 3.0 + reach * (1.0 if k % 2 == 0 else 0.7)), ArtPalette.ORANGE if strong else ArtPalette.YELLOW_TOP, 4.0 if strong else 3.0, true)
 	canvas.draw_circle(c, radius, ArtPalette.YELLOW if strong else ArtPalette.YELLOW_TOP.lightened(0.35))
 	canvas.draw_arc(c, radius, 0.0, TAU, 32, OUTLINE, 2.0, true)
+
+## The 바닷바람 coast (#93): the land on the left, the sea on the right (as the lab), under a light sky
+## and the sun, or under a deep blue sky with a crescent moon and stars (`night`).
+static func _coast(canvas: Control, r: Rect2, night: bool) -> void:
+	var sky := Color("1c2a62") if night else Color("8fd3ff")
+	canvas.draw_rect(r, sky)
+	var shore := r.position.x + r.size.x * 0.48
+	var top := r.position.y + r.size.y * 0.7
+	var dim := 0.45 if night else 0.0
+	canvas.draw_rect(Rect2(r.position.x, top, shore - r.position.x, r.end.y - top), ArtPalette.SAND.darkened(dim))
+	canvas.draw_rect(Rect2(r.position.x, top, shore - r.position.x, 4.0), ArtPalette.GRASS.darkened(dim))
+	canvas.draw_rect(Rect2(shore, top + 4.0, r.end.x - shore, r.end.y - top - 4.0), ArtPalette.SEA.darkened(dim))
+	for k in 3:
+		var w := Vector2(shore + 14.0 + k * 22.0, top + 12.0 + (k % 2) * 6.0)
+		canvas.draw_arc(w, 5.0, PI * 1.1, PI * 1.9, 8, Color(1, 1, 1, 0.7 if not night else 0.35), 2.0, true)
+	var light := Vector2(r.position.x + r.size.x * 0.3, r.position.y + r.size.y * 0.36)
+	if night:
+		canvas.draw_circle(light, 13.0, Color("fff4c2"))
+		canvas.draw_circle(light + Vector2(6.0, -3.0), 11.0, sky)
+		for star: Vector2 in [Vector2(0.62, 0.18), Vector2(0.8, 0.4), Vector2(0.15, 0.15), Vector2(0.5, 0.45), Vector2(0.9, 0.12)]:
+			canvas.draw_circle(r.position + star * r.size, 2.2, Color("fff6d0"))
+	else:
+		for k in 8:
+			var d := Vector2.from_angle(TAU * k / 8.0)
+			canvas.draw_line(light + d * 16.0, light + d * 22.0, ArtPalette.YELLOW, 3.0, true)
+		canvas.draw_circle(light, 12.0, ArtPalette.YELLOW)
+	canvas.draw_rect(r, OUTLINE, false, 2.0)
 
 
 ## The Earth (as "earth") with its axis through it, leaning `tilt` deg to the left (the 계절 lab's
