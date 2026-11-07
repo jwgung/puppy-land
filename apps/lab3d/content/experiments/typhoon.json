@@ -1,0 +1,133 @@
+{
+  "id": "typhoon",
+  "version": 1,
+  "icon": "☁",
+  "law": {},
+  "scene": "res://experiments/typhoon/typhoon.gd",
+  "bench_id": "TY",
+  "camera": {
+    "target": [0.0, 0.6, -0.9],
+    "distance": 15.5,
+    "distance_range": [8.0, 32.0],
+    "yaw_range_deg": [-100.0, 100.0],
+    "pitch_range_deg": [-89.0, -10.0],
+    "pan_radius": 7.0,
+    "default_mode": "front",
+    "views": {
+      "front": { "yaw_deg": 0.0, "pitch_deg": -50.0 },
+      "three_quarter": { "yaw_deg": 24.0, "pitch_deg": -40.0 },
+      "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 26.0 },
+      "side": { "yaw_deg": 90.0, "pitch_deg": -30.0, "distance": 24.0 },
+      "follow": { "yaw_deg": 0.0, "pitch_deg": -48.0, "distance": 16.0 }
+    }
+  },
+  "controls": [
+    {
+      "id": "sea",
+      "type": "choice",
+      "default": "warm",
+      "options": [{ "id": "cold" }, { "id": "warm" }, { "id": "hot" }]
+    }
+  ],
+  "actions": [
+    { "id": "reset", "style": "primary" }
+  ],
+  "key_observations": ["state", "under", "vapor"],
+  "predict": {
+    "question_face": "thinking",
+    "choices": [
+      { "id": "yes", "picture": "cloud_grows" },
+      { "id": "no", "picture": "cloud_stays" }
+    ],
+    "answer": "no",
+    "bridge_face": "happy"
+  },
+  "missions": {
+    "judge_on": ["rain", "typhoon", "calm"],
+    "stages": [
+      {
+        "observe": "",
+        "judge_on": ["rain"],
+        "miss_on": ["small", "typhoon", "calm", "landfall"],
+        "conditions": { "sea": "warm" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["typhoon"],
+        "miss_on": ["small", "rain", "calm", "landfall"],
+        "conditions": { "sea": "hot" },
+        "say_face": "explain",
+        "win_face": "surprised",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["calm"],
+        "miss_on": ["small", "rain", "typhoon", "landfall", "calm"],
+        "conditions": { "sea": "hot" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      }
+    ]
+  },
+  "story": { "keeper_face": "worried", "clue_face": "worried", "map_clue_face": "explain" },
+  "kid": {
+    "intro_face": "explain",
+    "intro_more": [
+      { "face": "explain" }
+    ],
+    "card": "state",
+    "say_face": "explain",
+    "picks": {
+      "sea": [
+        { "value": "cold", "picture": "sea_cold" },
+        { "value": "warm", "picture": "sea_warm" },
+        { "value": "hot", "picture": "sea_hot" }
+      ]
+    }
+  },
+  "note": {
+    "numbers": [
+      { "ids": ["state"] },
+      { "ids": ["under"] },
+      { "ids": ["vapor"] }
+    ],
+    "graph": true
+  },
+  "cast": {
+    "dugi": {
+      "at": [10.2, 1.0],
+      "explain_on": ["rain", "typhoon", "calm"],
+      "delay_s": 0.6
+    },
+    "puppy": {
+      "at": [-10.2, 1.0]
+    }
+  },
+  "observations": [
+    { "id": "state" },
+    { "id": "under" },
+    { "id": "vapor" }
+  ],
+  "manipulation": {
+    "grab_radius": 72.0,
+    "objects": [
+      { "id": "cloud", "surface": "sea", "snap": 0.0, "height": false, "marker": false, "guide_to": "min" }
+    ]
+  },
+  "graph": {
+    "x": { "unit": "s", "max": 40.0 },
+    "y": { "unit": "", "min_max": 100.0 },
+    "series": [
+      { "id": "size", "color": "#5d6a86", "style": "line" },
+      { "id": "now", "color": "#ff3b3b", "style": "points" }
+    ]
+  }
+}

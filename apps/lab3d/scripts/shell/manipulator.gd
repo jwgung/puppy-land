@@ -867,7 +867,7 @@ const GUIDE_REACH := 0.6
 ## The gesture the hand guide (HandGuide) shows for this lab, read only (nothing is pressed or moved):
 ## {"kind": "pull" | "hold" | "tap" | "drag", "id", "from": world point the finger presses now (guide_point),
 ## "to": world point the drag or the pull ends at}, or {} when the lab has no object a finger takes now.
-## The object is the slingshot's, else the first one a finger may pick up. A pull ends where the demo's
+## The object is the slingshot's, else the first one a finger may pick up now. A pull ends where the demo's
 ## pull (slingshot_demo) lands on the slingshot's surface, so it stays the throw's direction when the
 ## camera turns. The rule says what the lab really takes (2026-11-03 playtest: the hand showed a drag
 ## where a touch lets the box go, and the spring's pull the wrong way): `"guide": "tap"` shows a tap
@@ -876,7 +876,9 @@ const GUIDE_REACH := 0.6
 func guide() -> Dictionary:
 	var id := slingshot_id if slingshot_id != "" and rules.has(slingshot_id) else ""
 	if id == "":
-		var draggable := draggable_ids()
+		# The first object a finger may take now: a lab may offer some objects only in some stages and
+		# has no body for the others then (#92 one object per stage, #96).
+		var draggable := draggable_ids().filter(func(d: String) -> bool: return experiment.manipulation_body(d) != null)
 		if draggable.is_empty():
 			return {}
 		id = draggable[0]

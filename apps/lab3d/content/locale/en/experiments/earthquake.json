@@ -1,0 +1,95 @@
+{
+  "title": "Which ground shakes more?",
+  "category": "Land and sea",
+  "question": "Rock ground or sand ground: which one shakes more?",
+  "steps": [
+    "Pull the red handle to the left and let go: the shake table shakes.",
+    "The farther you pull, the harder it shakes.",
+    "Use the buttons at the bottom left to pick the ground and the house's brace."
+  ],
+  "observe": "With the same shake, soft sand ground shakes more than hard rock ground. A house with a slanted brace between its posts does not lean over easily, so it stands.",
+  "terms": [
+    { "name": "Earthquake", "description": "The ground shaking when a big force stored deep underground lets go all at once." },
+    { "name": "Earthquake-proof building", "description": "Building a house strong, with braces and such, so it stands when an earthquake comes." }
+  ],
+  "law": {
+    "equation": "soft ground = bigger shake",
+    "title": "Ground and shaking",
+    "description": "A shake starts in one place and spreads out all around like ripples. With the same shake, soft sand ground sways more. A house built strong with braces stands even a big shake."
+  },
+  "tip": "Press the red handle, pull it to the left and let go. The farther you pull, the harder the table shakes. After a shake, press the handle again and the house stands up again.",
+  "tip_short": "Pull the handle and let go",
+  "controls": [
+    { "label": "Ground", "options": [{ "label": "Rock" }, { "label": "Sand" }] },
+    { "label": "House", "options": [{ "label": "No brace" }, { "label": "Brace" }] }
+  ],
+  "actions": [{ "label": "Start over" }],
+  "predict": {
+    "question": "Rock ground or sand ground: which one shakes more?",
+    "choices": [{ "label": "Rock ground" }, { "label": "Sand ground" }],
+    "reason": "Sand ground is soft and wobbly. So the same earthquake shakes it more.",
+    "bridge": "Shake it and see for yourself!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Pull the table just a little and let go, and keep the house standing!",
+        "say": "A small shake, and the house can stand. Hard rock ground shakes less.",
+        "win": "Wobble wobble! It stood!",
+        "miss": "Pull just a little!",
+        "miss_conditions": "Try rock with no brace!"
+      },
+      {
+        "text": "Keep the braced house standing on sand ground too!",
+        "say": "Sand ground shakes more. A slanted brace between the posts keeps the house from leaning over. Building like this to stand earthquakes is called **earthquake-proof building**.",
+        "win": "The brace saved it!",
+        "miss": "Pull just right and shake!",
+        "miss_conditions": "Pick sand and the brace!"
+      },
+      {
+        "text": "Pull all the way and keep the house standing in the biggest shake!",
+        "say": "A shake spreads out all around from where it starts. See where the ripple stripes on the ground come from, and you know where the shake started.",
+        "win": "It came from the volcano!",
+        "miss": "Pull all the way!",
+        "miss_conditions": "Pick sand and the brace!"
+      }
+    ]
+  },
+  "story": {
+    "keeper": "This is the squirrels' village. That night the ground shook and the houses cracked. What if it shakes again…",
+    "clue": "The squirrels must have been so scared…",
+    "more": [
+      {
+        "text": "Oh, there's a piece on the hill behind the village! The houses must be strong so we can get there safely."
+      }
+    ],
+    "map_clue": "At the end of the valley, where the block house stands!"
+  },
+  "kid": {
+    "intro": "This is the earthquake lab. When a big force stored deep underground lets go all at once, the ground shakes. This is called an **earthquake**.",
+    "intro_more": [
+      { "text": "A shake starts in one place and spreads out all around like ripples. Pull the shake table and let go, and it shakes like an earthquake." }
+    ],
+    "title": "Pull the shake table, let go, and see if the house stands!",
+    "place": "Earthquake",
+    "say": "Soft sand ground shakes more than rock ground. A house with a brace stands well.",
+    "tip": "Pull the handle and let go.",
+    "cards": { "state": "Block house", "shake": "Shake", "ground": "Ground" },
+    "picks": {
+      "ground": [{ "label": "Rock" }, { "label": "Sand" }],
+      "brace": [{ "label": "No brace" }, { "label": "Brace" }]
+    }
+  },
+  "note": {
+    "law": "A shake starts in one place and spreads out all around. Soft ground shakes more, and a house with a brace stands well.",
+    "formula": "soft ground = bigger shake",
+    "numbers": [{ "label": "Block house" }, { "label": "Shake" }, { "label": "Ground" }]
+  },
+  "observations": [{ "label": "Block house" }, { "label": "Shake" }, { "label": "Ground" }],
+  "graph": {
+    "title": "How far the ground and the house moved in the shake",
+    "x": { "label": "Time since letting go" },
+    "y": { "label": "Sideways from where it was" },
+    "series": [{ "label": "Ground" }, { "label": "House roof (from the ground)" }]
+  }
+}

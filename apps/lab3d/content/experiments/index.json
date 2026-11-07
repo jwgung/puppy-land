@@ -20,7 +20,14 @@
     "hutton": [
       "day-night.json",
       "shadow-clock.json",
-      "seasons.json"
+      "seasons.json",
+      "water-cycle.json",
+      "dew-cloud.json",
+      "sea-breeze.json",
+      "typhoon.json",
+      "river.json",
+      "strata.json",
+      "earthquake.json"
     ]
   }
 }

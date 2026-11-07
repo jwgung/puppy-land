@@ -151,6 +151,7 @@ var _done_card: RoundDoneCard = null
 var _next_due := false                # a stage was won and nothing was done since (its stamp may still fly)
 var _next_wait := -1.0                # >= 0: a stage was won, the next one comes once Dugi is done (_run_next_wait)
 var next_goes := 0                     # times the round went on to the next stage by itself (tests)
+var _play_open := false                # what the lab was last told (_sync_play_open)
 var _mission_text_held := false        # the stage's text is off the strip until Dugi has told it
 var _retells := 0                     # times he started the missed mission line again (_retell_mission)
 var _mission_announced := false        # his telling of it is on its way (the bridge, the next mission's): the text shows once his box closes
@@ -233,6 +234,8 @@ func _ready() -> void:
 	_build_sidebar()
 	experiment = ExperimentRegistry.instantiate(definition)
 	experiment.time_scale = definition.time_scale()   # the orbit's faster playback (2026-10-29)
+	_play_open = not show_cast   # (#93: a cast may talk first; _sync_play_open says when it is done)
+	experiment.set_play_open(_play_open)
 	# A game round draws no answer preview before the run (Experiment.answer_preview: visual only).
 	experiment.answer_preview = MissionRound.missions(definition.raw).is_empty()
 	experiment.state_changed.connect(_on_state_changed)
@@ -356,6 +359,7 @@ func _process(delta: float) -> void:
 			_run_measured_action(manipulator.demo_action)
 	_watch_touch()
 	_run_dialogue()
+	_sync_play_open()
 	_run_round_wait(delta)
 	_run_next_wait(delta)
 	_run_celebration(delta)
@@ -455,6 +459,17 @@ func _run_question() -> void:
 				nudge_choices()
 
 
+## Tells the lab whether the child can play now (Experiment.set_play_open, #93): not while the clue
+## or the question is up, the stage's mission waits for Dugi, or his box is open.
+func _sync_play_open() -> void:
+	if experiment == null:
+		return
+	var open := not _asking() and not _mission_text_held and not (dialogue != null and dialogue.active)
+	if open != _play_open:
+		_play_open = open
+		experiment.set_play_open(open)
+
+
 ## The round's clue or question is open (its shield takes every touch).
 func _asking() -> bool:
 	return mission_round != null and mission_round.asking()
@@ -497,6 +512,7 @@ func _layout_dialogue() -> bool:
 	# The explanation picture's card keeps clear of the top chips (title, key cards, stamps and the
 	# guess, the top buttons) and the picture buttons.
 	dialogue.set_card_avoid([_title_bar, _key_row, _mission_pill, _mission_strip, _mission_text, _top_buttons, _picks_row])
+	dialogue.card_align = experiment.picture_card_align() if experiment != null else Vector2(0.5, 0.5)
 	return dialogue.layout(view_rect, right, OVERLAY_MARGIN)
 
 
@@ -636,6 +652,12 @@ func _fit_slingshot_hud() -> void:
 	if _mission_pill != null:
 		top = maxf(top, _mission_pill.get_rect().end.y)
 	_slingshot_hud.position = Vector2((view.size.x - _slingshot_hud.size.x) * 0.5, top + 16.0)
+	# #97: a lab whose middle the readout would hide names its own spot (slingshot_setup `readout_at`:
+	# () -> a world point): centred there, kept inside the view and under the top band.
+	var spot: Callable = _slingshot_spec.get("readout_at", Callable())
+	if spot.is_valid():
+		var at := view_point(spot.call()) - _slingshot_hud.size * 0.5
+		_slingshot_hud.position = Vector2(clampf(at.x, 16.0, maxf(16.0, view.size.x - _slingshot_hud.size.x - 16.0)), maxf(at.y, top + 16.0))
 
 
 ## Manipulator.slingshot: "rearm" resets a finished run (the next shot), "pull" moves the readout

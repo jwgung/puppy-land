@@ -1,0 +1,133 @@
+{
+  "id": "water-cycle",
+  "version": 1,
+  "icon": "☔",
+  "law": {},
+  "scene": "res://experiments/water_cycle/water_cycle.gd",
+  "bench_id": "WC",
+  "camera": {
+    "target": [0.0, 2.6, 0.0],
+    "distance": 12.0,
+    "distance_range": [7.0, 30.0],
+    "yaw_range_deg": [-100.0, 100.0],
+    "pitch_range_deg": [-89.0, -2.0],
+    "pan_radius": 7.0,
+    "default_mode": "front",
+    "views": {
+      "front": { "yaw_deg": 0.0, "pitch_deg": -9.0 },
+      "three_quarter": { "yaw_deg": 24.0, "pitch_deg": -24.0 },
+      "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 24.0 },
+      "side": { "yaw_deg": 90.0, "pitch_deg": -12.0, "distance": 22.0 },
+      "follow": { "yaw_deg": 0.0, "pitch_deg": -9.0, "distance": 12.0, "target": [0.0, 3.0, 0.0] }
+    }
+  },
+  "controls": [
+    {
+      "id": "sun",
+      "type": "choice",
+      "default": "weak",
+      "options": [{ "id": "weak" }, { "id": "strong" }]
+    }
+  ],
+  "actions": [
+    { "id": "reset", "style": "primary" }
+  ],
+  "key_observations": ["state", "pond", "day"],
+  "predict": {
+    "question_face": "thinking",
+    "choices": [
+      { "id": "up", "picture": "water_rises" },
+      { "id": "stay", "picture": "water_stays" }
+    ],
+    "answer": "up",
+    "bridge_face": "happy"
+  },
+  "missions": {
+    "judge_on": ["cloud", "rain", "full"],
+    "stages": [
+      {
+        "observe": "",
+        "judge_on": ["cloud", "rain", "full"],
+        "miss_on": ["vapour", "cloud", "rain", "full"],
+        "conditions": { "sun": "weak" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["rain", "full"],
+        "miss_on": ["vapour", "cloud", "rain", "full"],
+        "conditions": { "sun": "weak" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["full"],
+        "miss_on": ["vapour", "cloud", "rain", "full"],
+        "conditions": { "sun": "strong" },
+        "say_face": "explain",
+        "win_face": "surprised",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      }
+    ]
+  },
+  "story": { "keeper_face": "worried", "clue_face": "worried", "more": [{ "speaker": "puppy", "face": "thinking" }], "map_clue_face": "explain" },
+  "kid": {
+    "intro_face": "explain",
+    "intro_more": [
+      { "face": "explain" }
+    ],
+    "card": "state",
+    "say_face": "explain",
+    "picks": {
+      "sun": [
+        { "value": "weak", "picture": "sun_weak" },
+        { "value": "strong", "picture": "sun_strong" }
+      ]
+    }
+  },
+  "note": {
+    "numbers": [
+      { "ids": ["state"] },
+      { "ids": ["pond"] },
+      { "ids": ["day"] }
+    ],
+    "graph": true
+  },
+  "cast": {
+    "dugi": {
+      "at": [8.0, -0.8],
+      "explain_on": ["cloud", "rain", "full"],
+      "delay_s": 0.6
+    },
+    "puppy": {
+      "at": [-8.0, -0.8]
+    }
+  },
+  "observations": [
+    { "id": "state" },
+    { "id": "pond" },
+    { "id": "day" }
+  ],
+  "manipulation": {
+    "grab_radius": 72.0,
+    "objects": [
+      { "id": "sun", "hold": true }
+    ]
+  },
+  "graph": {
+    "x": { "unit": "s", "max": 10.0 },
+    "y": { "unit": "%", "max": 100.0 },
+    "series": [
+      { "id": "weak", "color": "#f2c14e", "style": "line" },
+      { "id": "strong", "color": "#ff7a1a", "style": "line" },
+      { "id": "now", "color": "#ff3b3b", "style": "points" }
+    ]
+  }
+}

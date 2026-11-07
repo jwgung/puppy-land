@@ -1,0 +1,89 @@
+{
+  "title": "How does a rain cloud become a typhoon?",
+  "category": "Weather",
+  "question": "Does a rain cloud grow over a cold sea too?",
+  "steps": [
+    "Drag the cloud with your finger and put it over the sea.",
+    "Watch the cloud take up water vapor and grow, or lose its strength.",
+    "Use the button at the bottom left to make the sea cold, warm or very warm."
+  ],
+  "observe": "Over a warm sea, water vapor rises and the cloud grows into a rain cloud. Over a very warm sea it grows even bigger and becomes a spinning typhoon. Over a cold sea or over land there is no vapor to feed it, so the cloud loses its strength.",
+  "terms": [
+    { "name": "Water vapor", "description": "Water warmed into an invisible gas. The warmer the sea, the more of it rises." },
+    { "name": "Rain cloud", "description": "A dark cloud that has taken up lots of water vapor and grown big enough to rain." },
+    { "name": "Typhoon", "description": "A rain cloud that grew very big over a very warm sea and spins round and round. It brings strong winds and lots of rain." }
+  ],
+  "law": {
+    "equation": "warm sea + water vapor = a growing rain cloud",
+    "title": "The sea's warmth and rain clouds",
+    "description": "Over a warm sea lots of water vapor rises, and a rain cloud feeds on it and grows. Over a very warm sea it grows very big and becomes a typhoon. When a typhoon moves over a cold sea or land, there is no vapor to feed it, so it gets weaker."
+  },
+  "tip": "Drag the cloud with one finger and put it anywhere over the sea. Depending on the sea under it, the cloud grows or loses its strength. The far sea at the top is always cold.",
+  "tip_short": "Drag the cloud over the sea",
+  "controls": [{ "label": "Sea", "options": [{ "label": "Cold" }, { "label": "Warm" }, { "label": "Very warm" }] }],
+  "actions": [{ "label": "Start over" }],
+  "predict": {
+    "question": "Does a rain cloud grow over a cold sea too?",
+    "choices": [{ "label": "Yes, it grows" }, { "label": "It hardly grows" }],
+    "reason": "Little water vapor rises from a cold sea. So the rain cloud has nothing to feed on and hardly grows.",
+    "bridge": "Move the cloud and see for yourself!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Put the little cloud over the warm sea and grow it into a rain cloud!",
+        "say": "Over a warm sea, water vapor keeps rising. The cloud takes it up and grows bigger and bigger.",
+        "win": "A dark rain cloud! Whoosh!",
+        "miss": "Leave it over the sea longer!",
+        "miss_conditions": "Pick the warm sea!"
+      },
+      {
+        "text": "See if a rain cloud becomes a typhoon over a very warm sea!",
+        "say": "When the sea is very warm, lots and lots of water vapor rises. The rain cloud grows, starts to spin and becomes a typhoon.",
+        "win": "So that's how a typhoon is born!",
+        "miss": "Leave it over the sea longer!",
+        "miss_conditions": "Pick the very warm sea!"
+      },
+      {
+        "text": "Drag the typhoon heading for the island to the cold sea to weaken it!",
+        "say": "A typhoon feeds on the water vapor of a warm sea. Over a cold sea there is nothing to feed on, so it gets weaker and weaker.",
+        "win": "The sea is calm! The piece!",
+        "miss": "Drag it to colder water!",
+        "miss_conditions": "Pick the very warm sea!"
+      }
+    ]
+  },
+  "story": {
+    "keeper": "Out in the middle of the sea, a huge swirling cloud is spinning round and round. What if it comes to the island…",
+    "clue": "The wind looks so strong… Huh? Something shines in the middle of the swirl!",
+    "map_clue": "At the end of the beach, where the waves are high!"
+  },
+  "kid": {
+    "intro": "This is the typhoon lab. Lots of water vapor rises from a warm sea. Rain clouds feed on this vapor and grow bigger and bigger.",
+    "intro_more": [
+      {
+        "text": "A rain cloud that grows very big and spins round and round is called a **typhoon**. Let's first find out with a little cloud how a typhoon grows and how it gets weaker."
+      }
+    ],
+    "title": "Move the cloud over the sea and grow it!",
+    "place": "Typhoon",
+    "say": "Over a warm sea the cloud feeds on water vapor and grows. Over a cold sea or land it loses its strength.",
+    "tip": "Drag the cloud over the sea.",
+    "cards": { "state": "Cloud", "under": "Under the cloud", "vapor": "Water vapor rising" },
+    "picks": {
+      "sea": [{ "label": "Cold" }, { "label": "Warm" }, { "label": "Very warm" }]
+    }
+  },
+  "note": {
+    "law": "A rain cloud grows on the water vapor of a warm sea. Over a very warm sea it becomes a typhoon; over a cold sea or land it weakens.",
+    "formula": "warm sea + water vapor = a growing rain cloud",
+    "numbers": [{ "label": "Cloud" }, { "label": "Under the cloud" }, { "label": "Water vapor rising" }]
+  },
+  "observations": [{ "label": "Cloud" }, { "label": "Under the cloud" }, { "label": "Water vapor rising" }],
+  "graph": {
+    "title": "The cloud's strength",
+    "x": { "label": "Time since the cloud was moved" },
+    "y": { "label": "The cloud's strength" },
+    "series": [{ "label": "The cloud's strength" }, { "label": "Now" }]
+  }
+}

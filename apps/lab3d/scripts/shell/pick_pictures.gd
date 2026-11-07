@@ -4,7 +4,9 @@
 ## the moon and Jupiter, a light or a heavy box, a steel, wooden or rubber slide, a planet near or far
 ## from its star, a gentle or a steep slope, one, two or four ropes, the hand near or far on the lever,
 ## a small or a big ball (blue, orange, the free fall's red), a big or a small drum, a weight, a short
-## or a long string, a short or a long stick (#86), the Earth with its axis tilted or upright (#87).
+## or a long string, a short or a long stick (#86), the Earth with its axis tilted or upright (#87), a weak
+## or a strong sun (#91), a humid or a dry day's air (#92), a cold, warm or very warm sea (#94), rock or
+## sand ground and the block house without or with its brace (#97).
 ## `size` (0..1) and `count` say how much the drawing shows (kid.picks entries). The words under the
 ## picture say the same thing.
 ## A mass's picture (a ball, a box, a weight) is drawn like the lab draws the body (2026-10-28,
@@ -16,7 +18,9 @@ extends RefCounted
 
 const KINDS := ["earth", "moon", "jupiter", "box", "slide_steel", "slide_wood", "slide_rubber", "orbit",
 	"slope", "pulley", "lever", "ball_blue", "ball_orange", "ball_red", "drum_big", "drum_small", "weight", "rope",
-	"stick", "earth_tilted", "earth_upright"]
+	"stick", "earth_tilted", "earth_upright", "sun_weak", "sun_strong", "air_humid", "air_dry",
+	"coast_day", "coast_night", "sea_cold", "sea_warm", "sea_hot",
+	"ground_rock", "ground_sand", "house_plain", "house_brace"]
 const OUTLINE := Color("8a6a46")   # PredictPictures.GROUND: the brown of the storybook lines
 const STEEL := ArtPalette.STEEL
 
@@ -31,8 +35,16 @@ static func draw(canvas: Control, kind: String, size := 0.5, count := 1) -> void
 			for blob in [[Vector2(-8, -6), 9.0], [Vector2(9, 6), 8.0], [Vector2(-3, 11), 5.0]]:
 				canvas.draw_circle(c + blob[0], blob[1], ArtPalette.GRASS)
 			canvas.draw_arc(c, r.size.y * 0.45, 0.0, TAU, 32, OUTLINE, 2.0, true)
+		"air_humid", "air_dry":   # #92: a humid day's air full of vapour, a dry day's with little
+			_air(canvas, r, kind == "air_humid")
 		"earth_tilted", "earth_upright":   # #87: the Earth with its axis leaning or straight
 			_earth_axis(canvas, r, SunModel.EARTH_TILT if kind == "earth_tilted" else SunModel.UPRIGHT)
+		"sea_cold", "sea_warm", "sea_hot":   # #94: the sea's warmth
+			_sea(canvas, r, ["sea_cold", "sea_warm", "sea_hot"].find(kind))
+		"ground_rock", "ground_sand":   # #97: a slab of grey rock or of yellow sand
+			_ground_slab(canvas, r, kind == "ground_sand")
+		"house_plain", "house_brace":   # #97: the block house without or with the X brace
+			_block_house(canvas, r, kind == "house_brace")
 		"moon":
 			canvas.draw_circle(c, r.size.y * 0.32, Color("d9dbe2"))
 			for crater in [[Vector2(-6, -4), 4.0], [Vector2(6, 5), 3.0], [Vector2(3, -8), 2.5]]:
@@ -123,6 +135,10 @@ static func draw(canvas: Control, kind: String, size := 0.5, count := 1) -> void
 			canvas.draw_line(top, bob, Color("ffffff"), 3.0)
 			canvas.draw_line(top, bob, OUTLINE, 1.0)
 			canvas.draw_circle(bob, 8.0, ArtPalette.BLUE)
+		"sun_weak", "sun_strong":   # #91 (물의 여행): a small pale sun with short rays, or a big deep one with long rays
+			_sun(canvas, c, r.size.y, kind == "sun_strong")
+		"coast_day", "coast_night":   # #93 (바닷바람): the coast under the sun, or under the moon and stars
+			_coast(canvas, r, kind == "coast_night")
 		"stick":   # #86 (그림자 시계): the yard's stick, `size` of the picture's height (short / long)
 			_ground(canvas, r)
 			var foot := Vector2(c.x, r.end.y - 2.0)
@@ -130,6 +146,46 @@ static func draw(canvas: Control, kind: String, size := 0.5, count := 1) -> void
 			canvas.draw_line(foot, top, ArtPalette.WOOD_GRAIN, 7.0, true)
 			canvas.draw_line(foot, top, ArtPalette.WOOD, 4.0, true)
 			canvas.draw_circle(top, 6.0, ArtPalette.RED)
+
+
+## The sun at `c` in a picture `height` tall: weak (small, pale, eight short rays) or strong (big,
+## deep yellow, twelve long orange rays).
+static func _sun(canvas: Control, c: Vector2, height: float, strong: bool) -> void:
+	var radius := height * (0.24 if strong else 0.17)
+	var rays := 12 if strong else 8
+	var reach := radius * (0.85 if strong else 0.4)
+	for k in rays:
+		var d := Vector2.from_angle(TAU * k / rays)
+		canvas.draw_line(c + d * (radius + 3.0), c + d * (radius + 3.0 + reach * (1.0 if k % 2 == 0 else 0.7)), ArtPalette.ORANGE if strong else ArtPalette.YELLOW_TOP, 4.0 if strong else 3.0, true)
+	canvas.draw_circle(c, radius, ArtPalette.YELLOW if strong else ArtPalette.YELLOW_TOP.lightened(0.35))
+	canvas.draw_arc(c, radius, 0.0, TAU, 32, OUTLINE, 2.0, true)
+
+## The 바닷바람 coast (#93): the land on the left, the sea on the right (as the lab), under a light sky
+## and the sun, or under a deep blue sky with a crescent moon and stars (`night`).
+static func _coast(canvas: Control, r: Rect2, night: bool) -> void:
+	var sky := Color("1c2a62") if night else Color("8fd3ff")
+	canvas.draw_rect(r, sky)
+	var shore := r.position.x + r.size.x * 0.48
+	var top := r.position.y + r.size.y * 0.7
+	var dim := 0.45 if night else 0.0
+	canvas.draw_rect(Rect2(r.position.x, top, shore - r.position.x, r.end.y - top), ArtPalette.SAND.darkened(dim))
+	canvas.draw_rect(Rect2(r.position.x, top, shore - r.position.x, 4.0), ArtPalette.GRASS.darkened(dim))
+	canvas.draw_rect(Rect2(shore, top + 4.0, r.end.x - shore, r.end.y - top - 4.0), ArtPalette.SEA.darkened(dim))
+	for k in 3:
+		var w := Vector2(shore + 14.0 + k * 22.0, top + 12.0 + (k % 2) * 6.0)
+		canvas.draw_arc(w, 5.0, PI * 1.1, PI * 1.9, 8, Color(1, 1, 1, 0.7 if not night else 0.35), 2.0, true)
+	var light := Vector2(r.position.x + r.size.x * 0.3, r.position.y + r.size.y * 0.36)
+	if night:
+		canvas.draw_circle(light, 13.0, Color("fff4c2"))
+		canvas.draw_circle(light + Vector2(6.0, -3.0), 11.0, sky)
+		for star: Vector2 in [Vector2(0.62, 0.18), Vector2(0.8, 0.4), Vector2(0.15, 0.15), Vector2(0.5, 0.45), Vector2(0.9, 0.12)]:
+			canvas.draw_circle(r.position + star * r.size, 2.2, Color("fff6d0"))
+	else:
+		for k in 8:
+			var d := Vector2.from_angle(TAU * k / 8.0)
+			canvas.draw_line(light + d * 16.0, light + d * 22.0, ArtPalette.YELLOW, 3.0, true)
+		canvas.draw_circle(light, 12.0, ArtPalette.YELLOW)
+	canvas.draw_rect(r, OUTLINE, false, 2.0)
 
 
 ## The Earth (as "earth") with its axis through it, leaning `tilt` deg to the left (the 계절 lab's
@@ -144,6 +200,113 @@ static func _earth_axis(canvas: Control, r: Rect2, tilt: float) -> void:
 	var up := Vector2(-sin(deg_to_rad(tilt)), -cos(deg_to_rad(tilt))) * (radius + 7.0)
 	canvas.draw_line(c - up, c + up, OUTLINE, 3.0, true)
 	canvas.draw_circle(c + up, 4.0, ArtPalette.RED)
+
+
+## A day's air: a soft cloud and many vapour dots (humid), or a bright sun and three dots (dry).
+static func _air(canvas: Control, r: Rect2, humid: bool) -> void:
+	var c := r.get_center()
+	if humid:
+		for blob: Array in [[Vector2(-14.0, 0.0), 13.0], [Vector2(2.0, -6.0), 16.0], [Vector2(18.0, 1.0), 12.0]]:
+			canvas.draw_circle(c + Vector2(0.0, -r.size.y * 0.12) + blob[0], blob[1], Color("dfe9f5"))
+	else:
+		var sun := c + Vector2(0.0, -r.size.y * 0.1)
+		for k in 8:
+			var d := Vector2.from_angle(TAU * k / 8.0)
+			canvas.draw_line(sun + d * 14.0, sun + d * 20.0, ArtPalette.YELLOW, 3.0, true)
+		canvas.draw_circle(sun, 11.0, ArtPalette.YELLOW)
+	var dots := 16 if humid else 3
+	for i in dots:
+		var u := fposmod(i * 0.618034 + 0.1, 1.0)
+		var v := fposmod(i * 0.754878 + 0.2, 1.0)
+		var at := Vector2(r.position.x + 8.0 + u * (r.size.x - 16.0), r.position.y + r.size.y * 0.45 + v * r.size.y * 0.5)
+		canvas.draw_circle(at, 3.6, Color("8cc8f2"))
+		canvas.draw_circle(at, 2.2, Color("dff1ff"))
+
+## A sea of warmth `heat` (0 cold, 1 warm, 2 very warm; the typhoon lab's colours, TyphoonProps): the
+## water's wavy band; a cold sea has an ice floe and a snowflake, a warm one a sun (bigger when very
+## warm) and wisps of water vapour rising (one, or three).
+static func _sea(canvas: Control, r: Rect2, heat: int) -> void:
+	var water: Color = [TyphoonProps.COLD_SEA, TyphoonProps.WARM_SEA, TyphoonProps.HOT_SEA][heat]
+	var top := r.position.y + r.size.y * 0.62
+	var band := PackedVector2Array()
+	for i in 25:
+		var x := lerpf(r.position.x, r.end.x, i / 24.0)
+		band.append(Vector2(x, top + 3.0 * sin(i * 0.9)))
+	band.append(r.end)
+	band.append(Vector2(r.position.x, r.end.y))
+	canvas.draw_colored_polygon(band, water)
+	canvas.draw_polyline(band.slice(0, 25), water.lightened(0.45), 2.0, true)
+	var sun := Vector2(r.end.x - r.size.y * 0.32, r.position.y + r.size.y * 0.3)
+	if heat == 0:
+		var floe := Vector2(r.position.x + r.size.x * 0.62, top + r.size.y * 0.12)
+		canvas.draw_set_transform(floe, 0.0, Vector2(1.0, 0.4))
+		canvas.draw_circle(Vector2.ZERO, r.size.y * 0.24, Color.WHITE)
+		canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		PredictPictures._snowflake(canvas, Vector2(r.position.x + r.size.x * 0.36, r.position.y + r.size.y * 0.3), Color("7fb0e0"), 1.2)
+		return
+	var radius := r.size.y * (0.12 if heat == 1 else 0.19)
+	for k in 8:
+		var d := Vector2.from_angle(TAU * k / 8.0)
+		canvas.draw_line(sun + d * (radius + 3.0), sun + d * (radius + 3.0 + radius * 0.6), ArtPalette.YELLOW, 2.5, true)
+	canvas.draw_circle(sun, radius, ArtPalette.YELLOW)
+	var wisps: Array = [0.4] if heat == 1 else [0.22, 0.42, 0.62]
+	for share: float in wisps:
+		var foot := Vector2(r.position.x + r.size.x * share, top - 3.0)
+		var wisp := PackedVector2Array()
+		for i in 9:
+			var k := i / 8.0
+			wisp.append(foot + Vector2(4.0 * sin(k * TAU), -k * r.size.y * 0.42))
+		canvas.draw_polyline(wisp, Color("9fb3c8"), 3.0, true)
+
+## A slab of ground (the 지진 lab's): grey rock with lighter stones on it, or a soft yellow sand heap
+## with ripple lines.
+static func _ground_slab(canvas: Control, r: Rect2, sand: bool) -> void:
+	var c := r.get_center()
+	var w := minf(r.size.x * 0.8, r.size.y * 1.9)
+	var h := r.size.y * 0.42
+	var slab := Rect2(c.x - w * 0.5, c.y - h * 0.3, w, h)
+	if sand:
+		var heap := PackedVector2Array()
+		for k in 17:
+			var t := k / 16.0
+			heap.append(Vector2(slab.position.x + w * t, slab.position.y + h * 0.18 - sin(PI * t) * h * 0.3))
+		heap.append(slab.end)
+		heap.append(Vector2(slab.position.x, slab.end.y))
+		canvas.draw_colored_polygon(heap, ArtPalette.SAND)
+		canvas.draw_polyline(heap, OUTLINE, 2.0, true)
+		for k in 3:
+			var y := slab.position.y + h * (0.35 + 0.2 * k)
+			canvas.draw_line(Vector2(slab.position.x + w * (0.2 + 0.05 * k), y), Vector2(slab.end.x - w * (0.2 + 0.05 * k), y), Color("d9ae4e"), 2.0, true)
+	else:
+		canvas.draw_rect(slab, Color("8d97a8"))
+		canvas.draw_rect(Rect2(slab.position, Vector2(w, h * 0.22)), ArtPalette.ROCK)
+		for k in 3:
+			canvas.draw_rect(Rect2(slab.position + Vector2(w * (0.12 + 0.3 * k), h * 0.4 + 4.0 * (k % 2)), Vector2(w * 0.18, h * 0.2)), Color("c3cad6"))
+		canvas.draw_rect(slab, OUTLINE, false, 2.0)
+
+
+## The block house (the 지진 lab's): two posts, a beam, a red roof, and with `brace` the X of two planks
+## between the posts.
+static func _block_house(canvas: Control, r: Rect2, brace: bool) -> void:
+	_ground(canvas, r)
+	var c := r.get_center()
+	var w := minf(r.size.x * 0.46, r.size.y * 0.95)
+	var foot := r.end.y - 1.0
+	var top := foot - r.size.y * 0.5
+	var post := w * 0.2
+	for side: float in [-1.0, 1.0]:
+		var x := c.x + side * (w * 0.5 - post * 0.5)
+		canvas.draw_rect(Rect2(x - post * 0.5, top, post, foot - top), Color("e3a35e"))
+		canvas.draw_rect(Rect2(x - post * 0.5, top, post, foot - top), OUTLINE, false, 1.5)
+	canvas.draw_rect(Rect2(c.x - w * 0.5, top - 6.0, w, 6.0), ArtPalette.WOOD_GRAIN)
+	var roof := PackedVector2Array([Vector2(c.x - w * 0.62, top - 6.0), Vector2(c.x + w * 0.62, top - 6.0), Vector2(c.x, top - 6.0 - r.size.y * 0.3)])
+	canvas.draw_colored_polygon(roof, ArtPalette.RED_TOP)
+	canvas.draw_polyline(PackedVector2Array([roof[0], roof[1], roof[2], roof[0]]), OUTLINE, 1.5, true)
+	if brace:
+		var x0 := c.x - w * 0.5 + post
+		var x1 := c.x + w * 0.5 - post
+		canvas.draw_line(Vector2(x0, foot - 2.0), Vector2(x1, top + 2.0), ArtPalette.WOOD_GRAIN, 4.0, true)
+		canvas.draw_line(Vector2(x1, foot - 2.0), Vector2(x0, top + 2.0), ArtPalette.WOOD_GRAIN, 4.0, true)
 
 
 static func _ground(canvas: Control, r: Rect2) -> void:

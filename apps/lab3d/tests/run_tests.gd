@@ -151,6 +151,36 @@
 ##    docs/islands/hutton-lines.md 3, the seasons and the upright loop, the judging of the three stages
 ##    (the wrong axis's line), the tilt button, no number on the screen, the Earth and the window in view,
 ##    the spot, the opening lines (the fox first), the hand (round the path) and the piece.
+## 24d. 물의 여행 (tests/water_cycle_checks.gd, #91 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 4, the water's rules (the day's cap), the judging of the three stages
+##    (the wrong sun's line), the sun button, no number on the screen, the hold, what matters in view,
+##    the spot, the opening lines (the fox, Puppy's two lines) and the piece.
+## 24e. 구름과 이슬 (tests/dew_cloud_checks.gd, #92 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 5, the dew point against the textbook values, the cubes each day
+##    needs and the parcel's cloud, the judging (the wrong day's line), the day button, no number on the
+##    screen, the cup, the summit and the parcel in view, the spot, the opening, the hands and the piece.
+## 24f. 바닷바람 (tests/sea_breeze_checks.gd, #93 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 6, the land warming and cooling faster than the sea, the wind from the
+##    cooler side, the night's land breeze, the judging of the three stages (the wrong time's line), the
+##    hold on the sun, the day / night button, no number on the screen, the sun and the props in view,
+##    the spot, the opening lines (the fox, Puppy's two) and the piece.
+## 24g. 태풍·비구름 (tests/typhoon_checks.gd, #94 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 7, the rule model (warmer sea, bigger cloud; cold sea and land weaken
+##    it), the judging of the three stages (the wrong sea's line), the sea button, no number on the
+##    screen, the cloud and the cold strip in view, the spot, the opening, the hand and the piece.
+## 24h. 강물이 깎고 쌓기 (tests/river_checks.gd, #95 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 8, the rules (steep cuts deep, gentle drops its sand, the bend's outer
+##    bank), the judging of the three stages (the wrong slope's line), the slope button, no number on the
+##    screen, the targets in view, the spot, the opening lines, the hand (hold the cloud: rain) and the piece.
+## 24i. 지층 쌓기 (tests/strata_checks.gd, #96 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 9, the rule (the first pour is the bottom layer) and the statuses, the
+##    judging of the three stages, each stage's objects and the hand guide, no number on the screen, the
+##    buckets, the tank and the cliff in view, the spot, the opening, the hand (pour, dig) and the piece.
+## 24j. 지진 (tests/earthquake_checks.gd, #97 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 10, the shake model (the pull's levels, rock and sand, the brace),
+##    the judging of the three stages, the Jolt house posed on the model and falling with it, the
+##    buttons, no number on the screen, the table and the house in view, the volcano's stripes, the
+##    spot, the opening lines, the slingshot and the piece.
 ## Times are engine fixed steps (60 Hz), independent of rendering FPS.
 extends SceneTree
 
@@ -374,6 +404,41 @@ func _run() -> void:
 	_expect(seasons != null and seasons.can_instantiate(), "seasons checks compile", "")
 	if seasons != null and seasons.can_instantiate():
 		await seasons.new(self, _expect).run()
+	print("== 물의 여행 (#91): Hutton Island's water cycle lab, its lines, rules, judging, sun button, hold, view and piece ==")
+	var water_cycle: GDScript = load("res://tests/water_cycle_checks.gd")
+	_expect(water_cycle != null and water_cycle.can_instantiate(), "water-cycle checks compile", "")
+	if water_cycle != null and water_cycle.can_instantiate():
+		await water_cycle.new(self, _expect).run()
+	print("== 구름과 이슬 (#92): Hutton Island's dew and cloud lab, its lines, dew point, judging, day button, view, hands and piece ==")
+	var dew_cloud: GDScript = load("res://tests/dew_cloud_checks.gd")
+	_expect(dew_cloud != null and dew_cloud.can_instantiate(), "dew-cloud checks compile", "")
+	if dew_cloud != null and dew_cloud.can_instantiate():
+		await dew_cloud.new(self, _expect).run()
+	print("== 바닷바람 (#93): Hutton Island's sea breeze lab, its lines, model, judging, hold, time button, view and piece ==")
+	var sea_breeze: GDScript = load("res://tests/sea_breeze_checks.gd")
+	_expect(sea_breeze != null and sea_breeze.can_instantiate(), "sea breeze checks compile", "")
+	if sea_breeze != null and sea_breeze.can_instantiate():
+		await sea_breeze.new(self, _expect).run()
+	print("== 태풍·비구름 (#94): Hutton Island's typhoon lab, its lines, rule model, judging, sea button, view, hand and piece ==")
+	var typhoon: GDScript = load("res://tests/typhoon_checks.gd")
+	_expect(typhoon != null and typhoon.can_instantiate(), "typhoon checks compile", "")
+	if typhoon != null and typhoon.can_instantiate():
+		await typhoon.new(self, _expect).run()
+	print("== 강물이 깎고 쌓기 (#95): Hutton Island's river lab, its lines, rules, judging, slope button, view, hold and piece ==")
+	var river: GDScript = load("res://tests/river_checks.gd")
+	_expect(river != null and river.can_instantiate(), "river checks compile", "")
+	if river != null and river.can_instantiate():
+		await river.new(self, _expect).run()
+	print("== 지층 쌓기 (#96): Hutton Island's strata lab, its lines, rule, judging, stages, view, hand and piece ==")
+	var strata: GDScript = load("res://tests/strata_checks.gd")
+	_expect(strata != null and strata.can_instantiate(), "strata checks compile", "")
+	if strata != null and strata.can_instantiate():
+		await strata.new(self, _expect).run()
+	print("== 지진 (#97): Hutton Island's earthquake lab, its lines, model, judging, Jolt house, view, slingshot and piece ==")
+	var earthquake: GDScript = load("res://tests/earthquake_checks.gd")
+	_expect(earthquake != null and earthquake.can_instantiate(), "earthquake checks compile", "")
+	if earthquake != null and earthquake.can_instantiate():
+		await earthquake.new(self, _expect).run()
 	print("== the hand guide (2026-10-30: the gesture on the lab's object, once and after a quiet while; the map's tap) ==")
 	var hand: GDScript = load("res://tests/hand_guide_checks.gd")
 	_expect(hand != null and hand.can_instantiate(), "hand guide checks compile", "")

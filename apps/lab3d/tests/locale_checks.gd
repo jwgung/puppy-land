@@ -96,6 +96,34 @@ func check_keys() -> void:
 		named["seasons.sun." + word] = "t"
 	for word in ["long", "middle", "short"]:   # the window's day length words
 		named["seasons.day." + word] = "t"
+	for id in ["ready", "clear", "dew", "rising", "cloud"]:   # the dew-cloud card's words (DewCloudLab.observations)
+		named["dew_cloud.status." + id] = "t"
+	for word in ["warm", "cool", "cold", "icy"]:   # the cup's cold
+		named["dew_cloud.cup." + word] = "t"
+	for word in ["low", "middle", "top"]:   # the air parcel's height
+		named["dew_cloud.height." + word] = "t"
+	for word in ["small", "rain", "typhoon", "weak"]:   # the typhoon lab's cloud words (TyphoonLab.observations)
+		named["typhoon.cloud." + word] = "t"
+	for word in ["cold", "warm", "hot", "land"]:   # what is under the cloud
+		named["typhoon.under." + word] = "t"
+	for word in ["lots", "some", "none"]:   # the water vapour rising there
+		named["typhoon.vapor." + word] = "t"
+	for id in ["ready", "little", "valley", "bar", "bank"]:   # the river card's words (RiverLab.observations)
+		named["river.status." + id] = "t"
+	for word in ["none", "some", "much"]:   # how much was cut, how much sand
+		named["river.amount." + word] = "t"
+	for id in ["ready", "stacking", "layered", "fossil", "mixed", "shell_off", "found", "dug_off"]:   # the strata card's words (StrataLab.observations, #96)
+		named["strata.status." + id] = "t"
+	for id in StrataModel.MATERIALS + ["none"]:   # the strata's bottom and top layer words
+		named["strata.layer." + id] = "t"
+	for id in ["ready", "shaking", "stood", "held", "strongest", "fell"]:   # the house card's words (EarthquakeLab.observations)
+		named["earthquake.status." + id] = "t"
+	for word in ["small", "medium", "big", "biggest"]:   # the shake's words and the pull's readout (EarthquakeLab.shake_word)
+		named["earthquake.shake." + word] = "t"
+		named["earthquake.pull." + word] = "t"
+	named["earthquake.shake.none"] = "t"
+	for id in ["rock", "sand"]:   # the ground's words
+		named["earthquake.ground." + id] = "t"
 	for id in Island.ids():   # the islands' names and fields (섬 고르기, IslandCards, #75)
 		named["island.%s.name" % id] = "t"
 		named["island.%s.about" % id] = "t"

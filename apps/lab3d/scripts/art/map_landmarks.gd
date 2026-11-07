@@ -54,6 +54,20 @@ static func add(b: ArtMeshBuilder, id: String, xf: Transform3D) -> float:
 			return _shadow_stick(b, xf)
 		"seasons":
 			return _orrery(b, xf)
+		"water-cycle":
+			return _rain_pond(b, xf)
+		"dew-cloud":
+			return _dew_cup(b, xf)
+		"sea-breeze":
+			return _pinwheel(b, xf)
+		"typhoon":
+			return _typhoon(b, xf)
+		"river":
+			return _river_hill(b, xf)
+		"strata":
+			return _strata_cliff(b, xf)
+		"earthquake":
+			return _shake_house(b, xf)
 	_rod(b, xf, Vector3.ZERO, Vector3(0.0, 1.0, 0.0), 0.08, ArtPalette.BLUE)
 	_ball(b, xf, Vector3(0.0, 1.15, 0.0), 0.2, ArtPalette.WHITE)
 	return 1.35
@@ -377,6 +391,108 @@ static func _orrery(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	_rod(b, xf, earth - axis * 0.3, earth + axis * 0.32, 0.025, ArtPalette.STEEL_SHINE)
 	_ball(b, xf, earth + axis * 0.33, 0.045, ArtPalette.RED)
 	return 1.6
+
+
+## The hutton island's 물의 여행 (#91, "바닷가, 마른 연못이 있는 곳"): a little pond in a ring of stones, a
+## rain cloud over it on a post with drops falling, a small sun beside it.
+static func _rain_pond(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.add_cylinder(xf, 0.55, 0.5, 0.1, 12, ArtPalette.ROCK, true, ArtPalette.STEEL_SHINE)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, 0.1, 0.0)), 0.42, 0.42, 0.03, 12, ArtPalette.POND)
+	_rod(b, xf, Vector3(-0.45, 0.1, -0.2), Vector3(-0.45, 1.25, -0.2), 0.04, ArtPalette.WOOD_GRAIN)
+	for puff: Array in [[Vector3(-0.22, 1.35, 0.0), 0.22], [Vector3(0.05, 1.45, 0.0), 0.27], [Vector3(0.3, 1.35, 0.0), 0.2]]:
+		_ball(b, xf, puff[0], puff[1], ArtPalette.WHITE)
+	for drop: Vector3 in [Vector3(-0.15, 0.9, 0.05), Vector3(0.1, 0.7, 0.0), Vector3(0.3, 0.95, -0.05), Vector3(-0.05, 0.5, 0.1)]:
+		_rod(b, xf, drop, drop + Vector3(0.0, -0.14, 0.0), 0.03, ArtPalette.BLUE)
+	_ball(b, xf, Vector3(0.55, 1.05, -0.15), 0.14, ArtPalette.YELLOW)
+	return 1.75
+
+## The hutton island's 구름과 이슬 (#92, "바닷가 언덕, 유리컵이 놓인 곳이야!"): a glass cup of iced water on
+## a little table, dew drops on its front, and a small cloud over it.
+static func _dew_cup(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.add_cylinder(xf, 0.5, 0.42, 0.12, 10, ArtPalette.WOOD_GRAIN, true, ArtPalette.WOOD)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, 0.12, 0.0)), 0.26, 0.31, 0.62, 12, Color("cdeeff"), true, Color("8fd3ff"))
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, 0.7, 0.0)), 0.32, 0.32, 0.04, 12, ArtPalette.WHITE)
+	_ball(b, xf, Vector3(0.05, 0.72, 0.02), 0.09, Color("e3f4ff"))
+	for k in 5:
+		var a := deg_to_rad(60.0 + k * 15.0)
+		_ball(b, xf, Vector3(cos(a) * 0.31, 0.25 + 0.08 * (k % 3), sin(a) * 0.31), 0.04, Color("4aa8f5"))
+	for puff: Array in [[Vector3(-0.15, 1.15, 0.0), 0.16], [Vector3(0.05, 1.22, 0.0), 0.2], [Vector3(0.24, 1.14, 0.0), 0.15]]:
+		_ball(b, xf, puff[0], puff[1], ArtPalette.CLOUD)
+	return 1.45
+
+## The hutton island's 바닷바람 (#93, "바람개비가 서 있는 곳"): a pinwheel on a pole, four coloured blades
+## round a white hub facing the front.
+static func _pinwheel(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.add_cylinder(xf, 0.34, 0.3, 0.1, 10, ArtPalette.WOOD_GRAIN, true, ArtPalette.WOOD)
+	_rod(b, xf, Vector3(0.0, 0.1, 0.0), Vector3(0.0, 1.1, 0.0), 0.05, ArtPalette.WOOD)
+	var hub := Vector3(0.0, 1.15, 0.08)
+	var colors := [ArtPalette.RED, ArtPalette.YELLOW, ArtPalette.BLUE, ArtPalette.GRASS]
+	for i in 4:
+		var a := TAU * i / 4.0 + 0.4
+		var out := Vector3(cos(a), sin(a), 0.0)
+		var side := Vector3(-sin(a), cos(a), 0.0)
+		var c: Color = colors[i]
+		var p := [xf * hub, xf * (hub + out * 0.45), xf * (hub + out * 0.25 + side * 0.24 + Vector3(0.0, 0.0, 0.08))]
+		b.add_triangle(p, [c, c, c.lightened(0.2)], xf.basis * Vector3.BACK)
+		b.add_triangle([p[0], p[2], p[1]], [c, c, c], xf.basis * Vector3.FORWARD)
+	_ball(b, xf, hub + Vector3(0.0, 0.0, 0.04), 0.07, ArtPalette.WHITE)
+	return 1.6
+
+## The hutton island's 태풍·비구름 (#94, "파도가 높은 곳"): a round pool of warm sea with white wave
+## caps and, over it on a thin post, a grey swirl of cloud arms round an eye.
+static func _typhoon(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.add_cylinder(xf, 0.55, 0.5, 0.1, 12, ArtPalette.SAND, true, TyphoonProps.WARM_SEA)
+	for k in 4:
+		var a := TAU * k / 4.0 + 0.4
+		_box(b, xf, Vector3(cos(a) * 0.32, 0.11, sin(a) * 0.32), Vector3(0.16, 0.025, 0.05), ArtPalette.FOAM)
+	_rod(b, xf, Vector3(0.0, 0.1, 0.0), Vector3(0.0, 0.95, 0.0), 0.03, ArtPalette.STEEL_SHINE)
+	var center := Vector3(0.0, 1.05, 0.0)
+	for arm in 3:
+		for k in 5:
+			var u := k / 4.0
+			var a := TAU * arm / 3.0 - u * 2.4
+			var r := lerpf(0.14, 0.5, u)
+			b.add_sphere(xf * Transform3D(Basis.from_scale(Vector3(1.0, 0.55, 1.0)), center + Vector3(cos(a) * r, 0.0, -sin(a) * r)), lerpf(0.13, 0.07, u), 3, 6, Color("c9d3e3"))
+	return 1.4
+
+## The hutton island's 강물이 깎고 쌓기 (#95, "골짜기 입구, 강이 굽이치는 곳"): a little green mountain
+## with a brown cut down its face, a cloud over it and a blue river winding from its foot.
+static func _river_hill(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(-0.3, 0.0, -0.15)), 0.62, 0.08, 0.9, 7, ArtPalette.GRASS, true, ArtPalette.GRASS_TOP)
+	_rod(b, xf, Vector3(-0.3, 0.86, -0.1), Vector3(0.12, 0.08, 0.32), 0.05, ArtPalette.SOIL)
+	var river := [Vector3(0.12, 0.03, 0.32), Vector3(0.45, 0.03, 0.12), Vector3(0.75, 0.03, 0.35), Vector3(0.95, 0.03, 0.7)]
+	for k in river.size() - 1:
+		_rod(b, xf, river[k], river[k + 1], 0.07, ArtPalette.RIVER, 6)
+	_ball(b, xf, Vector3(0.45, 0.06, 0.32), 0.1, ArtPalette.SAND)
+	for puff: Array in [[Vector3(-0.3, 1.35, -0.1), 0.22], [Vector3(-0.55, 1.28, -0.1), 0.16], [Vector3(-0.05, 1.28, -0.1), 0.16]]:
+		_ball(b, xf, puff[0], puff[1], ArtPalette.CLOUD)
+	return 1.65
+
+## The hutton island's 지층 쌓기 (#96, "줄무늬 절벽이 있는 곳"): a little cliff of coloured stripes (the
+## lab's gravel, sand, mud, grey ash, sand) with grass on top.
+static func _strata_cliff(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	var h := 0.26
+	for i in StrataModel.CLIFF.size():
+		var colors: Array = StrataProps.COLORS[StrataModel.CLIFF[i]]
+		_box(b, xf, Vector3(0.0, h * (i + 0.5), 0.0), Vector3(1.0 - 0.03 * (i % 2), h, 0.7), colors[0], colors[1])
+	_box(b, xf, Vector3(0.0, h * StrataModel.CLIFF.size() + 0.05, 0.0), Vector3(1.04, 0.1, 0.74), ArtPalette.GRASS, ArtPalette.GRASS_TOP)
+	return h * StrataModel.CLIFF.size() + 0.25
+
+## The hutton island's 지진 (#97, "블록 집이 서 있는 곳"): the shake table (blue base, orange deck, the red
+## handle's knob on the left) and the block house on it, its X brace and red roof.
+static func _shake_house(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	_box(b, xf, Vector3(0.0, 0.08, 0.0), Vector3(1.3, 0.16, 0.8), ArtPalette.BLUE_DARK, ArtPalette.BLUE)
+	_box(b, xf, Vector3(0.0, 0.2, 0.0), Vector3(1.1, 0.08, 0.7), ArtPalette.ORANGE, ArtPalette.ORANGE_TOP)
+	_rod(b, xf, Vector3(-0.55, 0.2, 0.0), Vector3(-0.72, 0.2, 0.0), 0.03, ArtPalette.STEEL)
+	_ball(b, xf, Vector3(-0.76, 0.2, 0.0), 0.1, ArtPalette.RED)
+	for x: float in [-0.3, 0.3]:
+		_box(b, xf, Vector3(x, 0.52, 0.0), Vector3(0.14, 0.56, 0.36), Color("e3a35e"))
+	_box(b, xf, Vector3(0.0, 0.84, 0.0), Vector3(0.78, 0.09, 0.4), ArtPalette.WOOD_GRAIN)
+	_rod(b, xf, Vector3(-0.22, 0.26, 0.2), Vector3(0.22, 0.78, 0.2), 0.03, ArtPalette.WOOD_GRAIN)
+	_rod(b, xf, Vector3(0.22, 0.26, 0.2), Vector3(-0.22, 0.78, 0.2), 0.03, ArtPalette.WOOD_GRAIN)
+	for side: float in [-1.0, 1.0]:   # the roof's two slopes
+		b.add_rounded_box(xf * Transform3D(Basis(Vector3.BACK, -side * 0.6), Vector3(side * 0.2, 1.02, 0.0)), Vector3(0.56, 0.07, 0.5), 0.0, 0, ArtPalette.RED, ArtPalette.RED_TOP)
+	return 1.4
 
 
 # --- helpers ---------------------------------------------------------------------------------

@@ -73,6 +73,10 @@ var words_face := ""
 ## own words (set_words).
 var picture := ""
 var words_picture := ""
+## Where the card stands in the view before it keeps clear of the box and the rects: shares of the
+## room left (x) and down (y) inside a CARD_GAP margin, (0.5, 0.5) the middle (the screen sets it from
+## Experiment.picture_card_align).
+var card_align := Vector2(0.5, 0.5)
 ## Rects in the parent (the view) the card keeps clear of when it can (set_card_avoid, before layout()).
 var card_avoid: Array[Rect2] = []
 var card: Control
@@ -329,13 +333,17 @@ func set_card_avoid(controls: Array) -> void:
 		card_avoid.append(parent.get_global_transform().affine_inverse() * r if parent != null else r)
 
 
-## The card's place: the middle of `view`; up when it would come near the box (and its name tag).
+## The card's place: `card_align` of `view` (the middle by default); up when it would come near the box
+## (and its name tag).
 ## Near an avoided rect it moves down below it while it stays above the box, else to its right
 ## while it stays in the view. A move can bring it onto another avoided rect, so the rects are
 ## checked again (a few passes) until none is in the way; a narrow view where no place is clear
 ## keeps the last place (it may overlap).
 func _place_card(view: Rect2) -> void:
+	var room := view.grow(-CARD_GAP)
 	var at := view.get_center() - CARD_SIZE / 2.0
+	if card_align != Vector2(0.5, 0.5):
+		at = room.position + (room.size - CARD_SIZE).max(Vector2.ZERO) * card_align
 	var under := position.y + box.position.y - NAME_LIFT - CARD_GAP
 	at.y = minf(at.y, under - CARD_SIZE.y)
 	for pass_index in 4:
