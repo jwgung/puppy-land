@@ -733,7 +733,7 @@ func check_piece() -> void:
 		frames += 1
 	var rest: Vector3 = game.piece.global_position
 	var bar := RiverProps.bar_top(lab.props.shown_inner)
-	if game.piece_state != "out" or absf(rest.y - (bar.y + LabGame.PIECE_SIZE)) > 0.05 \
+	if game.piece_state != "out" or absf(rest.y - (bar.y + game.piece_size)) > 0.05 \
 			or Vector2(rest.x - bar.x, rest.z - bar.z).length() > 0.35 or rest.distance_to(cut) < 1.0:
 		problems.append("after the last stamp: %s at %s (the bar %s)" % [game.piece_state, str(rest), str(bar)])
 	if not game.take_piece() is Vector3:

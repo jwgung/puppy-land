@@ -182,6 +182,8 @@ func check_lab_pieces() -> void:
 		await tree.process_frame
 		if lab.game == null or not _is_sundial(lab.game.piece):
 			problems.append("%s: no sundial piece" % d.id)
+		elif not is_equal_approx(lab.game.full_size(), LabGame.PIECE_SIZE * LabGame.SUNDIAL_LAB_SCALE):
+			problems.append("%s: full size %.2f, not the bigger lab wedge" % [d.id, lab.game.full_size()])
 		lab.queue_free()
 		await tree.process_frame
 	for id in ["free-fall", "orbit"]:
@@ -190,9 +192,11 @@ func check_lab_pieces() -> void:
 		await tree.process_frame
 		if lab.game == null or not _is_star_piece(lab.game.piece):
 			problems.append("%s: not the star piece" % id)
+		elif not is_equal_approx(lab.game.full_size(), LabGame.PIECE_SIZE):
+			problems.append("%s: star size changed (%.2f)" % [id, lab.game.full_size()])
 		lab.queue_free()
 		await tree.process_frame
-	expect.call(problems.is_empty(), "sundial piece: every hutton lab hides the sundial wedge (LabGame.make_piece); the mechanics labs keep the star", "; ".join(problems))
+	expect.call(problems.is_empty(), "sundial piece: every hutton lab hides the sundial wedge (LabGame.make_piece), 1.3 times the star's size in the lab; the mechanics labs keep the star at its size", "; ".join(problems))
 
 
 ## The found piece over the cat and the round-done card follow the lab's island.
