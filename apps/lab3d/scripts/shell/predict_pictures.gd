@@ -21,7 +21,9 @@ const KINDS := ["long_arc", "same_arc", "fall_together", "fall_heavy_first", "li
 	# #87 (계절): would an upright Earth have seasons?
 	"seasons_change", "seasons_same",
 	# #91 (물의 여행): does warmed seawater rise into the sky, or stay in the sea?
-	"water_rises", "water_stays"]
+	"water_rises", "water_stays",
+	# #92 (구름과 이슬): the drops on a cold cup, from the air or from inside?
+	"dew_from_air", "dew_from_inside"]
 const STRONG := Color("e2683c")
 const PALE := Color("c9b892")
 const GROUND := Color("8a6a46")
@@ -92,6 +94,8 @@ static func draw(canvas: Control, kind: String) -> void:
 			_seasons(canvas, r, kind == "seasons_change")
 		"water_rises", "water_stays":
 			_water(canvas, r, kind == "water_rises")
+		"dew_from_air", "dew_from_inside":
+			_dew(canvas, r, kind == "dew_from_air")
 		_:
 			_ground(canvas, r)
 
@@ -644,3 +648,35 @@ static func _water(canvas: Control, r: Rect2, rises: bool) -> void:
 		canvas.draw_polyline(wisp, STRONG if rises else PALE, 3.0 if rises else 2.0, true)
 		if rises:
 			_arrow(canvas, wisp[-2], wisp[-1], STRONG, 3.0)
+
+## A glass of iced water with drops on its outside; orange arrows show where the drops come from: in
+## from the vapour dots in the air round it ("dew_from_air"), or out through the glass from the water
+## inside ("dew_from_inside").
+static func _dew(canvas: Control, r: Rect2, from_air: bool) -> void:
+	_ground(canvas, r)
+	var c := Vector2(r.get_center().x, r.end.y)
+	var h := r.size.y * 0.8
+	var bottom := r.size.y * 0.2
+	var top := r.size.y * 0.25
+	var glass := PackedVector2Array([c + Vector2(-bottom, -2.0), c + Vector2(bottom, -2.0), c + Vector2(top, -h), c + Vector2(-top, -h)])
+	var water := PackedVector2Array([c + Vector2(-bottom + 3.0, -5.0), c + Vector2(bottom - 3.0, -5.0), c + Vector2(top - 4.0, -h * 0.7), c + Vector2(-top + 4.0, -h * 0.7)])
+	canvas.draw_colored_polygon(water, WATER)
+	for cube: Vector2 in [Vector2(-6.0, -h * 0.72), Vector2(6.0, -h * 0.68)]:
+		canvas.draw_rect(Rect2(c + cube - Vector2(5.0, 5.0), Vector2(10.0, 10.0)), Color("e3f4ff"))
+	canvas.draw_polyline(PackedVector2Array([glass[3], glass[0], glass[1], glass[2]]), GROUND, 2.0, true)
+	# Drops on both sides of the glass.
+	for k in 4:
+		var y := -h * (0.25 + 0.15 * k)
+		var w := lerpf(bottom, top, (-y) / h)
+		for side: float in [-1.0, 1.0]:
+			canvas.draw_circle(c + Vector2(side * (w + 3.0), y + (2.0 if side > 0.0 else -3.0)), 2.6, Color("4aa8f5"))
+	if from_air:
+		for side: float in [-1.0, 1.0]:
+			for k in 2:
+				var dot := c + Vector2(side * (top + 22.0 + 6.0 * k), -h * (0.45 + 0.3 * k))
+				canvas.draw_arc(dot, 3.5, 0.0, TAU, 12, Color("8cc8f2"), 1.5, true)
+				_arrow(canvas, dot + Vector2(-side * 5.0, 0.0), dot + Vector2(-side * 15.0, 1.0), STRONG, 2.5)
+	else:
+		for side: float in [-1.0, 1.0]:
+			var from := c + Vector2(side * 4.0, -h * 0.4)
+			_arrow(canvas, from, from + Vector2(side * (bottom + 14.0), -2.0), STRONG, 3.0)

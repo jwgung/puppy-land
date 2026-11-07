@@ -1,0 +1,134 @@
+{
+  "id": "dew-cloud",
+  "version": 1,
+  "icon": "☁",
+  "law": {},
+  "scene": "res://experiments/dew_cloud/dew_cloud.gd",
+  "bench_id": "DC",
+  "camera": {
+    "target": [0.4, 2.3, 0.0],
+    "distance": 12.5,
+    "distance_range": [7.0, 30.0],
+    "yaw_range_deg": [-100.0, 100.0],
+    "pitch_range_deg": [-89.0, -2.0],
+    "pan_radius": 7.0,
+    "default_mode": "front",
+    "views": {
+      "front": { "yaw_deg": 0.0, "pitch_deg": -12.0 },
+      "three_quarter": { "yaw_deg": 24.0, "pitch_deg": -22.0 },
+      "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 26.0 },
+      "side": { "yaw_deg": 90.0, "pitch_deg": -12.0, "distance": 24.0 },
+      "follow": { "yaw_deg": 0.0, "pitch_deg": -12.0, "distance": 12.5, "target": [0.4, 2.3, 0.0] }
+    }
+  },
+  "controls": [
+    {
+      "id": "air",
+      "type": "choice",
+      "default": "humid",
+      "options": [{ "id": "humid" }, { "id": "dry" }]
+    }
+  ],
+  "actions": [
+    { "id": "reset", "style": "primary" }
+  ],
+  "key_observations": ["state", "cup", "height"],
+  "predict": {
+    "question_face": "thinking",
+    "choices": [
+      { "id": "air", "picture": "dew_from_air" },
+      { "id": "inside", "picture": "dew_from_inside" }
+    ],
+    "answer": "air",
+    "bridge_face": "happy"
+  },
+  "missions": {
+    "judge_on": ["dew", "cloud"],
+    "stages": [
+      {
+        "observe": "",
+        "judge_on": ["dew"],
+        "miss_on": ["clear"],
+        "conditions": { "air": "humid" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["dew"],
+        "miss_on": ["clear"],
+        "conditions": { "air": "dry" },
+        "say_face": "explain",
+        "win_face": "surprised",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["cloud"],
+        "miss_on": ["rising"],
+        "conditions": { "air": "humid" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      }
+    ]
+  },
+  "story": { "keeper_face": "worried", "clue_face": "thinking", "map_clue_face": "explain" },
+  "kid": {
+    "intro_face": "explain",
+    "intro_more": [
+      { "face": "explain" }
+    ],
+    "card": "state",
+    "say_face": "explain",
+    "picks": {
+      "air": [
+        { "value": "humid", "picture": "air_humid" },
+        { "value": "dry", "picture": "air_dry" }
+      ]
+    }
+  },
+  "note": {
+    "numbers": [
+      { "ids": ["state"] },
+      { "ids": ["cup"] },
+      { "ids": ["height"] }
+    ],
+    "graph": true
+  },
+  "cast": {
+    "dugi": {
+      "at": [-7.4, 2.4],
+      "explain_on": ["dew", "cloud"],
+      "delay_s": 0.6
+    },
+    "puppy": {
+      "at": [1.4, 3.0]
+    }
+  },
+  "observations": [
+    { "id": "state" },
+    { "id": "cup" },
+    { "id": "height" }
+  ],
+  "manipulation": {
+    "grab_radius": 72.0,
+    "objects": [
+      { "id": "ice", "surface": "table", "snap": 0.0, "height": false, "marker": false, "guide_to": "max" },
+      { "id": "air", "surface": "slope", "snap": 0.0, "height": false, "marker": false, "guide_to": "min" }
+    ]
+  },
+  "graph": {
+    "x": { "unit": "", "max": 5.0 },
+    "y": { "unit": "°C", "max": 30.0 },
+    "series": [
+      { "id": "cup", "color": "#2d7cf6", "style": "line" },
+      { "id": "dew", "color": "#ffb31a", "style": "line" },
+      { "id": "now", "color": "#ff3b3b", "style": "points" }
+    ]
+  }
+}

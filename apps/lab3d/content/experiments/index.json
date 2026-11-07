@@ -21,7 +21,8 @@
       "day-night.json",
       "shadow-clock.json",
       "seasons.json",
-      "water-cycle.json"
+      "water-cycle.json",
+      "dew-cloud.json"
     ]
   }
 }

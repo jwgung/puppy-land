@@ -56,6 +56,8 @@ static func add(b: ArtMeshBuilder, id: String, xf: Transform3D) -> float:
 			return _orrery(b, xf)
 		"water-cycle":
 			return _rain_pond(b, xf)
+		"dew-cloud":
+			return _dew_cup(b, xf)
 	_rod(b, xf, Vector3.ZERO, Vector3(0.0, 1.0, 0.0), 0.08, ArtPalette.BLUE)
 	_ball(b, xf, Vector3(0.0, 1.15, 0.0), 0.2, ArtPalette.WHITE)
 	return 1.35
@@ -393,6 +395,20 @@ static func _rain_pond(b: ArtMeshBuilder, xf: Transform3D) -> float:
 		_rod(b, xf, drop, drop + Vector3(0.0, -0.14, 0.0), 0.03, ArtPalette.BLUE)
 	_ball(b, xf, Vector3(0.55, 1.05, -0.15), 0.14, ArtPalette.YELLOW)
 	return 1.75
+
+## The hutton island's 구름과 이슬 (#92, "바닷가 언덕, 유리컵이 놓인 곳이야!"): a glass cup of iced water on
+## a little table, dew drops on its front, and a small cloud over it.
+static func _dew_cup(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.add_cylinder(xf, 0.5, 0.42, 0.12, 10, ArtPalette.WOOD_GRAIN, true, ArtPalette.WOOD)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, 0.12, 0.0)), 0.26, 0.31, 0.62, 12, Color("cdeeff"), true, Color("8fd3ff"))
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, 0.7, 0.0)), 0.32, 0.32, 0.04, 12, ArtPalette.WHITE)
+	_ball(b, xf, Vector3(0.05, 0.72, 0.02), 0.09, Color("e3f4ff"))
+	for k in 5:
+		var a := deg_to_rad(60.0 + k * 15.0)
+		_ball(b, xf, Vector3(cos(a) * 0.31, 0.25 + 0.08 * (k % 3), sin(a) * 0.31), 0.04, Color("4aa8f5"))
+	for puff: Array in [[Vector3(-0.15, 1.15, 0.0), 0.16], [Vector3(0.05, 1.22, 0.0), 0.2], [Vector3(0.24, 1.14, 0.0), 0.15]]:
+		_ball(b, xf, puff[0], puff[1], ArtPalette.CLOUD)
+	return 1.45
 
 
 # --- helpers ---------------------------------------------------------------------------------
