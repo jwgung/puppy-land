@@ -1021,6 +1021,16 @@ python3 -I apps/lab3d/tools/device_gesture.py orbit  # orbit | pinch | pinch-fix
 - **태양 위치 모델** `SunModel`(낮과 밤·그림자 시계·계절이 함께 씀): 입력 `rotation`(지구 자전 각, 0 = 자정, 180 = 한낮, 한 바퀴 = 24시간), `orbit`(공전 각, 0 = 춘분, 90 = 하지, 270 = 동지), `tilt`(자전축 기울기, 23.44° 또는 똑바로 0°), `latitude`(기본 서울 37.57°N), `stick`(막대 높이 m). 결과는 태양 고도·방위각(북 0°, 동 90°), 남중 고도, 적위, 낮 길이(태양 중심이 기하학적 지평선 위에 있는 시간: 대기 굴절·역서 정밀도 없음, 2026-11-06 사용자 결정), 낮·밤(고도 > 0°)과 상태(`night`·`sunrise`·`day`·`sunset`. 기하학적 해 뜨기·지기의 앞뒤 1시간(`EDGE_HOURS`, 시간각으로 재서 위도·계절과 무관)이 해 뜨는·지는 중, #74 사용자 결정. 그 전에는 지평선 ±7.5° 고도 띠로 서울에서 약 40분이었다), 막대 그림자의 길이·방향(해가 땅 위일 때만). 공전은 원, 시각은 지방 태양시다(균시차 없음).
 - **교과서 값 시험**: `tests/earth_textbook_values.json`(출처를 단 기준값: 자전 24시간, 서울 한낮 해 높이 하지 75.9°·동지 29.0°·춘추분 52.4°, 낮 길이는 하지 > 춘분 > 동지이고 춘분은 약 12시간, 똑바로 선 지구는 일 년 내내 같은 한낮 높이, 그림자는 한낮에 가장 짧고 북쪽, 해는 동쪽에서 뜸)과 `tests/earth_model_checks.gd`. 새 모델은 기준값과 출처·허용 오차를 이 JSON에 더하고 같은 시험 파일에 검사를 더한다.
 
+### 새 실험 만들기 (허턴섬) (#90, 2026-11-07)
+
+허턴섬 장소 하나 = 실험 하나다. 낮과 밤·그림자 시계·계절을 본보기로 같은 틀을 따른다.
+
+- **파일 나누기**: `experiments/<이름>/`에 넷. `<이름>.gd` 실험(`extends EarthLab`: 모델 연결, 손잡이, 판정 `status()`, `_redraw()`), `<이름>_model.gd` 순수 모델(`EarthModel`/`SunModel`, 3D 없음), `<이름>_props.gd` 그림(`RefCounted`, 메시만, 빵고양이 `cat` 포함), `<이름>_game.gd` 조각(`extends LabGame`).
+- **조각 도우미**(`LabGame`, `scripts/art/lab_game.gd`): `cheer_cat(last)`(도장마다 빵고양이 환호, `lab_cat()`은 `props.cat`), `cat_spot(offset)`(빵고양이 곁 지점, 고양이가 없으면 `Vector3.ZERO + offset`; `launch_to`의 `spot`으로 권장), `launch_to(spot, flight_s, ground, grow)`(실험의 g로 `flight_s`초 뒤 `spot`에 내려앉는 포물선, `grow`면 작게 숨은 조각이 날며 `PIECE_SIZE`로 커짐), 타이머 `NEVER`·`running(at)`·`progress(at, s)`·`eased(at, s)`·`pulse(at, s)`·`due(until)`(시각은 `_t` 기준: `_open_at = _t`로 켜고 `NEVER`로 끔). 그 밖은 `make_piece`·`smooth`·`wobble`·`chest_mesh`·`add_lamps`. 옛 실험(pulley, orbit, free_fall, incline_friction)은 아직 리터럴 `-10.0` 타이머를 쓰고, 새 실험은 `NEVER`를 쓴다.
+- **그림 도우미**: `WindowArt`(`scripts/art/window_art.gd`) 마당 창 `sky_mesh(size, top, low)`·`horizon_y(size, yard_share)`·`add_frame(b, inner, border, depth, …)`·`add_stand(b, center, bottom, half_span, …)`, `ArtKit.disc`(카메라를 보는 둥근 판)·`ArtKit.flat_disc`(땅에 누운 둥근 판). 복사하지 말고 부른다.
+- **데이터와 말**: `content/experiments/<id>.json`(정의: 조건, 미션, 조작, 그림 단추), `content/locale/ko|en/experiments/<id>.json`(말: 대사·미션 줄, 데이터 파일에는 한글을 두지 않음), `content/experiments/index.json`의 `islands.hutton` 목록에 파일 이름을 더한다. 실험 id는 `content/islands/hutton.json`의 장소 id와 같아야 지도 장소가 열린다.
+- **시험**: `tests/<이름>_checks.gd`에서 한국어 줄을 `docs/islands/hutton-lines.md`의 그 절과 글자까지 비교한다(`day_night_checks.gd`의 `LINES_PATH` 참고). 미션 조건은 `docs/islands/hutton-missions.md`와 맞춘다.
+
 ### 낮과 밤 (#74, 2026-11-06)
 
 허턴섬의 첫 장소([미션](../../docs/islands/hutton-missions.md) 1절, [대사](../../docs/islands/hutton-lines.md) 1절, 이슈 #74 결정). `experiments/day_night/`: `DayNightLab`(`EarthLab`), `DayNightModel`(`SunModel`), `DayNightProps`(그림), `DayNightGame`(조각). 데이터는 `content/experiments/day-night.json`, 말은 `content/locale/<언어>/experiments/day-night.json`, 목록은 `index.json`의 `islands.hutton`이다.

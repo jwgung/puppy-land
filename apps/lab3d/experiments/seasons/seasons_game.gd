@@ -49,11 +49,8 @@ const FLAKE_ANGLE := 2.399963
 ## landing beside the cat.
 const BLOOM_S := 1.0
 const FLIGHT_S := 1.0
-const GROW_RATE := 6.0
 const LAND_FROM_CAT := Vector3(1.0, 0.0, 0.2)
 const HIGHLIGHT_R := 0.75
-## A timer that is not running.
-const NEVER := -10.0
 ## The stages that do something in `_cleared`: the first (winter) is the snow, the second (the upright
 ## loop) is the bud's shiver; the last one blooms.
 const WINTER_STAGE := 0
@@ -110,9 +107,7 @@ func _set_bloom(amount: float) -> void:
 
 
 func _cleared(stage_index: int, last: bool) -> void:
-	var cat: CatActor = (host().props as SeasonsProps).cat
-	if cat != null:
-		cat.cheer(true, 2 if last else 1)
+	cheer_cat(last)
 	match stage_index:
 		WINTER_STAGE:
 			_snow_at = _t
@@ -144,49 +139,38 @@ func bloomed() -> bool:
 func _process(delta: float) -> void:
 	super(delta)
 	_run_snow()
-	if _shiver_at > 0.0:
-		var k := (_t - _shiver_at) / SHIVER_S
+	if running(_shiver_at):
+		var k := progress(_shiver_at, SHIVER_S)
 		bud.rotation.z = SHIVER * sin(k * TAU * SHIVER_TIMES) * (1.0 - k) if k < 1.0 else 0.0
 		if k >= 1.0:
 			_shiver_at = NEVER
 	if piece == null:
 		return
-	if piece_state == "held" and _bloom_at > 0.0:
-		var o := smooth((_t - _bloom_at) / BLOOM_S)
+	if piece_state == "held" and running(_bloom_at):
+		var o := eased(_bloom_at, BLOOM_S)
 		_set_bloom(o)
 		if o >= 1.0:
-			_launch()
-	elif piece_state in ["flying", "out"]:
-		var grow := PIECE_SIZE / (HIDDEN_SIZE * PROP_SIZE)
-		piece.scale = piece.scale.lerp(Vector3.ONE * grow, clampf(delta * GROW_RATE, 0.0, 1.0))
+			# Out of the open flower: up on an arc that lands on the stage beside the cat, at the
+			# round's size.
+			launch_to(cat_spot(LAND_FROM_CAT), FLIGHT_S, SeasonsProps.STAGE_TOP, true)
 
 
 ## The snow burst (flakes falling and fading out) and the snowman growing with a little bounce.
 func _run_snow() -> void:
-	if _snow_at > 0.0:
-		var k := (_t - _snow_at) / SNOW_S
+	if running(_snow_at):
+		var k := progress(_snow_at, SNOW_S)
 		if k >= 1.0:
 			_snow_at = NEVER
 			_flakes.visible = false
 		else:
 			_flakes.position = Vector3(0.0, -SNOW_TOP * k, 0.0)
-	if _grow_at > 0.0 and _t >= _grow_at:
+	if running(_grow_at) and _t >= _grow_at:
 		snowman.visible = true
-		var g := clampf((_t - _grow_at) / GROW_S, 0.0, 1.0)
+		var g := clampf(progress(_grow_at, GROW_S), 0.0, 1.0)
 		snowman.scale = Vector3.ONE * PROP_SIZE * maxf(0.001, (1.0 - pow(1.0 - g, 3.0)) * (1.0 + GROW_BOUNCE * sin(g * PI)))
 		if g >= 1.0:
 			_grow_at = NEVER
 			snowman.scale = Vector3.ONE * PROP_SIZE
-
-
-## Out of the open flower: up on an arc (the lab's gravity) that lands on the stage beside the cat.
-func _launch() -> void:
-	piece_size = PIECE_SIZE
-	var from := piece.global_position
-	var land := (host().props as SeasonsProps).cat.global_position + LAND_FROM_CAT + Vector3.UP * piece_size
-	var g := lab_g()
-	var v := (land - from) / FLIGHT_S + Vector3.UP * 0.5 * g * FLIGHT_S
-	launch_piece(v, g, SeasonsProps.STAGE_TOP)
 
 
 # --- the meshes -----------------------------------------------------------------------------------
