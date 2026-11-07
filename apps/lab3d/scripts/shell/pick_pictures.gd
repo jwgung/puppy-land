@@ -5,7 +5,7 @@
 ## from its star, a gentle or a steep slope, one, two or four ropes, the hand near or far on the lever,
 ## a small or a big ball (blue, orange, the free fall's red), a big or a small drum, a weight, a short
 ## or a long string, a short or a long stick (#86), the Earth with its axis tilted or upright (#87), a weak
-## or a strong sun (#91), a humid or a dry day's air (#92).
+## or a strong sun (#91), a humid or a dry day's air (#92), a cold, warm or very warm sea (#94).
 ## `size` (0..1) and `count` say how much the drawing shows (kid.picks entries). The words under the
 ## picture say the same thing.
 ## A mass's picture (a ball, a box, a weight) is drawn like the lab draws the body (2026-10-28,
@@ -18,7 +18,7 @@ extends RefCounted
 const KINDS := ["earth", "moon", "jupiter", "box", "slide_steel", "slide_wood", "slide_rubber", "orbit",
 	"slope", "pulley", "lever", "ball_blue", "ball_orange", "ball_red", "drum_big", "drum_small", "weight", "rope",
 	"stick", "earth_tilted", "earth_upright", "sun_weak", "sun_strong", "air_humid", "air_dry",
-	"coast_day", "coast_night"]
+	"coast_day", "coast_night", "sea_cold", "sea_warm", "sea_hot"]
 const OUTLINE := Color("8a6a46")   # PredictPictures.GROUND: the brown of the storybook lines
 const STEEL := ArtPalette.STEEL
 
@@ -37,6 +37,8 @@ static func draw(canvas: Control, kind: String, size := 0.5, count := 1) -> void
 			_air(canvas, r, kind == "air_humid")
 		"earth_tilted", "earth_upright":   # #87: the Earth with its axis leaning or straight
 			_earth_axis(canvas, r, SunModel.EARTH_TILT if kind == "earth_tilted" else SunModel.UPRIGHT)
+		"sea_cold", "sea_warm", "sea_hot":   # #94: the sea's warmth
+			_sea(canvas, r, ["sea_cold", "sea_warm", "sea_hot"].find(kind))
 		"moon":
 			canvas.draw_circle(c, r.size.y * 0.32, Color("d9dbe2"))
 			for crater in [[Vector2(-6, -4), 4.0], [Vector2(6, 5), 3.0], [Vector2(3, -8), 2.5]]:
@@ -213,6 +215,42 @@ static func _air(canvas: Control, r: Rect2, humid: bool) -> void:
 		var at := Vector2(r.position.x + 8.0 + u * (r.size.x - 16.0), r.position.y + r.size.y * 0.45 + v * r.size.y * 0.5)
 		canvas.draw_circle(at, 3.6, Color("8cc8f2"))
 		canvas.draw_circle(at, 2.2, Color("dff1ff"))
+
+## A sea of warmth `heat` (0 cold, 1 warm, 2 very warm; the typhoon lab's colours, TyphoonProps): the
+## water's wavy band; a cold sea has an ice floe and a snowflake, a warm one a sun (bigger when very
+## warm) and wisps of water vapour rising (one, or three).
+static func _sea(canvas: Control, r: Rect2, heat: int) -> void:
+	var water: Color = [TyphoonProps.COLD_SEA, TyphoonProps.WARM_SEA, TyphoonProps.HOT_SEA][heat]
+	var top := r.position.y + r.size.y * 0.62
+	var band := PackedVector2Array()
+	for i in 25:
+		var x := lerpf(r.position.x, r.end.x, i / 24.0)
+		band.append(Vector2(x, top + 3.0 * sin(i * 0.9)))
+	band.append(r.end)
+	band.append(Vector2(r.position.x, r.end.y))
+	canvas.draw_colored_polygon(band, water)
+	canvas.draw_polyline(band.slice(0, 25), water.lightened(0.45), 2.0, true)
+	var sun := Vector2(r.end.x - r.size.y * 0.32, r.position.y + r.size.y * 0.3)
+	if heat == 0:
+		var floe := Vector2(r.position.x + r.size.x * 0.62, top + r.size.y * 0.12)
+		canvas.draw_set_transform(floe, 0.0, Vector2(1.0, 0.4))
+		canvas.draw_circle(Vector2.ZERO, r.size.y * 0.24, Color.WHITE)
+		canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		PredictPictures._snowflake(canvas, Vector2(r.position.x + r.size.x * 0.36, r.position.y + r.size.y * 0.3), Color("7fb0e0"), 1.2)
+		return
+	var radius := r.size.y * (0.12 if heat == 1 else 0.19)
+	for k in 8:
+		var d := Vector2.from_angle(TAU * k / 8.0)
+		canvas.draw_line(sun + d * (radius + 3.0), sun + d * (radius + 3.0 + radius * 0.6), ArtPalette.YELLOW, 2.5, true)
+	canvas.draw_circle(sun, radius, ArtPalette.YELLOW)
+	var wisps: Array = [0.4] if heat == 1 else [0.22, 0.42, 0.62]
+	for share: float in wisps:
+		var foot := Vector2(r.position.x + r.size.x * share, top - 3.0)
+		var wisp := PackedVector2Array()
+		for i in 9:
+			var k := i / 8.0
+			wisp.append(foot + Vector2(4.0 * sin(k * TAU), -k * r.size.y * 0.42))
+		canvas.draw_polyline(wisp, Color("9fb3c8"), 3.0, true)
 
 
 static func _ground(canvas: Control, r: Rect2) -> void:

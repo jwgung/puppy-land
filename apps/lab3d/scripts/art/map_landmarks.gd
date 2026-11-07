@@ -60,6 +60,8 @@ static func add(b: ArtMeshBuilder, id: String, xf: Transform3D) -> float:
 			return _dew_cup(b, xf)
 		"sea-breeze":
 			return _pinwheel(b, xf)
+		"typhoon":
+			return _typhoon(b, xf)
 	_rod(b, xf, Vector3.ZERO, Vector3(0.0, 1.0, 0.0), 0.08, ArtPalette.BLUE)
 	_ball(b, xf, Vector3(0.0, 1.15, 0.0), 0.2, ArtPalette.WHITE)
 	return 1.35
@@ -429,6 +431,23 @@ static func _pinwheel(b: ArtMeshBuilder, xf: Transform3D) -> float:
 		b.add_triangle([p[0], p[2], p[1]], [c, c, c], xf.basis * Vector3.FORWARD)
 	_ball(b, xf, hub + Vector3(0.0, 0.0, 0.04), 0.07, ArtPalette.WHITE)
 	return 1.6
+
+## The hutton island's 태풍·비구름 (#94, "파도가 높은 곳"): a round pool of warm sea with white wave
+## caps and, over it on a thin post, a grey swirl of cloud arms round an eye.
+static func _typhoon(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.add_cylinder(xf, 0.55, 0.5, 0.1, 12, ArtPalette.SAND, true, TyphoonProps.WARM_SEA)
+	for k in 4:
+		var a := TAU * k / 4.0 + 0.4
+		_box(b, xf, Vector3(cos(a) * 0.32, 0.11, sin(a) * 0.32), Vector3(0.16, 0.025, 0.05), ArtPalette.FOAM)
+	_rod(b, xf, Vector3(0.0, 0.1, 0.0), Vector3(0.0, 0.95, 0.0), 0.03, ArtPalette.STEEL_SHINE)
+	var center := Vector3(0.0, 1.05, 0.0)
+	for arm in 3:
+		for k in 5:
+			var u := k / 4.0
+			var a := TAU * arm / 3.0 - u * 2.4
+			var r := lerpf(0.14, 0.5, u)
+			b.add_sphere(xf * Transform3D(Basis.from_scale(Vector3(1.0, 0.55, 1.0)), center + Vector3(cos(a) * r, 0.0, -sin(a) * r)), lerpf(0.13, 0.07, u), 3, 6, Color("c9d3e3"))
+	return 1.4
 
 
 # --- helpers ---------------------------------------------------------------------------------

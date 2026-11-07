@@ -164,6 +164,10 @@
 ##    cooler side, the night's land breeze, the judging of the three stages (the wrong time's line), the
 ##    hold on the sun, the day / night button, no number on the screen, the sun and the props in view,
 ##    the spot, the opening lines (the fox, Puppy's two) and the piece.
+## 24g. 태풍·비구름 (tests/typhoon_checks.gd, #94 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 7, the rule model (warmer sea, bigger cloud; cold sea and land weaken
+##    it), the judging of the three stages (the wrong sea's line), the sea button, no number on the
+##    screen, the cloud and the cold strip in view, the spot, the opening, the hand and the piece.
 ## Times are engine fixed steps (60 Hz), independent of rendering FPS.
 extends SceneTree
 
@@ -402,6 +406,11 @@ func _run() -> void:
 	_expect(sea_breeze != null and sea_breeze.can_instantiate(), "sea breeze checks compile", "")
 	if sea_breeze != null and sea_breeze.can_instantiate():
 		await sea_breeze.new(self, _expect).run()
+	print("== 태풍·비구름 (#94): Hutton Island's typhoon lab, its lines, rule model, judging, sea button, view, hand and piece ==")
+	var typhoon: GDScript = load("res://tests/typhoon_checks.gd")
+	_expect(typhoon != null and typhoon.can_instantiate(), "typhoon checks compile", "")
+	if typhoon != null and typhoon.can_instantiate():
+		await typhoon.new(self, _expect).run()
 	print("== the hand guide (2026-10-30: the gesture on the lab's object, once and after a quiet while; the map's tap) ==")
 	var hand: GDScript = load("res://tests/hand_guide_checks.gd")
 	_expect(hand != null and hand.can_instantiate(), "hand guide checks compile", "")

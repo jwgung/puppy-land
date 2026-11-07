@@ -1,5 +1,5 @@
 {
-  "about": "hutton 섬(지구과학, #72 시안 A)의 배치. mechanics.json과 같은 모양이고 새로 넣은 것: ground coast(모래 해변과 등대)와 valley(volcano 쪽으로 오르는 비탈, height는 오르는 높이), features(volcano: at·radius·height, river: volcano 옆에서 바다로 가는 강 [x, z] 꺾은선, lighthouse: 등대 [x, z], sundial: 광장의 해시계), lookout home(조각이 모이는 곳이 장소가 아니라 해시계 광장). 서쪽 언덕 1~3, 남동 해변 4~7, 북쪽 골짜기 8~11, 섬 뒤 volcano. 장소가 모두 실험이 되기 전에는 앱에서 열리지 않고 --island=hutton으로만 본다(Island.playable). 실험이 된 장소: day-night(#74), shadow-clock(#86), seasons(#87), water-cycle(#91), dew-cloud(#92), sea-breeze(#93).",
+  "about": "hutton 섬(지구과학, #72 시안 A)의 배치. mechanics.json과 같은 모양이고 새로 넣은 것: ground coast(모래 해변과 등대)와 valley(volcano 쪽으로 오르는 비탈, height는 오르는 높이), features(volcano: at·radius·height, river: volcano 옆에서 바다로 가는 강 [x, z] 꺾은선, lighthouse: 등대 [x, z], sundial: 광장의 해시계), lookout home(조각이 모이는 곳이 장소가 아니라 해시계 광장). 서쪽 언덕 1~3, 남동 해변 4~7, 북쪽 골짜기 8~11, 섬 뒤 volcano. 장소가 모두 실험이 되기 전에는 앱에서 열리지 않고 --island=hutton으로만 본다(Island.playable). 실험이 된 장소: day-night(#74), shadow-clock(#86), seasons(#87), water-cycle(#91), dew-cloud(#92), sea-breeze(#93), typhoon(#94).",
   "zones": {
     "hill": {
       "at": [-7.0, 1.0],

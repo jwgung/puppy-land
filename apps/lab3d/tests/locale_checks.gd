@@ -102,6 +102,12 @@ func check_keys() -> void:
 		named["dew_cloud.cup." + word] = "t"
 	for word in ["low", "middle", "top"]:   # the air parcel's height
 		named["dew_cloud.height." + word] = "t"
+	for word in ["small", "rain", "typhoon", "weak"]:   # the typhoon lab's cloud words (TyphoonLab.observations)
+		named["typhoon.cloud." + word] = "t"
+	for word in ["cold", "warm", "hot", "land"]:   # what is under the cloud
+		named["typhoon.under." + word] = "t"
+	for word in ["lots", "some", "none"]:   # the water vapour rising there
+		named["typhoon.vapor." + word] = "t"
 	for id in Island.ids():   # the islands' names and fields (섬 고르기, IslandCards, #75)
 		named["island.%s.name" % id] = "t"
 		named["island.%s.about" % id] = "t"
