@@ -223,7 +223,9 @@ func check_result_lines() -> void:
 			var line := str(stage.get(key, ""))
 			if line == "" or line.length() > LINE_MAX or symbols.search(line) != null or science.any(func(w: String) -> bool: return line.contains(w)):
 				problems.append("%s '%s'" % [key, line])
-	for line: String in [Story.keeper(_definition()), Story.clue_lead(_definition()), Story.clue(_definition()), Story.map_clue(_definition())]:
+	var told: Array = [Story.keeper(_definition()), Story.clue(_definition()), Story.map_clue(_definition())]
+	told.append_array(Story.more(_definition()).map(func(l: Dictionary) -> String: return str(l.text)))
+	for line: String in told:
 		if science.any(func(w: String) -> bool: return line.contains(w)):
 			problems.append("science word in '%s'" % line)
 	var raw: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://content/experiments/earthquake.json"))
@@ -231,7 +233,7 @@ func check_result_lines() -> void:
 	var english: Dictionary = Locale.words("experiments/earthquake.json")
 	var en: Dictionary = Locale.overlay(raw, english)
 	Locale.lang = "ko"
-	if english.is_empty() or en.story.get("keeper", "") == "" or en.story.get("clue_lead", "") == "" or en.story.get("clue", "") == "" or en.kid.intro_more.size() != 1 \
+	if english.is_empty() or en.story.get("keeper", "") == "" or en.story.get("clue", "") == "" or Story.more(en).size() != 1 or en.kid.intro_more.size() != 1 \
 			or en.missions.stages.any(func(s: Dictionary) -> bool: return ["text", "say", "win", "miss", "miss_conditions"].any(func(k: String) -> bool: return str(s.get(k, "")) == "")) \
 			or (en.kid.picks.ground + en.kid.picks.brace).any(func(p: Dictionary) -> bool: return str(p.get("label", "")) == "") or not ExperimentRegistry.validate(en).is_empty():
 		problems.append("English lines missing or invalid: %s" % str(ExperimentRegistry.validate(en)))
@@ -630,7 +632,7 @@ func check_opening() -> void:
 		again.clue_read()
 	Story.enabled = was
 	expect.call(first_ok and later == ["dugi", "dugi"],
-		"earthquake opening: first visit the fox (worried), Puppy worried for the squirrels (story.clue_lead), Puppy's clue, Dugi's two lines, then the question; later visits Dugi's two lines",
+		"earthquake opening: first visit the fox (worried), Puppy worried for the squirrels (story.clue), Puppy spots the piece (story.more), Dugi's two lines, then the question; later visits Dugi's two lines",
 		"%s / %s" % [str(told), str(later)])
 
 

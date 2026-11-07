@@ -214,24 +214,16 @@ static func keeper_reply_face(definition: Dictionary) -> String:
 	return face_or_default(_story_text(definition, "keeper_reply_face"))
 
 
-## Puppy's second line after his clue on the first visit ("" when it has none). #91: what he thinks
-## will free the piece.
-static func clue_more(definition: Dictionary) -> String:
-	return _story_text(definition, "clue_more")
-
-
-static func clue_more_face(definition: Dictionary) -> String:
-	return face_or_default(_story_text(definition, "clue_more_face"))
-
-
-## Puppy's line between the keeper's and the clue on the first visit ("" when it has none). #97: Puppy
-## feels for the squirrels before he spots the piece.
-static func clue_lead(definition: Dictionary) -> String:
-	return _story_text(definition, "clue_lead")
-
-
-static func clue_lead_face(definition: Dictionary) -> String:
-	return face_or_default(_story_text(definition, "clue_lead_face"))
+## More first-visit lines after Puppy's clue (#98: the volcano's talk, Puppy and the keeper in turn):
+## [{"speaker": Story.SPEAKERS key, "face", "text"}], [] when it has none.
+static func more(definition: Dictionary) -> Array:
+	var story: Variant = definition.get("story")
+	var lines: Variant = story.get("more", []) if story is Dictionary else []
+	var out := []
+	for line: Variant in (lines if lines is Array else []):
+		if line is Dictionary and str(line.get("text", "")) != "" and SPEAKERS.has(str(line.get("speaker", ""))):
+			out.append({"speaker": str(line.speaker), "face": face_or_default(line.get("face")), "text": str(line.text)})
+	return out
 
 
 ## Puppy's riddle on the night map while this spot is the next to find ("" when it has none).

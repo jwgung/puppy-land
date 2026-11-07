@@ -59,7 +59,11 @@
   "story": {
     "keeper": "This is a seaside village. The wind blows every which way, so the boats can't go out to sea or come back…",
     "clue": "There's a sailboat way out there! Huh? It's carrying a piece!",
-    "clue_more": "The wind has to blow toward the shore to bring the boat back.",
+    "more": [
+      {
+        "text": "The wind has to blow toward the shore to bring the boat back."
+      }
+    ],
     "map_clue": "By the sea, where the pinwheel stands!"
   },
   "kid": {

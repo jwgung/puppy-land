@@ -83,7 +83,7 @@
       }
     ]
   },
-  "story": { "keeper_face": "worried", "clue_lead_face": "worried", "clue_face": "thinking", "map_clue_face": "explain" },
+  "story": { "keeper_face": "worried", "clue_face": "worried", "more": [{ "speaker": "puppy", "face": "thinking" }], "map_clue_face": "explain" },
   "kid": {
     "intro_face": "explain",
     "intro_more": [

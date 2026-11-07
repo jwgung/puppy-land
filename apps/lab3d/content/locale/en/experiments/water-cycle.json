@@ -92,7 +92,11 @@
   "story": {
     "keeper": "This was the frogs' pond. No rain came, and it dried up to the bottom…",
     "clue": "The frogs must be so thirsty… Huh? There's a piece stuck in the dry bottom!",
-    "clue_more": "If the pond fills up, I think the piece will float up.",
+    "more": [
+      {
+        "text": "If the pond fills up, I think the piece will float up."
+      }
+    ],
     "map_clue": "By the sea, where the dry pond is!"
   },
   "kid": {

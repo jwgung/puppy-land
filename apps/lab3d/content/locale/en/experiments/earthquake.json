@@ -57,8 +57,12 @@
   },
   "story": {
     "keeper": "This is the squirrels' village. That night the ground shook and the houses cracked. What if it shakes again…",
-    "clue_lead": "The squirrels must have been so scared…",
-    "clue": "Oh, there's a piece on the hill behind the village! The houses must be strong so we can get there safely.",
+    "clue": "The squirrels must have been so scared…",
+    "more": [
+      {
+        "text": "Oh, there's a piece on the hill behind the village! The houses must be strong so we can get there safely."
+      }
+    ],
     "map_clue": "At the end of the valley, where the block house stands!"
   },
   "kid": {
