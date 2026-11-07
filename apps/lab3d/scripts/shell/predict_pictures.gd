@@ -15,7 +15,9 @@ const KINDS := ["long_arc", "same_arc", "fall_together", "fall_heavy_first", "li
 	"push_wait", "push_now", "lever_near_hard", "lever_near_easy", "drum_floats", "drum_sinks",
 	"pulley_one_hard", "pulley_one_easy", "slide_go", "slide_stay",
 	# #74 (낮과 밤): does the sun move round, or does the Earth turn?
-	"sun_moves", "earth_spins"]
+	"sun_moves", "earth_spins",
+	# #86 (그림자 시계): with the sun high, does the stick's shadow get shorter or longer?
+	"shadow_short", "shadow_long"]
 const STRONG := Color("e2683c")
 const PALE := Color("c9b892")
 const GROUND := Color("8a6a46")
@@ -26,7 +28,10 @@ const CRATE := Color("5b4636")
 const CAT := Color("f2a64a")
 const SUN := Color("f2c14e")             # the star (orbit_*) and the sun (sun_moves / earth_spins)
 const LAND := Color("4fbf3b")            # the Earth's land (sun_moves / earth_spins)
-const NIGHT_SHADE := Color(0.1, 0.14, 0.35, 0.55)   # the Earth's far half (the night)             # the bread cat riding the barrel (drum_floats / drum_sinks)
+const SHADOW := ArtPalette.CAST_SHADOW  # the stick, its cap and its shadow (shadow_short / shadow_long)
+const STICK := Color("c98d4f")
+const CAP := Color("ff3b3b")
+const NIGHT_SHADE := Color(0.1, 0.14, 0.35, 0.55)   # the Earth's far half (the night)
 
 
 ## Draws `kind` filling `canvas` (an unknown kind draws the ground only).
@@ -77,6 +82,8 @@ static func draw(canvas: Control, kind: String) -> void:
 			_slide(canvas, r, kind == "slide_go")
 		"sun_moves", "earth_spins":
 			_day_night(canvas, r, kind == "sun_moves")
+		"shadow_short", "shadow_long":
+			_shadow(canvas, r, kind == "shadow_short")
 		_:
 			_ground(canvas, r)
 
@@ -498,3 +505,31 @@ static func _day_night(canvas: Control, r: Rect2, sun_moves: bool) -> void:
 			ring.append(earth + Vector2(cos(a) * rx, -sin(a) * rx * 0.42 + radius * 0.15))
 		canvas.draw_polyline(ring, STRONG, 4.0, true)
 		_arrow(canvas, ring[-2], ring[-1], STRONG, 4.0)
+
+
+## The sun climbing high (an orange arrow up to it) over a stick on the ground: the stick's shadow
+## along the ground is short ("shadow_short") or long ("shadow_long"), its round tip at the end.
+static func _shadow(canvas: Control, r: Rect2, short: bool) -> void:
+	var ground := r.end.y - 4.0
+	canvas.draw_line(Vector2(r.position.x, ground), Vector2(r.end.x, ground), GROUND, 3.0)
+	var foot := Vector2(r.position.x + r.size.x * 0.3, ground)
+	var top := foot - Vector2(0.0, r.size.y * 0.42)
+	var reach := r.size.x * (0.13 if short else 0.62)
+	var tip := foot + Vector2(reach, 0.0)
+	canvas.draw_line(foot, tip, SHADOW, 7.0, true)
+	canvas.draw_circle(tip, 6.0, SHADOW)
+	canvas.draw_line(foot, top, STICK, 5.0, true)
+	canvas.draw_circle(top, 5.0, CAP)
+	var sun := Vector2(foot.x - r.size.x * 0.1, r.position.y + 13.0)
+	for k in 8:   # the sun's rays
+		var a := TAU * k / 8.0
+		var d := Vector2(cos(a), sin(a))
+		canvas.draw_line(sun + d * 12.0, sun + d * 17.0, SUN, 3.0, true)
+	canvas.draw_circle(sun, 9.0, SUN)
+	var arrow := PackedVector2Array()   # a curve from low on the left up to the sun
+	var from := Vector2(r.position.x + 6.0, ground - r.size.y * 0.3)
+	for k in 9:
+		var t := k / 8.0
+		arrow.append(from.lerp(sun + Vector2(-16.0, 4.0), t) + Vector2(0.0, -sin(PI * t) * 6.0))
+	canvas.draw_polyline(arrow, STRONG, 3.0, true)
+	_arrow(canvas, arrow[-2], arrow[-1], STRONG, 3.0)

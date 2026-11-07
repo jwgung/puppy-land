@@ -360,6 +360,11 @@ func _run() -> void:
 	_expect(day_night != null and day_night.can_instantiate(), "day-night checks compile", "")
 	if day_night != null and day_night.can_instantiate():
 		await day_night.new(self, _expect).run()
+	print("== 그림자 시계 (#86): Hutton Island's second lab, its lines, judging, stick, hand, view and piece ==")
+	var shadow_clock: GDScript = load("res://tests/shadow_clock_checks.gd")
+	_expect(shadow_clock != null and shadow_clock.can_instantiate(), "shadow-clock checks compile", "")
+	if shadow_clock != null and shadow_clock.can_instantiate():
+		await shadow_clock.new(self, _expect).run()
 	print("== the hand guide (2026-10-30: the gesture on the lab's object, once and after a quiet while; the map's tap) ==")
 	var hand: GDScript = load("res://tests/hand_guide_checks.gd")
 	_expect(hand != null and hand.can_instantiate(), "hand guide checks compile", "")

@@ -1,0 +1,136 @@
+{
+  "id": "shadow-clock",
+  "version": 1,
+  "icon": "☀",
+  "law": {},
+  "scene": "res://experiments/shadow_clock/shadow_clock.gd",
+  "bench_id": "SC",
+  "camera": {
+    "target": [0.0, 1.1, 0.0],
+    "distance": 10.0,
+    "distance_range": [6.0, 26.0],
+    "yaw_range_deg": [-100.0, 100.0],
+    "pitch_range_deg": [-89.0, -2.0],
+    "pan_radius": 6.0,
+    "default_mode": "front",
+    "views": {
+      "front": { "yaw_deg": 0.0, "pitch_deg": -30.0 },
+      "three_quarter": { "yaw_deg": 24.0, "pitch_deg": -26.0 },
+      "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 16.0 },
+      "side": { "yaw_deg": 90.0, "pitch_deg": -14.0, "distance": 14.0 },
+      "follow": { "yaw_deg": 0.0, "pitch_deg": -28.0, "distance": 10.0, "target": [0.0, 0.8, 1.0] }
+    }
+  },
+  "controls": [
+    {
+      "id": "stick",
+      "type": "choice",
+      "default": "short",
+      "options": [
+        { "id": "short" },
+        { "id": "long" }
+      ]
+    }
+  ],
+  "actions": [
+    { "id": "reset", "style": "primary" }
+  ],
+  "key_observations": ["state", "altitude"],
+  "predict": {
+    "question_face": "thinking",
+    "choices": [
+      { "id": "shorter", "picture": "shadow_short" },
+      { "id": "longer", "picture": "shadow_long" }
+    ],
+    "answer": "shorter",
+    "bridge_face": "happy"
+  },
+  "missions": {
+    "judge_on": ["noon", "bed", "stone"],
+    "stages": [
+      {
+        "observe": "",
+        "judge_on": ["noon"],
+        "conditions": { "stick": "short" },
+        "miss_on": ["noon", "morning", "afternoon", "bed", "stone"],
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["bed"],
+        "conditions": { "stick": "short" },
+        "miss_on": ["afternoon", "stone"],
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "surprised",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["stone"],
+        "conditions": { "stick": "long" },
+        "miss_on": ["noon", "morning", "afternoon", "bed"],
+        "say_face": "explain",
+        "win_face": "surprised",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      }
+    ]
+  },
+  "story": { "keeper_face": "worried", "clue_face": "thinking", "keeper_reply_face": "thinking", "map_clue_face": "explain" },
+  "kid": {
+    "intro_face": "explain",
+    "intro_more": [
+      { "face": "explain" }
+    ],
+    "card": "state",
+    "say_face": "explain",
+    "picks": {
+      "stick": [
+        { "value": "short", "picture": "stick", "size": 0.4 },
+        { "value": "long", "picture": "stick", "size": 1.0 }
+      ]
+    }
+  },
+  "note": {
+    "numbers": [
+      { "ids": ["state"] },
+      { "ids": ["altitude"] },
+      { "ids": ["shadow"] }
+    ],
+    "graph": true
+  },
+  "cast": {
+    "dugi": {
+      "at": [6.6, -1.2],
+      "explain_on": ["noon", "bed", "stone"],
+      "delay_s": 0.6
+    },
+    "puppy": {
+      "at": [-6.4, -0.8]
+    }
+  },
+  "observations": [
+    { "id": "state" },
+    { "id": "altitude", "unit": "°", "digits": 0 },
+    { "id": "shadow", "unit": "m", "digits": 1 }
+  ],
+  "manipulation": {
+    "grab_radius": 72.0,
+    "objects": [
+      { "id": "sun", "surface": "path", "snap": 0.0, "height": false, "marker": false, "guide_to": "max" }
+    ]
+  },
+  "graph": {
+    "x": { "unit": "°", "max": 60.0 },
+    "y": { "unit": "m", "max": 12.0 },
+    "series": [
+      { "id": "short", "color": "#c98d4f", "style": "line" },
+      { "id": "long", "color": "#434a86", "style": "line" },
+      { "id": "now", "color": "#ff3b3b", "style": "points" }
+    ]
+  }
+}

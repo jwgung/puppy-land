@@ -256,8 +256,9 @@ static func _validate_intro_more(lines: Variant) -> PackedStringArray:
 ## The story's words for this lab (`story`, optional, 2026-10-28 "별 조각 찾기"): {"clue": <Puppy's
 ## clue, told once on the first visit before Dugi's question>, "map_clue": <Puppy's riddle on the
 ## night map while this spot is the next to find>, "keeper": <the island keeper's line before the
-## clue on the first visit (#74, Story.KEEPER)>, "clue_face"?, "map_clue_face"?, "keeper_face"?:
-## <Story.FACES>} (Story.clue, Story.map_clue, Story.keeper, their portraits' faces).
+## clue on the first visit (#74, Story.KEEPER)>, "keeper_reply": <the keeper's answer after the clue
+## (#86)>, "clue_face"?, "map_clue_face"?, "keeper_face"?, "keeper_reply_face"?: <Story.FACES>}
+## (Story.clue, Story.map_clue, Story.keeper, Story.keeper_reply, their portraits' faces).
 static func _validate_story(story: Variant) -> PackedStringArray:
 	var problems := PackedStringArray()
 	if story == null:
@@ -266,11 +267,11 @@ static func _validate_story(story: Variant) -> PackedStringArray:
 		problems.append("story must be an object")
 		return problems
 	for key in story:
-		if key in ["clue_face", "map_clue_face", "keeper_face"]:
+		if key in ["clue_face", "map_clue_face", "keeper_face", "keeper_reply_face"]:
 			if not story[key] in Story.FACES:
 				problems.append("story.%s must be one of Story.FACES" % key)
-		elif not key in ["clue", "map_clue", "keeper"]:
-			problems.append("story.%s unknown (clue, map_clue, keeper, clue_face, map_clue_face, keeper_face)" % key)
+		elif not key in ["clue", "map_clue", "keeper", "keeper_reply"]:
+			problems.append("story.%s unknown (clue, map_clue, keeper, keeper_reply and their _face)" % key)
 		elif not (story[key] is String and story[key] != ""):
 			problems.append("story.%s must be a text" % key)
 	return problems

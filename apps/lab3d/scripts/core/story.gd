@@ -204,6 +204,16 @@ static func keeper_face(definition: Dictionary) -> String:
 	return face_or_default(_story_text(definition, "keeper_face"))
 
 
+## The keeper's answer after Puppy's clue on the first visit ("" when it has none). #86: the fox tells
+## how the piece's lid opens.
+static func keeper_reply(definition: Dictionary) -> String:
+	return _story_text(definition, "keeper_reply")
+
+
+static func keeper_reply_face(definition: Dictionary) -> String:
+	return face_or_default(_story_text(definition, "keeper_reply_face"))
+
+
 ## Puppy's riddle on the night map while this spot is the next to find ("" when it has none).
 static func map_clue(definition: Dictionary) -> String:
 	return _story_text(definition, "map_clue")
