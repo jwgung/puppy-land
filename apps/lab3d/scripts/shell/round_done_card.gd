@@ -20,8 +20,10 @@ const STAR_GAP := 14.0
 const POP_S := 0.35
 
 var stamps := 3
-## The story: the round's star piece is drawn over the stamps (the piece the child just found).
+## The story: the round's piece (piece_kind) is drawn over the stamps (the piece the child just found).
 var piece := false
+## Which piece (PieceArt: the island's, #101): the star, or the hutton island's sundial wedge.
+var piece_kind := PieceArt.STAR
 var dim: ColorRect
 var card: PanelContainer
 var stamp_row: Control
@@ -30,10 +32,11 @@ var stay_button: Button
 var closed := false
 
 
-func _init(stamp_count: int, with_piece := false) -> void:
+func _init(stamp_count: int, with_piece := false, kind := PieceArt.STAR) -> void:
 	name = "RoundDoneCard"
 	stamps = stamp_count
 	piece = with_piece
+	piece_kind = kind
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	dim = ColorRect.new()
@@ -105,33 +108,8 @@ func _draw_stamps() -> void:
 	for i in stamps:
 		var c := Vector2((w - row_w) * 0.5 + STAMP_R + i * (STAMP_R * 2.0 + STAMP_GAP), row_y)
 		StampSlam.draw_stamp(stamp_row, c, STAMP_R, true)
-	if piece:   # the found star piece, drawn like the 3D one (StarArt, 2026-10-29 user): chubby, round tips, a face
-		var c := Vector2(w * 0.5, STAR_R + 4.0)
-		var r := STAR_R
-		stamp_row.draw_colored_polygon(_chubby_star(c, r + 4.0, 1.0), ArtPalette.OUTLINE)
-		stamp_row.draw_colored_polygon(_chubby_star(c, r, 1.0), StarArt.DEEP)
-		stamp_row.draw_colored_polygon(_chubby_star(c + Vector2(-1.0, -1.5), r, 0.9), StarArt.MID)
-		stamp_row.draw_colored_polygon(_chubby_star(c, r, StarArt.FACE_SHRINK), StarArt.MID.lerp(StarArt.LIGHT, 0.55))
-		_draw_face(c, r)
-
-
-## StarArt's round-tipped star rim (radius `r`, scaled by `k`) in the card's 2D (y down).
-static func _chubby_star(c: Vector2, r: float, k: float) -> PackedVector2Array:
-	var out := PackedVector2Array()
-	for p: Vector3 in StarArt.round_rim():
-		out.append(c + Vector2(p.x, -p.y) * r * k)
-	return out
-
-
-## The star piece's face, as on the 3D piece (StarArt): two shiny eyes, pink cheeks, a smile.
-func _draw_face(c: Vector2, r: float) -> void:
-	for x in [-1.0, 1.0]:
-		var eye := c + Vector2(x * StarArt.EYE_X, -StarArt.EYE_Y) * r
-		stamp_row.draw_circle(c + Vector2(x * StarArt.EYE_X * 1.75, -(StarArt.EYE_Y - 0.13)) * r, StarArt.CHEEK_R * r, StarArt.CHEEK)
-		stamp_row.draw_circle(eye, StarArt.EYE_R * r, StarArt.FACE_INK)
-		stamp_row.draw_circle(eye + Vector2(-StarArt.EYE_R * 0.3, -StarArt.EYE_R * 0.35) * r, StarArt.EYE_R * 0.38 * r, Color.WHITE)
-	var mouth := c + Vector2(0.0, -(StarArt.MOUTH_Y + StarArt.MOUTH_R)) * r
-	stamp_row.draw_arc(mouth, (StarArt.MOUTH_R + StarArt.MOUTH_W * 0.5) * r, PI * 0.15, PI * 0.85, 10, StarArt.FACE_INK, maxf(2.0, StarArt.MOUTH_W * r), true)
+	if piece:   # the found piece, drawn like the 3D one (StarArt, 2026-10-29 user; the island's kind, #101)
+		PieceArt.draw_2d(piece_kind, stamp_row, Vector2(w * 0.5, STAR_R + 4.0), STAR_R)
 
 
 ## Closes now: the touch of this same frame already reaches what is behind (IGNORE before the free).

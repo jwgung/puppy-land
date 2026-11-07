@@ -67,7 +67,8 @@ var cards: Dictionary = {}
 var _entries: Array = []
 
 
-## The cards, in order: per island {id, name, about, open, complete, pieces, total, current, after}
+## The cards, in order: per island {id, name, about, open, complete, pieces, total, piece (its kind,
+## PieceArt), current, after}
 ## (`after`: the name of the island it waits for), then 다음 섬 {id "", open false, after: the last
 ## island's name}.
 static func entries(progress: Dictionary) -> Array:
@@ -78,10 +79,10 @@ static func entries(progress: Dictionary) -> Array:
 		var after := Island.opens_after(id)
 		out.append({"id": id, "name": island_name(id), "about": Locale.t("island.%s.about" % id),
 			"open": Island.is_open(id, progress), "complete": island.complete(progress),
-			"pieces": island.found(progress).size(), "total": island.spots().size(),
+			"pieces": island.found(progress).size(), "total": island.spots().size(), "piece": island.piece,
 			"current": id == Island.current_id(), "after": island_name(after) if after != "" else ""})
 	out.append({"id": "", "name": Locale.t("islands.next"), "about": "", "open": false, "complete": false,
-		"pieces": 0, "total": 0, "current": false, "after": island_name(str(ids[-1])) if not ids.is_empty() else ""})
+		"pieces": 0, "total": 0, "piece": PieceArt.STAR, "current": false, "after": island_name(str(ids[-1])) if not ids.is_empty() else ""})
 	return out
 
 
@@ -205,7 +206,7 @@ func _picture(entry: Dictionary) -> Panel:
 		lock.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		frame.add_child(lock)
 	elif int(entry.total) > 0:
-		var emblem := StarEmblem.new(int(entry.total))
+		var emblem := PieceArt.emblem(str(entry.piece), int(entry.total))
 		emblem.set_filled(int(entry.pieces))
 		emblem.pivot_offset = Vector2.ZERO
 		emblem.scale = Vector2.ONE * EMBLEM_SCALE

@@ -3,51 +3,17 @@
 ## per piece (11). The face sleeps (eyes shut) with no piece, looks up once pieces come, and beams
 ## (cheeks, a big smile) when the star is whole. A piece at the lookout fills its wedge (yellow); the others are pale
 ## paper. A newly filled wedge pops (a short bounce of the whole emblem). Pictures only, no number
-## and no words. 2D shapes only (one canvas item); it takes no touch.
+## and no words. 2D shapes only (one canvas item); it takes no touch. The filling and the pop: PieceEmblem.
 class_name StarEmblem
-extends Control
+extends PieceEmblem
 
-const SIZE := 104.0
-const PAPER := Color("fff6e6")        # UiTheme.DIALOGUE_PAPER
-const EMPTY := Color("f1e2c0")
 const FILL := Color("ffc61a")         # ArtPalette.YELLOW
 const FILL_LIGHT := Color("ffe27a")
-const POP_S := 0.45
-
-var total := 11
-var filled := 0
-var _pop := -1.0
 
 
 func _init(count: int) -> void:
+	super(count)
 	name = "StarEmblem"
-	total = count
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	custom_minimum_size = Vector2(SIZE, SIZE)
-	size = custom_minimum_size
-	pivot_offset = size * 0.5
-
-
-## Shows `count` pieces at the lookout; `pop` when one just arrived.
-func set_filled(count: int, pop := false) -> void:
-	filled = clampi(count, 0, total)
-	if pop:
-		_pop = 0.0
-		set_process(true)
-	queue_redraw()
-
-
-func _ready() -> void:
-	set_process(false)
-
-
-func _process(delta: float) -> void:
-	_pop += delta
-	var k := clampf(_pop / POP_S, 0.0, 1.0)
-	scale = Vector2.ONE * (1.0 + 0.35 * sin(PI * k) * (1.0 - k * 0.5))
-	if k >= 1.0:
-		scale = Vector2.ONE
-		set_process(false)
 
 
 ## The star's outline points (StarArt's chubby rim, starting at the top), radius r about c.
