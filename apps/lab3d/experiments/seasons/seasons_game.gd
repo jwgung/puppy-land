@@ -8,11 +8,12 @@
 class_name SeasonsGame
 extends LabGame
 
-## Inside the path, on the podium: the bud on the summer side (left), the snowman on the winter side (right).
-## On either side of the sun's post, under the sun and inside the Earth's path (#87 Q14: the path
-## hugs the sun; the Earth's ball passes over them), drawn PROP_SIZE times their meshes.
+## Inside the path, on the podium: the bud on the summer side (left).
 const BUD_AT := Vector3(-1.5, SeasonsProps.STAGE_TOP, -1.0)
+## The snowman on the winter side (right).
 const SNOWMAN_AT := Vector3(1.5, SeasonsProps.STAGE_TOP, -1.0)
+## On either side of the sun's post, under the sun and inside the Earth's path (#87 Q14: the path
+## hugs the sun; the Earth's ball passes over them), the props are drawn PROP_SIZE times their meshes.
 const PROP_SIZE := 1.2
 const STEM := 0.9
 const PETALS := 6
@@ -23,19 +24,27 @@ const FROST := Color("e9f6ff")
 const ICE := Color("a9dcff")
 const ICE_TOP := Color("d8f0ff")
 const CENTRE := Color("ffd23a")
-## The petals' lean from upright: closed and open (rad, about each petal's hinge at the bud's base).
+## The petals' lean from upright when closed (rad, about each petal's hinge at the bud's base).
 const CLOSED := 0.16
+## The petals' lean from upright when open.
 const OPEN := 1.25
 const HIDDEN_SIZE := 0.12
 ## A shiver (stage 2): the bud sways by SHIVER rad SHIVER_TIMES times in SHIVER_S.
 const SHIVER_S := 0.9
 const SHIVER := 0.12
 const SHIVER_TIMES := 3.0
-## The snow burst: flakes falling over the stage for SNOW_S, the snowman growing in GROW_S.
+## The snow burst: FLAKES flakes falling over the stage.
 const FLAKES := 40
+## How long the flakes fall.
 const SNOW_S := 2.2
 const SNOW_TOP := 4.5
+## The snowman grows in GROW_S, starting SNOW_DELAY_S after the snow, with a little bounce (GROW_BOUNCE).
 const GROW_S := 0.8
+const SNOW_DELAY_S := 0.4
+const GROW_BOUNCE := 0.15
+## The flakes spread over a disc of this radius (golden-angle scatter, FLAKE_ANGLE rad apart).
+const FLAKE_SPREAD := 4.5
+const FLAKE_ANGLE := 2.399963
 ## The bloom: the ice shrinks and the petals open in BLOOM_S, then the piece jumps (FLIGHT_S) to its
 ## landing beside the cat.
 const BLOOM_S := 1.0
@@ -43,17 +52,22 @@ const FLIGHT_S := 1.0
 const GROW_RATE := 6.0
 const LAND_FROM_CAT := Vector3(1.0, 0.0, 0.2)
 const HIGHLIGHT_R := 0.75
+## A timer that is not running.
+const NEVER := -10.0
+## The stages that do something in `_cleared`: the first (winter) is the snow, the second (the upright
+## loop) is the bud's shiver; the last one blooms.
+const WINTER_STAGE := 0
+const UPRIGHT_STAGE := 1
 
 var bud: Node3D
 var snowman: Node3D
-var _petals: Array[Node3D] = []
+var _petals: Array[Node3D] = []   # the meshes on the hinges: the part that leans
 var _ice: Node3D
 var _flakes: Node3D
-var _snow_at := -10.0
-var _grow_at := -10.0
-var _shiver_at := -10.0
-var _bloom_at := -10.0
-var _launched := false
+var _snow_at := NEVER
+var _grow_at := NEVER
+var _shiver_at := NEVER
+var _bloom_at := NEVER
 
 
 func build() -> void:
@@ -71,7 +85,7 @@ func build() -> void:
 		var petal := ArtKit.instance(_petal_mesh())
 		hinge.add_child(petal)
 		bud.add_child(hinge)
-		_petals.append(hinge)
+		_petals.append(petal)
 	_ice = ArtKit.instance(_ice_mesh())
 	_ice.name = "Ice"
 	bud.add_child(_ice)
@@ -90,7 +104,7 @@ func build() -> void:
 ## The petals' lean (0 closed .. 1 open) and the ice's size (1 frozen .. 0 melted).
 func _set_bloom(amount: float) -> void:
 	for petal in _petals:
-		petal.get_child(0).rotation = Vector3(lerpf(CLOSED, OPEN, amount), 0.0, 0.0)
+		petal.rotation = Vector3(lerpf(CLOSED, OPEN, amount), 0.0, 0.0)
 	_ice.scale = Vector3.ONE * maxf(0.001, 1.0 - amount)
 	_ice.visible = amount < 1.0
 
@@ -100,11 +114,11 @@ func _cleared(stage_index: int, last: bool) -> void:
 	if cat != null:
 		cat.cheer(true, 2 if last else 1)
 	match stage_index:
-		0:
+		WINTER_STAGE:
 			_snow_at = _t
-			_grow_at = _t + 0.4
+			_grow_at = _t + SNOW_DELAY_S
 			_flakes.visible = true
-		1:
+		UPRIGHT_STAGE:
 			_shiver_at = _t
 	if last:
 		_bloom_at = _t
@@ -114,8 +128,8 @@ func _jump(stamps: int) -> void:
 	snowman.visible = stamps >= 1
 	snowman.scale = Vector3.ONE * PROP_SIZE
 	_set_bloom(1.0 if stamps >= stages else 0.0)
-	_grow_at = -10.0
-	_bloom_at = -10.0
+	_grow_at = NEVER
+	_bloom_at = NEVER
 
 
 func highlight_radius() -> float:
@@ -134,14 +148,13 @@ func _process(delta: float) -> void:
 		var k := (_t - _shiver_at) / SHIVER_S
 		bud.rotation.z = SHIVER * sin(k * TAU * SHIVER_TIMES) * (1.0 - k) if k < 1.0 else 0.0
 		if k >= 1.0:
-			_shiver_at = -10.0
+			_shiver_at = NEVER
 	if piece == null:
 		return
 	if piece_state == "held" and _bloom_at > 0.0:
 		var o := smooth((_t - _bloom_at) / BLOOM_S)
 		_set_bloom(o)
-		if o >= 1.0 and not _launched:
-			_launched = true
+		if o >= 1.0:
 			_launch()
 	elif piece_state in ["flying", "out"]:
 		var grow := PIECE_SIZE / (HIDDEN_SIZE * PROP_SIZE)
@@ -153,16 +166,16 @@ func _run_snow() -> void:
 	if _snow_at > 0.0:
 		var k := (_t - _snow_at) / SNOW_S
 		if k >= 1.0:
-			_snow_at = -10.0
+			_snow_at = NEVER
 			_flakes.visible = false
 		else:
 			_flakes.position = Vector3(0.0, -SNOW_TOP * k, 0.0)
 	if _grow_at > 0.0 and _t >= _grow_at:
 		snowman.visible = true
 		var g := clampf((_t - _grow_at) / GROW_S, 0.0, 1.0)
-		snowman.scale = Vector3.ONE * PROP_SIZE * maxf(0.001, (1.0 - pow(1.0 - g, 3.0)) * (1.0 + 0.15 * sin(g * PI)))
+		snowman.scale = Vector3.ONE * PROP_SIZE * maxf(0.001, (1.0 - pow(1.0 - g, 3.0)) * (1.0 + GROW_BOUNCE * sin(g * PI)))
 		if g >= 1.0:
-			_grow_at = -10.0
+			_grow_at = NEVER
 			snowman.scale = Vector3.ONE * PROP_SIZE
 
 
@@ -246,8 +259,8 @@ static func _flake_mesh() -> Mesh:
 	var b := ArtKit.builder()
 	b.ao_min = 1.0
 	for i in FLAKES:
-		var r := 4.5 * sqrt((i + 0.5) / FLAKES)
-		var a := i * 2.399963
+		var r := FLAKE_SPREAD * sqrt((i + 0.5) / FLAKES)
+		var a := i * FLAKE_ANGLE
 		var p := Vector3(SNOWMAN_AT.x + cos(a) * r * 0.6, SNOW_TOP + fposmod(i * 0.618, 1.0) * 2.5, SNOWMAN_AT.z + sin(a) * r * 0.5)
 		b.add_sphere(Transform3D(Basis(), p), 0.07 + 0.03 * (i % 3), 2, 6, Color.WHITE)
 	return b.commit()

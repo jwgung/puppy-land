@@ -72,6 +72,7 @@ func run() -> void:
 	await check_no_numbers()
 	await check_in_view()
 	check_spot()
+	await check_pictures()
 	check_opening()
 	await check_drag()
 	await check_piece()
@@ -322,10 +323,12 @@ func check_judging() -> void:
 	# [stage, tilt, orbit (deg; "loop": upright, carried round), hit, missed, wrong-condition line]
 	var cases := [
 		[0, "tilted", 270.0, true, false], [0, "tilted", 230.0, true, false], [0, "tilted", 312.0, true, false],
+		[0, "tilted", 225.0, true, false], [0, "tilted", 315.0, true, false], [0, "tilted", 224.0, false, true], [0, "tilted", 316.0, false, true],
 		[0, "tilted", 0.0, false, true], [0, "tilted", 320.0, false, true], [0, "tilted", 90.0, false, true], [0, "tilted", 180.0, false, true],
 		[0, "upright", 270.0, false, true],
 		[1, "upright", "loop", true, false], [1, "upright", 200.0, false, true], [1, "tilted", "loop", false, true], [1, "tilted", 270.0, false, true],
 		[2, "tilted", 90.0, true, false], [2, "tilted", 50.0, true, false], [2, "tilted", 130.0, true, false],
+		[2, "tilted", 45.0, true, false], [2, "tilted", 135.0, true, false], [2, "tilted", 44.0, false, true], [2, "tilted", 136.0, false, true],
 		[2, "tilted", 140.0, false, true], [2, "tilted", 270.0, false, true], [2, "tilted", 0.0, false, true],
 		[2, "upright", 90.0, false, true],
 	]
@@ -512,6 +515,36 @@ func check_in_view() -> void:
 		await tree.process_frame
 	expect.call(problems.is_empty(), "seasons in view: the Earth all the way round its path (the start, the solstices, the near side) with its flag between the top band (%.0f%%) and the bottom %.0f%%, a solstice's globe %.0f%% of the height or more, the path across %.0f%% of the phone's width or more, the start Earth's upper half over the sun, the yard window inside and above the December Earth (phone, desktop and tablet)" % [TOP_FREE * 100.0, (1.0 - BOTTOM_FREE) * 100.0, GOAL_MIN * 100.0, PATH_SPAN * 100.0],
 		"; ".join(problems.slice(0, 4) + seen))
+
+
+# --- the pictures ---------------------------------------------------------------------------------
+
+## The question's seasons pictures (PredictPictures) and the condition buttons' earth axis pictures
+## (PickPictures) draw on a canvas of their button's size without errors.
+func check_pictures() -> void:
+	var canvas := Control.new()
+	canvas.size = Vector2(190.0, 100.0)
+	tree.root.add_child(canvas)
+	var drawn := []
+	var predict_kinds := ["seasons_change", "seasons_same"]
+	var pick_kinds := ["earth_tilted", "earth_upright"]
+	for kind: String in predict_kinds + pick_kinds:
+		var draw := func() -> void:
+			if kind in predict_kinds:
+				PredictPictures.draw(canvas, kind)
+			else:
+				PickPictures.draw(canvas, kind)
+			drawn.append(kind)
+		canvas.draw.connect(draw)
+		canvas.queue_redraw()
+		await tree.process_frame
+		canvas.draw.disconnect(draw)
+	canvas.queue_free()
+	var listed := predict_kinds.all(func(k: String) -> bool: return k in PredictPictures.KINDS) \
+			and pick_kinds.all(func(k: String) -> bool: return k in PickPictures.KINDS)
+	expect.call(listed and drawn == predict_kinds + pick_kinds,
+		"seasons pictures: the question's seasons kinds (PredictPictures) and the earth axis kinds (PickPictures) are listed and draw",
+		str(drawn))
 
 
 # --- the spot -------------------------------------------------------------------------------------

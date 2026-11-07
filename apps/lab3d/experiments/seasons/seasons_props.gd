@@ -480,7 +480,7 @@ static func _sky_mesh(top: Color, low: Color) -> Mesh:
 	var b := ArtKit.builder()
 	b.ao_min = 1.0
 	var half := WINDOW_SIZE * 0.5
-	var corners := [Vector3(-half.x, -half.y, 0.0), Vector3(half.x, -half.y, 0.0), Vector3(half.x, half.y, 0.0), Vector3(-half.x, half.y, 0.0)]
+	var corners: Array[Vector3] = [Vector3(-half.x, -half.y, 0.0), Vector3(half.x, -half.y, 0.0), Vector3(half.x, half.y, 0.0), Vector3(-half.x, half.y, 0.0)]
 	b.add_triangle([corners[0], corners[1], corners[2]], [low, low, top], Vector3.BACK)
 	b.add_triangle([corners[0], corners[2], corners[3]], [low, top, top], Vector3.BACK)
 	return b.commit()
@@ -491,11 +491,12 @@ static func _pill(b: ArtMeshBuilder, r: Rect2, z: float, color: Color) -> void:
 	var radius := minf(r.size.x, r.size.y) * 0.5
 	var inner := r.grow(-radius)
 	var poly := PackedVector2Array()
-	var corners := [[inner.end, 0.0], [Vector2(inner.position.x, inner.end.y), 0.5 * PI], [inner.position, PI], [Vector2(inner.end.x, inner.position.y), 1.5 * PI]]
-	for corner: Array in corners:
+	var centres: Array[Vector2] = [inner.end, Vector2(inner.position.x, inner.end.y), inner.position, Vector2(inner.end.x, inner.position.y)]
+	var starts: Array[float] = [0.0, 0.5 * PI, PI, 1.5 * PI]
+	for c_i in centres.size():
 		for k in 7:
-			var a: float = corner[1] + PI * 0.5 * k / 6.0
-			poly.append((corner[0] as Vector2) + Vector2(cos(a), sin(a)) * radius)
+			var a := starts[c_i] + PI * 0.5 * k / 6.0
+			poly.append(centres[c_i] + Vector2(cos(a), sin(a)) * radius)
 	var c := r.get_center()
 	for i in poly.size():
 		var p0 := poly[i]

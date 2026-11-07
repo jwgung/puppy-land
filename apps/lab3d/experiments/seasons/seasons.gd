@@ -91,17 +91,16 @@ func observations() -> Dictionary:
 	var noon := m.noon_sun_altitude() - even
 	var day := m.day_hours() - SunModel.HOURS_PER_ROTATION * 0.5
 	return {
-		"state": {
-			"winter": Locale.t("seasons.status.winter"),
-			"spring": Locale.t("seasons.status.spring"),
-			"summer": Locale.t("seasons.status.summer"),
-			"autumn": Locale.t("seasons.status.autumn"),
-			"upright": Locale.t("seasons.status.upright"),
-			"loop": Locale.t("seasons.status.loop"),
-		}.get(m.season(), ""),
-		"sun": Locale.t("seasons.sun.high") if noon > SUN_WORD_DEG else Locale.t("seasons.sun.low") if noon < -SUN_WORD_DEG else Locale.t("seasons.sun.middle"),
-		"day": Locale.t("seasons.day.long") if day > DAY_WORD_HOURS else Locale.t("seasons.day.short") if day < -DAY_WORD_HOURS else Locale.t("seasons.day.middle"),
+		"state": Locale.t("seasons.status." + m.season()),
+		"sun": _three_way(noon, SUN_WORD_DEG, "seasons.sun.", "high", "low"),
+		"day": _three_way(day, DAY_WORD_HOURS, "seasons.day.", "long", "short"),
 	}
+
+
+## The word for `value` against `limit`: over it `more`, under minus it `less`, else "middle"
+## (`prefix` is the locale key up to the word).
+static func _three_way(value: float, limit: float, prefix: String, more: String, less: String) -> String:
+	return Locale.t(prefix + (more if value > limit else less if value < -limit else "middle"))
 
 
 ## The noon sun's height through one year on this axis (x: the path from the March equinox, deg) and

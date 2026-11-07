@@ -2,9 +2,10 @@
 ## drawn with the canvas's 2D calls (no textures, nothing downloaded), in the storybook colours of
 ## the prediction pictures (PredictPictures) and the labs' own toy colours (ArtPalette): the earth,
 ## the moon and Jupiter, a light or a heavy box, a steel, wooden or rubber slide, a planet near or far
-## from its star, a gentle or a steep slope, one, two or four ropes, the hand near or far on the lever, a small or a big ball (blue, orange, the free fall's red),
-## a big or a small drum, a weight, a short or a long string, the Earth with its axis tilted or upright (#87). `size` (0..1) and `count` say how much
-## the drawing shows (kid.picks entries). The words under the picture say the same thing.
+## from its star, a gentle or a steep slope, one, two or four ropes, the hand near or far on the lever,
+## a small or a big ball (blue, orange, the free fall's red), a big or a small drum, a weight, a short
+## or a long string, the Earth with its axis tilted or upright (#87). `size` (0..1) and `count` say how
+## much the drawing shows (kid.picks entries). The words under the picture say the same thing.
 ## A mass's picture (a ball, a box, a weight) is drawn like the lab draws the body (2026-10-28,
 ## MassLook): `size` is its share of the biggest one, the cube root of the mass over the lab's
 ## heaviest button (tests/easy_controls_checks.gd checks the definitions), so equal masses draw equal
