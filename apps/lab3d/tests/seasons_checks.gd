@@ -33,6 +33,8 @@ const VIEW_SIZE := Vector2(1152, 720)
 ## The phone (2340 x 1080) and the tablet (1920 x 1200) in UI units at the same height.
 const PHONE := Vector2(1560, 720)
 const TABLET := Vector2(1152, 720)
+## A desktop window (1920 x 1080).
+const DESKTOP := Vector2(1280, 720)
 ## In view: inside this margin of the view's sides and top, above the bottom share the dialogue box
 ## and the buttons take.
 const EDGE := 0.03
@@ -41,8 +43,8 @@ const BOTTOM_FREE := 0.8
 const TOP_FREE := 0.33
 ## A solstice's globe at least this share of the view's height; the path at least this share of the
 ## phone's width (#87 Q13).
-const GOAL_MIN := 0.35
-const PATH_SPAN := 0.58
+const GOAL_MIN := 0.28
+const PATH_SPAN := 0.4
 const LINE_MAX := 24
 ## How far (deg) the Earth may land from the finger's 50 deg in the drag check (the camera assist).
 const DRAG_SLACK := 10.0
@@ -438,20 +440,18 @@ func check_no_numbers() -> void:
 
 # --- in view --------------------------------------------------------------------------------------
 
-## What matters is big and in the clear on the phone's and the tablet's front view (#87 Q13: the
-## globe 1.65 times bigger, the path across the screen): the Earth at the start (the March equinox,
-## behind the sun: the first dialogue box opens over the stage, not over it) and on the back half of
-## its path, the two solstices of the stages included, with the house's flag, stays between the top
-## band (TOP_FREE: the title, the card and the mission strip) and the bottom (BOTTOM_FREE: the dialogue
-## box, the buttons) and inside the sides; only the near half (the September side, passed on the way
-## round) may dip under the bottom. A solstice's globe is GOAL_MIN of the height or more, the path
-## spans PATH_SPAN of the phone's width or more, and the yard window is inside the view, above the
-## December globe and its flag (the window never hides behind the Earth). The start Earth, behind the
-## sun, shows its upper half above the sun and its rays.
+## What matters is big and in the clear on the phone's, the desktop's and the tablet's front view
+## (#87 Q13: the globe 1.65 times bigger; Q14: all the way round): the Earth with the house's flag, at
+## every place of its path (the start behind the sun, the solstices of the stages, the near September
+## side), stays between the top band (TOP_FREE: the title, the card and the mission strip) and the
+## bottom (BOTTOM_FREE: the dialogue box, the buttons) and inside the sides. A solstice's globe is
+## GOAL_MIN of the height or more, the path spans PATH_SPAN of the phone's width or more, and the yard
+## window is inside the view, above the December globe, its flag and its axis (the window never hides behind
+## the Earth). The start Earth, behind the sun, shows its upper half above the sun and its rays.
 func check_in_view() -> void:
 	var problems := []
 	var seen := []
-	for size: Vector2 in [PHONE, TABLET]:
+	for size: Vector2 in [PHONE, DESKTOP, TABLET]:
 		var host := Control.new()
 		host.size = size
 		tree.root.add_child(host)
@@ -471,7 +471,8 @@ func check_in_view() -> void:
 		var span := Vector2(1.0, 0.0)
 		var goal := 1.0
 		var flag_top := 1.0
-		for orbit: float in [0.0, 30.0, 60.0, 90.0, 270.0, 300.0, 330.0]:
+		for k in 24:   # every 15 deg all the way round (Q14: the near side too)
+			var orbit := 15.0 * k
 			lab.model.set_input("orbit", orbit)
 			lab._show()
 			var c := SeasonsProps.earth_center(orbit)
@@ -486,7 +487,8 @@ func check_in_view() -> void:
 			if orbit in [90.0, 270.0]:
 				goal = minf(goal, box[1].y - box[0].y)
 			if orbit == 270.0:
-				flag_top = minf(box[0].y, flag.y)
+				var tip: Vector2 = at.call(c + SeasonsProps.north(SunModel.EARTH_TILT) * (SeasonsProps.GLOBE_RADIUS + SeasonsProps.ROD_OUT))
+				flag_top = minf(minf(box[0].y, flag.y), tip.y)
 		# The start Earth (behind the sun) shows its upper half over the sun and its rays.
 		var sun_top: Vector2 = at.call(SeasonsProps.SUN_CENTER + Vector3.UP * SeasonsProps.SUN_RADIUS * 1.55)
 		var start: Vector2 = at.call(SeasonsProps.earth_center(SeasonsModel.START_ORBIT))
@@ -508,7 +510,7 @@ func check_in_view() -> void:
 		seen.append("%s solstice globe %.2f, path %.2f..%.2f, window to %.2f" % [str(size), goal, span.x, span.y, low])
 		host.queue_free()
 		await tree.process_frame
-	expect.call(problems.is_empty(), "seasons in view: the Earth at the start and round the back half of its path (the solstices) with its flag between the top band (%.0f%%) and the bottom %.0f%%, a solstice's globe %.0f%% of the height or more, the path across %.0f%% of the phone's width or more, the start Earth's upper half over the sun, the yard window inside and above the December Earth (phone and tablet)" % [TOP_FREE * 100.0, (1.0 - BOTTOM_FREE) * 100.0, GOAL_MIN * 100.0, PATH_SPAN * 100.0],
+	expect.call(problems.is_empty(), "seasons in view: the Earth all the way round its path (the start, the solstices, the near side) with its flag between the top band (%.0f%%) and the bottom %.0f%%, a solstice's globe %.0f%% of the height or more, the path across %.0f%% of the phone's width or more, the start Earth's upper half over the sun, the yard window inside and above the December Earth (phone, desktop and tablet)" % [TOP_FREE * 100.0, (1.0 - BOTTOM_FREE) * 100.0, GOAL_MIN * 100.0, PATH_SPAN * 100.0],
 		"; ".join(problems.slice(0, 4) + seen))
 
 

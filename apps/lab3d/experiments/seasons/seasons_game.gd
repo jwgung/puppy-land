@@ -9,11 +9,11 @@ class_name SeasonsGame
 extends LabGame
 
 ## Inside the path, on the podium: the bud on the summer side (left), the snowman on the winter side (right).
-## Behind the sun's foot, between the sun and the Earth's path (#87 Q13: the low camera sees the
-## podium's back half clear of the dialogue box), drawn PROP_SIZE times their meshes.
-const BUD_AT := Vector3(-2.0, SeasonsProps.STAGE_TOP, -3.4)
-const SNOWMAN_AT := Vector3(2.0, SeasonsProps.STAGE_TOP, -3.4)
-const PROP_SIZE := 1.5
+## On either side of the sun's post, under the sun and inside the Earth's path (#87 Q14: the path
+## hugs the sun; the Earth's ball passes over them), drawn PROP_SIZE times their meshes.
+const BUD_AT := Vector3(-1.5, SeasonsProps.STAGE_TOP, -1.0)
+const SNOWMAN_AT := Vector3(1.5, SeasonsProps.STAGE_TOP, -1.0)
+const PROP_SIZE := 1.2
 const STEM := 0.9
 const PETALS := 6
 const PETAL := Vector3(0.2, 0.42, 0.09)   # a petal's half sizes (across, up, thick)

@@ -11,7 +11,8 @@
 ##   the same way all year, towards the screen's right: the June solstice is on the left of the sun,
 ##   where the north end leans towards it, the December solstice on the right. Upright, it stands
 ##   straight. (#87 Q13, 2026-11-07: the globe 1.65 times the first one's, the start far from the
-##   camera so the big globe opens clear of the dialogue box.)
+##   camera so the big globe opens clear of the dialogue box. Q14: a tight path round a small sun, so
+##   the near side of the path, nearer the camera, stays above the dialogue box too.)
 ## - the yard window, high on the right: the sky over Hutton Island at noon. The sun stands as high as
 ##   the noon sun (a dashed arc is its day's path: wide and high in summer, short and low in winter),
 ##   a thick bar beside the picture fills with the sun's height, and the day bar under it is as long
@@ -23,10 +24,10 @@ class_name SeasonsProps
 extends RefCounted
 
 const SUN_CENTER := Vector3(0.0, 3.6, -1.6)
-const SUN_RADIUS := 0.8
+const SUN_RADIUS := 0.55
 const SUN_SHADE := Color(1.0, 0.82, 0.6)
 ## The Earth's path round the sun (m) and the globe on it (m).
-const ORBIT_RADIUS := 6.3
+const ORBIT_RADIUS := 5.6
 const GLOBE_RADIUS := 2.8
 ## The house on the globe drawn this much bigger than the 낮과 밤 globe's (its flag reads from afar).
 const HOUSE_GROW := 1.4
@@ -59,7 +60,7 @@ const NIGHT := Color("2a3a86")   # the globe's night side: a dusk blue (the land
 const CAT_AT := Vector3(-5.6, STAGE_TOP, 6.4)
 ## The yard window: its centre (world), the picture's size (m), the frame, the height bar beside the
 ## picture and the day bar under it (m).
-const WINDOW_CENTER := Vector3(8.4, 9.0, -7.5)
+const WINDOW_CENTER := Vector3(9.0, 9.9, -7.5)
 const WINDOW_TURN_DEG := -24.0
 ## The whole window drawn this much bigger than its picture's metres (the bars read on a phone).
 const WINDOW_SCALE := 1.15
@@ -234,7 +235,7 @@ func _stage_mesh() -> Mesh:
 	b.ao_min = 0.85
 	b.ao_height = 0.6
 	var foot := Vector3(SUN_CENTER.x, STAGE_TOP, SUN_CENTER.z)
-	b.add_cylinder(Transform3D(Basis(), foot), 0.6, 0.45, 0.14, 10, ArtPalette.BLUE_DARK)
+	b.add_cylinder(Transform3D(Basis(), foot), 0.4, 0.3, 0.14, 10, ArtPalette.BLUE_DARK)
 	b.add_cylinder(Transform3D(Basis(), foot + Vector3(0.0, 0.12, 0.0)), 0.14, 0.14, SUN_CENTER.y - SUN_RADIUS - 0.05 - STAGE_TOP, 8, ArtPalette.BLUE)
 	_add_window_stand(b)
 	return b.commit()
