@@ -4,7 +4,8 @@
 ## the moon and Jupiter, a light or a heavy box, a steel, wooden or rubber slide, a planet near or far
 ## from its star, a gentle or a steep slope, one, two or four ropes, the hand near or far on the lever,
 ## a small or a big ball (blue, orange, the free fall's red), a big or a small drum, a weight, a short
-## or a long string, a short or a long stick (#86), the Earth with its axis tilted or upright (#87).
+## or a long string, a short or a long stick (#86), the Earth with its axis tilted or upright (#87), a
+## humid or a dry day's air (#92).
 ## `size` (0..1) and `count` say how much the drawing shows (kid.picks entries). The words under the
 ## picture say the same thing.
 ## A mass's picture (a ball, a box, a weight) is drawn like the lab draws the body (2026-10-28,
@@ -16,7 +17,7 @@ extends RefCounted
 
 const KINDS := ["earth", "moon", "jupiter", "box", "slide_steel", "slide_wood", "slide_rubber", "orbit",
 	"slope", "pulley", "lever", "ball_blue", "ball_orange", "ball_red", "drum_big", "drum_small", "weight", "rope",
-	"stick", "earth_tilted", "earth_upright"]
+	"stick", "earth_tilted", "earth_upright", "air_humid", "air_dry"]
 const OUTLINE := Color("8a6a46")   # PredictPictures.GROUND: the brown of the storybook lines
 const STEEL := ArtPalette.STEEL
 
@@ -31,6 +32,8 @@ static func draw(canvas: Control, kind: String, size := 0.5, count := 1) -> void
 			for blob in [[Vector2(-8, -6), 9.0], [Vector2(9, 6), 8.0], [Vector2(-3, 11), 5.0]]:
 				canvas.draw_circle(c + blob[0], blob[1], ArtPalette.GRASS)
 			canvas.draw_arc(c, r.size.y * 0.45, 0.0, TAU, 32, OUTLINE, 2.0, true)
+		"air_humid", "air_dry":   # #92: a humid day's air full of vapour, a dry day's with little
+			_air(canvas, r, kind == "air_humid")
 		"earth_tilted", "earth_upright":   # #87: the Earth with its axis leaning or straight
 			_earth_axis(canvas, r, SunModel.EARTH_TILT if kind == "earth_tilted" else SunModel.UPRIGHT)
 		"moon":
@@ -144,6 +147,27 @@ static func _earth_axis(canvas: Control, r: Rect2, tilt: float) -> void:
 	var up := Vector2(-sin(deg_to_rad(tilt)), -cos(deg_to_rad(tilt))) * (radius + 7.0)
 	canvas.draw_line(c - up, c + up, OUTLINE, 3.0, true)
 	canvas.draw_circle(c + up, 4.0, ArtPalette.RED)
+
+
+## A day's air: a soft cloud and many vapour dots (humid), or a bright sun and three dots (dry).
+static func _air(canvas: Control, r: Rect2, humid: bool) -> void:
+	var c := r.get_center()
+	if humid:
+		for blob: Array in [[Vector2(-14.0, 0.0), 13.0], [Vector2(2.0, -6.0), 16.0], [Vector2(18.0, 1.0), 12.0]]:
+			canvas.draw_circle(c + Vector2(0.0, -r.size.y * 0.12) + blob[0], blob[1], Color("dfe9f5"))
+	else:
+		var sun := c + Vector2(0.0, -r.size.y * 0.1)
+		for k in 8:
+			var d := Vector2.from_angle(TAU * k / 8.0)
+			canvas.draw_line(sun + d * 14.0, sun + d * 20.0, ArtPalette.YELLOW, 3.0, true)
+		canvas.draw_circle(sun, 11.0, ArtPalette.YELLOW)
+	var dots := 16 if humid else 3
+	for i in dots:
+		var u := fposmod(i * 0.618034 + 0.1, 1.0)
+		var v := fposmod(i * 0.754878 + 0.2, 1.0)
+		var at := Vector2(r.position.x + 8.0 + u * (r.size.x - 16.0), r.position.y + r.size.y * 0.45 + v * r.size.y * 0.5)
+		canvas.draw_circle(at, 3.6, Color("8cc8f2"))
+		canvas.draw_circle(at, 2.2, Color("dff1ff"))
 
 
 static func _ground(canvas: Control, r: Rect2) -> void:
