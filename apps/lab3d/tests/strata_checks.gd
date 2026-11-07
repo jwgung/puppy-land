@@ -16,6 +16,8 @@
 ## - each stage's objects: the buckets in stages 1 and 2, the shell in stage 2, the cliff in stage 3, all
 ##   outside a round; the hand guide shows the stage's gesture (a drag, then a tap on the cliff);
 ## - no number on the screen: the observations are words, the card is the state;
+## - on the real screen (phone, desktop, tablet): Puppy (with his flag) and Dugi whole inside the view,
+##   the pouring bucket clear of the title, the card, the mission strip (each stage's text) and 자세히;
 ## - what matters is big and in view: the buckets, the shell, the tank and every cliff layer inside the
 ##   phone's, the desktop's and the tablet's front view, above the bottom (the dialogue box) and the
 ##   left ones under the top band; a cliff layer and a bucket big enough for a finger;
@@ -29,6 +31,8 @@ const ID := "strata"
 const LINES_PATH := "res://../../docs/islands/hutton-lines.md"
 const MISSIONS_PATH := "res://../../docs/islands/hutton-missions.md"
 const VIEW_3D := "res://scripts/shell/view_3d.gd"
+const EXPERIMENT_SCREEN := "res://scripts/shell/experiment_screen.gd"
+const UI_THEME := "res://scripts/app/ui_theme.gd"
 const VIEW_SIZE := Vector2(1152, 720)
 const PHONE := Vector2(1560, 720)
 const TABLET := Vector2(1152, 720)
@@ -67,6 +71,8 @@ func run() -> void:
 	await check_stage_objects()
 	await check_no_numbers()
 	await check_in_view()
+	for size: Vector2 in [PHONE, DESKTOP, TABLET]:
+		await check_screen(size)
 	check_spot()
 	await check_pictures()
 	check_opening()
@@ -480,6 +486,59 @@ func check_in_view() -> void:
 		await tree.process_frame
 	expect.call(problems.is_empty(), "strata in view: the buckets, the shell, the tank, the pour and every cliff layer inside the view and above its bottom %.0f%% (left of the middle under the top band), a cliff layer %.0f units tall and a bucket %.0f wide or more (phone, desktop and tablet)" % [(1.0 - BOTTOM_FREE) * 100.0, LAYER_MIN, BUCKET_MIN],
 		"; ".join(problems.slice(0, 4) + seen))
+
+
+## The real screen of `size`: Puppy (his flag too) and Dugi are whole inside the view (not cut at its
+## sides or top), and the bucket pouring over the tank is clear of the title bar, the card, the mission
+## pill with each stage's text and the top buttons (자세히).
+func check_screen(size: Vector2) -> void:
+	DirAccess.remove_absolute(ProgressStore.path)
+	var host := Control.new()
+	host.theme = load(UI_THEME).build()
+	host.size = size
+	tree.root.add_child(host)
+	var screen: Control = load(EXPERIMENT_SCREEN).new()
+	screen.setup(_definition())
+	host.add_child(screen)
+	for i in 20:
+		await tree.process_frame
+	var lab: StrataLab = screen.experiment
+	var view: View3D = screen.view
+	var per_unit := Vector2(view.viewport.size) / view.size
+	var on_screen := func(box: AABB) -> Rect2:
+		var r := Rect2()
+		for k in 8:
+			var p: Vector2 = view.rig.unproject_position(box.get_endpoint(k)) / per_unit
+			r = Rect2(p, Vector2.ZERO) if k == 0 else r.expand(p)
+		return r
+	var problems := []
+	var view_rect := Rect2(Vector2.ZERO, view.size)
+	var cast: IslandCast = screen.cast
+	for pair: Array in [["Puppy", cast.puppy if cast != null else null], ["Dugi", cast.dugi if cast != null else null]]:
+		if pair[1] == null:
+			problems.append("no %s" % pair[0])
+			continue
+		var r: Rect2 = on_screen.call(IslandCast.drawn_bounds(pair[1]))
+		if r.position.x < 0.0 or r.end.x > view_rect.end.x or r.position.y < 0.0:
+			problems.append("%s at %s (view %s)" % [pair[0], str(r), str(view.size)])
+	lab.model.pour("gravel")
+	lab.model.set_input("settle", 0.5)
+	lab._show()
+	var bucket: Rect2 = on_screen.call(IslandCast.drawn_bounds(lab.props.buckets["gravel"]))
+	var round: MissionRound = screen.mission_round
+	for stage in 3:
+		screen._mission_text.text = round.stage_text(stage)
+		screen._fit_mission_strip()
+		await tree.process_frame
+		for c: Control in [screen._title_bar, screen._key_row, screen._mission_pill, screen._top_buttons]:
+			if c != null and c.is_visible_in_tree() and c.get_rect().intersects(bucket):
+				problems.append("stage %d: the pouring bucket %s under %s %s" % [stage + 1, str(bucket), c.name, str(c.get_rect())])
+	var name: String = {PHONE: "phone", DESKTOP: "desktop", TABLET: "tablet"}[size]
+	expect.call(problems.is_empty(), "strata screen (%s): Puppy with his flag and Dugi whole inside the view; the pouring bucket clear of the title, the card, the mission strip (every stage's text) and 자세히" % name,
+		"; ".join(problems.slice(0, 6)))
+	host.queue_free()
+	for i in 3:
+		await tree.process_frame
 
 
 # --- the pictures ---------------------------------------------------------------------------------
