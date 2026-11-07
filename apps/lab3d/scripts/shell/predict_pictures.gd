@@ -19,7 +19,9 @@ const KINDS := ["long_arc", "same_arc", "fall_together", "fall_heavy_first", "li
 	# #86 (그림자 시계): with the sun high, does the stick's shadow get shorter or longer?
 	"shadow_short", "shadow_long",
 	# #87 (계절): would an upright Earth have seasons?
-	"seasons_change", "seasons_same"]
+	"seasons_change", "seasons_same",
+	# #95 (강물이 깎고 쌓기): where does the water cut the land most, the steep land or the flat land?
+	"cut_steep", "cut_flat"]
 const STRONG := Color("e2683c")
 const PALE := Color("c9b892")
 const GROUND := Color("8a6a46")
@@ -88,6 +90,8 @@ static func draw(canvas: Control, kind: String) -> void:
 			_shadow(canvas, r, kind == "shadow_short")
 		"seasons_change", "seasons_same":
 			_seasons(canvas, r, kind == "seasons_change")
+		"cut_steep", "cut_flat":
+			_cuts(canvas, r, kind == "cut_steep")
 		_:
 			_ground(canvas, r)
 
@@ -603,3 +607,32 @@ static func _sprout(canvas: Control, at: Vector2, color: Color, k := 1.0) -> voi
 			var t := 1.0 - float(n) / 8.0
 			leaf.append(at + Vector2(side * 8.0 * t, -3.0 + 2.0 * sin(t * PI) - 2.0 * t) * k)
 		canvas.draw_colored_polygon(leaf, color)
+
+
+## A steep slope (left) and a flat land (right), water running over each (a blue line with its arrow)
+## into a V cut in the land: the choice's land is orange with a deep cut, the other pale with a
+## shallow one ("cut_steep": the steep land cuts deep; "cut_flat": the flat land does).
+static func _cuts(canvas: Control, r: Rect2, steep_wins: bool) -> void:
+	_ground(canvas, r)
+	var half := r.size.x * 0.5
+	var lands := [[0.0, true], [half, false]]
+	for land: Array in lands:
+		var x0: float = r.position.x + float(land[0]) + 4.0
+		var steep: bool = land[1]
+		var wins := steep == steep_wins
+		var color := STRONG if wins else PALE
+		var top := Vector2(x0, r.end.y - r.size.y * (0.8 if steep else 0.24))
+		var end := Vector2(x0 + half - 12.0, r.end.y - (2.0 if steep else r.size.y * 0.24))
+		var body := PackedVector2Array([top, end, Vector2(end.x, r.end.y), Vector2(x0, r.end.y)])
+		canvas.draw_colored_polygon(body, Color(color, 0.4))
+		var d := (end - top).normalized()
+		var inward := Vector2(-d.y, d.x)
+		var mid := top.lerp(end, 0.55)
+		var wide := 9.0 if wins else 6.0
+		var deep := r.size.y * (0.2 if wins else 0.05)
+		var notch := PackedVector2Array([mid - d * wide, mid + inward * deep, mid + d * wide])
+		canvas.draw_colored_polygon(notch, GROUND)
+		canvas.draw_polyline(PackedVector2Array([top, mid - d * wide, mid + inward * deep, mid + d * wide, end]), color, 3.0 if wins else 2.0, true)
+		var water := PackedVector2Array([top - inward * 4.0, mid - d * wide - inward * 3.0, mid + inward * (deep - 3.0), mid + d * wide - inward * 3.0, end - inward * 4.0])
+		canvas.draw_polyline(water, WATER.darkened(0.15), 3.0, true)
+		_arrow(canvas, end - inward * 4.0 - d * 14.0, end - inward * 4.0 + d * 2.0, WATER.darkened(0.15), 3.0)

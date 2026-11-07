@@ -96,6 +96,10 @@ func check_keys() -> void:
 		named["seasons.sun." + word] = "t"
 	for word in ["long", "middle", "short"]:   # the window's day length words
 		named["seasons.day." + word] = "t"
+	for id in ["ready", "little", "valley", "bar", "bank"]:   # the river card's words (RiverLab.observations)
+		named["river.status." + id] = "t"
+	for word in ["none", "some", "much"]:   # how much was cut, how much sand
+		named["river.amount." + word] = "t"
 	for id in Island.ids():   # the islands' names and fields (섬 고르기, IslandCards, #75)
 		named["island.%s.name" % id] = "t"
 		named["island.%s.about" % id] = "t"
