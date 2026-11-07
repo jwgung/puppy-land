@@ -9,8 +9,12 @@
 class_name PieceArt
 extends RefCounted
 
-const STAR := "star"
-const SUNDIAL := "sundial"
+const STAR := Island.PIECE_STAR
+const SUNDIAL := Island.PIECE_SUNDIAL
+## The sundial wedge is thinner than the star (a tenth of the dial), so in the lab it is drawn this much
+## bigger to keep its face readable (#101, 2026-11-07 user); the cat's paws, the card and the ending
+## use their own sizes.
+const SUNDIAL_LAB_SCALE := 1.3
 
 
 ## The piece kind of `island_id` (an unknown island: the star).
@@ -28,6 +32,11 @@ static func of_experiment(experiment_id: String) -> String:
 		var ids := Island.ids()
 		island = str(ids[0]) if not ids.is_empty() else ""
 	return of_island(island)
+
+
+## How much bigger a piece of `kind` is drawn in the lab than the star (LabGame.full_size).
+static func lab_scale(kind: String) -> float:
+	return SUNDIAL_LAB_SCALE if kind == SUNDIAL else 1.0
 
 
 ## A piece node of `kind`, `size` m from its centre to its point (StarArt.face_camera turns either).

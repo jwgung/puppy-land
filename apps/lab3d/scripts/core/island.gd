@@ -25,7 +25,9 @@ const GROUNDS := ["meadow", "hill", "yard", "pond", "coast", "valley"]
 const HOME := "home"
 ## The pieces an island's spots give (#101, PieceArt): the guiding star's (the default) or the
 ## sundial's golden wedges (the hutton island).
-const PIECES := ["star", "sundial"]
+const PIECE_STAR := "star"
+const PIECE_SUNDIAL := "sundial"
+const PIECES := [PIECE_STAR, PIECE_SUNDIAL]
 
 ## Zone id -> {ground (GROUNDS: the hutton island adds coast and valley, #72), look (the lab ground's look; default the ground), at [x, z], radius or
 ## size [w, d], height (hills; the valley's rise), spots [[experiment id, [x, z], landmark yaw deg], ...]}, in the
@@ -47,7 +49,7 @@ var lab_facing: Dictionary = {}   # experiment id -> map angle deg of the lab's 
 ## Where the story's pieces gather: a spot id, or HOME (the square).
 var lookout := ""
 ## The piece each spot gives (PIECES; "star" when the file has none): PieceArt draws it.
-var piece := "star"
+var piece := PIECE_STAR
 ## The island's own landforms and buildings (#72), each optional: volcano {at [x, z], radius, height}
 ## (a cone, the valley's ground rising to it), river [[x, z], ...] (from its source to past the coast),
 ## lighthouse [x, z], sundial true (on the square). Read by MapIsland and LabWorld; {} on the
@@ -192,7 +194,7 @@ static func from_data(data: Dictionary) -> Island:
 	island.sea_waves = _array(data.get("sea_waves"))
 	island.lab_facing = _dict(data.get("lab_facing"))
 	island.lookout = str(data.get("lookout", ""))
-	island.piece = str(data.get("piece", "star"))
+	island.piece = str(data.get("piece", PIECE_STAR))
 	island.features = _dict(data.get("features"))
 	island.order = _array(data.get("order")).filter(func(id: Variant) -> bool: return id is String)
 	island.problem = island._check()

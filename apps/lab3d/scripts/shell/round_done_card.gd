@@ -20,7 +20,7 @@ const STAR_GAP := 14.0
 const POP_S := 0.35
 
 var stamps := 3
-## The story: the round's star piece is drawn over the stamps (the piece the child just found).
+## The story: the round's piece (piece_kind) is drawn over the stamps (the piece the child just found).
 var piece := false
 ## Which piece (PieceArt: the island's, #101): the star, or the hutton island's sundial wedge.
 var piece_kind := PieceArt.STAR

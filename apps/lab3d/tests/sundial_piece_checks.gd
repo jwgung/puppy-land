@@ -182,7 +182,7 @@ func check_lab_pieces() -> void:
 		await tree.process_frame
 		if lab.game == null or not _is_sundial(lab.game.piece):
 			problems.append("%s: no sundial piece" % d.id)
-		elif not is_equal_approx(lab.game.full_size(), LabGame.PIECE_SIZE * LabGame.SUNDIAL_LAB_SCALE):
+		elif not is_equal_approx(lab.game.full_size(), LabGame.PIECE_SIZE * PieceArt.SUNDIAL_LAB_SCALE):
 			problems.append("%s: full size %.2f, not the bigger lab wedge" % [d.id, lab.game.full_size()])
 		lab.queue_free()
 		await tree.process_frame

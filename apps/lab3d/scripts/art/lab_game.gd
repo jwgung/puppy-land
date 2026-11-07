@@ -13,10 +13,6 @@ class_name LabGame
 extends Node3D
 
 const PIECE_SIZE := 0.3                 # the piece's outer radius (m): its face reads from the front view
-## The sundial wedge is thinner than the star (a tenth of the dial), so in the lab it is drawn this much
-## bigger to keep its face readable (#101, 2026-11-07 user); the cat's paws, the card and the ending
-## use their own sizes.
-const SUNDIAL_LAB_SCALE := 1.3
 const PIECE_SPIN := 1.4                 # rad/s the waiting piece turns (a little "find me" sparkle)
 const LAND_BOUNCES := 2                 # small hops after it lands (visual only)
 const CHEST_WOOD := Color("c98d4f")      # the treasure chests of batch B (chest_mesh)
@@ -78,9 +74,9 @@ func piece_kind() -> String:
 	return PieceArt.of_experiment(lab.definition.id()) if lab != null else PieceArt.STAR
 
 
-## The lab's size factor for its piece kind (SUNDIAL_LAB_SCALE for the sundial wedge, 1 for the star).
+## The lab's size factor for its piece kind (PieceArt.lab_scale: 1.3 for the sundial wedge, 1 for the star).
 func kind_scale() -> float:
-	return SUNDIAL_LAB_SCALE if piece_kind() == PieceArt.SUNDIAL else 1.0
+	return PieceArt.lab_scale(piece_kind())
 
 
 ## The piece's full size in this lab (PIECE_SIZE times kind_scale()): what a hidden piece grows to.

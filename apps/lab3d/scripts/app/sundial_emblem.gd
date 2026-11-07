@@ -7,7 +7,7 @@
 class_name SundialEmblem
 extends PieceEmblem
 
-const WEDGES := 10
+const WEDGES := SundialArt.WEDGES
 const HUB := 0.2                       # the gnomon's empty spot (share of the radius)
 const FILL_LIGHT := Color("ffe08a")    # every other filled wedge, a touch lighter
 
