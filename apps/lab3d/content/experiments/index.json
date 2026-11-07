@@ -19,7 +19,8 @@
   "islands": {
     "hutton": [
       "day-night.json",
-      "shadow-clock.json"
+      "shadow-clock.json",
+      "seasons.json"
     ]
   }
 }

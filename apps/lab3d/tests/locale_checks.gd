@@ -90,6 +90,12 @@ func check_keys() -> void:
 	var balls: Dictionary = (load("res://experiments/free_fall/free_fall.gd") as GDScript).get_script_constant_map().BALLS
 	for id in balls:
 		named["free-fall.ball." + id] = "t"
+	for id in ["winter", "spring", "summer", "autumn", "upright", "loop"]:   # the season card's words (SeasonsLab.observations)
+		named["seasons.status." + id] = "t"
+	for word in ["high", "middle", "low"]:   # the window's sun height words
+		named["seasons.sun." + word] = "t"
+	for word in ["long", "middle", "short"]:   # the window's day length words
+		named["seasons.day." + word] = "t"
 	for id in Island.ids():   # the islands' names and fields (섬 고르기, IslandCards, #75)
 		named["island.%s.name" % id] = "t"
 		named["island.%s.about" % id] = "t"

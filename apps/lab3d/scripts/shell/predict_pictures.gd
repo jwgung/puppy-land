@@ -17,7 +17,9 @@ const KINDS := ["long_arc", "same_arc", "fall_together", "fall_heavy_first", "li
 	# #74 (낮과 밤): does the sun move round, or does the Earth turn?
 	"sun_moves", "earth_spins",
 	# #86 (그림자 시계): with the sun high, does the stick's shadow get shorter or longer?
-	"shadow_short", "shadow_long"]
+	"shadow_short", "shadow_long",
+	# #87 (계절): would an upright Earth have seasons?
+	"seasons_change", "seasons_same"]
 const STRONG := Color("e2683c")
 const PALE := Color("c9b892")
 const GROUND := Color("8a6a46")
@@ -84,6 +86,8 @@ static func draw(canvas: Control, kind: String) -> void:
 			_day_night(canvas, r, kind == "sun_moves")
 		"shadow_short", "shadow_long":
 			_shadow(canvas, r, kind == "shadow_short")
+		"seasons_change", "seasons_same":
+			_seasons(canvas, r, kind == "seasons_change")
 		_:
 			_ground(canvas, r)
 
@@ -533,3 +537,69 @@ static func _shadow(canvas: Control, r: Rect2, short: bool) -> void:
 		arrow.append(from.lerp(sun + Vector2(-16.0, 4.0), t) + Vector2(0.0, -sin(PI * t) * 6.0))
 	canvas.draw_polyline(arrow, STRONG, 3.0, true)
 	_arrow(canvas, arrow[-2], arrow[-1], STRONG, 3.0)
+
+
+## The sun (middle) and an upright Earth on either side of its path: over the two Earths a snowflake
+## and a flower, the seasons changing ("seasons_change", orange), or the same green sprout over both,
+## nothing changing ("seasons_same").
+static func _seasons(canvas: Control, r: Rect2, change: bool) -> void:
+	var c := r.get_center() + Vector2(0.0, r.size.y * 0.16)
+	var rx := r.size.x * 0.36
+	var path := PackedVector2Array()
+	for k in 41:
+		var a := TAU * k / 40.0
+		path.append(c + Vector2(cos(a) * rx, sin(a) * r.size.y * 0.13))
+	canvas.draw_polyline(path, PALE, 2.0, true)
+	for k in 8:
+		var a := TAU * k / 8.0
+		var d := Vector2(cos(a), sin(a))
+		canvas.draw_line(c + d * 12.0, c + d * 17.0, SUN, 3.0, true)
+	canvas.draw_circle(c, 10.0, SUN)
+	var radius := minf(r.size.y * 0.17, 15.0)
+	var mark_size := minf(r.size.y * 0.016, 1.8)
+	for side: float in [-1.0, 1.0]:
+		var earth := c + Vector2(side * rx, 0.0)
+		canvas.draw_circle(earth, radius, WATER)
+		canvas.draw_circle(earth + Vector2(-radius * 0.3, -radius * 0.25), radius * 0.42, LAND)
+		canvas.draw_line(earth + Vector2(0.0, -radius - 4.0), earth + Vector2(0.0, radius + 4.0), GROUND, 2.0, true)
+		canvas.draw_circle(earth + Vector2(0.0, -radius - 4.0), 2.5, Color("ff3b3b"))
+		var mark := earth + Vector2(0.0, -radius - 6.0 - 10.0 * mark_size)
+		if not change:
+			_sprout(canvas, mark, Color("4fbf3b"), mark_size)
+		elif side < 0.0:
+			_snowflake(canvas, mark, STRONG, mark_size)
+		else:
+			_flower(canvas, mark, STRONG, mark_size)
+
+
+## A snowflake (`k` times its base size): three crossing strokes with little ticks.
+static func _snowflake(canvas: Control, at: Vector2, color: Color, k := 1.0) -> void:
+	for n in 3:
+		var d := Vector2.from_angle(PI * n / 3.0 + PI * 0.5) * 8.0 * k
+		canvas.draw_line(at - d, at + d, color, 2.5 * k, true)
+		for end: Vector2 in [d, -d]:
+			var tick := end * 0.55
+			var side := Vector2(-end.y, end.x).normalized() * 3.0 * k
+			canvas.draw_line(at + tick, at + tick * 1.35 + side, color, 1.8 * k, true)
+			canvas.draw_line(at + tick, at + tick * 1.35 - side, color, 1.8 * k, true)
+
+
+## A flower (`k` times its base size): five round petals round a yellow heart.
+static func _flower(canvas: Control, at: Vector2, color: Color, k := 1.0) -> void:
+	for n in 5:
+		canvas.draw_circle(at + Vector2.from_angle(TAU * n / 5.0 - PI * 0.5) * 5.0 * k, 4.0 * k, color)
+	canvas.draw_circle(at, 3.0 * k, SUN)
+
+
+## A sprout (`k` times its base size): a stem and two leaves.
+static func _sprout(canvas: Control, at: Vector2, color: Color, k := 1.0) -> void:
+	canvas.draw_line(at + Vector2(0.0, 7.0) * k, at + Vector2(0.0, -3.0) * k, color, 2.5 * k, true)
+	for side: float in [-1.0, 1.0]:
+		var leaf := PackedVector2Array()
+		for n in 9:
+			var t := float(n) / 8.0
+			leaf.append(at + Vector2(side * 8.0 * t, -3.0 - 4.0 * sin(t * PI) - 2.0 * t) * k)
+		for n in 9:
+			var t := 1.0 - float(n) / 8.0
+			leaf.append(at + Vector2(side * 8.0 * t, -3.0 + 2.0 * sin(t * PI) - 2.0 * t) * k)
+		canvas.draw_colored_polygon(leaf, color)

@@ -1,0 +1,92 @@
+{
+  "title": "Why do we have seasons?",
+  "category": "Earth and sky",
+  "question": "If the Earth stood up straight, would there be seasons?",
+  "steps": [
+    "Drag the Earth with your finger along its path around the sun.",
+    "Watch the noon sun and the day bar in the window at the top right.",
+    "Use the button at the bottom left to tilt the Earth or stand it up straight."
+  ],
+  "observe": "The tilted Earth goes around the sun. When Hutton Island leans toward the sun, the sun is high and the days are long (summer). When it leans away, the sun is low and the days are short (winter). An Earth standing up straight gets the same sun everywhere on its path.",
+  "terms": [
+    { "name": "Revolution", "description": "The Earth going around the sun, once a year." },
+    {
+      "name": "Axis",
+      "description": "An invisible rod through the middle of the Earth, joining its north end and its south end. It leans a little."
+    },
+    { "name": "Seasons", "description": "Spring, summer, fall and winter: the sun's height and the day's length change through the year." }
+  ],
+  "law": {
+    "equation": "tilted axis + revolution = seasons",
+    "title": "The Earth's revolution and the seasons",
+    "description": "The Earth goes around the sun once a year with its axis tilted. So the noon sun's height and the day's length change, and we have seasons. If the axis stood up straight, the sun would be just as high all year, and there would be no seasons."
+  },
+  "tip": "Drag the Earth with one finger: it moves along its path around the sun. It stops where you let go, and it goes either way. The orange arrow on the path shows the way the Earth really goes.",
+  "tip_short": "Drag the Earth around the sun",
+  "controls": [{ "label": "Earth's tilt", "options": [{ "label": "Tilted" }, { "label": "Straight" }] }],
+  "actions": [{ "label": "Start over" }],
+  "predict": {
+    "question": "If the Earth stood up straight, would there be seasons?",
+    "choices": [{ "label": "Yes, seasons" }, { "label": "No seasons" }],
+    "reason": "Seasons come from the Earth's tilt. Standing straight, the sun is just as high all year.",
+    "bridge": "Move the Earth and see for yourself!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Move the Earth to winter, the shortest days, and make a snowman!",
+        "say": "When Hutton Island leans away from the sun, the sun stays low and the days are short. That is winter.",
+        "win": "Snow! A snowman!",
+        "miss": "Go where the sun is low!",
+        "miss_conditions": "Pick the tilted Earth!"
+      },
+      {
+        "text": "Stand the Earth up straight and take it all the way around!",
+        "say": "An Earth standing up straight gets the same high sun everywhere. So no seasons come.",
+        "win": "Huh? No new season!",
+        "miss": "Go all the way around!",
+        "miss_conditions": "Pick the straight Earth!"
+      },
+      {
+        "text": "Tilt it again and make the flower bloom in summer, when the sun is highest!",
+        "say": "Seasons come from the Earth's tilt. When Hutton Island leans toward the sun, the sun is high and the days are long. That is summer.",
+        "win": "It bloomed! The piece is out!",
+        "miss": "Go where the sun is higher!",
+        "miss_conditions": "Pick the tilted Earth!"
+      }
+    ]
+  },
+  "story": {
+    "keeper": "This is the flower hill. The seasons keep jumping around, so the flowers can't bloom…",
+    "clue": "There's a piece in that frozen bud! It has to bloom first.",
+    "map_clue": "At the top of the hill, by the path around the sun!"
+  },
+  "kid": {
+    "intro": "This is the seasons lab. Besides spinning in place, the Earth also goes around the sun, once a year. This is called **revolution**.",
+    "intro_more": [
+      {
+        "text": "The Earth goes around the sun with its axis tilted a little. So sometimes Hutton Island leans toward the sun, and sometimes away from it."
+      }
+    ],
+    "title": "Move the Earth around the sun to change the seasons!",
+    "place": "Seasons",
+    "say": "When Hutton Island leans toward the sun, the sun is high and the days are long. When it leans away, the sun is low and the days are short.",
+    "tip": "Drag the Earth around the sun.",
+    "cards": { "state": "Season on Hutton Island", "sun": "Noon sun", "day": "Day length" },
+    "picks": {
+      "tilt": [{ "label": "Tilted" }, { "label": "Straight" }]
+    }
+  },
+  "note": {
+    "law": "The Earth goes around the sun with its axis tilted, so the sun's height and the day's length change. That brings the seasons.",
+    "formula": "tilted axis + revolution = seasons",
+    "numbers": [{ "label": "Season on Hutton Island" }, { "label": "Noon sun's height" }, { "label": "Day length" }]
+  },
+  "observations": [{ "label": "Season on Hutton Island" }, { "label": "Noon sun's height" }, { "label": "Day length" }],
+  "graph": {
+    "title": "The noon sun's height on Hutton Island through the year",
+    "x": { "label": "How far the Earth went around the sun (from the spring equinox)" },
+    "y": { "label": "Noon sun's height" },
+    "series": [{ "label": "Noon sun's height" }, { "label": "Now" }]
+  }
+}

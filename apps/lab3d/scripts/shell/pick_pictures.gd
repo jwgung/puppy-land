@@ -2,9 +2,11 @@
 ## drawn with the canvas's 2D calls (no textures, nothing downloaded), in the storybook colours of
 ## the prediction pictures (PredictPictures) and the labs' own toy colours (ArtPalette): the earth,
 ## the moon and Jupiter, a light or a heavy box, a steel, wooden or rubber slide, a planet near or far
-## from its star, a gentle or a steep slope, one, two or four ropes, the hand near or far on the lever, a small or a big ball (blue, orange, the free fall's red),
-## a big or a small drum, a weight, a short or a long string, a short or a long stick. `size` (0..1) and `count` say how much
-## the drawing shows (kid.picks entries). The words under the picture say the same thing.
+## from its star, a gentle or a steep slope, one, two or four ropes, the hand near or far on the lever,
+## a small or a big ball (blue, orange, the free fall's red), a big or a small drum, a weight, a short
+## or a long string, a short or a long stick (#86), the Earth with its axis tilted or upright (#87).
+## `size` (0..1) and `count` say how much the drawing shows (kid.picks entries). The words under the
+## picture say the same thing.
 ## A mass's picture (a ball, a box, a weight) is drawn like the lab draws the body (2026-10-28,
 ## MassLook): `size` is its share of the biggest one, the cube root of the mass over the lab's
 ## heaviest button (tests/easy_controls_checks.gd checks the definitions), so equal masses draw equal
@@ -14,7 +16,7 @@ extends RefCounted
 
 const KINDS := ["earth", "moon", "jupiter", "box", "slide_steel", "slide_wood", "slide_rubber", "orbit",
 	"slope", "pulley", "lever", "ball_blue", "ball_orange", "ball_red", "drum_big", "drum_small", "weight", "rope",
-	"stick"]
+	"stick", "earth_tilted", "earth_upright"]
 const OUTLINE := Color("8a6a46")   # PredictPictures.GROUND: the brown of the storybook lines
 const STEEL := ArtPalette.STEEL
 
@@ -29,6 +31,8 @@ static func draw(canvas: Control, kind: String, size := 0.5, count := 1) -> void
 			for blob in [[Vector2(-8, -6), 9.0], [Vector2(9, 6), 8.0], [Vector2(-3, 11), 5.0]]:
 				canvas.draw_circle(c + blob[0], blob[1], ArtPalette.GRASS)
 			canvas.draw_arc(c, r.size.y * 0.45, 0.0, TAU, 32, OUTLINE, 2.0, true)
+		"earth_tilted", "earth_upright":   # #87: the Earth with its axis leaning or straight
+			_earth_axis(canvas, r, SunModel.EARTH_TILT if kind == "earth_tilted" else SunModel.UPRIGHT)
 		"moon":
 			canvas.draw_circle(c, r.size.y * 0.32, Color("d9dbe2"))
 			for crater in [[Vector2(-6, -4), 4.0], [Vector2(6, 5), 3.0], [Vector2(3, -8), 2.5]]:
@@ -126,6 +130,20 @@ static func draw(canvas: Control, kind: String, size := 0.5, count := 1) -> void
 			canvas.draw_line(foot, top, ArtPalette.WOOD_GRAIN, 7.0, true)
 			canvas.draw_line(foot, top, ArtPalette.WOOD, 4.0, true)
 			canvas.draw_circle(top, 6.0, ArtPalette.RED)
+
+
+## The Earth (as "earth") with its axis through it, leaning `tilt` deg to the left (the 계절 lab's
+## lean), its north end a red dot.
+static func _earth_axis(canvas: Control, r: Rect2, tilt: float) -> void:
+	var c := r.get_center()
+	var radius := r.size.y * 0.36
+	canvas.draw_circle(c, radius, ArtPalette.SEA)
+	for blob in [[Vector2(-0.3, -0.25), 0.36], [Vector2(0.38, 0.22), 0.3], [Vector2(-0.1, 0.45), 0.2]]:
+		canvas.draw_circle(c + (blob[0] as Vector2) * radius, float(blob[1]) * radius, ArtPalette.GRASS)
+	canvas.draw_arc(c, radius, 0.0, TAU, 32, OUTLINE, 2.0, true)
+	var up := Vector2(-sin(deg_to_rad(tilt)), -cos(deg_to_rad(tilt))) * (radius + 7.0)
+	canvas.draw_line(c - up, c + up, OUTLINE, 3.0, true)
+	canvas.draw_circle(c + up, 4.0, ArtPalette.RED)
 
 
 static func _ground(canvas: Control, r: Rect2) -> void:

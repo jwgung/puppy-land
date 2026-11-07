@@ -147,6 +147,10 @@
 ## 24a. 낮과 밤 (tests/day_night_checks.gd, #74 2026-11-06): the lab's data and its lines against
 ##    docs/islands/hutton-lines.md 1, the bands and the judging of the three stages (the evening's miss),
 ##    the spot on the hutton map, the opening lines (the fox first), the hand (one to one) and the piece.
+## 24c. 계절 (tests/seasons_checks.gd, #87 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 3, the seasons and the upright loop, the judging of the three stages
+##    (the wrong axis's line), the tilt button, no number on the screen, the Earth and the window in view,
+##    the spot, the opening lines (the fox first), the hand (round the path) and the piece.
 ## Times are engine fixed steps (60 Hz), independent of rendering FPS.
 extends SceneTree
 
@@ -365,6 +369,11 @@ func _run() -> void:
 	_expect(shadow_clock != null and shadow_clock.can_instantiate(), "shadow-clock checks compile", "")
 	if shadow_clock != null and shadow_clock.can_instantiate():
 		await shadow_clock.new(self, _expect).run()
+	print("== 계절 (#87): Hutton Island's seasons lab, its lines, judging, tilt button, view, hand and piece ==")
+	var seasons: GDScript = load("res://tests/seasons_checks.gd")
+	_expect(seasons != null and seasons.can_instantiate(), "seasons checks compile", "")
+	if seasons != null and seasons.can_instantiate():
+		await seasons.new(self, _expect).run()
 	print("== the hand guide (2026-10-30: the gesture on the lab's object, once and after a quiet while; the map's tap) ==")
 	var hand: GDScript = load("res://tests/hand_guide_checks.gd")
 	_expect(hand != null and hand.can_instantiate(), "hand guide checks compile", "")
