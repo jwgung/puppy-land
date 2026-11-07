@@ -54,6 +54,8 @@ static func add(b: ArtMeshBuilder, id: String, xf: Transform3D) -> float:
 			return _shadow_stick(b, xf)
 		"seasons":
 			return _orrery(b, xf)
+		"earthquake":
+			return _shake_house(b, xf)
 	_rod(b, xf, Vector3.ZERO, Vector3(0.0, 1.0, 0.0), 0.08, ArtPalette.BLUE)
 	_ball(b, xf, Vector3(0.0, 1.15, 0.0), 0.2, ArtPalette.WHITE)
 	return 1.35
@@ -377,6 +379,23 @@ static func _orrery(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	_rod(b, xf, earth - axis * 0.3, earth + axis * 0.32, 0.025, ArtPalette.STEEL_SHINE)
 	_ball(b, xf, earth + axis * 0.33, 0.045, ArtPalette.RED)
 	return 1.6
+
+
+## The hutton island's 지진 (#97, "블록 집이 서 있는 곳"): the shake table (blue base, orange deck, the red
+## handle's knob on the left) and the block house on it, its X brace and red roof.
+static func _shake_house(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	_box(b, xf, Vector3(0.0, 0.08, 0.0), Vector3(1.3, 0.16, 0.8), ArtPalette.BLUE_DARK, ArtPalette.BLUE)
+	_box(b, xf, Vector3(0.0, 0.2, 0.0), Vector3(1.1, 0.08, 0.7), ArtPalette.ORANGE, ArtPalette.ORANGE_TOP)
+	_rod(b, xf, Vector3(-0.55, 0.2, 0.0), Vector3(-0.72, 0.2, 0.0), 0.03, ArtPalette.STEEL)
+	_ball(b, xf, Vector3(-0.76, 0.2, 0.0), 0.1, ArtPalette.RED)
+	for x: float in [-0.3, 0.3]:
+		_box(b, xf, Vector3(x, 0.52, 0.0), Vector3(0.14, 0.56, 0.36), Color("e3a35e"))
+	_box(b, xf, Vector3(0.0, 0.84, 0.0), Vector3(0.78, 0.09, 0.4), ArtPalette.WOOD_GRAIN)
+	_rod(b, xf, Vector3(-0.22, 0.26, 0.2), Vector3(0.22, 0.78, 0.2), 0.03, ArtPalette.WOOD_GRAIN)
+	_rod(b, xf, Vector3(0.22, 0.26, 0.2), Vector3(-0.22, 0.78, 0.2), 0.03, ArtPalette.WOOD_GRAIN)
+	for side: float in [-1.0, 1.0]:   # the roof's two slopes
+		b.add_rounded_box(xf * Transform3D(Basis(Vector3.BACK, -side * 0.6), Vector3(side * 0.2, 1.02, 0.0)), Vector3(0.56, 0.07, 0.5), 0.0, 0, ArtPalette.RED, ArtPalette.RED_TOP)
+	return 1.4
 
 
 # --- helpers ---------------------------------------------------------------------------------

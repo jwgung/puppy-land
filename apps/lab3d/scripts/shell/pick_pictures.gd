@@ -4,7 +4,8 @@
 ## the moon and Jupiter, a light or a heavy box, a steel, wooden or rubber slide, a planet near or far
 ## from its star, a gentle or a steep slope, one, two or four ropes, the hand near or far on the lever,
 ## a small or a big ball (blue, orange, the free fall's red), a big or a small drum, a weight, a short
-## or a long string, a short or a long stick (#86), the Earth with its axis tilted or upright (#87).
+## or a long string, a short or a long stick (#86), the Earth with its axis tilted or upright (#87),
+## rock or sand ground and the block house without or with its brace (#97).
 ## `size` (0..1) and `count` say how much the drawing shows (kid.picks entries). The words under the
 ## picture say the same thing.
 ## A mass's picture (a ball, a box, a weight) is drawn like the lab draws the body (2026-10-28,
@@ -16,7 +17,8 @@ extends RefCounted
 
 const KINDS := ["earth", "moon", "jupiter", "box", "slide_steel", "slide_wood", "slide_rubber", "orbit",
 	"slope", "pulley", "lever", "ball_blue", "ball_orange", "ball_red", "drum_big", "drum_small", "weight", "rope",
-	"stick", "earth_tilted", "earth_upright"]
+	"stick", "earth_tilted", "earth_upright",
+	"ground_rock", "ground_sand", "house_plain", "house_brace"]
 const OUTLINE := Color("8a6a46")   # PredictPictures.GROUND: the brown of the storybook lines
 const STEEL := ArtPalette.STEEL
 
@@ -33,6 +35,10 @@ static func draw(canvas: Control, kind: String, size := 0.5, count := 1) -> void
 			canvas.draw_arc(c, r.size.y * 0.45, 0.0, TAU, 32, OUTLINE, 2.0, true)
 		"earth_tilted", "earth_upright":   # #87: the Earth with its axis leaning or straight
 			_earth_axis(canvas, r, SunModel.EARTH_TILT if kind == "earth_tilted" else SunModel.UPRIGHT)
+		"ground_rock", "ground_sand":   # #97: a slab of grey rock or of yellow sand
+			_ground_slab(canvas, r, kind == "ground_sand")
+		"house_plain", "house_brace":   # #97: the block house without or with the X brace
+			_block_house(canvas, r, kind == "house_brace")
 		"moon":
 			canvas.draw_circle(c, r.size.y * 0.32, Color("d9dbe2"))
 			for crater in [[Vector2(-6, -4), 4.0], [Vector2(6, 5), 3.0], [Vector2(3, -8), 2.5]]:
@@ -144,6 +150,57 @@ static func _earth_axis(canvas: Control, r: Rect2, tilt: float) -> void:
 	var up := Vector2(-sin(deg_to_rad(tilt)), -cos(deg_to_rad(tilt))) * (radius + 7.0)
 	canvas.draw_line(c - up, c + up, OUTLINE, 3.0, true)
 	canvas.draw_circle(c + up, 4.0, ArtPalette.RED)
+
+
+## A slab of ground (the 지진 lab's): grey rock with lighter stones on it, or a soft yellow sand heap
+## with ripple lines.
+static func _ground_slab(canvas: Control, r: Rect2, sand: bool) -> void:
+	var c := r.get_center()
+	var w := minf(r.size.x * 0.8, r.size.y * 1.9)
+	var h := r.size.y * 0.42
+	var slab := Rect2(c.x - w * 0.5, c.y - h * 0.3, w, h)
+	if sand:
+		var heap := PackedVector2Array()
+		for k in 17:
+			var t := k / 16.0
+			heap.append(Vector2(slab.position.x + w * t, slab.position.y + h * 0.18 - sin(PI * t) * h * 0.3))
+		heap.append(slab.end)
+		heap.append(Vector2(slab.position.x, slab.end.y))
+		canvas.draw_colored_polygon(heap, ArtPalette.SAND)
+		canvas.draw_polyline(heap, OUTLINE, 2.0, true)
+		for k in 3:
+			var y := slab.position.y + h * (0.35 + 0.2 * k)
+			canvas.draw_line(Vector2(slab.position.x + w * (0.2 + 0.05 * k), y), Vector2(slab.end.x - w * (0.2 + 0.05 * k), y), Color("d9ae4e"), 2.0, true)
+	else:
+		canvas.draw_rect(slab, Color("8d97a8"))
+		canvas.draw_rect(Rect2(slab.position, Vector2(w, h * 0.22)), ArtPalette.ROCK)
+		for k in 3:
+			canvas.draw_rect(Rect2(slab.position + Vector2(w * (0.12 + 0.3 * k), h * 0.4 + 4.0 * (k % 2)), Vector2(w * 0.18, h * 0.2)), Color("c3cad6"))
+		canvas.draw_rect(slab, OUTLINE, false, 2.0)
+
+
+## The block house (the 지진 lab's): two posts, a beam, a red roof, and with `brace` the X of two planks
+## between the posts.
+static func _block_house(canvas: Control, r: Rect2, brace: bool) -> void:
+	_ground(canvas, r)
+	var c := r.get_center()
+	var w := minf(r.size.x * 0.46, r.size.y * 0.95)
+	var foot := r.end.y - 1.0
+	var top := foot - r.size.y * 0.5
+	var post := w * 0.2
+	for side: float in [-1.0, 1.0]:
+		var x := c.x + side * (w * 0.5 - post * 0.5)
+		canvas.draw_rect(Rect2(x - post * 0.5, top, post, foot - top), Color("e3a35e"))
+		canvas.draw_rect(Rect2(x - post * 0.5, top, post, foot - top), OUTLINE, false, 1.5)
+	canvas.draw_rect(Rect2(c.x - w * 0.5, top - 6.0, w, 6.0), ArtPalette.WOOD_GRAIN)
+	var roof := PackedVector2Array([Vector2(c.x - w * 0.62, top - 6.0), Vector2(c.x + w * 0.62, top - 6.0), Vector2(c.x, top - 6.0 - r.size.y * 0.3)])
+	canvas.draw_colored_polygon(roof, ArtPalette.RED_TOP)
+	canvas.draw_polyline(PackedVector2Array([roof[0], roof[1], roof[2], roof[0]]), OUTLINE, 1.5, true)
+	if brace:
+		var x0 := c.x - w * 0.5 + post
+		var x1 := c.x + w * 0.5 - post
+		canvas.draw_line(Vector2(x0, foot - 2.0), Vector2(x1, top + 2.0), ArtPalette.WOOD_GRAIN, 4.0, true)
+		canvas.draw_line(Vector2(x1, foot - 2.0), Vector2(x0, top + 2.0), ArtPalette.WOOD_GRAIN, 4.0, true)
 
 
 static func _ground(canvas: Control, r: Rect2) -> void:

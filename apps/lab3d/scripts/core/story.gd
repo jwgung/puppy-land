@@ -214,6 +214,16 @@ static func keeper_reply_face(definition: Dictionary) -> String:
 	return face_or_default(_story_text(definition, "keeper_reply_face"))
 
 
+## Puppy's line between the keeper's and the clue on the first visit ("" when it has none). #97: Puppy
+## feels for the squirrels before he spots the piece.
+static func clue_lead(definition: Dictionary) -> String:
+	return _story_text(definition, "clue_lead")
+
+
+static func clue_lead_face(definition: Dictionary) -> String:
+	return face_or_default(_story_text(definition, "clue_lead_face"))
+
+
 ## Puppy's riddle on the night map while this spot is the next to find ("" when it has none).
 static func map_clue(definition: Dictionary) -> String:
 	return _story_text(definition, "map_clue")
