@@ -168,6 +168,10 @@
 ##    docs/islands/hutton-lines.md 7, the rule model (warmer sea, bigger cloud; cold sea and land weaken
 ##    it), the judging of the three stages (the wrong sea's line), the sea button, no number on the
 ##    screen, the cloud and the cold strip in view, the spot, the opening, the hand and the piece.
+## 24h. 강물이 깎고 쌓기 (tests/river_checks.gd, #95 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 8, the rules (steep cuts deep, gentle drops its sand, the bend's outer
+##    bank), the judging of the three stages (the wrong slope's line), the slope button, no number on the
+##    screen, the targets in view, the spot, the opening lines, the hand (hold the cloud: rain) and the piece.
 ## Times are engine fixed steps (60 Hz), independent of rendering FPS.
 extends SceneTree
 
@@ -411,6 +415,11 @@ func _run() -> void:
 	_expect(typhoon != null and typhoon.can_instantiate(), "typhoon checks compile", "")
 	if typhoon != null and typhoon.can_instantiate():
 		await typhoon.new(self, _expect).run()
+	print("== 강물이 깎고 쌓기 (#95): Hutton Island's river lab, its lines, rules, judging, slope button, view, hold and piece ==")
+	var river: GDScript = load("res://tests/river_checks.gd")
+	_expect(river != null and river.can_instantiate(), "river checks compile", "")
+	if river != null and river.can_instantiate():
+		await river.new(self, _expect).run()
 	print("== the hand guide (2026-10-30: the gesture on the lab's object, once and after a quiet while; the map's tap) ==")
 	var hand: GDScript = load("res://tests/hand_guide_checks.gd")
 	_expect(hand != null and hand.can_instantiate(), "hand guide checks compile", "")

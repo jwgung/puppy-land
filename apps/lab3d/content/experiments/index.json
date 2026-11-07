@@ -24,7 +24,8 @@
       "water-cycle.json",
       "dew-cloud.json",
       "sea-breeze.json",
-      "typhoon.json"
+      "typhoon.json",
+      "river.json"
     ]
   }
 }

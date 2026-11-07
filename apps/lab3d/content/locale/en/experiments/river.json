@@ -1,0 +1,169 @@
+{
+  "title": "How does a river change the land?",
+  "category": "Earth and sky",
+  "question": "Where does water wear away the most land?",
+  "steps": [
+    "Press and hold the cloud over the mountain: it rains while you hold it.",
+    "The water runs down the mountain, round the bend and out to the sea. Watch where the land is worn away and where sand piles up.",
+    "Use the button at the bottom left to make the land gentle or steep."
+  ],
+  "observe": "On steep land the water runs fast and cuts deep into the land. On gentle land the water slows down and drops its sand. In a bend the outer bank is worn away and sand piles up on the inside.",
+  "terms": [
+    {
+      "name": "Erosion",
+      "description": "Running water wearing away soil and stones."
+    },
+    {
+      "name": "Deposition",
+      "description": "Water putting down the soil and sand it carried, so they pile up."
+    },
+    {
+      "name": "Sand bar",
+      "description": "Low land made of sand the river put down."
+    }
+  ],
+  "law": {
+    "equation": "fast water cuts, slow water piles up",
+    "title": "What running water does",
+    "description": "Running water wears the land away (erosion), carries the soil and sand, and puts them down where it slows (deposition). On steep land the water is fast and cuts a lot; on gentle land it is slow and piles a lot up. A bend is cut on its outer side and piles sand on its inner side."
+  },
+  "tip": "Press and hold the cloud with one finger: it rains, and it stops when you let go. Several presses add up. Start over puts the land back.",
+  "tip_short": "Hold the cloud to make rain",
+  "controls": [
+    {
+      "label": "Land slope",
+      "options": [
+        {
+          "label": "Gentle"
+        },
+        {
+          "label": "Steep"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "label": "Start over"
+    }
+  ],
+  "predict": {
+    "question": "Where does water wear away the most land?",
+    "choices": [
+      {
+        "label": "Steep land"
+      },
+      {
+        "label": "Flat land"
+      }
+    ],
+    "reason": "On steep land the water rushes down. So it wears away a lot of land.",
+    "bridge": "Make it rain and see for yourself!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Rain on the steep mountain and cut a new way for the blocked river!",
+        "say": "On steep land the water rushes down and cuts deep into the land. That is how valleys and river channels are made.",
+        "win": "A new channel! Whoosh!",
+        "miss": "Hold it longer to make more rain!",
+        "miss_conditions": "Pick the steep land!"
+      },
+      {
+        "text": "Pile up a sand bar by the sea at the river's end, where a turtle can lay eggs!",
+        "say": "When the water reaches flat land, it slows down. Then it puts down the sand it carried. Sand piles up at the river's end and makes a sand bar.",
+        "win": "A sand bar! A turtle!",
+        "miss": "More rain to carry the sand!",
+        "miss_conditions": "Pick the gentle land!"
+      },
+      {
+        "text": "Wear away the outer bank of the bend and get the piece out!",
+        "say": "In a bend the water on the outside runs faster and wears the bank away. On the inside the water is slow, so sand piles up.",
+        "win": "The bank wore away! The piece!",
+        "miss": "More rain to wear the outside!",
+        "miss_conditions": "Pick the gentle land!"
+      }
+    ]
+  },
+  "story": {
+    "keeper": "This river used to run from the mountain to the sea. On the night of the big thump, the earth fell down and blocked it…",
+    "clue": "That thump again? …Oh, there's a piece buried in the bank on the outside of the bend!",
+    "map_clue": "At the mouth of the valley, where the river winds!"
+  },
+  "kid": {
+    "intro": "This is the river lab. Running water wears away soil and stones and carries them along. Water wearing the land away like this is called **erosion**.",
+    "intro_more": [
+      {
+        "text": "When the water slows down, it puts down the soil and sand it carried. Piling up like this is called **deposition**."
+      }
+    ],
+    "title": "Hold the cloud and make it rain!",
+    "place": "River at work",
+    "say": "On steep land the water rushes and cuts deep into the land. On gentle land the water slows down and sand piles up.",
+    "tip": "Hold the cloud to make it rain.",
+    "cards": {
+      "state": "What the river did",
+      "cut": "Land worn away",
+      "sand": "Sand piled up"
+    },
+    "picks": {
+      "slope": [
+        {
+          "label": "Gentle"
+        },
+        {
+          "label": "Steep"
+        }
+      ]
+    }
+  },
+  "note": {
+    "law": "Fast water wears the land away and slow water piles sand up.",
+    "formula": "fast water cuts, slow water piles up",
+    "numbers": [
+      {
+        "label": "What the river did"
+      },
+      {
+        "label": "Land worn away"
+      },
+      {
+        "label": "Sand piled up"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "label": "What the river did"
+    },
+    {
+      "label": "Land worn away"
+    },
+    {
+      "label": "Sand piled up"
+    }
+  ],
+  "graph": {
+    "title": "How the land changed with the rain",
+    "x": {
+      "label": "Time it rained"
+    },
+    "y": {
+      "label": "How much it changed"
+    },
+    "series": [
+      {
+        "label": "Valley depth"
+      },
+      {
+        "label": "Outer bank worn away"
+      },
+      {
+        "label": "Sand bar at the river's end"
+      },
+      {
+        "label": "Now"
+      }
+    ]
+  }
+}

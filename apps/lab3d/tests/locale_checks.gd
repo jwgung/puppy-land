@@ -108,6 +108,10 @@ func check_keys() -> void:
 		named["typhoon.under." + word] = "t"
 	for word in ["lots", "some", "none"]:   # the water vapour rising there
 		named["typhoon.vapor." + word] = "t"
+	for id in ["ready", "little", "valley", "bar", "bank"]:   # the river card's words (RiverLab.observations)
+		named["river.status." + id] = "t"
+	for word in ["none", "some", "much"]:   # how much was cut, how much sand
+		named["river.amount." + word] = "t"
 	for id in Island.ids():   # the islands' names and fields (섬 고르기, IslandCards, #75)
 		named["island.%s.name" % id] = "t"
 		named["island.%s.about" % id] = "t"

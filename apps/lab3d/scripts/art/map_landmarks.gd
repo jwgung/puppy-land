@@ -62,6 +62,8 @@ static func add(b: ArtMeshBuilder, id: String, xf: Transform3D) -> float:
 			return _pinwheel(b, xf)
 		"typhoon":
 			return _typhoon(b, xf)
+		"river":
+			return _river_hill(b, xf)
 	_rod(b, xf, Vector3.ZERO, Vector3(0.0, 1.0, 0.0), 0.08, ArtPalette.BLUE)
 	_ball(b, xf, Vector3(0.0, 1.15, 0.0), 0.2, ArtPalette.WHITE)
 	return 1.35
@@ -448,6 +450,19 @@ static func _typhoon(b: ArtMeshBuilder, xf: Transform3D) -> float:
 			var r := lerpf(0.14, 0.5, u)
 			b.add_sphere(xf * Transform3D(Basis.from_scale(Vector3(1.0, 0.55, 1.0)), center + Vector3(cos(a) * r, 0.0, -sin(a) * r)), lerpf(0.13, 0.07, u), 3, 6, Color("c9d3e3"))
 	return 1.4
+
+## The hutton island's 강물이 깎고 쌓기 (#95, "골짜기 입구, 강이 굽이치는 곳"): a little green mountain
+## with a brown cut down its face, a cloud over it and a blue river winding from its foot.
+static func _river_hill(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(-0.3, 0.0, -0.15)), 0.62, 0.08, 0.9, 7, ArtPalette.GRASS, true, ArtPalette.GRASS_TOP)
+	_rod(b, xf, Vector3(-0.3, 0.86, -0.1), Vector3(0.12, 0.08, 0.32), 0.05, ArtPalette.SOIL)
+	var river := [Vector3(0.12, 0.03, 0.32), Vector3(0.45, 0.03, 0.12), Vector3(0.75, 0.03, 0.35), Vector3(0.95, 0.03, 0.7)]
+	for k in river.size() - 1:
+		_rod(b, xf, river[k], river[k + 1], 0.07, ArtPalette.RIVER, 6)
+	_ball(b, xf, Vector3(0.45, 0.06, 0.32), 0.1, ArtPalette.SAND)
+	for puff: Array in [[Vector3(-0.3, 1.35, -0.1), 0.22], [Vector3(-0.55, 1.28, -0.1), 0.16], [Vector3(-0.05, 1.28, -0.1), 0.16]]:
+		_ball(b, xf, puff[0], puff[1], ArtPalette.CLOUD)
+	return 1.65
 
 
 # --- helpers ---------------------------------------------------------------------------------
