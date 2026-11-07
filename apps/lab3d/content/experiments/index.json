@@ -20,7 +20,8 @@
     "hutton": [
       "day-night.json",
       "shadow-clock.json",
-      "seasons.json"
+      "seasons.json",
+      "strata.json"
     ]
   }
 }

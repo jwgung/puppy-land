@@ -54,6 +54,8 @@ static func add(b: ArtMeshBuilder, id: String, xf: Transform3D) -> float:
 			return _shadow_stick(b, xf)
 		"seasons":
 			return _orrery(b, xf)
+		"strata":
+			return _strata_cliff(b, xf)
 	_rod(b, xf, Vector3.ZERO, Vector3(0.0, 1.0, 0.0), 0.08, ArtPalette.BLUE)
 	_ball(b, xf, Vector3(0.0, 1.15, 0.0), 0.2, ArtPalette.WHITE)
 	return 1.35
@@ -378,6 +380,16 @@ static func _orrery(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	_ball(b, xf, earth + axis * 0.33, 0.045, ArtPalette.RED)
 	return 1.6
 
+
+## The hutton island's 지층 쌓기 (#96, "줄무늬 절벽이 있는 곳"): a little cliff of coloured stripes (the
+## lab's gravel, sand, mud, grey ash, sand) with grass on top.
+static func _strata_cliff(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	var h := 0.26
+	for i in StrataModel.CLIFF.size():
+		var colors: Array = StrataProps.COLORS[StrataModel.CLIFF[i]]
+		_box(b, xf, Vector3(0.0, h * (i + 0.5), 0.0), Vector3(1.0 - 0.03 * (i % 2), h, 0.7), colors[0], colors[1])
+	_box(b, xf, Vector3(0.0, h * StrataModel.CLIFF.size() + 0.05, 0.0), Vector3(1.04, 0.1, 0.74), ArtPalette.GRASS, ArtPalette.GRASS_TOP)
+	return h * StrataModel.CLIFF.size() + 0.25
 
 # --- helpers ---------------------------------------------------------------------------------
 

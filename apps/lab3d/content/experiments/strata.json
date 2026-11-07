@@ -1,0 +1,121 @@
+{
+  "id": "strata",
+  "version": 1,
+  "icon": "▤",
+  "law": {},
+  "scene": "res://experiments/strata/strata.gd",
+  "bench_id": "ST",
+  "camera": {
+    "target": [0.2, 1.9, 0.0],
+    "distance": 11.4,
+    "distance_range": [6.0, 24.0],
+    "yaw_range_deg": [-80.0, 80.0],
+    "pitch_range_deg": [-89.0, -2.0],
+    "pan_radius": 6.0,
+    "default_mode": "front",
+    "views": {
+      "front": { "yaw_deg": 0.0, "pitch_deg": -9.0 },
+      "three_quarter": { "yaw_deg": 22.0, "pitch_deg": -18.0 },
+      "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 16.0 },
+      "side": { "yaw_deg": 70.0, "pitch_deg": -12.0, "distance": 13.0 },
+      "follow": { "yaw_deg": 0.0, "pitch_deg": -12.0, "distance": 8.0, "target": [0.35, 2.0, 0.0] }
+    }
+  },
+  "controls": [],
+  "actions": [
+    { "id": "reset", "style": "primary" }
+  ],
+  "key_observations": ["state", "bottom", "top"],
+  "predict": {
+    "question_face": "thinking",
+    "choices": [
+      { "id": "bottom", "picture": "strata_bottom" },
+      { "id": "top", "picture": "strata_top" }
+    ],
+    "answer": "bottom",
+    "bridge_face": "happy"
+  },
+  "missions": {
+    "judge_on": ["layered", "fossil", "found"],
+    "stages": [
+      {
+        "observe": "",
+        "judge_on": ["layered", "fossil"],
+        "miss_on": ["mixed", "shell_off"],
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["fossil"],
+        "miss_on": ["mixed", "shell_off", "layered"],
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["found"],
+        "miss_on": ["dug_off"],
+        "say_face": "explain",
+        "win_face": "surprised",
+        "miss_face": "thinking"
+      }
+    ]
+  },
+  "story": { "keeper_face": "worried", "clue_face": "thinking", "map_clue_face": "explain" },
+  "kid": {
+    "intro_face": "explain",
+    "intro_more": [
+      { "face": "explain" }
+    ],
+    "card": "state",
+    "say_face": "explain"
+  },
+  "note": {
+    "numbers": [
+      { "ids": ["state"] },
+      { "ids": ["bottom"] },
+      { "ids": ["top"] }
+    ],
+    "graph": false
+  },
+  "cast": {
+    "dugi": {
+      "at": [5.4, 2.7],
+      "explain_on": ["layered", "fossil", "found"],
+      "delay_s": 0.6
+    },
+    "puppy": {
+      "at": [-5.3, 2.7]
+    }
+  },
+  "observations": [
+    { "id": "state" },
+    { "id": "bottom" },
+    { "id": "top" }
+  ],
+  "manipulation": {
+    "grab_radius": 72.0,
+    "objects": [
+      { "id": "gravel", "surface": "tank", "snap": 0.0, "height": false, "marker": false, "guide_to": "max" },
+      { "id": "sand", "surface": "tank", "snap": 0.0, "height": false, "marker": false, "guide_to": "max" },
+      { "id": "mud", "surface": "tank", "snap": 0.0, "height": false, "marker": false, "guide_to": "max" },
+      { "id": "ash", "surface": "tank", "snap": 0.0, "height": false, "marker": false, "guide_to": "max" },
+      { "id": "shell", "surface": "tank", "snap": 0.0, "height": false, "marker": false, "guide_to": "max" },
+      { "id": "cliff4", "surface": "cliff", "snap": 0.0, "height": false, "marker": false, "guide": "tap" },
+      { "id": "cliff3", "surface": "cliff", "snap": 0.0, "height": false, "marker": false, "guide": "tap" },
+      { "id": "cliff2", "surface": "cliff", "snap": 0.0, "height": false, "marker": false, "guide": "tap" },
+      { "id": "cliff1", "surface": "cliff", "snap": 0.0, "height": false, "marker": false, "guide": "tap" },
+      { "id": "cliff0", "surface": "cliff", "snap": 0.0, "height": false, "marker": false, "guide": "tap" }
+    ]
+  },
+  "graph": {
+    "x": { "unit": "", "max": 3.0 },
+    "y": { "unit": "", "min_max": 3.0 },
+    "series": [
+      { "id": "order", "color": "#ff7a1a", "style": "points" }
+    ]
+  }
+}

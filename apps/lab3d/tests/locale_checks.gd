@@ -96,6 +96,10 @@ func check_keys() -> void:
 		named["seasons.sun." + word] = "t"
 	for word in ["long", "middle", "short"]:   # the window's day length words
 		named["seasons.day." + word] = "t"
+	for id in ["ready", "stacking", "layered", "fossil", "mixed", "shell_off", "found", "dug_off"]:   # the strata card's words (StrataLab.observations, #96)
+		named["strata.status." + id] = "t"
+	for id in StrataModel.MATERIALS + ["none"]:   # the strata's bottom and top layer words
+		named["strata.layer." + id] = "t"
 	for id in Island.ids():   # the islands' names and fields (섬 고르기, IslandCards, #75)
 		named["island.%s.name" % id] = "t"
 		named["island.%s.about" % id] = "t"

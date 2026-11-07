@@ -19,7 +19,9 @@ const KINDS := ["long_arc", "same_arc", "fall_together", "fall_heavy_first", "li
 	# #86 (그림자 시계): with the sun high, does the stick's shadow get shorter or longer?
 	"shadow_short", "shadow_long",
 	# #87 (계절): would an upright Earth have seasons?
-	"seasons_change", "seasons_same"]
+	"seasons_change", "seasons_same",
+	# #96 (지층 쌓기): which layer is the oldest, the bottom one or the top one?
+	"strata_bottom", "strata_top"]
 const STRONG := Color("e2683c")
 const PALE := Color("c9b892")
 const GROUND := Color("8a6a46")
@@ -88,6 +90,8 @@ static func draw(canvas: Control, kind: String) -> void:
 			_shadow(canvas, r, kind == "shadow_short")
 		"seasons_change", "seasons_same":
 			_seasons(canvas, r, kind == "seasons_change")
+		"strata_bottom", "strata_top":
+			_strata(canvas, r, kind == "strata_bottom")
 		_:
 			_ground(canvas, r)
 
@@ -603,3 +607,27 @@ static func _sprout(canvas: Control, at: Vector2, color: Color, k := 1.0) -> voi
 			var t := 1.0 - float(n) / 8.0
 			leaf.append(at + Vector2(side * 8.0 * t, -3.0 + 2.0 * sin(t * PI) - 2.0 * t) * k)
 		canvas.draw_colored_polygon(leaf, color)
+
+
+## A cut through three layers (gravel at the bottom, sand, mud on top: the tank's colours) in the
+## middle of the card, the layer the choice names ringed in orange with an orange arrow pointing at it
+## from the right ("strata_bottom": the bottom one, "strata_top": the top one).
+static func _strata(canvas: Control, r: Rect2, bottom: bool) -> void:
+	var w := minf(r.size.x * 0.5, r.size.y * 1.3)
+	var h := r.size.y * 0.24
+	var x0 := r.get_center().x - w * 0.5 - r.size.x * 0.06
+	var y0 := r.get_center().y + h * 1.5
+	var stripes := ["gravel", "sand", "mud"]
+	for i in 3:
+		var colors: Array = StrataProps.COLORS[stripes[i]]
+		var band := Rect2(x0, y0 - h * (i + 1), w, h)
+		canvas.draw_rect(band, colors[0])
+		canvas.draw_rect(Rect2(band.position, Vector2(w, h * 0.18)), colors[1])
+		for k in 7:
+			var p := band.position + Vector2(w * fposmod((k + 0.5) * 0.618 + i * 0.3, 1.0), h * (0.35 + 0.45 * fposmod(k * 0.414 + i * 0.2, 1.0)))
+			canvas.draw_circle(p, h * (0.12 if i == 0 else 0.05), StrataProps.PEBBLES[k % 3] if i == 0 else colors[0].darkened(0.25))
+	var pick := Rect2(x0, y0 - h * (1 if bottom else 3), w, h).grow(2.0)
+	var ring := PackedVector2Array([pick.position, Vector2(pick.end.x, pick.position.y), pick.end, Vector2(pick.position.x, pick.end.y), pick.position])
+	canvas.draw_polyline(ring, STRONG, 4.0, true)
+	var tip := Vector2(pick.end.x + 4.0, pick.get_center().y)
+	_arrow(canvas, tip + Vector2(r.size.x * 0.18, 0.0), tip, STRONG, 4.0)
