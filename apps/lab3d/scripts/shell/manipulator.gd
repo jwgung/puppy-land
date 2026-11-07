@@ -876,8 +876,8 @@ const GUIDE_REACH := 0.6
 func guide() -> Dictionary:
 	var id := slingshot_id if slingshot_id != "" and rules.has(slingshot_id) else ""
 	if id == "":
-		# The first object a finger may take now (a lab with one object per stage, #92, has no body
-		# for the others).
+		# The first object a finger may take now: a lab may offer some objects only in some stages and
+		# has no body for the others then (#92 one object per stage, #96).
 		var draggable := draggable_ids().filter(func(d: String) -> bool: return experiment.manipulation_body(d) != null)
 		if draggable.is_empty():
 			return {}

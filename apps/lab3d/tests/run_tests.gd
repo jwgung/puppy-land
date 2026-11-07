@@ -172,6 +172,10 @@
 ##    docs/islands/hutton-lines.md 8, the rules (steep cuts deep, gentle drops its sand, the bend's outer
 ##    bank), the judging of the three stages (the wrong slope's line), the slope button, no number on the
 ##    screen, the targets in view, the spot, the opening lines, the hand (hold the cloud: rain) and the piece.
+## 24i. 지층 쌓기 (tests/strata_checks.gd, #96 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 9, the rule (the first pour is the bottom layer) and the statuses, the
+##    judging of the three stages, each stage's objects and the hand guide, no number on the screen, the
+##    buckets, the tank and the cliff in view, the spot, the opening, the hand (pour, dig) and the piece.
 ## Times are engine fixed steps (60 Hz), independent of rendering FPS.
 extends SceneTree
 
@@ -420,6 +424,11 @@ func _run() -> void:
 	_expect(river != null and river.can_instantiate(), "river checks compile", "")
 	if river != null and river.can_instantiate():
 		await river.new(self, _expect).run()
+	print("== 지층 쌓기 (#96): Hutton Island's strata lab, its lines, rule, judging, stages, view, hand and piece ==")
+	var strata: GDScript = load("res://tests/strata_checks.gd")
+	_expect(strata != null and strata.can_instantiate(), "strata checks compile", "")
+	if strata != null and strata.can_instantiate():
+		await strata.new(self, _expect).run()
 	print("== the hand guide (2026-10-30: the gesture on the lab's object, once and after a quiet while; the map's tap) ==")
 	var hand: GDScript = load("res://tests/hand_guide_checks.gd")
 	_expect(hand != null and hand.can_instantiate(), "hand guide checks compile", "")
