@@ -152,7 +152,7 @@ func _process(delta: float) -> void:
 		if o >= 1.0:
 			# Out of the open flower: up on an arc that lands on the stage beside the cat, at the
 			# round's size.
-			launch_to(lab_cat().global_position + LAND_FROM_CAT, FLIGHT_S, SeasonsProps.STAGE_TOP, true)
+			launch_to(cat_spot(LAND_FROM_CAT), FLIGHT_S, SeasonsProps.STAGE_TOP, true)
 
 
 ## The snow burst (flakes falling and fading out) and the snowman growing with a little bounce.

@@ -28,14 +28,15 @@ static func horizon_y(size: Vector2, yard_share: float) -> float:
 
 
 ## The wooden frame round `inner` (window local: the picture, or the picture and its bars), `border`
-## wide and `depth` deep, with a darker board behind (`board_darken`). `round`: the bars' rounding.
-static func add_frame(b: ArtMeshBuilder, inner: Rect2, border: float, depth: float, round := 0.025, board_darken := 0.3, color := FRAME_COLOR, top := FRAME_TOP) -> void:
+## wide and `depth` deep, with a darker board behind (`board_darken`). `corner_r`: the bars' rounding.
+## Arguments in order: (b, inner, border, depth, corner_r, board_darken, color, top).
+static func add_frame(b: ArtMeshBuilder, inner: Rect2, border: float, depth: float, corner_r := 0.025, board_darken := 0.3, color := FRAME_COLOR, top := FRAME_TOP) -> void:
 	var w := inner.size.x + border * 2.0
 	var h := inner.size.y + border * 2.0
 	var c := inner.get_center()
 	for side: float in [-1.0, 1.0]:
-		b.add_rounded_box(Transform3D(Basis(), Vector3(c.x, c.y + side * (h - border) * 0.5, 0.0)), Vector3(w, border, depth), round, 1, color, top)
-		b.add_rounded_box(Transform3D(Basis(), Vector3(c.x + side * (w - border) * 0.5, c.y, 0.0)), Vector3(border, h - border * 2.0 + 0.002, depth), round, 1, color, top)
+		b.add_rounded_box(Transform3D(Basis(), Vector3(c.x, c.y + side * (h - border) * 0.5, 0.0)), Vector3(w, border, depth), corner_r, 1, color, top)
+		b.add_rounded_box(Transform3D(Basis(), Vector3(c.x + side * (w - border) * 0.5, c.y, 0.0)), Vector3(border, h - border * 2.0 + 0.002, depth), corner_r, 1, color, top)
 	b.add_rounded_box(Transform3D(Basis(), Vector3(c.x, c.y, -depth * 0.5 + 0.01)), Vector3(w - 0.02, h - 0.02, 0.02), 0.0, 1, color.darkened(board_darken))
 
 

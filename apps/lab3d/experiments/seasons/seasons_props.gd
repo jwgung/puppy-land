@@ -311,7 +311,7 @@ func _build_window(lab: Node3D) -> void:
 	_pill(tracks, _day_rect(), 0.012, BAR_TRACK)
 	# The day bar's ends: a sun on its left (day), a moon on its right (night).
 	var day := _day_rect()
-	ArtKit.disc(tracks, Vector3(day.position.x - 0.0, day.get_center().y, 0.05), DAY_BAR.y * 0.62, DAY_FILL_TOP, 14)
+	ArtKit.disc(tracks, Vector3(day.position.x, day.get_center().y, 0.05), DAY_BAR.y * 0.62, DAY_FILL_TOP, 14)
 	var moon_at := Vector3(day.end.x, day.get_center().y, 0.05)
 	ArtKit.disc(tracks, moon_at, DAY_BAR.y * 0.55, Color("f4f1d0"), 14)
 	ArtKit.disc(tracks, moon_at + Vector3(DAY_BAR.y * 0.22, DAY_BAR.y * 0.12, 0.003), DAY_BAR.y * 0.45, FRAME_COLOR.darkened(0.15), 14)

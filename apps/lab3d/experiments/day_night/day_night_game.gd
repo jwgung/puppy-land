@@ -104,4 +104,4 @@ func _process(delta: float) -> void:
 			_open = true
 			# Out of the crevice: up from the globe's surface on an arc that lands on the stage beside
 			# the bread cat, at the round's size.
-			launch_to(lab_cat().global_position + LAND_FROM_CAT, FLIGHT_S, 0.0, true)
+			launch_to(cat_spot(LAND_FROM_CAT), FLIGHT_S, 0.0, true)

@@ -78,6 +78,7 @@ func build() -> void:
 func make_piece(at: Vector3, size := PIECE_SIZE) -> Node3D:
 	piece = StarArt.make(true, size)
 	piece_size = size
+	_grow_from = 0.0
 	piece.name = "Piece"
 	piece.position = at
 	add_child(piece)
@@ -185,13 +186,12 @@ func launch_piece(v: Vector3, g: float, ground := 0.0) -> void:
 ## Releases the piece on an arc (the lab's gravity, lab_g) that lands on `spot` in `flight_s` seconds:
 ## the piece rests on its point there (its centre piece_size above `spot`), the floor at `ground`.
 ## `grow`: a piece hidden small in its object (make_piece with a smaller size) lands at PIECE_SIZE,
-## growing on the way (GROW_RATE). The usual spot is beside the bread cat: lab_cat().global_position
-## + an offset.
+## growing on the way (GROW_RATE). The usual spot is beside the bread cat: cat_spot(offset).
 func launch_to(spot: Vector3, flight_s: float, ground := 0.0, grow := false) -> void:
 	if piece == null:
 		return
+	_grow_from = piece_size if grow else 0.0
 	if grow:
-		_grow_from = piece_size
 		piece_size = PIECE_SIZE
 	var land := spot + Vector3.UP * piece_size
 	var from := piece.global_position
@@ -268,6 +268,13 @@ func lab_cat() -> CatActor:
 	return l.props.cat as CatActor
 
 
+## A point `offset` from the bread cat (lab_cat().global_position + offset): the usual `spot` of
+## launch_to. With no cat (a bench run) the origin stands in for it: Vector3.ZERO + offset.
+func cat_spot(offset: Vector3) -> Vector3:
+	var cat := lab_cat()
+	return (cat.global_position if cat != null else Vector3.ZERO) + offset
+
+
 ## The bread cat cheers a stamp (a bigger cheer for the round's `last` one), if the lab has one.
 func cheer_cat(last: bool) -> void:
 	var cat := lab_cat()
@@ -281,12 +288,14 @@ func cheer_cat(last: bool) -> void:
 # _process `if running(_open_at): var o := eased(_open_at, OPEN_S)`. An end time works the same way
 # (`_flash_until = _t + FLASH_S`, `if due(_flash_until): …`).
 
-## The timer started at `at` is running (not NEVER).
+## The timer started at `at` is running (not NEVER). Check this before progress(): progress(NEVER, …)
+## is meaningless (a huge number).
 func running(at: float) -> bool:
 	return at > 0.0
 
 
-## The share of `duration` gone since `at` (not clamped: past 1 when over, very large for NEVER).
+## The share of `duration` gone since `at` (not clamped: past 1 when over). Only for a running timer:
+## with `at` NEVER the value means nothing, so ask running(at) first.
 func progress(at: float, duration: float) -> float:
 	return (_t - at) / duration
 
@@ -302,7 +311,8 @@ func pulse(at: float, duration: float) -> float:
 	return sin(PI * clampf(progress(at, duration), 0.0, 1.0))
 
 
-## The end time `until` is set and passed now (then reset it to NEVER).
+## The end time `until` is set and passed now. due() does not reset it: the caller sets the timer
+## back to NEVER (`if due(_flash_until): _flash_until = NEVER`).
 func due(until: float) -> bool:
 	return running(until) and _t > until
 
