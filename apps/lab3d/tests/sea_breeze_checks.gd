@@ -23,13 +23,18 @@
 ##   the two boats on the phone, the desktop and the tablet, clear of the top band and the bottom;
 ## - the spot: the hutton map's sea-breeze spot is this experiment, the island is still not playable;
 ## - the opening (the fox first, Puppy's two lines) and the piece (on the sailing boat until the last
-##   stamp, the fishing boat out at the second).
+##   stamp, the fishing boat out at the second);
+## - a saved second stage (the screen sets the night as it opens): the night waits in the evening while
+##   the question and Dugi's mission line are up (no stamp while he talks) and cools once the child
+##   can play.
 extends RefCounted
 
 const ID := "sea-breeze"
 const LINES_PATH := "res://../../docs/islands/hutton-lines.md"
 const MISSIONS_PATH := "res://../../docs/islands/hutton-missions.md"
 const VIEW_3D := "res://scripts/shell/view_3d.gd"
+const EXPERIMENT_SCREEN := "res://scripts/shell/experiment_screen.gd"
+const UI_THEME := "res://scripts/app/ui_theme.gd"
 const VIEW_SIZE := Vector2(1152, 720)
 ## The phone (2340 x 1080) and the tablet (1920 x 1200) in UI units at the same height.
 const PHONE := Vector2(1560, 720)
@@ -77,6 +82,7 @@ func run() -> void:
 	await check_pictures()
 	check_opening()
 	await check_piece()
+	await check_saved_night()
 	if Locale.lang != lang:
 		Locale.set_language(lang)
 
@@ -681,3 +687,54 @@ func check_piece() -> void:
 	lab.queue_free()
 	again.queue_free()
 	await tree.process_frame
+
+
+# --- a saved night stage ------------------------------------------------------------------------
+
+## Opened at a saved second stage, the screen sets the night at once (its entry conditions) while the
+## question and then Dugi's mission line are up: the land must not cool (no stamp while he talks).
+## Once the child can play the night cools by itself and the stage is won.
+func check_saved_night() -> void:
+	DirAccess.remove_absolute(ProgressStore.path)
+	ProgressStore.save({ID: 1})
+	var host := Control.new()
+	host.theme = load(UI_THEME).build()
+	host.size = TABLET
+	tree.root.add_child(host)
+	var screen: Control = load(EXPERIMENT_SCREEN).new()
+	screen.setup(_definition())
+	host.add_child(screen)
+	var lab: SeaBreezeLab = screen.experiment
+	var problems := []
+	for i in 420:   # 7 s with the question up
+		await tree.physics_frame
+	if lab.control_value("time") != "night" or not screen.mission_round.asking():
+		problems.append("not a night with the question up: %s, asking %s" % [lab.control_value("time"), screen.mission_round.asking()])
+	if lab.model.input("land") != SeaBreezeModel.EVENING_LAND or screen.mission_round.stamps != 1 or lab.play_open:
+		problems.append("the night went on during the question: land %.2f, stamps %d" % [lab.model.input("land"), screen.mission_round.stamps])
+	screen._predict_pick_choice("sea")
+	var talked := 0
+	var waited_through := true
+	for i in 1200:   # through Dugi's lines (tapped on), 20 s at most
+		await tree.physics_frame
+		if screen.dialogue != null and screen.dialogue.active:
+			talked += 1
+			if lab.model.input("land") != SeaBreezeModel.EVENING_LAND or screen.mission_round.stamps != 1:
+				waited_through = false
+			if i % 20 == 0:
+				screen.dialogue.advance()
+		elif lab.play_open:
+			break
+	if talked == 0 or not waited_through or not lab.play_open:
+		problems.append("Dugi talked %d frames, the night waited %s, play open %s" % [talked, waited_through, lab.play_open])
+	var t := 0
+	while screen.mission_round.stamps < 2 and t < 900:
+		await tree.physics_frame
+		t += 1
+	if screen.mission_round.stamps != 2:
+		problems.append("no land breeze stamp %d frames after play opened (land %.2f)" % [t, lab.model.input("land")])
+	expect.call(problems.is_empty(), "sea breeze saved night: opened at stage 2 (night set at once) the land does not cool while the question and Dugi's lines are up, and the stage is won %.1f s after the child can play" % (t / 60.0),
+		"; ".join(problems))
+	host.queue_free()
+	await tree.process_frame
+	DirAccess.remove_absolute(ProgressStore.path)

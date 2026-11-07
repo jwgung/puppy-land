@@ -17,6 +17,9 @@
 ## keeps changing after the finger leaves (the land cools; at night it cools the whole time), so the
 ## lab is settled whenever no finger holds the sun: a let-go is judged on the wind at that moment
 ## (MissionRound judges a settled run), and the night's land breeze comes while the child waits.
+## The night starts cooling only once the child can play (Experiment.set_play_open): a night set while
+## the clue, the question or Dugi's mission line is up (the screen's entry conditions on a saved
+## second stage) waits in the evening, so no stamp comes while he talks.
 class_name SeaBreezeLab
 extends EarthLab
 
@@ -35,6 +38,10 @@ const COOL_DEG := 16.0
 var props := SeaBreezeProps.new()
 ## The finger presses the sun now.
 var pressing := false
+## The child can play now (the screen's set_play_open; true without a screen).
+var play_open := true
+## The night's run waits in the evening for play_open.
+var night_waits := false
 var _graph_key := Vector2.INF
 var _graph_revision := 0
 var _line := PackedVector2Array()
@@ -79,10 +86,23 @@ func hold_ended(_id: String) -> void:
 	_update_status()
 
 
-## A new run (다시, a condition): the sun is not pressed any more.
+## A new run (다시, a condition): the sun is not pressed any more; a night waits for the child.
 func reset_run() -> void:
 	pressing = false
+	night_waits = (model as SeaBreezeModel).is_night() and not play_open
 	super()
+
+
+func set_play_open(open: bool) -> void:
+	play_open = open
+	if open:
+		night_waits = false
+
+
+## The model steps (EarthLab) unless the night still waits for the child.
+func _physics_process(delta: float) -> void:
+	if not night_waits:
+		super(delta)
 
 
 ## Judged whenever no finger presses the sun (the coast keeps warming or cooling after it: the wind at

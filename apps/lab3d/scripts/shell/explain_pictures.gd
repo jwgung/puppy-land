@@ -99,7 +99,9 @@ static func draw_card(canvas: CanvasItem, kind: String, rect: Rect2) -> void:
 		"morning_evening":
 			_morning_evening(pen)
 		"sea_breeze":
+			pen.mirror(true)   # #93: the sea on the right, as the 바닷바람 lab shows it
 			_sea_breeze(pen)
+			pen.mirror(false)
 		"river":
 			_river(pen)
 	pen.card_front()
@@ -193,7 +195,8 @@ static func _morning_evening(p: Pen) -> void:
 
 ## The sea breeze by day: the sea on the left, the warm land on the right under the sun, and the
 ## loop of air: along the ground from the sea to the land, up over the land, back high over the
-## sea and down again (blue cool air, orange warm air).
+## sea and down again (blue cool air, orange warm air). draw_card shows it mirrored (Pen.mirror,
+## #93): the sea on the right and the land on the left, as the 바닷바람 lab's coast.
 static func _sea_breeze(p: Pen) -> void:
 	p.sky(Color8(120, 200, 255), Color8(222, 242, 255))
 	var surf := 190.0
@@ -444,10 +447,19 @@ class Pen:
 	var canvas: CanvasItem
 	var panel: PackedVector2Array
 
+	var base: Transform2D
+
 	func _init(on: CanvasItem, rect: Rect2) -> void:
 		canvas = on
-		canvas.draw_set_transform(rect.position, 0.0, rect.size / ExplainPictures.DESIGN)
+		base = Transform2D(0.0, rect.size / ExplainPictures.DESIGN, 0.0, rect.position)
+		canvas.draw_set_transform_matrix(base)
 		panel = ExplainPictures.round_rect_points(_panel_rect(), ExplainPictures.PANEL_RADIUS)
+
+	## Draws left-right mirrored (`on`) about the card's middle, or back as usual (the panel is
+	## symmetric, so the clip stays the same).
+	func mirror(on: bool) -> void:
+		var flip := Transform2D(Vector2(-1.0, 0.0), Vector2(0.0, 1.0), Vector2(ExplainPictures.DESIGN.x, 0.0))
+		canvas.draw_set_transform_matrix(base * flip if on else base)
 
 	func _panel_rect() -> Rect2:
 		var inset := ExplainPictures.INSET

@@ -151,6 +151,7 @@ var _done_card: RoundDoneCard = null
 var _next_due := false                # a stage was won and nothing was done since (its stamp may still fly)
 var _next_wait := -1.0                # >= 0: a stage was won, the next one comes once Dugi is done (_run_next_wait)
 var next_goes := 0                     # times the round went on to the next stage by itself (tests)
+var _play_open := false                # what the lab was last told (_sync_play_open)
 var _mission_text_held := false        # the stage's text is off the strip until Dugi has told it
 var _retells := 0                     # times he started the missed mission line again (_retell_mission)
 var _mission_announced := false        # his telling of it is on its way (the bridge, the next mission's): the text shows once his box closes
@@ -233,6 +234,8 @@ func _ready() -> void:
 	_build_sidebar()
 	experiment = ExperimentRegistry.instantiate(definition)
 	experiment.time_scale = definition.time_scale()   # the orbit's faster playback (2026-10-29)
+	_play_open = not show_cast   # (#93: a cast may talk first; _sync_play_open says when it is done)
+	experiment.set_play_open(_play_open)
 	# A game round draws no answer preview before the run (Experiment.answer_preview: visual only).
 	experiment.answer_preview = MissionRound.missions(definition.raw).is_empty()
 	experiment.state_changed.connect(_on_state_changed)
@@ -356,6 +359,7 @@ func _process(delta: float) -> void:
 			_run_measured_action(manipulator.demo_action)
 	_watch_touch()
 	_run_dialogue()
+	_sync_play_open()
 	_run_round_wait(delta)
 	_run_next_wait(delta)
 	_run_celebration(delta)
@@ -453,6 +457,17 @@ func _run_question() -> void:
 			_ask_age += get_process_delta_time()
 			if _ask_age >= NUDGE_S and not _nudging:
 				nudge_choices()
+
+
+## Tells the lab whether the child can play now (Experiment.set_play_open, #93): not while the clue
+## or the question is up, the stage's mission waits for Dugi, or his box is open.
+func _sync_play_open() -> void:
+	if experiment == null:
+		return
+	var open := not _asking() and not _mission_text_held and not (dialogue != null and dialogue.active)
+	if open != _play_open:
+		_play_open = open
+		experiment.set_play_open(open)
 
 
 ## The round's clue or question is open (its shield takes every touch).

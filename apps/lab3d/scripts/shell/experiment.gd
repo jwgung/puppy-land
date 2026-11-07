@@ -306,6 +306,13 @@ func manipulation_pick_point(id: String) -> Vector3:
 	return body.global_position if body != null else global_position
 
 
+## The screen says whether the child can play now (#93): false while the round's clue, question or
+## Dugi's box is up (the mission not yet told), true once the hand is free. A lab whose run goes on by
+## itself (the 바닷바람 night) waits for it before it starts; the others ignore it.
+func set_play_open(_open: bool) -> void:
+	pass
+
+
 ## A finger presses and holds the hold object `id` (rule `"hold": true`, 2026-10-28): the lab ramps
 ## its applied force from 0 (HoldRamp) until hold_ended.
 func hold_started(_id: String) -> void:
