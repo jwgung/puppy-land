@@ -129,6 +129,10 @@
 ##    spots are not experiments, its map (one mesh within the mechanics map's vertices; coast sand, valley,
 ##    volcano, river to the sea, lighthouse, sundial clear of the spots and the three), a tap opens
 ##    nothing, its coast and valley labs' ground.
+## 22d. the hutton island's pieces (tests/sundial_piece_checks.gd, #101 2026-11-07): Island.piece (hutton
+##    sundial, mechanics star), the 36° wedge (on its point, band, hour lines and face inside,
+##    two draws), the 10-wedge dial emblem, every hutton lab's piece, the cat's piece and the card, the
+##    map's emblem and flying pieces, the island cards; the mechanics ones stay stars.
 ## 23c. UI polish (tests/polish_checks.gd, 2026-10-29): 자세히's header (닫기) stays above the scrolled
 ##    note; a vertical drag from a button, check box or slider scrolls the settings and the note
 ##    (DragScroll) and presses nothing; check boxes instead of switches; 처음부터 다시 하기 asks first and
@@ -369,6 +373,11 @@ func _run() -> void:
 	_expect(hutton != null and hutton.can_instantiate(), "hutton map checks compile", "")
 	if hutton != null and hutton.can_instantiate():
 		await hutton.new(self, _expect).run()
+	print("== the hutton island's pieces (#101: golden sundial wedges, the dial emblem; the mechanics star unchanged) ==")
+	var sundial: GDScript = load("res://tests/sundial_piece_checks.gd")
+	_expect(sundial != null and sundial.can_instantiate(), "sundial piece checks compile", "")
+	if sundial != null and sundial.can_instantiate():
+		await sundial.new(self, _expect).run()
 	print("== game G3: the slingshot (pull = angle / speed, big readout, no path, formula stamp) ==")
 	var slingshot: GDScript = load("res://tests/slingshot_checks.gd")
 	_expect(slingshot != null and slingshot.can_instantiate(), "slingshot checks compile", "")

@@ -87,7 +87,7 @@ var home: IslandHomeScreen
 var part := ""                     # "", "prologue", "flight", "finale"
 var page := -1                     # the prologue / finale page now (-1: none)
 var sea: MapSea
-var emblem: StarEmblem
+var emblem: PieceEmblem
 var sky_star: Node3D
 var dialogue: DialogueBox
 var shield: Control
@@ -166,7 +166,7 @@ func _ready() -> void:
 	sea = MapSea.new()
 	sea.build(home.world)
 	sea.set_lanterns(Story.finale_seen())
-	emblem = StarEmblem.new(Story.spots().size())
+	emblem = PieceArt.emblem(home.island.piece, Story.spots().size())
 	home.add_child(emblem)
 	placed_count = Story.placed(ProgressStore.load()).size()
 	emblem.set_filled(placed_count)
@@ -724,7 +724,7 @@ func _next_flight() -> void:
 		part = "flight"
 		var from: Vector3 = spot.at + Vector3.UP * (float(spot.top) + 0.6)
 		var to := _lookout_point()
-		var node := StarArt.make(true, PIECE_SIZE)
+		var node := PieceArt.make(home.island.piece, PIECE_SIZE)
 		home.world.add_child(node)
 		node.position = from
 		_flight = {"id": id, "node": node, "from": from, "to": to, "t": -FLIGHT_IN_S}
@@ -1117,7 +1117,7 @@ func _break_star() -> void:
 
 
 func _add_piece(from: Vector3, ctrl: Vector3, to: Vector3, seconds: float, start: float) -> void:
-	var node := StarArt.make(true, PIECE_SIZE)
+	var node := PieceArt.make(home.island.piece, PIECE_SIZE)
 	node.position = from
 	node.visible = start >= 0.0
 	home.world.add_child(node)

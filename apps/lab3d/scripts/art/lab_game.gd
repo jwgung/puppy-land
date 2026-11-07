@@ -21,7 +21,7 @@ const CHEST_GOLD := Color("ffc61a")
 const LAMP_OFF := Color("6b7a90")
 const LAMP_ON := Color("ffe14a")
 ## A piece that hides small in its object (make_piece with a smaller size) and is launched with
-## `grow` (launch_to) grows back to PIECE_SIZE on its flight at this rate (1/s, the lerp's rate).
+## `grow` (launch_to) grows back to full_size() on its flight at this rate (1/s, the lerp's rate).
 const GROW_RATE := 6.0
 ## A game timer that is not running (an "at" or "until" time; see running, progress, due).
 const NEVER := -10.0
@@ -69,15 +69,31 @@ func lab_g() -> float:
 	return float(l.g) if l != null and "g" in l else 9.81
 
 
+## The kind of piece this lab gives (PieceArt): its island's; the star for a lab with no definition.
+func piece_kind() -> String:
+	return PieceArt.of_experiment(lab.definition.id()) if lab != null else PieceArt.STAR
+
+
+## The lab's size factor for its piece kind (PieceArt.lab_scale: 1.3 for the sundial wedge, 1 for the star).
+func kind_scale() -> float:
+	return PieceArt.lab_scale(piece_kind())
+
+
+## The piece's full size in this lab (PIECE_SIZE times kind_scale()): what a hidden piece grows to.
+func full_size() -> float:
+	return PIECE_SIZE * kind_scale()
+
+
 ## Builds the object and the piece (subclasses; called once from the lab's _build_world).
 func build() -> void:
 	pass
 
 
-## The piece in its object: a cute star of PIECE_SIZE (or `size`) at `at` (local to the game).
+## The piece in its object: a cute piece of PIECE_SIZE (or `size`) at `at` (local to the game): the
+## lab's island's (PieceArt, #101: the star, or the hutton island's sundial wedge).
 func make_piece(at: Vector3, size := PIECE_SIZE) -> Node3D:
-	piece = StarArt.make(true, size)
-	piece_size = size
+	piece_size = size * kind_scale()
+	piece = PieceArt.make(piece_kind(), piece_size)
 	_grow_from = 0.0
 	piece.name = "Piece"
 	piece.position = at
@@ -185,14 +201,14 @@ func launch_piece(v: Vector3, g: float, ground := 0.0) -> void:
 
 ## Releases the piece on an arc (the lab's gravity, lab_g) that lands on `spot` in `flight_s` seconds:
 ## the piece rests on its point there (its centre piece_size above `spot`), the floor at `ground`.
-## `grow`: a piece hidden small in its object (make_piece with a smaller size) lands at PIECE_SIZE,
+## `grow`: a piece hidden small in its object (make_piece with a smaller size) lands at full_size(),
 ## growing on the way (GROW_RATE). The usual spot is beside the bread cat: cat_spot(offset).
 func launch_to(spot: Vector3, flight_s: float, ground := 0.0, grow := false) -> void:
 	if piece == null:
 		return
 	_grow_from = piece_size if grow else 0.0
 	if grow:
-		piece_size = PIECE_SIZE
+		piece_size = full_size()
 	var land := spot + Vector3.UP * piece_size
 	var from := piece.global_position
 	var g := lab_g()
@@ -251,7 +267,7 @@ func _process(delta: float) -> void:
 			piece.global_position = _rest_at + Vector3.UP * 0.05 * absf(sin(_t * 3.0))
 			piece.rotation.y = sin(_t * PIECE_SPIN) * 0.6
 	if _grow_from > 0.0 and piece_state in ["flying", "out"]:
-		piece.scale = piece.scale.lerp(Vector3.ONE * (PIECE_SIZE / _grow_from), clampf(delta * GROW_RATE, 0.0, 1.0))
+		piece.scale = piece.scale.lerp(Vector3.ONE * (full_size() / _grow_from), clampf(delta * GROW_RATE, 0.0, 1.0))
 
 
 func fly_velocity_y() -> float:

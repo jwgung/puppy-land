@@ -118,7 +118,7 @@ static func _pillow(rim: Array, depth: float, grow: float, face: bool) -> ArrayM
 			var face_color := MID.lerp(LIGHT, 0.55)
 			b.add_triangle([Vector3(0.0, 0.0, z), t0, t1], [face_color, face_color, face_color], Vector3(0.0, 0.0, side))
 		if face:
-			_face(b, z + side * 0.01, side)
+			add_face(b, z + side * 0.01, side)
 	return b.commit()
 
 
@@ -128,13 +128,14 @@ static func _lit(n: Vector3, sun: Vector3) -> Color:
 
 
 ## Two shiny eyes, pink cheeks and a little smile on the flat side at height z (side +1: facing +z;
-## -1: the back, mirrored so it reads the same from behind).
-static func _face(b: ArtMeshBuilder, z: float, side: float) -> void:
+## -1: the back, mirrored so it reads the same from behind). `at` moves the face on the side and `k`
+## scales it (the sundial piece, SundialArt: its face sits higher and a little smaller).
+static func add_face(b: ArtMeshBuilder, z: float, side: float, at := Vector2.ZERO, k := 1.0) -> void:
 	var facing := Vector3(0.0, 0.0, side)
 	for x in [-EYE_X, EYE_X]:
-		_disc(b, Vector2(x * side, EYE_Y), EYE_R, z, facing, FACE_INK)
-		_disc(b, Vector2((x - EYE_R * 0.3) * side, EYE_Y + EYE_R * 0.35), EYE_R * 0.38, z + side * 0.004, facing, Color.WHITE)
-		_disc(b, Vector2((x * 1.75) * side, EYE_Y - 0.13), CHEEK_R, z - side * 0.002, facing, CHEEK)
+		_disc(b, Vector2((at.x + x * k) * side, at.y + EYE_Y * k), EYE_R * k, z, facing, FACE_INK)
+		_disc(b, Vector2((at.x + (x - EYE_R * 0.3) * k) * side, at.y + (EYE_Y + EYE_R * 0.35) * k), EYE_R * 0.38 * k, z + side * 0.004, facing, Color.WHITE)
+		_disc(b, Vector2((at.x + (x * 1.75) * k) * side, at.y + (EYE_Y - 0.13) * k), CHEEK_R * k, z - side * 0.002, facing, CHEEK)
 	# The smile: a short thick arc under the eyes.
 	var steps := 8
 	for i in steps:
@@ -148,7 +149,7 @@ static func _face(b: ArtMeshBuilder, z: float, side: float) -> void:
 		var pts := [p0, p1, q1, q0]
 		var v: Array = []
 		for p: Vector2 in pts:
-			v.append(Vector3(p.x * side, p.y, z))
+			v.append(Vector3((at.x + p.x * k) * side, at.y + p.y * k, z))
 		b.add_triangle([v[0], v[1], v[2]], [FACE_INK, FACE_INK, FACE_INK], facing)
 		b.add_triangle([v[0], v[2], v[3]], [FACE_INK, FACE_INK, FACE_INK], facing)
 
@@ -160,6 +161,36 @@ static func _disc(b: ArtMeshBuilder, c: Vector2, r: float, z: float, facing: Vec
 		var a1 := TAU * (i + 1) / sides
 		b.add_triangle([Vector3(c.x, c.y, z), Vector3(c.x + cos(a0) * r, c.y + sin(a0) * r, z),
 			Vector3(c.x + cos(a1) * r, c.y + sin(a1) * r, z)], [color, color, color], facing)
+
+
+## The piece in 2D (the round-done card, RoundDoneCard; y down), `r` px from the centre to a point:
+## the chubby star with its outline, its sides and its face, drawn like the 3D one.
+static func draw_piece_2d(canvas: CanvasItem, c: Vector2, r: float) -> void:
+	canvas.draw_colored_polygon(rim_2d(c, r + 4.0, 1.0), ArtPalette.OUTLINE)
+	canvas.draw_colored_polygon(rim_2d(c, r, 1.0), DEEP)
+	canvas.draw_colored_polygon(rim_2d(c + Vector2(-1.0, -1.5), r, 0.9), MID)
+	canvas.draw_colored_polygon(rim_2d(c, r, FACE_SHRINK), MID.lerp(LIGHT, 0.55))
+	draw_face_2d(canvas, c, r)
+
+
+## The round-tipped star rim (radius `r`, scaled by `k`) in 2D (y down).
+static func rim_2d(c: Vector2, r: float, k: float) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for p: Vector3 in round_rim():
+		out.append(c + Vector2(p.x, -p.y) * r * k)
+	return out
+
+
+## The piece's face in 2D (y down) about `c`, `r` px for the star's radius 1: two shiny eyes, pink
+## cheeks, a smile (the sundial piece's too, SundialArt.draw_piece_2d).
+static func draw_face_2d(canvas: CanvasItem, c: Vector2, r: float) -> void:
+	for x in [-1.0, 1.0]:
+		var eye := c + Vector2(x * EYE_X, -EYE_Y) * r
+		canvas.draw_circle(c + Vector2(x * EYE_X * 1.75, -(EYE_Y - 0.13)) * r, CHEEK_R * r, CHEEK)
+		canvas.draw_circle(eye, EYE_R * r, FACE_INK)
+		canvas.draw_circle(eye + Vector2(-EYE_R * 0.3, -EYE_R * 0.35) * r, EYE_R * 0.38 * r, Color.WHITE)
+	var mouth := c + Vector2(0.0, -(MOUTH_Y + MOUTH_R)) * r
+	canvas.draw_arc(mouth, (MOUTH_R + MOUTH_W * 0.5) * r, PI * 0.15, PI * 0.85, 10, FACE_INK, maxf(2.0, MOUTH_W * r), true)
 
 
 ## A star (or a piece) node: the body and its outline, `size` m from the centre to a point.

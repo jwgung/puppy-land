@@ -1499,14 +1499,14 @@ func _celebrate_round() -> void:
 			_show_piece()
 
 
-## The story: the round's star piece appears over the bread cat, who lifts it (its cheer); pictures
+## The story: the round's piece (the island's: PieceArt) appears over the bread cat, who lifts it (its cheer); pictures
 ## only. A node beside the lab (the cast's place), never in it.
 func _show_piece() -> void:
 	if _piece != null and is_instance_valid(_piece):
 		_piece.queue_free()
 	var cat := lab_cat()
 	var height := cat.bounds().size.y if cat != null else 1.4
-	_piece = StarArt.make(true, clampf(height * 0.32, 0.25, 1.0))   # big enough to see its face
+	_piece = PieceArt.make(piece_kind(), clampf(height * 0.32, 0.25, 1.0))   # big enough to see its face
 	_piece.name = "FoundPiece"
 	_piece_t = 0.0
 	# The piece game's piece (LabGame, 2026-10-29): the one the child got out flies from where it lies
@@ -1554,6 +1554,11 @@ func found_piece() -> Node3D:
 	return _piece if _piece != null and is_instance_valid(_piece) else null
 
 
+## The piece this lab gives (PieceArt, #101): its island's, for the cat's paws and the card.
+func piece_kind() -> String:
+	return PieceArt.of_experiment(definition.id())
+
+
 ## The bread cat acting in the lab (inside its props; null in a lab without it).
 func lab_cat() -> CatActor:
 	if _cat != null and is_instance_valid(_cat):
@@ -1574,7 +1579,7 @@ func _show_done_card() -> void:
 	if is_sidebar_open():
 		close_sidebar(false)
 	_hide_tip()
-	_done_card = RoundDoneCard.new(_stamp_labels.size(), Story.enabled)
+	_done_card = RoundDoneCard.new(_stamp_labels.size(), Story.enabled, piece_kind())
 	if _piece != null and is_instance_valid(_piece):
 		_piece.queue_free()   # the card shows the piece now
 	_piece = null

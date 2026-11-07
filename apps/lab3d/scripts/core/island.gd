@@ -23,6 +23,11 @@ const INDEX_PATH := "res://content/islands/index.json"
 const GROUNDS := ["meadow", "hill", "yard", "pond", "coast", "valley"]
 ## The lookout may be the cat's square instead of a spot (the hutton island's sundial, #72).
 const HOME := "home"
+## The pieces an island's spots give (#101, PieceArt): the guiding star's (the default) or the
+## sundial's golden wedges (the hutton island).
+const PIECE_STAR := "star"
+const PIECE_SUNDIAL := "sundial"
+const PIECES := [PIECE_STAR, PIECE_SUNDIAL]
 
 ## Zone id -> {ground (GROUNDS: the hutton island adds coast and valley, #72), look (the lab ground's look; default the ground), at [x, z], radius or
 ## size [w, d], height (hills; the valley's rise), spots [[experiment id, [x, z], landmark yaw deg], ...]}, in the
@@ -43,6 +48,8 @@ var sea_waves: Array = []    # [angle deg, distance, size]
 var lab_facing: Dictionary = {}   # experiment id -> map angle deg of the lab's front
 ## Where the story's pieces gather: a spot id, or HOME (the square).
 var lookout := ""
+## The piece each spot gives (PIECES; "star" when the file has none): PieceArt draws it.
+var piece := PIECE_STAR
 ## The island's own landforms and buildings (#72), each optional: volcano {at [x, z], radius, height}
 ## (a cone, the valley's ground rising to it), river [[x, z], ...] (from its source to past the coast),
 ## lighthouse [x, z], sundial true (on the square). Read by MapIsland and LabWorld; {} on the
@@ -187,6 +194,7 @@ static func from_data(data: Dictionary) -> Island:
 	island.sea_waves = _array(data.get("sea_waves"))
 	island.lab_facing = _dict(data.get("lab_facing"))
 	island.lookout = str(data.get("lookout", ""))
+	island.piece = str(data.get("piece", PIECE_STAR))
 	island.features = _dict(data.get("features"))
 	island.order = _array(data.get("order")).filter(func(id: Variant) -> bool: return id is String)
 	island.problem = island._check()
@@ -260,6 +268,8 @@ func _check() -> String:
 		for spot: Variant in spec.spots:
 			if not spot is Array or spot.size() != 3 or not spot[0] is String or _array(spot[1]).size() != 2:
 				return "zone %s: a spot is not [id, [x, z], yaw]" % zone
+	if piece not in PIECES:
+		return "piece %s is not one of %s" % [piece, ", ".join(PIECES)]
 	var ids := spots()
 	if lookout not in ids and lookout != HOME:
 		return "lookout %s is not a spot or the square" % lookout
