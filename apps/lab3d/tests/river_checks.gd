@@ -10,7 +10,7 @@
 ## - the rules (RiverModel): steep land cuts deeper than gentle land at any rain, and only the steep
 ##   land's cut gets DEEP; gentle land drops its sand (the mouth's bar and the bend's inner bar grow),
 ##   steep land washes it to sea (no bar, the plume); the gentle land's bend loses its outer bank and the
-##   steep land's keeps it; every amount grows with the rain; "ready" until it rains; the gentle land's
+##   steep land's only a little (never BANK_FULL) while its bed cuts deeper; every amount grows with the rain; "ready" until it rains; the gentle land's
 ##   bar comes before its bank;
 ## - the judging (MissionRound on the real lab): each stage's hit and misses (Puppy's miss line), the
 ##   wrong slope's line, nothing while it rains;
@@ -41,6 +41,11 @@ const TABLET := Vector2(1152, 720)
 const LINE_MAX := 24
 ## The cloud's radius on the screen at least this many UI units (a child's finger finds it at once).
 const CLOUD_MIN := 45.0
+## The bend on the screen at least this big (UI units, 2026-11-07 user: too small on a phone): the cut
+## bank's face this tall, the inner bar this far from it, the steep valley this long.
+const BANK_MIN := 60.0
+const BEND_MIN := 48.0
+const VALLEY_MIN := 260.0
 ## A spot must be this far inside the view's edges and clear of the boxes (UI units, its half size).
 const SPOT := 14.0
 const EDGE := 8.0
@@ -273,11 +278,12 @@ func check_rules() -> void:
 		# Gentle land drops its sand, steep land washes it to sea.
 		if gentle.mouth_bar() <= 0.0 or gentle.inner_bar() <= 0.0 or steep.mouth_bar() != 0.0 or steep.inner_bar() != 0.0 or steep.washed() <= 0.0 or gentle.washed() != 0.0:
 			problems.append("%.2f s: sand gentle %.3f/%.3f steep %.3f/%.3f washed %.3f" % [rain, gentle.mouth_bar(), gentle.inner_bar(), steep.mouth_bar(), steep.inner_bar(), steep.washed()])
-		# The gentle land's bend loses its outer bank, the steep land's keeps it.
-		if gentle.bank_cut() <= 0.0 or steep.bank_cut() != 0.0:
+		# The gentle land's bend loses its outer bank; the steep land's is cut a little (more than none,
+		# less than the gentle land's, never BANK_FULL) while its bed goes deeper than the gentle one's.
+		if gentle.bank_cut() <= 0.0 or steep.bank_cut() <= 0.0 or steep.bank_cut() >= gentle.bank_cut() or steep.bank_cut() >= RiverModel.BANK_FULL:
 			problems.append("%.2f s: bank gentle %.3f steep %.3f" % [rain, gentle.bank_cut(), steep.bank_cut()])
 		# Every amount grows with the rain.
-		var now := [gentle.mouth_bar(), gentle.inner_bar(), gentle.bank_cut(), gentle.valley_depth(), steep.valley_depth(), steep.washed()]
+		var now := [gentle.mouth_bar(), gentle.inner_bar(), gentle.bank_cut(), gentle.valley_depth(), steep.valley_depth(), steep.washed(), steep.bank_cut()]
 		if not before.is_empty():
 			for k in now.size():
 				if now[k] <= before.now[k]:
@@ -304,7 +310,7 @@ func check_rules() -> void:
 	if m.status() != "ready":
 		problems.append("a reset keeps the rain")
 	expect.call(problems.is_empty(),
-		"river rules: steep land cuts deeper at any rain and only it gets the deep valley (%.1f s of rain); gentle land drops its sand (the bar %.1f s, the inner bar) while steep land washes it to sea; the gentle bend loses its outer bank (%.1f s), the steep one keeps it; everything grows with the rain, which adds up" % [first.valley, first.bar, first.bank],
+		"river rules: steep land cuts deeper at any rain and only it gets the deep valley (%.1f s of rain); gentle land drops its sand (the bar %.1f s, the inner bar) while steep land washes it to sea; the gentle bend loses its outer bank (%.1f s), the steep one only a little (never enough for the piece) while its bed cuts deeper; everything grows with the rain, which adds up" % [first.valley, first.bar, first.bank],
 		"; ".join(problems.slice(0, 6)))
 
 
@@ -320,7 +326,7 @@ func check_judging() -> void:
 	var cases := [
 		[0, "steep", 3.0, true, false], [0, "steep", 0.8, false, true], [0, "gentle", 6.0, false, true], [0, "gentle", 0.8, false, true],
 		[1, "gentle", 2.0, true, false], [1, "gentle", 5.0, true, false], [1, "gentle", 0.6, false, true], [1, "steep", 6.0, false, true], [1, "steep", 0.5, false, true],
-		[2, "gentle", 4.0, true, false], [2, "gentle", 2.0, false, true], [2, "gentle", 0.5, false, true], [2, "steep", 8.0, false, true],
+		[2, "gentle", 4.0, true, false], [2, "gentle", 2.0, false, true], [2, "gentle", 0.5, false, true], [2, "steep", 8.0, false, true], [2, "steep", 2.0, false, true],
 	]
 	for case: Array in cases:
 		var stage := int(case[0])
@@ -331,6 +337,20 @@ func check_judging() -> void:
 		var missed := MissionRound.missed(definition, stage, status, lab.observations())
 		if (stamps == stage + 1) != bool(case[3]) or missed != bool(case[4]):
 			problems.append("stage %d %s %.1f s (%s): stamps %d missed %s" % [stage + 1, case[1], case[2], status, stamps, missed])
+	# Stage 3 on the steep land (2026-11-07 user): the bed goes deep, the outer bank is cut a little (it
+	# shows) but not to the piece: a miss, with the doc's wrong-slope line.
+	lab.set_control("slope", "gentle")
+	_rain(lab, RiverModel.RAIN_MAX)
+	var gentle_bed := (lab.model as RiverModel).valley_depth()
+	lab.set_control("slope", "steep")
+	_rain(lab, RiverModel.RAIN_MAX)
+	var steep_m := lab.model as RiverModel
+	var goal := RiverModel.BANK_FULL * RiverProps.BANK_RETREAT
+	var steep_off := not MissionRound.conditions_met(definition.missions.stages[2].conditions, lab)
+	if steep_m.bank_cut() <= 0.0 or steep_m.bank_cut() >= RiverModel.BANK_FULL or lab.props.shown_retreat <= 0.05 or lab.props.shown_retreat >= goal \
+			or steep_m.valley_depth() <= gentle_bed or MissionRound.judge(definition, 2, lab.status(), lab, lab.observations()) == 3 \
+			or not MissionRound.missed(definition, 2, lab.status(), lab.observations()) or MissionRound.result_line(definition, 2, false, steep_off)[0] != "완만한 땅을 골라 봐!":
+		problems.append("stage 3 steep: bank %.3f (drawn %.2f m of %.2f), bed %.3f vs gentle %.3f, %s" % [steep_m.bank_cut(), lab.props.shown_retreat, goal, steep_m.valley_depth(), gentle_bed, lab.status()])
 	var wants := [["steep", "가파른 땅을 골라 봐!"], ["gentle", "완만한 땅을 골라 봐!"], ["gentle", "완만한 땅을 골라 봐!"]]
 	for i in 3:
 		lab.set_control("slope", "gentle" if wants[i][0] == "steep" else "steep")
@@ -346,7 +366,7 @@ func check_judging() -> void:
 	lab.hold_ended(RiverLab.KNOB_ID)
 	if not lab.settled() or MissionRound.judge(definition, 0, lab.status(), lab, lab.observations()) != 1:
 		problems.append("not judged after the rain (%s)" % lab.status())
-	expect.call(problems.is_empty(), "river judging: the deep valley (steep) / the sand bar (gentle) / the cut outer bank (gentle) hit with enough rain and miss short of it (Puppy's line), the wrong slope says the doc's \"…땅을 골라 봐!\" line; not judged while it rains",
+	expect.call(problems.is_empty(), "river judging: the deep valley (steep) / the sand bar (gentle) / the cut outer bank (gentle) hit with enough rain and miss short of it (Puppy's line); stage 3 on the steep land cuts the bed deep and the bank only a little (short of the piece) and misses; the wrong slope says the doc's \"…땅을 골라 봐!\" line; not judged while it rains",
 		"; ".join(problems))
 	lab.queue_free()
 	await tree.process_frame
@@ -417,7 +437,8 @@ func check_no_numbers() -> void:
 ## On a phone, a desktop and a tablet, with the dialogue box open (the first line), the things a child
 ## must follow are on the view and clear of the box, its bust, the top band (the title, the card, the
 ## mission strip) and the buttons: the cloud (its middle and its foot, big), the channel down the
-## steep mountain, the heap, the bank's face where the piece is, the bend's inner bar and the mouth.
+## steep mountain, the heap, the bank's face where the piece is, the bend's inner bar and the mouth;
+## again in play (the question answered). The bend and the valley are big on the screen (#95 review).
 func check_view(size: Vector2) -> void:
 	DirAccess.remove_absolute(ProgressStore.path)
 	var host := Control.new()
@@ -433,43 +454,89 @@ func check_view(size: Vector2) -> void:
 	var view: View3D = screen.view
 	var per_unit := Vector2(view.viewport.size) / view.size
 	var box: DialogueBox = screen.dialogue
-	var blocks: Array[Rect2] = []
-	if box.active and box.visible:
-		blocks.append_array(box.rects())
-	for c: Control in [screen._title_bar, screen._key_row, screen._mission_pill, screen._mission_strip, screen._mission_text, screen._top_buttons, screen._action_row, screen._picks_row]:
-		if c != null and c.is_visible_in_tree():
-			blocks.append(c.get_rect())
+	var asked := box.active
 	var steep := RiverModel.STEEP_DEG
 	var line := RiverProps.river_line()
-	var inner := RiverProps.bank_face(0.0) - Vector3(RiverProps.outward(line, RiverProps.bend_samples(line)[RiverProps.bend_samples(line).size() / 2]).x, 0.0, RiverProps.outward(line, RiverProps.bend_samples(line)[RiverProps.bend_samples(line).size() / 2]).y) * 1.2
+	var mid: int = RiverProps.bend_samples(line)[RiverProps.bend_samples(line).size() / 2]
+	var inner := RiverProps.bank_face(0.0) - Vector3(RiverProps.outward(line, mid).x, 0.0, RiverProps.outward(line, mid).y) * 1.2
 	var mouth: Vector2 = lab.props.mouth()
 	var points := {
 		"cloud": RiverProps.CLOUD_AT,
 		"cloud's foot": RiverProps.CLOUD_AT + Vector3.DOWN * RiverProps.CLOUD_RADIUS * 0.6,
+		"cloud's top": RiverProps.CLOUD_AT + Vector3.UP * RiverProps.CLOUD_RADIUS,
 		"channel's top": RiverProps.channel_point(steep, 0.0, 1.0, RiverProps.TOP_X - 0.4),
 		"channel's middle": RiverProps.channel_point(steep, 0.0, 1.0, (RiverProps.TOP_X + RiverProps.FOOT_X) * 0.5),
 		"heap": Vector3(RiverProps.HEAP_AT.x, RiverProps.HEAP_HEIGHT, RiverProps.HEAP_AT.y),
 		"bank's face (the piece)": RiverProps.bank_face(0.0) + Vector3.UP * RiverGame.PIECE_UP,
+		"bank's top": RiverProps.bank_face(0.0) + Vector3.UP * RiverProps.BANK_HEIGHT,
 		"inner bar": inner,
 		"mouth": Vector3(mouth.x, 0.0, mouth.y),
 	}
+	var at := func(world: Vector3) -> Vector2: return view.rig.unproject_position(world) / per_unit
 	var view_rect := Rect2(Vector2.ZERO, view.size).grow(-EDGE)
 	var problems := []
-	for name: String in points:
-		var at: Vector2 = view.rig.unproject_position(points[name]) / per_unit
-		var spot := Rect2(at - Vector2(SPOT, SPOT), Vector2(SPOT, SPOT) * 2.0)
-		if not view_rect.encloses(spot):
-			problems.append("%s off the view at %s" % [name, str(at)])
-		for r in blocks:
-			if r.intersects(spot):
-				problems.append("%s at %s under %s" % [name, str(at), str(r)])
-	var c: Vector2 = view.rig.unproject_position(RiverProps.CLOUD_AT) / per_unit
-	var e: Vector2 = view.rig.unproject_position(RiverProps.CLOUD_AT + Vector3.RIGHT * RiverProps.CLOUD_RADIUS) / per_unit
+	# At the question (the box up) and in play (the question answered: the mission strip, the
+	# condition buttons and their hint up).
+	for phase in ["question", "play"]:
+		if phase == "play":
+			screen._predict_pick_choice("steep")
+			for k in 8:
+				for i in 6:
+					await tree.process_frame
+				if box.active:
+					box.advance()
+			for i in 20:
+				await tree.process_frame
+		var blocks: Array[Rect2] = []
+		if box.active and box.visible:
+			blocks.append_array(box.rects())
+		for c: Control in [screen._title_bar, screen._key_row, screen._mission_pill, screen._mission_strip, screen._mission_text, screen._top_buttons, screen._action_row, screen._picks_row]:
+			if c != null and c.is_visible_in_tree():
+				blocks.append(c.get_rect())
+		for name: String in points:
+			var p: Vector2 = at.call(points[name])
+			var spot := Rect2(p - Vector2(SPOT, SPOT), Vector2(SPOT, SPOT) * 2.0)
+			if not view_rect.encloses(spot):
+				problems.append("%s: %s off the view at %s" % [phase, name, str(p)])
+			for r in blocks:
+				if r.intersects(spot):
+					problems.append("%s: %s at %s under %s" % [phase, name, str(p), str(r)])
+	# Dugi's bent-river card (stage 3) stands clear of the bend: the bank's face and top, the inner bar,
+	# the bend's ends and the piece show beside it; it stays on the view and off the top chips.
+	box.set_speaker("dugi", "explain")
+	box.open("x", "explain", "river")
+	var shown := box.picture   # (the screen closes this stray line on its next frame; the place stays)
+	await tree.process_frame
+	var card := box.card_rect()
+	if shown != "river" or not view_rect.encloses(card):
+		problems.append("card %s off the view or not up (%s)" % [str(card), shown])
+	for ctl: Control in [screen._title_bar, screen._key_row, screen._mission_pill, screen._mission_strip, screen._top_buttons, screen._picks_row]:
+		if ctl != null and ctl.is_visible_in_tree() and card.intersects(ctl.get_rect()):
+			problems.append("card %s on %s" % [str(card), ctl.name])
+	for r in box.rects():
+		if card.intersects(r):
+			problems.append("card %s on the box" % str(card))
+	var bend_points := {"bank's face": RiverProps.bank_face(0.0), "bank's top": points["bank's top"], "inner bar": inner,
+		"bend's start": Vector3(line[RiverProps.bend_samples(line)[0]].x, RiverProps.BANK_HEIGHT, line[RiverProps.bend_samples(line)[0]].y),
+		"bend's end": Vector3(line[RiverProps.bend_samples(line)[-1]].x, RiverProps.BANK_HEIGHT, line[RiverProps.bend_samples(line)[-1]].y),
+		"piece": RiverProps.bank_face(0.0) + Vector3.UP * RiverGame.PIECE_UP}
+	for n: String in bend_points:
+		var p: Vector2 = at.call(bend_points[n])
+		if card.intersects(Rect2(p - Vector2(SPOT, SPOT), Vector2(SPOT, SPOT) * 2.0)):
+			problems.append("card %s on the %s at %s" % [str(card), n, str(p)])
+	var c: Vector2 = at.call(RiverProps.CLOUD_AT)
+	var e: Vector2 = at.call(RiverProps.CLOUD_AT + Vector3.RIGHT * RiverProps.CLOUD_RADIUS)
 	if c.distance_to(e) < CLOUD_MIN:
 		problems.append("the cloud is small (%.0f units)" % c.distance_to(e))
+	var face: Vector2 = at.call(RiverProps.bank_face(0.0))
+	var bank_h := face.distance_to(at.call(points["bank's top"]))
+	var bend := face.distance_to(at.call(inner))
+	var valley := (at.call(points["channel's top"]) as Vector2).distance_to(at.call(RiverProps.channel_point(steep, 0.0, 1.0, RiverProps.FOOT_X)))
+	if bank_h < BANK_MIN or bend < BEND_MIN or valley < VALLEY_MIN:
+		problems.append("small: the bank %.0f, the bend %.0f, the valley %.0f units" % [bank_h, bend, valley])
 	var name: String = {PHONE: "phone", DESKTOP: "desktop", TABLET: "tablet"}.get(size, str(size))
-	expect.call(box.active and problems.is_empty(), "river view (%s): the cloud (big), the steep mountain's channel, the heap, the bank's face with the piece, the inner bar and the mouth are on the view, clear of the dialogue box, the top band and the buttons" % name,
-		"box %s; cloud %.0f units; %s" % [box.active, c.distance_to(e), "; ".join(problems.slice(0, 6))])
+	expect.call(asked and problems.is_empty(), "river view (%s): the cloud (big), the steep mountain's channel, the heap, the bank's face with the piece and its top, the inner bar and the mouth are on the view, clear of the dialogue box, the top band and the buttons, at the question and in play; the bend's bank, its inner bar and the valley are big; Dugi's bent-river card stands clear of the bend, the top chips and the box" % name,
+		"asked %s; cloud %.0f units; bank %.0f bend %.0f valley %.0f; %s" % [asked, c.distance_to(e), bank_h, bend, valley, "; ".join(problems.slice(0, 6))])
 	host.queue_free()
 	for i in 3:
 		await tree.process_frame

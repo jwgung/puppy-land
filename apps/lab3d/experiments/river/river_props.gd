@@ -17,7 +17,8 @@
 ##   RiverGame); on its inner side a sand bar grows (inner_bar());
 ## - the sea (left) with its beach: where the river meets it the sand bar grows (mouth_bar()), or,
 ##   on the steep land, a muddy plume goes out to sea (washed());
-## - the bread cat behind the bend, watching the bank.
+## - the bread cat behind the bend's right end (between it and the mountain), watching the bank; Puppy
+##   stands at the bend's left, so the two have room.
 ## No number anywhere. Visual only: no body, nothing the model reads.
 class_name RiverProps
 extends RefCounted
@@ -38,30 +39,30 @@ const GRID := 0.14
 ## steep land's deepest); its half width grows with its depth.
 const BASE_GROOVE := 0.06
 const GROOVE_MAX := 0.85
-const GROOVE_HALF := 0.22
-const GROOVE_WIDEN := 0.7
+const GROOVE_HALF := 0.28
+const GROOVE_WIDEN := 0.8
 ## The heap of fallen earth at the mountain's foot (centre x, z; radius; height).
 const HEAP_AT := Vector2(1.25, -0.6)
 const HEAP_RADIUS := 0.85
 const HEAP_HEIGHT := 0.55
 ## The cloud over the mountain's top (its middle, its size) and the rain under it (drops in a box).
-const CLOUD_AT := Vector3(3.7, 4.35, -0.6)
+const CLOUD_AT := Vector3(3.3, 3.3, -0.6)
 const CLOUD_RADIUS := 0.85
 ## The cloud bobs gently up and down (m, s a bob), visual only (the knob stays at CLOUD_AT).
 const CLOUD_BOB := 0.07
 const CLOUD_BOB_S := 3.6
 const DROPS := 46
-const RAIN_TOP := 3.75
+const RAIN_TOP := 2.8
 const RAIN_SPAN := Vector2(1.5, 0.6)   # half extents in x and z under the cloud
 const RAIN_SPEED := 6.0
 const DROP := Color("7cc6ff")
 ## The river on the plain: its control points (x, z; a Catmull-Rom line through them), its half width
 ## (wider at the mouth), how high its water and its sandy edges lie.
-const RIVER_POINTS := [Vector2(1.75, -0.6), Vector2(1.0, -0.55), Vector2(0.35, -0.85), Vector2(-0.15, -1.45),
-	Vector2(-0.9, -1.75), Vector2(-1.65, -1.45), Vector2(-2.05, -0.8), Vector2(-2.45, -0.05), Vector2(-3.05, 0.55),
-	Vector2(-3.75, 0.95), Vector2(-4.7, 1.25)]
+const RIVER_POINTS := [Vector2(1.75, -0.6), Vector2(1.0, -0.55), Vector2(0.66, -0.78), Vector2(-0.04, -1.52),
+	Vector2(-0.9, -1.9), Vector2(-1.84, -1.52), Vector2(-2.34, -0.71), Vector2(-2.6, 0.0), Vector2(-3.0, 0.45),
+	Vector2(-3.45, 0.75), Vector2(-3.95, 0.95)]
 const RIVER_STEPS := 8                # samples between two control points
-const RIVER_HALF := 0.3
+const RIVER_HALF := 0.36
 const MOUTH_HALF := 0.55
 const WATER_Y := 0.035
 const EDGE_Y := 0.02
@@ -73,7 +74,7 @@ const RIVER_SAND := Color("e8d29a")
 ## with z under BEND_Z), BANK_HEIGHT tall, BANK_DEPTH deep, its face cut back by up to BANK_RETREAT
 ## (at the model's whole side_power, the most at the bend's middle).
 const BEND_Z := -1.2
-const BANK_HEIGHT := 0.75
+const BANK_HEIGHT := 1.0
 const BANK_DEPTH := 1.0
 const BANK_RETREAT := 0.9
 const BANK_SOIL := Color("b8743f")
@@ -81,10 +82,15 @@ const BANK_STRIPE := Color("cf9152")
 const BANK_DARK := Color("9a5c2e")
 ## The sand bars: the bend's inner one, the mouth's (both grow from nothing), the plume's mud.
 const SAND := Color("f3d88c")
+## The bend's inner bar: its mounds' radius (m, at the bend's middle), how much taller than the
+## mouth's they stand, how far in from the water they spread as it grows (#95 review: big on a phone).
+const INNER_R := 0.62
+const INNER_TALL := 1.4
+const INNER_OUT := 0.3
 const SAND_TOP := Color("f8e6a8")
 const MUD := Color("b08a5a")
 ## The sea (front left): its middle and half sizes (x, z), its beach around it.
-const SEA_AT := Vector3(-5.6, 0.0, 1.3)
+const SEA_AT := Vector3(-4.8, 0.0, 1.15)
 const SEA_HALF := Vector2(1.7, 1.6)
 const BEACH := 0.45
 const SEA := ArtPalette.SEA
@@ -97,7 +103,7 @@ const FLOW_AFTER_S := 1.2
 const STREAK := Color("eaf7ff")
 ## The lab's corner of the island: its trees stand clear of the mountain and the sea.
 const WORLD_CENTER := Vector3(-0.6, 0.0, -9.0)
-const CAT_AT := Vector3(-3.4, 0.0, -2.4)
+const CAT_AT := Vector3(1.4, 0.0, -2.6)
 
 var cat: CatActor
 var cloud: Node3D
@@ -547,12 +553,12 @@ func _bank_mesh(retreat: float) -> Mesh:
 
 
 ## A low sand mound of `size` (0..1 of its whole) at a ground point, flattened.
-static func _sand(b: ArtMeshBuilder, at: Vector2, radius: float, size: float) -> void:
+static func _sand(b: ArtMeshBuilder, at: Vector2, radius: float, size: float, tall := 1.0) -> void:
 	if size < 0.02:
 		return
 	var r := radius * (0.35 + 0.65 * size)
-	b.add_sphere(Transform3D(Basis.from_scale(Vector3(1.0, 0.28 * size + 0.04, 1.0)), Vector3(at.x, 0.02, at.y)), r, 3, 10, SAND)
-	b.add_sphere(Transform3D(Basis.from_scale(Vector3(0.7, 0.3 * size + 0.04, 0.7)), Vector3(at.x, 0.03, at.y)), r * 0.8, 3, 10, SAND_TOP)
+	b.add_sphere(Transform3D(Basis.from_scale(Vector3(1.0, (0.28 * size + 0.04) * tall, 1.0)), Vector3(at.x, 0.02, at.y)), r, 3, 10, SAND)
+	b.add_sphere(Transform3D(Basis.from_scale(Vector3(0.7, (0.3 * size + 0.04) * tall, 0.7)), Vector3(at.x, 0.03, at.y)), r * 0.8, 3, 10, SAND_TOP)
 
 
 ## The bend's inner sand bar (`size` 0..1): mounds along the inside of the bend.
@@ -564,8 +570,8 @@ func _inner_bar_mesh(size: float) -> Mesh:
 	for j in range(1, n - 1, 2):
 		var i: int = samples[j]
 		var share := sin(PI * (j + 0.5) / n)
-		var p := _line[i] - outward(_line, i) * (half_width(_line, i) + 0.12 + 0.15 * size * share)
-		_sand(b, p, 0.42 * share, size * share)
+		var p := _line[i] - outward(_line, i) * (half_width(_line, i) + 0.12 + INNER_OUT * size * share)
+		_sand(b, p, INNER_R * share, size * share, INNER_TALL)
 	return b.commit()
 
 

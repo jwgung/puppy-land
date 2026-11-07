@@ -512,6 +512,7 @@ func _layout_dialogue() -> bool:
 	# The explanation picture's card keeps clear of the top chips (title, key cards, stamps and the
 	# guess, the top buttons) and the picture buttons.
 	dialogue.set_card_avoid([_title_bar, _key_row, _mission_pill, _mission_strip, _mission_text, _top_buttons, _picks_row])
+	dialogue.card_align = experiment.picture_card_align() if experiment != null else Vector2(0.5, 0.5)
 	return dialogue.layout(view_rect, right, OVERLAY_MARGIN)
 
 

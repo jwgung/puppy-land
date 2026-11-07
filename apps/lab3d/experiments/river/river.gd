@@ -21,6 +21,8 @@ const KNOB_ID := "cloud"
 const SLOPE_CONTROL := "slope"
 ## The knob: a box this big round the cloud (m: the whole cloud is the target).
 const KNOB_BOX := 2.4
+## Dugi's picture card: at the top right (picture_card_align; it keeps under the top buttons).
+const CARD_ALIGN := Vector2(1.0, 0.0)
 
 ## The graph's curves: a point every this many seconds of rain.
 const GRAPH_STEP_S := 0.25
@@ -167,6 +169,12 @@ static func rain_curves(slope: float) -> Dictionary:
 ## Dugi points at the bend's bank (where the piece is).
 func explain_point() -> Vector3:
 	return RiverProps.bank_face(0.0) + Vector3.UP * RiverProps.BANK_HEIGHT
+
+
+## Dugi's bent-river card stands at the top right (over the cloud, under the top buttons), not
+## over the bend in the middle: the child sees the card and the real cut bank together (#95 review).
+func picture_card_align() -> Vector2:
+	return CARD_ALIGN
 
 
 ## The camera follows the plain's middle.

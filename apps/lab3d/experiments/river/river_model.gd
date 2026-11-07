@@ -13,13 +13,14 @@
 ##   settles where it reaches the sea (the sand bar, mouth_bar()) and on the inner side of the bend
 ##   (inner_bar()); on steep land the fast water carries it all out to sea (washed(): no bar);
 ## - a bend's outer bank is cut where the river swings sideways: on gentle land its work goes into the
-##   sides of the bend (side_power() = 1 - power()), on steep land into cutting down, so the steep
-##   land's bend keeps its bank (bank_cut()).
+##   sides of the bend (side_power() = 1 - power()); on steep land it goes mostly into cutting down
+##   (the valley above), so the steep land's bend loses only a little of its bank, SIDE_LEAST, never
+##   BANK_FULL (bank_cut(); 2026-11-07 user: real rivers on steep ground cut down and a little sideways).
 ## Each amount grows with the rain as 1 - exp(-rain / its time scale) times its most.
 ##
 ## Its status names what the stages judge: "ready" (no rain yet), then "valley" (the cut is DEEP or
 ## deeper: steep land only), "bank" (the outer bank cut BANK_FULL or more: gentle land only), "bar"
-## (the sand bar BAR_FULL or more: gentle land only), else "little". The gentle land's bar comes
+## (the sand bar BAR_FULL or more: gentle land only), else "little" (the steep land's bend: cut a little). The gentle land's bar comes
 ## before its bank (less rain), so a stage that wants the bar also takes "bank".
 ## No number is shown: the lab draws the cut, the sand and the bank, and the cards say them in words.
 class_name RiverModel
@@ -41,6 +42,9 @@ const SETTLE_SPEED := 0.75
 const DEEP := 0.6
 const BAR_FULL := 0.55
 const BANK_FULL := 0.45
+## The least share of its work the river puts into its bend's sides (the steep land's: a little cut,
+## well short of BANK_FULL, so it never reaches the piece).
+const SIDE_LEAST := 0.25
 
 
 func _init() -> void:
@@ -68,9 +72,10 @@ func power() -> float:
 	return speed() * speed()
 
 
-## The share of its work the river puts into the sides of its bend (the rest cuts down).
+## The share of its work the river puts into the sides of its bend (the rest cuts down): 1 - power(),
+## at least SIDE_LEAST (the steep land's).
 func side_power() -> float:
-	return maxf(0.0, 1.0 - power())
+	return maxf(SIDE_LEAST, 1.0 - power())
 
 
 ## The sand stays (1) where the water is slow, or goes out to sea (0).

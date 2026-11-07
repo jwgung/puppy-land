@@ -233,6 +233,13 @@ func keep_in_sight() -> Array[AABB]:
 	return []
 
 
+## Where Dugi's explanation picture card stands in the view (DialogueBox.card_align: shares of the room
+## left and down, (0.5, 0.5) the middle). A lab whose object sits in the middle of the view moves it
+## aside (the river's bend, #95 review). Read only (visual).
+func picture_card_align() -> Vector2:
+	return Vector2(0.5, 0.5)
+
+
 ## World point Dugi points at when he explains the run (IslandCast, Task 4h): what the lab's
 ## observation is about. Default: the body the camera follows. Read only (visual).
 func explain_point() -> Vector3:
