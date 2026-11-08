@@ -125,8 +125,8 @@
 ##    is complete, the island-level saves keyed by island (an old save is the first island's), no
 ##    experiment on two islands, the island's story file.
 ## 22c. the hutton island's map (tests/hutton_map_checks.gd, #72 2026-11-06): content/islands/hutton.json
-##    (11 spots once in the order, the lookout on the square, the features checked), never open while its
-##    spots are not experiments, its map (one mesh within the mechanics map's vertices; coast sand, valley,
+##    (11 spots once in the order, the lookout on the square, the features checked), open after the first
+##    island now every spot is a lab (an island in the making never opens), its map (one mesh within the mechanics map's vertices; coast sand, valley,
 ##    volcano, river to the sea, lighthouse, sundial clear of the spots and the three), a tap opens
 ##    nothing, its coast and valley labs' ground.
 ## 22d. the hutton island's pieces (tests/sundial_piece_checks.gd, #101 2026-11-07): Island.piece (hutton
@@ -378,7 +378,7 @@ func _run() -> void:
 	_expect(payment != null and payment.can_instantiate(), "payment checks compile", "")
 	if payment != null and payment.can_instantiate():
 		await payment.new(self, _expect).run()
-	print("== the hutton island's map (#72: its layout, grounds and features, never open while in the making) ==")
+	print("== the hutton island's map (#72: its layout, grounds and features, open after the first island, never while in the making) ==")
 	var hutton: GDScript = load("res://tests/hutton_map_checks.gd")
 	_expect(hutton != null and hutton.can_instantiate(), "hutton map checks compile", "")
 	if hutton != null and hutton.can_instantiate():

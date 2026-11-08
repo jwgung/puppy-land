@@ -810,6 +810,10 @@ func check_piece() -> void:
 		await tree.process_frame
 	if game.piece_state != "held" or game.risen():
 		problems.append("out before the last stamp (%s)" % game.piece_state)
+	for i in int(VolcanoGame.GLINT_S * 60.0) + 10:   # the stage's glint ends: the piece back to its size
+		await tree.process_frame
+	if not game.piece.scale.is_equal_approx(Vector3.ONE) or game._glint_at != LabGame.NEVER:
+		problems.append("the glint does not end (scale %s)" % str(game.piece.scale))
 	lab.set_game_stage(2, 2, true)
 	lab.reset_run()
 	lab.set_control("magma", "normal")
@@ -832,7 +836,7 @@ func check_piece() -> void:
 	again.set_game_stage(-1, 3, false)
 	if (again.game as VolcanoGame).take_piece() != null or not (again.game as VolcanoGame).risen() or again.props.shown_land < 0.99:
 		problems.append("a finished spot: a piece, a sunk needle or no land")
-	expect.call(problems.is_empty(), "volcano piece: the needle in the crater with the piece on its tip until the last stamp; then the land grows into the sea, the needle is pushed up and the piece jumps down onto the new land; a finished spot shows the needle up and the new land, no piece",
+	expect.call(problems.is_empty(), "volcano piece: the needle in the crater with the piece on its tip until the last stamp (a stage's glint ends); then the land grows into the sea, the needle is pushed up and the piece jumps down onto the new land; a finished spot shows the needle up and the new land, no piece",
 		"; ".join(problems))
 	lab.queue_free()
 	again.queue_free()
