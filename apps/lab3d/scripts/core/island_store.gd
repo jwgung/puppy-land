@@ -17,8 +17,8 @@
 ## state, and a purchase not yet acknowledged is acknowledged at once (Play refunds it after three
 ## days otherwise). A pending one (cash, a family member's approval) stays locked until it is
 ## purchased. The bought products are also kept in cache_file() (left out of Android backups), only
-## for a start when the store cannot answer (no connection): its next answer replaces them. Everything is checked on the device (no server): a forged purchase is an
-## accepted risk (ADR 0005).
+## for a start when the store cannot answer (no connection): its next answer replaces them.
+## Everything is checked on the device (no server): a forged purchase is an accepted risk (ADR 0005).
 class_name IslandStore
 extends Node
 
