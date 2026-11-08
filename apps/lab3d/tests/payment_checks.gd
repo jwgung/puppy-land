@@ -243,8 +243,7 @@ func check_story_today() -> void:
 
 ## 보호자 확인: a × b + c in its ranges, new each time; the answer typed in a number field (digits
 ## only, three at most) and 확인 or the keyboard's done key; a wrong answer a new sum; the third wrong
-## one closes; the right one passes. On phone, tablet and desktop the card is at the top (the keyboard
-## covers the bottom half) and inside the view.
+## one closes; the right one passes. On phone, tablet and desktop the card is inside the view.
 func check_gate() -> void:
 	var problems := []
 	var gate := ParentalGate.new()
@@ -302,15 +301,13 @@ func check_gate() -> void:
 		for r: Rect2 in shown.rects() + [shown.field.get_global_rect(), shown.ok_button.get_global_rect(), shown.note_label.get_global_rect()]:
 			if not Rect2(Vector2.ZERO, host.size).encloses(r):
 				problems.append("%s: %s outside %s" % [size_name, r, host.size])
-		if shown.card.get_global_rect().end.y > host.size.y * 0.5:
-			problems.append("%s: the card %s reaches under the keyboard (lower half)" % [size_name, shown.card.get_global_rect()])
 		if not shown.field.has_focus():
 			problems.append("%s: the answer field has no focus (no keyboard)" % size_name)
 		if shown.close_button.get_global_rect().intersects(shown.ok_button.get_global_rect()):
 			problems.append("%s: × over 확인" % size_name)
 		host.queue_free()
 		await _frames(1)
-	expect.call(problems.is_empty(), "payment: the guardian's check (a × b + c in range, number keyboard field, a new sum when wrong, closed after three, at the top)", "; ".join(problems))
+	expect.call(problems.is_empty(), "payment: the guardian's check (a × b + c in range, number keyboard field, a new sum when wrong, closed after three)", "; ".join(problems))
 
 
 ## The offer: price and 구매 from the store, waiting instead of the buttons, a bought island closes it,

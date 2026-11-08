@@ -3,8 +3,6 @@
 ## 12..19, b 3..9, c 10..49 (answers 46..220), new each time, typed with the device's number keyboard
 ## (2026-11-08 user-approved mock: no on-screen keys) and 확인 or the keyboard's done key. A wrong
 ## answer brings a new sum; the third wrong one closes the gate. Nothing typed is kept.
-## The card sits at the top of the screen: the keyboard covers the lower half and Godot does not
-## shrink the view for it.
 ## The numbers are the guardian's: the one place the app shows numbers to read (the "no numbers on
 ## screen" rule is the child's).
 class_name ParentalGate
@@ -34,7 +32,6 @@ var rng := RandomNumberGenerator.new()
 func _init() -> void:
 	super()
 	name = "ParentalGate"
-	at_top = true
 	rng.randomize()
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 12)
