@@ -21,7 +21,7 @@
 ##   dew and cold and the parcel's cloud follow the model;
 ## - what matters is big and in view: the cup, the ice to take, the mountain's summit (the piece) and
 ##   the parcel's way between the top band and the bottom on the phone, the desktop and the tablet;
-## - the spot: the hutton map's dew-cloud spot is this experiment, the island is still not playable;
+## - the spot: the hutton map's dew-cloud spot is this experiment;
 ## - the opening (the fox first on a first visit), the hands (an ice cube dropped over the cup goes
 ##   in, elsewhere it goes back; the parcel climbs the mountain in stage 3 only; the hand guide shows
 ##   the part in play) and the piece (under the dust until the last stamp).

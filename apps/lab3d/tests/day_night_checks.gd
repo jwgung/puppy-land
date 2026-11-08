@@ -10,7 +10,7 @@
 ## - the judging (MissionRound on the real lab): each stage's hit at its band's middle and inside its
 ##   edges, its misses (Puppy's miss line), the morning stage's evening miss with "그건 해 지는 쪽이야!
 ##   반대편!" and no line at all for a noon or a night then; no clock time among the observations;
-## - the spot: the hutton map's day-night spot is this experiment, the island is not playable yet;
+## - the spot: the hutton map's day-night spot is this experiment;
 ## - the round's opening on a first visit: the fox, Puppy's clue, Dugi's three lines (the picture on
 ##   the second), then the question; a later visit: Dugi's three lines only;
 ## - the hand: a press anywhere on the globe picks the Earth, a drag turns it one to one with the

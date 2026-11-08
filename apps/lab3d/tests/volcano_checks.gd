@@ -24,7 +24,7 @@
 ## - what matters is big and in view on the phone, the desktop and the tablet: the pump's button, the
 ##   table's lava (the widest and the tallest cone) and its goals, the big volcano's crater and stream,
 ##   the sea's new land and the risen needle;
-## - the spot: the hutton map's volcano spot is this experiment, the island is still not playable;
+## - the spot: the hutton map's volcano spot is this experiment, the last: with it the island is playable;
 ## - the opening (the fox, Puppy's clue and the talk after it, Dugi's two lines) and the piece (the
 ##   needle in the crater, pushed up in the big scene, the piece out to the cat).
 extends RefCounted

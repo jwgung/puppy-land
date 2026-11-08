@@ -20,7 +20,7 @@
 ## - what matters is big and in view on the phone, the desktop and the tablet, clear of the dialogue
 ##   box, the top band and the buttons: the cloud (big), the mountain's channel, the heap, the bank's
 ##   face where the piece is, the bend's inner bar and the mouth's bar;
-## - the spot: the hutton map's river spot is this experiment, the island is still not playable;
+## - the spot: the hutton map's river spot is this experiment;
 ## - the opening (the fox first on a first visit), the hand (a press on the cloud holds it: it rains
 ##   at the fixed step while held, the land stays when the finger lets go, the presses add up; the
 ##   hand guide shows a hold) and the piece (in the bank until the last stamp; the heap washed away

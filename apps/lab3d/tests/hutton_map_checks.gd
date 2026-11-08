@@ -1,6 +1,6 @@
 ## The hutton island's map (#72, 2026-11-06 layout A): content/islands/hutton.json reads without a
 ## problem (its 11 spots, every one once in the order, the lookout on the square, its features), it
-## never opens in the child's app while its spots are not experiments (Island.playable), its map
+## opens after the mechanics island now every spot is an experiment (Island.playable, #98), its map
 ## builds like the mechanics one (one static island mesh and the sky, within the mechanics map's
 ## vertices) with its coast sand, valley, volcano, river, lighthouse and sundial placed clear of the
 ## spots, paths and the three friends, a tap on a spot in the making opens nothing (its first lab,

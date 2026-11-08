@@ -21,7 +21,7 @@
 ##   thermometers and the arrows follow the model;
 ## - what matters is big and in view: the sun (the press target), the thermometers, the pinwheel and
 ##   the two boats on the phone, the desktop and the tablet, clear of the top band and the bottom;
-## - the spot: the hutton map's sea-breeze spot is this experiment, the island is still not playable;
+## - the spot: the hutton map's sea-breeze spot is this experiment;
 ## - the opening (the fox first, Puppy's two lines) and the piece (on the sailing boat until the last
 ##   stamp, the fishing boat out at the second);
 ## - a saved second stage (the screen sets the night as it opens): the night waits in the evening while

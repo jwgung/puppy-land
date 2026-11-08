@@ -187,8 +187,8 @@ func check_story_per_island() -> void:
 		"; ".join(problems))
 
 
-## The real first island plus a second laid out like it (the real hutton island's spots are not
-## experiments yet, so it never opens: hutton_map_checks): enough to check the list's logic.
+## The real first island plus a second laid out like it (its spots the mechanics labs, so it is
+## playable whatever the real hutton island's state): enough to check the list's logic.
 static func _two_islands() -> Array:
 	return [
 		{"id": "mechanics", "file": "mechanics.json"},

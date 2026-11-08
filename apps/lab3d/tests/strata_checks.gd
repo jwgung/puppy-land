@@ -21,7 +21,7 @@
 ## - what matters is big and in view: the buckets, the shell, the tank and every cliff layer inside the
 ##   phone's, the desktop's and the tablet's front view, above the bottom (the dialogue box) and the
 ##   left ones under the top band; a cliff layer and a bucket big enough for a finger;
-## - the spot: the hutton map's strata spot is this experiment, the island is still not playable;
+## - the spot: the hutton map's strata spot is this experiment;
 ## - the opening (the fox first on a first visit), the hand (a bucket dragged onto the tank pours, let go
 ##   elsewhere it goes back, a tap on a cliff layer digs it) and the piece (hidden in the cliff until the
 ##   last stamp, then out of its hole).

@@ -38,6 +38,9 @@ const FLIGHT_S := 2.0
 const AIM_SHARE := 0.15
 const LAND_TOP := 0.3
 const HIGHLIGHT_R := 1.1
+## The needle's little shake on the way up (pushed by the lava): its size and speed.
+const SHAKE_SIZE := 0.04
+const SHAKE_SPEED := 31.0
 
 var needle: Node3D
 var _glint_at := NEVER
@@ -90,7 +93,7 @@ func _jump(stamps: int) -> void:
 	if l != null and l.props != null:
 		var props: VolcanoProps = l.props
 		props.land_boost = 1.0 if done else 0.0
-		props.set_land(maxf(props.land_boost, props.shown_land if not done else 1.0))
+		props.set_land(1.0 if done else props.shown_land)
 
 
 func highlight_spots() -> Array:
@@ -102,6 +105,8 @@ func _process(delta: float) -> void:
 	if piece != null and piece_state == "held":
 		piece.position = _tip()
 		piece.scale = Vector3.ONE * (1.0 + GLINT_SWELL * pulse(_glint_at, GLINT_S))
+	if due(_glint_at + GLINT_S):
+		_glint_at = NEVER
 	if running(_scene_at):
 		_run_scene()
 
@@ -113,9 +118,9 @@ func _run_scene() -> void:
 	props.land_boost = lerpf(_land_from, 1.0, grow)
 	props.set_land(maxf(props.land_boost, props.shown_land))
 	var rise := smooth(progress(_scene_at + RISE_AT_S, RISE_S))
-	# A little shake on the way up, pushed by the lava.
 	_set_rise(rise)
-	needle.position.x += 0.04 * sin(_t * 31.0) * (1.0 - rise) * (1.0 if rise > 0.0 else 0.0)
+	if rise > 0.0:   # a little shake on the way up, pushed by the lava
+		needle.position.x += SHAKE_SIZE * sin(_t * SHAKE_SPEED) * (1.0 - rise)
 	if piece_state == "held" and _t >= _scene_at + JUMP_AT_S:
 		var spot := VolcanoProps.shore() + VolcanoProps.flow_dir() * VolcanoProps.LAND_LENGTH * AIM_SHARE
 		launch_to(Vector3(spot.x, LAND_TOP, spot.z), FLIGHT_S, LAND_TOP, true)

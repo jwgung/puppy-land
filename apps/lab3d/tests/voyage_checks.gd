@@ -49,7 +49,6 @@ func run() -> void:
 	ProgressStore.path = saved_path
 
 
-## Every spot of the first island complete and its finale (and prologue) seen.
 ## The next island still in the making (#98 made hutton playable): its entry with no map file, so it
 ## is not playable; `_made()` puts the real islands back.
 func _in_making() -> void:
@@ -60,6 +59,7 @@ func _made() -> void:
 	Island.use_index([])
 
 
+## Every spot of the first island complete and its finale (and prologue) seen.
 func _first_done() -> void:
 	ProgressStore.reset_all()
 	var store := {}
@@ -248,8 +248,19 @@ func check_finale_leads_on(_quality_script: GDScript) -> void:
 	var stays: bool = app._screen is IslandHomeScreen
 	await _free(app)
 	_made()
-	expect.call(on_map and sails and stays, "voyage: the finale's end leads to it when the next island is open, not while it is in the making",
-		"%s %s %s" % [on_map, sails, stays])
+	# The real islands with no switch (#98: every hutton spot a lab): the finale's end sails on.
+	_first_done()
+	app = await _app([])
+	app._show_map()
+	await tree.process_frame
+	home = app._screen as IslandHomeScreen
+	if home != null and home.story != null:
+		home.story.ended.emit("finale")
+	await tree.process_frame
+	var sails_real: bool = app._screen is VoyageScreen
+	await _free(app)
+	expect.call(on_map and sails and stays and sails_real, "voyage: the finale's end leads to it when the next island is open (with --islands=open and, hutton being whole, without), not while it is in the making",
+		"%s %s %s %s" % [on_map, sails, stays, sails_real])
 
 
 ## 건너뛰기 and Android back skip to the next island's map; 이야기 다시 보기 there plays it again.

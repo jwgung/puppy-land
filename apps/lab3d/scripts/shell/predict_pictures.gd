@@ -50,6 +50,7 @@ const SHADOW := ArtPalette.CAST_SHADOW  # the stick, its cap and its shadow (sha
 const STICK := Color("c98d4f")
 const CAP := Color("ff3b3b")
 const NIGHT_SHADE := Color(0.1, 0.14, 0.35, 0.55)   # the Earth's far half (the night)
+const LAVA_HILL := Color("c8501a")      # the mountain the sticky lava makes (mountain_*, #98)
 
 
 ## Draws `kind` filling `canvas` (an unknown kind draws the ground only).
@@ -868,7 +869,7 @@ static func _mountains(canvas: Control, r: Rect2, tall: bool) -> void:
 		var height: float = shapes[i][2]
 		var peak := PackedVector2Array([Vector2(x - half, ground), Vector2(x - half * 0.18, ground - height),
 			Vector2(x + half * 0.18, ground - height), Vector2(x + half, ground)])
-		canvas.draw_colored_polygon(peak, Color("c8501a") if mine else PALE)
+		canvas.draw_colored_polygon(peak, LAVA_HILL if mine else PALE)
 		if mine:
 			# The glowing top and two lava streams down its sides.
 			canvas.draw_colored_polygon(PackedVector2Array([Vector2(x - half * 0.32, ground - height * 0.8),
