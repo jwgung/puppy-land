@@ -10,7 +10,7 @@
 ## - the judging (MissionRound on the real lab): each stage's hit at its band's middle and inside its
 ##   edges, its misses (Puppy's miss line), the morning stage's evening miss with "그건 해 지는 쪽이야!
 ##   반대편!" and no line at all for a noon or a night then; no clock time among the observations;
-## - the spot: the hutton map's day-night spot is this experiment, the island is not playable yet;
+## - the spot: the hutton map's day-night spot is this experiment;
 ## - the round's opening on a first visit: the fox, Puppy's clue, Dugi's three lines (the picture on
 ##   the second), then the question; a later visit: Dugi's three lines only;
 ## - the hand: a press anywhere on the globe picks the Earth, a drag turns it one to one with the
@@ -273,11 +273,9 @@ func check_spot() -> void:
 		problems.append("day-night is not hutton's first spot")
 	if ExperimentRegistry.find(ID).is_empty():
 		problems.append("the spot is not an experiment")
-	if hutton.playable():
-		problems.append("hutton is playable before all its spots are labs")
 	if Story.SPEAKERS.get(Story.KEEPER, []).is_empty():
 		problems.append("the keeper %s is not a speaker" % Story.KEEPER)
-	expect.call(problems.is_empty(), "day-night: Hutton Island's first spot is an experiment (a lab on its map); the island is not playable until every spot is", "; ".join(problems))
+	expect.call(problems.is_empty(), "day-night: Hutton Island's first spot is an experiment (a lab on its map)", "; ".join(problems))
 
 
 # --- the opening ----------------------------------------------------------------------------------

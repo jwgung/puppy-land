@@ -21,7 +21,7 @@
 ##   dew and cold and the parcel's cloud follow the model;
 ## - what matters is big and in view: the cup, the ice to take, the mountain's summit (the piece) and
 ##   the parcel's way between the top band and the bottom on the phone, the desktop and the tablet;
-## - the spot: the hutton map's dew-cloud spot is this experiment, the island is still not playable;
+## - the spot: the hutton map's dew-cloud spot is this experiment;
 ## - the opening (the fox first on a first visit), the hands (an ice cube dropped over the cup goes
 ##   in, elsewhere it goes back; the parcel climbs the mountain in stage 3 only; the hand guide shows
 ##   the part in play) and the piece (under the dust until the last stamp).
@@ -589,9 +589,7 @@ func check_spot() -> void:
 		problems.append("dew-cloud is not hutton's fifth spot")
 	if ExperimentRegistry.find(ID).is_empty():
 		problems.append("the spot is not an experiment")
-	if hutton.playable():
-		problems.append("hutton is playable before all its spots are labs")
-	expect.call(problems.is_empty(), "dew-cloud: Hutton Island's fifth spot is an experiment (a lab on its map); the island is not playable until every spot is", "; ".join(problems))
+	expect.call(problems.is_empty(), "dew-cloud: Hutton Island's fifth spot is an experiment (a lab on its map)", "; ".join(problems))
 
 
 # --- the opening ----------------------------------------------------------------------------------

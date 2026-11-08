@@ -20,7 +20,7 @@
 ## - what matters is big and in view: the Earth at the start and at the solstices with the house's flag,
 ##   big, between the top band and the bottom (the dialogue box, the buttons), the path across the
 ##   phone, the yard window inside and above the December Earth;
-## - the spot: the hutton map's seasons spot is this experiment, the island is still not playable;
+## - the spot: the hutton map's seasons spot is this experiment;
 ## - the opening (the fox first on a first visit), the hand (the Earth follows the finger round its
 ##   path, a put-down keeps it, a cancel puts it back) and the piece (in the frozen bud until the last
 ##   stamp, the snowman at the first).
@@ -556,9 +556,7 @@ func check_spot() -> void:
 		problems.append("seasons is not hutton's third spot")
 	if ExperimentRegistry.find(ID).is_empty():
 		problems.append("the spot is not an experiment")
-	if hutton.playable():
-		problems.append("hutton is playable before all its spots are labs")
-	expect.call(problems.is_empty(), "seasons: Hutton Island's third spot is an experiment (a lab on its map); the island is not playable until every spot is", "; ".join(problems))
+	expect.call(problems.is_empty(), "seasons: Hutton Island's third spot is an experiment (a lab on its map)", "; ".join(problems))
 
 
 # --- the opening ----------------------------------------------------------------------------------

@@ -27,7 +27,8 @@
       "typhoon.json",
       "river.json",
       "strata.json",
-      "earthquake.json"
+      "earthquake.json",
+      "volcano.json"
     ]
   }
 }

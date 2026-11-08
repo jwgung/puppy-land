@@ -21,7 +21,7 @@
 ## - what matters is big and in view: the buckets, the shell, the tank and every cliff layer inside the
 ##   phone's, the desktop's and the tablet's front view, above the bottom (the dialogue box) and the
 ##   left ones under the top band; a cliff layer and a bucket big enough for a finger;
-## - the spot: the hutton map's strata spot is this experiment, the island is still not playable;
+## - the spot: the hutton map's strata spot is this experiment;
 ## - the opening (the fox first on a first visit), the hand (a bucket dragged onto the tank pours, let go
 ##   elsewhere it goes back, a tap on a cliff layer digs it) and the piece (hidden in the cliff until the
 ##   last stamp, then out of its hole).
@@ -571,9 +571,7 @@ func check_spot() -> void:
 		problems.append("strata is not hutton's ninth spot")
 	if ExperimentRegistry.find(ID).is_empty():
 		problems.append("the spot is not an experiment")
-	if hutton.playable():
-		problems.append("hutton is playable before all its spots are labs")
-	expect.call(problems.is_empty(), "strata: Hutton Island's ninth spot is an experiment (a lab on its map); the island is not playable until every spot is", "; ".join(problems))
+	expect.call(problems.is_empty(), "strata: Hutton Island's ninth spot is an experiment (a lab on its map)", "; ".join(problems))
 
 
 # --- the opening ----------------------------------------------------------------------------------

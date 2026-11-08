@@ -1,6 +1,6 @@
 ## The hutton island's map (#72, 2026-11-06 layout A): content/islands/hutton.json reads without a
 ## problem (its 11 spots, every one once in the order, the lookout on the square, its features), it
-## never opens in the child's app while its spots are not experiments (Island.playable), its map
+## opens after the mechanics island now every spot is an experiment (Island.playable, #98), its map
 ## builds like the mechanics one (one static island mesh and the sky, within the mechanics map's
 ## vertices) with its coast sand, valley, volcano, river, lighthouse and sundial placed clear of the
 ## spots, paths and the three friends, a tap on a spot in the making opens nothing (its first lab,
@@ -14,8 +14,8 @@ const PHONE := Vector2(1560, 720)
 const ORDER := ["day-night", "shadow-clock", "seasons", "water-cycle", "dew-cloud", "sea-breeze", "typhoon",
 	"river", "strata", "earthquake", "volcano"]
 const ZONES := {"hill": "hill", "coast": "coast", "valley": "valley"}
-## The hutton spots that are experiments so far (#74, #86, #87, #91, #92, #93, #94, #95, #96, #97); the island opens when all are.
-const EXPERIMENTS := ["day-night", "shadow-clock", "seasons", "water-cycle", "dew-cloud", "sea-breeze", "typhoon", "river", "strata", "earthquake"]
+## The hutton spots that are experiments so far (#74, #86, #87, #91, #92, #93, #94, #95, #96, #97, #98); the island opens when all are.
+const EXPERIMENTS := ["day-night", "shadow-clock", "seasons", "water-cycle", "dew-cloud", "sea-breeze", "typhoon", "river", "strata", "earthquake", "volcano"]
 const LAB_VERTS_MAX := 30000   # lab_world_checks.VERTS_MAX
 ## The mechanics island's map and two of its lab worlds (built at the origin) as they were before the
 ## hutton island (#72). The hutton features add nothing to an island without them; a change here must
@@ -56,7 +56,7 @@ func run() -> void:
 	Island.use_index([])
 	check_hutton_data()
 	check_features_checked()
-	check_never_opens()
+	check_opens()
 	check_paid_before_playable()
 	await check_mechanics_pinned()
 	await check_hutton_map()
@@ -135,9 +135,11 @@ func check_paid_before_playable() -> void:
 	expect.call(problems.is_empty(), "islands: a later island (opens_after) is playable only with its product set (ADR 0005, the payment #77)", "; ".join(problems))
 
 
-## Not every spot is an experiment yet (only EXPERIMENTS): the island is not playable and never
-## opens, even with every mechanics spot complete; the mechanics island is playable and open.
-func check_never_opens() -> void:
+## Every spot is an experiment (#98, the last): the island is playable and opens once the mechanics
+## island is complete (not before). An island still in the making (here: an entry with no map file)
+## is not playable and never opens, even after the mechanics island. The mechanics island is playable
+## and open.
+func check_opens() -> void:
 	var full := {}
 	for spot in Island.by_id("mechanics").spots():
 		full[spot] = MissionRound.missions(ExperimentRegistry.find(spot)).get("stages", []).size()
@@ -145,10 +147,14 @@ func check_never_opens() -> void:
 	var labs := Island.by_id("hutton").spots().filter(func(spot: String) -> bool: return not ExperimentRegistry.find(spot).is_empty())
 	if labs != EXPERIMENTS:
 		problems.append("the hutton spots that are experiments: %s (want %s)" % [str(labs), str(EXPERIMENTS)])
-	if Island.by_id("hutton").playable():
-		problems.append("hutton is playable")
-	if Island.is_open("hutton", full):
-		problems.append("hutton opens after the mechanics island")
+	if not Island.by_id("hutton").playable():
+		problems.append("hutton is not playable")
+	if not Island.is_open("hutton", full) or Island.is_open("hutton", {}):
+		problems.append("hutton open after the mechanics island %s, before %s" % [Island.is_open("hutton", full), Island.is_open("hutton", {})])
+	Island.use_index([{"id": "mechanics", "file": "mechanics.json"}, {"id": "making", "opens_after": "mechanics"}])
+	if Island.by_id("making").playable() or Island.is_open("making", full):
+		problems.append("an island in the making is playable or opens")
+	Island.use_index([])
 	if not Island.by_id("mechanics").playable() or not Island.is_open("mechanics", {}):
 		problems.append("the mechanics island is not playable or not open")
 	if str(Island.entry("hutton").get("opens_after", "")) != "mechanics":
@@ -167,7 +173,7 @@ func check_never_opens() -> void:
 			problems.append("%s: Play build %s, dev build %s" % [arg, Quality.dev_arg(PackedStringArray([arg]), key, true), Quality.dev_arg(PackedStringArray([arg]), key, false)])
 	if Quality.dev_arg(PackedStringArray(["--quality=low"]), "quality", false) != "":
 		problems.append("--quality is read as a developer switch")
-	expect.call(problems.is_empty(), "hutton island: in the making (its spots are not experiments) it never opens in the app, even after the mechanics island; --island=hutton shows its map (never in the Play build, nor --progress=complete or --ask=show)",
+	expect.call(problems.is_empty(), "hutton island: every spot an experiment, it opens after the mechanics island (an island in the making never does); --island=hutton shows its map (never in the Play build, nor --progress=complete or --ask=show)",
 		"; ".join(problems))
 
 

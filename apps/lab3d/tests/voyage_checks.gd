@@ -49,6 +49,16 @@ func run() -> void:
 	ProgressStore.path = saved_path
 
 
+## The next island still in the making (#98 made hutton playable): its entry with no map file, so it
+## is not playable; `_made()` puts the real islands back.
+func _in_making() -> void:
+	Island.use_index([{"id": ProgressStore.FIRST_ISLAND, "file": "mechanics.json"}, {"id": NEXT, "opens_after": ProgressStore.FIRST_ISLAND, "product": "island_hutton"}])
+
+
+func _made() -> void:
+	Island.use_index([])
+
+
 ## Every spot of the first island complete and its finale (and prologue) seen.
 func _first_done() -> void:
 	ProgressStore.reset_all()
@@ -104,9 +114,12 @@ func check_due_rule() -> void:
 	Story.enabled = true
 	_first_done()
 	Island.set_dev_open(false)
+	_in_making()
 	var in_making := Story.voyage_due(ProgressStore.load()) == ""   # the next island is not playable yet (#72)
+	_made()
+	var due := Story.voyage_due(ProgressStore.load()) == NEXT   # every hutton spot a lab (#98): open
 	Island.set_dev_open(true)
-	var due := Story.voyage_due(ProgressStore.load()) == NEXT
+	due = due and Story.voyage_due(ProgressStore.load()) == NEXT
 	ProgressStore.set_mark(ProgressStore.STORY, "finale", false)
 	var no_finale := Story.voyage_due(ProgressStore.load()) == ""
 	ProgressStore.set_mark(ProgressStore.STORY, "finale", true)
@@ -224,6 +237,7 @@ func check_finale_leads_on(_quality_script: GDScript) -> void:
 	await _free(app)
 	# Without the next island open (in the making): the map stays.
 	_first_done()
+	_in_making()
 	app = await _app([])
 	app._show_map()
 	await tree.process_frame
@@ -233,8 +247,20 @@ func check_finale_leads_on(_quality_script: GDScript) -> void:
 	await tree.process_frame
 	var stays: bool = app._screen is IslandHomeScreen
 	await _free(app)
-	expect.call(on_map and sails and stays, "voyage: the finale's end leads to it when the next island is open, not while it is in the making",
-		"%s %s %s" % [on_map, sails, stays])
+	_made()
+	# The real islands with no switch (#98: every hutton spot a lab): the finale's end sails on.
+	_first_done()
+	app = await _app([])
+	app._show_map()
+	await tree.process_frame
+	home = app._screen as IslandHomeScreen
+	if home != null and home.story != null:
+		home.story.ended.emit("finale")
+	await tree.process_frame
+	var sails_real: bool = app._screen is VoyageScreen
+	await _free(app)
+	expect.call(on_map and sails and stays and sails_real, "voyage: the finale's end leads to it when the next island is open (with --islands=open and, hutton being whole, without), not while it is in the making",
+		"%s %s %s %s" % [on_map, sails, stays, sails_real])
 
 
 ## 건너뛰기 and Android back skip to the next island's map; 이야기 다시 보기 there plays it again.
@@ -287,6 +313,7 @@ func check_title_islands(_quality_script: GDScript) -> void:
 	await _free(app)
 	Story.mark_voyage_seen(NEXT)
 	# The next island in the making: its card locked, with the first island's name in the condition.
+	_in_making()
 	app = await _app([])
 	var title := app._screen as TitleScreen
 	var shown := title.islands_button != null and title.islands_button.visible
@@ -320,6 +347,7 @@ func check_title_islands(_quality_script: GDScript) -> void:
 	await tree.process_frame
 	var back_closes: bool = app._screen is TitleScreen and title.island_cards == null and title.logo.visible
 	await _free(app)
+	_made()
 	# The next island open: its card's button makes it the island in use and opens its map.
 	app = await _app(["--islands=open"])
 	title = app._screen as TitleScreen

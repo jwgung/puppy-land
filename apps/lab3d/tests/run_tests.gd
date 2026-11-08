@@ -125,8 +125,9 @@
 ##    is complete, the island-level saves keyed by island (an old save is the first island's), no
 ##    experiment on two islands, the island's story file.
 ## 22c. the hutton island's map (tests/hutton_map_checks.gd, #72 2026-11-06): content/islands/hutton.json
-##    (11 spots once in the order, the lookout on the square, the features checked), never open while its
-##    spots are not experiments, its map (one mesh within the mechanics map's vertices; coast sand, valley,
+##    (11 spots once in the order, the lookout on the square, the features checked), open after the
+##    first island, now that every spot is a lab (an island in the making never opens), its map (one
+##    mesh within the mechanics map's vertices; coast sand, valley,
 ##    volcano, river to the sea, lighthouse, sundial clear of the spots and the three), a tap opens
 ##    nothing, its coast and valley labs' ground.
 ## 22d. the hutton island's pieces (tests/sundial_piece_checks.gd, #101 2026-11-07): Island.piece (hutton
@@ -185,6 +186,11 @@
 ##    the judging of the three stages, the Jolt house posed on the model and falling with it, the
 ##    buttons, no number on the screen, the table and the house in view, the volcano's stripes, the
 ##    spot, the opening lines, the slingshot and the piece.
+## 24k. 화산 (tests/volcano_checks.gd, #98 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 11, the rules of the small model and the big volcano, the pump (press
+##    and hold), the judging of the three stages (the wrong magma's line), the magma button, the site
+##    (the big volcano at night on stage 3), no number on the screen, what matters in view, the spot,
+##    the opening lines (story.more), the hand and the piece (the needle pushed up).
 ## Times are engine fixed steps (60 Hz), independent of rendering FPS.
 extends SceneTree
 
@@ -373,7 +379,7 @@ func _run() -> void:
 	_expect(payment != null and payment.can_instantiate(), "payment checks compile", "")
 	if payment != null and payment.can_instantiate():
 		await payment.new(self, _expect).run()
-	print("== the hutton island's map (#72: its layout, grounds and features, never open while in the making) ==")
+	print("== the hutton island's map (#72: its layout, grounds and features, open after the first island, never while in the making) ==")
 	var hutton: GDScript = load("res://tests/hutton_map_checks.gd")
 	_expect(hutton != null and hutton.can_instantiate(), "hutton map checks compile", "")
 	if hutton != null and hutton.can_instantiate():
@@ -453,6 +459,11 @@ func _run() -> void:
 	_expect(earthquake != null and earthquake.can_instantiate(), "earthquake checks compile", "")
 	if earthquake != null and earthquake.can_instantiate():
 		await earthquake.new(self, _expect).run()
+	print("== 화산 (#98): Hutton Island's volcano lab, its lines, rules, pump, judging, site, view, hand and piece ==")
+	var volcano: GDScript = load("res://tests/volcano_checks.gd")
+	_expect(volcano != null and volcano.can_instantiate(), "volcano checks compile", "")
+	if volcano != null and volcano.can_instantiate():
+		await volcano.new(self, _expect).run()
 	print("== the hand guide (2026-10-30: the gesture on the lab's object, once and after a quiet while; the map's tap) ==")
 	var hand: GDScript = load("res://tests/hand_guide_checks.gd")
 	_expect(hand != null and hand.can_instantiate(), "hand guide checks compile", "")

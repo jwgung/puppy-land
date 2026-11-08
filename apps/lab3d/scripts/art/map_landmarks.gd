@@ -68,6 +68,8 @@ static func add(b: ArtMeshBuilder, id: String, xf: Transform3D) -> float:
 			return _strata_cliff(b, xf)
 		"earthquake":
 			return _shake_house(b, xf)
+		"volcano":
+			return _lava_model(b, xf)
 	_rod(b, xf, Vector3.ZERO, Vector3(0.0, 1.0, 0.0), 0.08, ArtPalette.BLUE)
 	_ball(b, xf, Vector3(0.0, 1.15, 0.0), 0.2, ArtPalette.WHITE)
 	return 1.35
@@ -493,6 +495,18 @@ static func _shake_house(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	for side: float in [-1.0, 1.0]:   # the roof's two slopes
 		b.add_rounded_box(xf * Transform3D(Basis(Vector3.BACK, -side * 0.6), Vector3(side * 0.2, 1.02, 0.0)), Vector3(0.56, 0.07, 0.5), 0.0, 0, ArtPalette.RED, ArtPalette.RED_TOP)
 	return 1.4
+
+## The hutton island's 화산 (#98, "연기 나는 산"): the lab's little volcano model on its round table,
+## an orange stream of lava down its side, and the red button of the magma pump beside it.
+static func _lava_model(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.add_cylinder(xf, 0.62, 0.62, 0.14, 12, ArtPalette.WOOD_GRAIN, true, ArtPalette.WOOD)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, 0.14, 0.0)), 0.52, 0.12, 0.62, 10, ArtPalette.VOLCANO, true, ArtPalette.CRATER)
+	_rod(b, xf, Vector3(0.1, 0.72, 0.06), Vector3(0.42, 0.2, 0.26), 0.06, ArtPalette.ORANGE)
+	_ball(b, xf, Vector3(0.0, 0.8, 0.0), 0.1, ArtPalette.YELLOW)
+	_ball(b, xf, Vector3(0.06, 1.05, 0.0), 0.13, ArtPalette.SMOKE)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.55, 0.0, 0.45)), 0.16, 0.16, 0.3, 8, ArtPalette.IRON)
+	_ball(b, xf, Vector3(0.55, 0.33, 0.45), 0.12, ArtPalette.RED)
+	return 1.25
 
 
 # --- helpers ---------------------------------------------------------------------------------

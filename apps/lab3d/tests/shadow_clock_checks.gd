@@ -15,7 +15,7 @@
 ##   never a stamp at any sun, "긴 막대를 골라 봐!"); not judged while held; no clock time observed;
 ## - the condition button: the stick's height changes and the sun stays (the shadow grows 2.5 times);
 ##   처음으로 keeps the stick; the picture buttons are the short and the long stick;
-## - the spot: hutton's second spot is this experiment, the island still not playable;
+## - the spot: hutton's second spot is this experiment;
 ## - the opening: first visit the fox, Puppy, the fox (her name tag from ui.json speaker.fox), Dugi's
 ##   two lines, then the question; later visits Dugi's two lines;
 ## - the hand: a press on the sun picks it, a drag takes it along its path (to the noon sun, to the
@@ -398,9 +398,7 @@ func check_spot() -> void:
 		problems.append("shadow-clock is not hutton's second spot")
 	if ExperimentRegistry.find(ID).is_empty():
 		problems.append("the spot is not an experiment")
-	if hutton.playable():
-		problems.append("hutton is playable before all its spots are labs")
-	expect.call(problems.is_empty(), "shadow-clock: Hutton Island's second spot is an experiment (a lab on its map); the island is not playable until every spot is", "; ".join(problems))
+	expect.call(problems.is_empty(), "shadow-clock: Hutton Island's second spot is an experiment (a lab on its map)", "; ".join(problems))
 
 
 # --- the opening ----------------------------------------------------------------------------------

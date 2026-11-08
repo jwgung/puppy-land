@@ -124,6 +124,12 @@ func check_keys() -> void:
 	named["earthquake.shake.none"] = "t"
 	for id in ["rock", "sand"]:   # the ground's words
 		named["earthquake.ground." + id] = "t"
+	for id in ["ready", "small", "wide", "tall", "plugged", "thin", "short", "sea"]:   # the volcano's card words (VolcanoLab.observations)
+		named["volcano.status." + id] = "t"
+	for word in ["none", "little", "middle", "lots"]:   # how much magma came up
+		named["volcano.amount." + word] = "t"
+	for kind in VolcanoModel.KINDS:   # the magma's words
+		named["volcano.magma." + kind] = "t"
 	for id in Island.ids():   # the islands' names and fields (섬 고르기, IslandCards, #75)
 		named["island.%s.name" % id] = "t"
 		named["island.%s.about" % id] = "t"

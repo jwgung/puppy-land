@@ -20,7 +20,7 @@
 ## - what matters is big and in view on the phone, the desktop and the tablet, clear of the dialogue
 ##   box, the top band and the buttons: the cloud (big), the mountain's channel, the heap, the bank's
 ##   face where the piece is, the bend's inner bar and the mouth's bar;
-## - the spot: the hutton map's river spot is this experiment, the island is still not playable;
+## - the spot: the hutton map's river spot is this experiment;
 ## - the opening (the fox first on a first visit), the hand (a press on the cloud holds it: it rains
 ##   at the fixed step while held, the land stays when the finger lets go, the presses add up; the
 ##   hand guide shows a hold) and the piece (in the bank until the last stamp; the heap washed away
@@ -602,9 +602,7 @@ func check_spot() -> void:
 		problems.append("river is not hutton's eighth spot")
 	if ExperimentRegistry.find(ID).is_empty():
 		problems.append("the spot is not an experiment")
-	if hutton.playable():
-		problems.append("hutton is playable before all its spots are labs")
-	expect.call(problems.is_empty(), "river: Hutton Island's eighth spot is an experiment (a lab on its map); the island is not playable until every spot is", "; ".join(problems))
+	expect.call(problems.is_empty(), "river: Hutton Island's eighth spot is an experiment (a lab on its map)", "; ".join(problems))
 
 
 # --- the opening ----------------------------------------------------------------------------------

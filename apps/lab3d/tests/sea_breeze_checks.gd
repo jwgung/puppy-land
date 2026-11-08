@@ -21,7 +21,7 @@
 ##   thermometers and the arrows follow the model;
 ## - what matters is big and in view: the sun (the press target), the thermometers, the pinwheel and
 ##   the two boats on the phone, the desktop and the tablet, clear of the top band and the bottom;
-## - the spot: the hutton map's sea-breeze spot is this experiment, the island is still not playable;
+## - the spot: the hutton map's sea-breeze spot is this experiment;
 ## - the opening (the fox first, Puppy's two lines) and the piece (on the sailing boat until the last
 ##   stamp, the fishing boat out at the second);
 ## - a saved second stage (the screen sets the night as it opens): the night waits in the evening while
@@ -605,9 +605,7 @@ func check_spot() -> void:
 		problems.append("sea-breeze is not hutton's sixth spot")
 	if ExperimentRegistry.find(ID).is_empty():
 		problems.append("the spot is not an experiment")
-	if hutton.playable():
-		problems.append("hutton is playable before all its spots are labs")
-	expect.call(problems.is_empty(), "sea breeze: Hutton Island's sixth spot is an experiment (a lab on its map); the island is not playable until every spot is", "; ".join(problems))
+	expect.call(problems.is_empty(), "sea breeze: Hutton Island's sixth spot is an experiment (a lab on its map)", "; ".join(problems))
 
 
 # --- the opening ----------------------------------------------------------------------------------
