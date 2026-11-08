@@ -173,6 +173,8 @@ func _ready() -> void:
 	if Story.enabled:
 		story = StoryDirector.new(self)
 		add_child(story)
+		story.guardian_requested.connect(func() -> void:   # #77: the guardian's check, then the offer
+			IslandOffer.open_for_guardian(self, Island.current_id()))
 		story.refresh()
 		if play_prologue_on_open:
 			story.play_prologue()
@@ -1045,8 +1047,15 @@ func _walk_to_spot(index: int) -> void:
 		shake_spot(index)
 		SoundBoard.play(&"stop")   # a soft knock
 		return
+	if story != null and story.waits_for_tomorrow(_spots[index].id):
+		story.say_today()   # #77: today's new spot of an island not bought is used
+		shake_spot(index)
+		SoundBoard.play(&"stop")
+		return
 	if story != null:
 		story.hush()
+		if _spots[index].id == story.next_id:
+			DailyLimit.use(Island.current_id(), _spots[index].id)   # the day's new spot goes to it
 	_walk_spot = index
 	_route = route(Vector2(cat.position.x, cat.position.z), Vector2(_spots[index].stand.x, _spots[index].stand.z))
 	_route_at = PackedFloat32Array([0.0])

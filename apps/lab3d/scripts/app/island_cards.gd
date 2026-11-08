@@ -6,8 +6,8 @@
 ## 열려요"); the last card, 다음 섬, has no picture of its own (a grey island and a lock) and opens after
 ## the last island of the list. A card's button emits `chosen` (App makes it the island in use and
 ## opens its map); ← 돌아가기 emits `back_requested` (TitleScreen closes the cards). Android back
-## closes them too, through App (TitleScreen.hide_islands, no signal). The payment's words are not
-## here yet (#77, ADR 0005).
+## closes them too, through App (TitleScreen.hide_islands, no signal). The payment (#77):
+## an open island not bought has a small 보호자 in its picture's corner (ADR 0005: IslandOffer).
 class_name IslandCards
 extends Control
 
@@ -39,6 +39,9 @@ const CARD_SEPARATION := 6
 const PICTURE_RADIUS := 14
 const THUMB_ASPECT := 0.72
 const NAME_SIZE := 30
+## 보호자 (#77): small, in the picture's top right corner (the star pieces are top left).
+const GUARDIAN_HEIGHT := 46.0
+const GUARDIAN_INSET := 8
 ## The star pieces found, small in the picture's corner.
 const EMBLEM_SCALE := 0.6
 const EMBLEM_AT := Vector2(8.0, 8.0)
@@ -64,6 +67,8 @@ var row: HBoxContainer
 ## Island id ("" for 다음 섬) -> its card's button (null when locked) (tests).
 var buttons: Dictionary = {}
 var cards: Dictionary = {}
+## Island id -> its 보호자 button (an open island not bought, #77; tests).
+var guardians: Dictionary = {}
 var _entries: Array = []
 
 
@@ -116,6 +121,8 @@ func _ready() -> void:
 		row.add_child(card)
 	_layout()
 	resized.connect(_layout)
+	if IslandStore.instance != null:
+		IslandStore.instance.changed.connect(_on_store_changed)
 	_settle()
 
 
@@ -205,7 +212,9 @@ func _picture(entry: Dictionary) -> Panel:
 		lock.name = "Lock"
 		lock.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		frame.add_child(lock)
-	elif int(entry.total) > 0:
+	if not locked and entry.id != "" and not IslandStore.owns(entry.id):
+		frame.add_child(_guardian_button(entry.id))
+	if not locked and int(entry.total) > 0:
 		var emblem := PieceArt.emblem(str(entry.piece), int(entry.total))
 		emblem.set_filled(int(entry.pieces))
 		emblem.pivot_offset = Vector2.ZERO
@@ -213,6 +222,25 @@ func _picture(entry: Dictionary) -> Panel:
 		emblem.position = EMBLEM_AT
 		frame.add_child(emblem)
 	return frame
+
+
+## The small 보호자 at the picture's top right of an open island not bought (#77): the guardian's check,
+## then the island's offer. Gone once the island is bought.
+func _guardian_button(id: String) -> Button:
+	var guardian := Ui.button(Locale.t("guardian.button"), "TitleButton", GUARDIAN_HEIGHT)
+	guardian.name = "Guardian"
+	guardian.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT, Control.PRESET_MODE_MINSIZE, GUARDIAN_INSET)
+	guardian.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	guardian.pressed.connect(func() -> void: IslandOffer.open_for_guardian(self, id))
+	guardians[id] = guardian
+	return guardian
+
+
+## The store changed (a purchase): a bought island's 보호자 goes.
+func _on_store_changed() -> void:
+	for id in guardians:
+		if is_instance_valid(guardians[id]):
+			guardians[id].visible = not IslandStore.owns(id)
 
 
 ## The island's name and, under it, its field (or, when locked, what opens it).
@@ -274,12 +302,17 @@ func _layout() -> void:
 
 ## The island's picture: its map rendered once in its own small world from the title's 3/4 view.
 func _thumbnail(id: String) -> Texture2D:
+	return thumbnail(self, id)
+
+
+## The picture of `id`, its small world under `host` (the cards, the island's offer: IslandOffer).
+static func thumbnail(host: Node, id: String) -> Texture2D:
 	var sub := SubViewport.new()
 	sub.name = "Thumb_%s" % id
 	sub.size = THUMB_PIXELS
 	sub.own_world_3d = true
 	sub.render_target_update_mode = SubViewport.UPDATE_ONCE
-	add_child(sub)
+	host.add_child(sub)
 	sub.add_child(MapIsland.make_environment())
 	var world := Node3D.new()
 	sub.add_child(world)

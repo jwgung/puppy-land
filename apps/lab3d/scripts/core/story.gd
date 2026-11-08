@@ -266,9 +266,19 @@ static func next_spot(progress: Dictionary) -> String:
 	return ""
 
 
-## The spot opens from the map: its piece is found, or it is the next one.
+## The spot opens from the map: its piece is found, or it is the next one and today's new spot on an
+## island not bought (DailyLimit, #77).
 static func enterable(progress: Dictionary, id: String) -> bool:
-	return id in found(progress) or id == next_spot(progress)
+	return id in found(progress) or (id == next_spot(progress) and DailyLimit.allows(Island.current_id(), id))
+
+
+## Puppy's line when the next spot waits for tomorrow (#77: an island not bought, today's new spot used).
+static func today_line() -> String:
+	return str(_load().get("map_today", ""))
+
+
+static func today_face() -> String:
+	return face_or_default(_load().get("map_today_face"))
 
 
 ## Puppy's line when a locked spot is tapped.
@@ -310,6 +320,7 @@ static func puppy_lines() -> Array:
 			if line != "":
 				out.append(line)
 	out.append(wrong_line())
+	out.append(today_line())
 	return out
 
 

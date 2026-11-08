@@ -123,10 +123,16 @@ static func cmdline_value(key: String) -> String:
 
 
 ## The developer switches (DEV_KEYS: another island's map, a finished progress, the AI question
-## button, every island open: --islands=open, #75) are read only outside the Play build (feature
-## "play"): a launch intent cannot open an island, write the child's progress or show the button on
-## a child's device (#72 review).
-const DEV_KEYS := ["island", "progress", "ask", "islands"]
+## button, every island open: --islands=open, #75, the stand-in store: --store=, #77) are read only
+## outside the Play build (feature "play"): a launch intent cannot open an island, write the child's
+## progress or show the button on a child's device (#72 review).
+const DEV_KEYS := ["island", "progress", "ask", "islands", "store"]
+## The launch args the Play build reads at all (#77): the render quality, the fps overlay and the
+## screen size. Every other arg (--experiment=, --screen=, --demo-*, --progress=, --ctl-*, --camera,
+## --sound=, --auto-*, --sidebar, --scroll-to and the DEV_KEYS) is a measurement's or a developer's:
+## in the Play build a launch intent could open a lab past the map's order and the day's limit or
+## turn the story off. Measurements use the "Android" preset (no "play" feature).
+const PLAY_ARGS := ["--quality=", "--q-", "--fps=", "--ui-size="]
 
 
 ## Value of the developer switch `--<key>=` (DEV_KEYS) in this build ("" in the Play build).
@@ -159,8 +165,17 @@ static func all_args() -> PackedStringArray:
 		var extra = intent.getStringExtra("opargs") if intent else null
 		if extra is String:
 			args.append_array(extra.split(",", false))
-	_args_cache = args
-	return args
+	_args_cache = play_args(args) if OS.has_feature("play") else args
+	return _args_cache
+
+
+## The args the Play build keeps (PLAY_ARGS; tests call it on their own args).
+static func play_args(args: PackedStringArray) -> PackedStringArray:
+	var out := PackedStringArray()
+	for arg in args:
+		if PLAY_ARGS.any(func(prefix: String) -> bool: return arg.begins_with(prefix)):
+			out.append(arg)
+	return out
 
 
 static var _args_cache = null

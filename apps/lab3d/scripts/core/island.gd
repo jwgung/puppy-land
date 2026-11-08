@@ -6,15 +6,16 @@
 ##
 ## The islands are listed in content/islands/index.json (#69, 2026-11-06): in order, each with its
 ## layout file, the island it opens after (every spot of that one complete, computed from the stamps:
-## nothing is saved for it) and its product (ADR 0005; nothing reads it yet: the payment, #77). `current()` is the island in use: the one
-## saved in the progress ([map] island), else the first.
+## nothing is saved for it) and its product (ADR 0005, #77: IslandStore; an island not bought opens one
+## new spot a day, DailyLimit). `current()` is the island in use: the one saved in the progress
+## ([map] island) when it is open, else the first.
 ##
 ## An island in the making (#72, 2026-11-06: the hutton island's map before its experiments): its spots
 ## are laid out but not every spot is an experiment yet (`playable()` false). It never opens in the
 ## child's app (is_open), whatever the island before it; a developer sees its map with
 ## --island=<id> (App: this run only, nothing saved, no story, the bench store; never in the Play
-## build). Before such an island becomes playable its `product` must be set (the payment, #77): until
-## then it would open for free.
+## build). Before such an island becomes playable its `product` must be set (#77): else it would have
+## no day limit.
 class_name Island
 extends RefCounted
 
@@ -135,7 +136,9 @@ static func current_id() -> String:
 	if _current_id == "":
 		var saved := ProgressStore.current_island()
 		var all := ids()
-		_current_id = saved if saved in all else (str(all[0]) if not all.is_empty() else "")
+		# A saved island that is not open (#77: a hand-edited or restored save) is not the island in use.
+		var usable := saved in all and (saved == str(all[0]) or is_open(saved, ProgressStore.load()))
+		_current_id = saved if usable else (str(all[0]) if not all.is_empty() else "")
 	return _current_id
 
 

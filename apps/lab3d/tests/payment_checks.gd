@@ -1,0 +1,410 @@
+## The payment (#77, ADR 0005, 2026-11-08 decisions): the Play build's launch args, the islands bought
+## (IslandStore: PURCHASED only, pending, refunds, acknowledge, the cache), one new spot a day on an
+## island not bought (DailyLimit, Story.enterable), Puppy's "today" line with 보호자 on the map, the
+## guardian's check (ParentalGate), the island's offer (IslandOffer) and 보호자 on 섬 고르기's card.
+extends RefCounted
+
+const UI_THEME := "res://scripts/app/ui_theme.gd"
+const QualityScript := preload("res://scripts/core/quality.gd")
+const SIZES := {"phone": Vector2(1560, 720), "tablet": Vector2(1152, 720), "desktop": Vector2(1280, 720)}
+const CACHE := "user://purchases-test.cfg"
+
+var tree: SceneTree
+var expect: Callable
+
+
+func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:
+	tree = scene_tree
+	expect = expect_fn
+
+
+func run() -> void:
+	var saved_path := ProgressStore.path
+	ProgressStore.path = ProgressStore.TEST_PATH
+	ProgressStore.reset_all()
+	check_play_args()
+	check_products()
+	check_store_states()
+	check_daily_limit()
+	check_story_today()
+	check_gate()
+	await check_offer()
+	await check_cards()
+	await check_today_box()
+	DailyLimit.today_override = ""
+	Island.set_dev_open(false)
+	Island.use_index([])
+	Island.forget_current()
+	Story.forget_loaded()
+	ProgressStore.reset_all()
+	ProgressStore.path = saved_path
+
+
+func _frames(n: int) -> void:
+	for i in n:
+		await tree.process_frame
+
+
+## Two islands: the mechanics island and a paid one laid out like it (the hutton entry with its product).
+static func _paid_index() -> Array:
+	return [
+		{"id": "mechanics", "file": "mechanics.json"},
+		{"id": "hutton", "file": "mechanics.json", "opens_after": "mechanics", "product": "island_hutton"},
+	]
+
+
+## A store with the stand-in backend `mode` (no file but CACHE).
+func _store(mode: String) -> IslandStore:
+	if FileAccess.file_exists(CACHE):
+		DirAccess.remove_absolute(CACHE)
+	var store := IslandStore.new()
+	store.cache_path = CACHE
+	if mode != "":
+		store.backend = IslandStore.FakeStore.new(store, mode)
+	tree.root.add_child(store)
+	return store
+
+
+func _drop(store: IslandStore) -> void:
+	tree.root.remove_child(store)
+	store.free()
+	if FileAccess.file_exists(CACHE):
+		DirAccess.remove_absolute(CACHE)
+
+
+## The Play build reads only the quality, fps and screen-size args (#77 Q6): a launch intent cannot
+## open a lab, a demo, another island, the stand-in store or turn the story off.
+func check_play_args() -> void:
+	var args := PackedStringArray(["--quality=high", "--q-msaa=2", "--fps=1", "--ui-size=large", "--experiment=sea_breeze",
+		"--screen=settings", "--demo-story=map", "--demo-title", "--progress=bench", "--ctl-angle=30", "--camera=top",
+		"--sound=0", "--auto-drag=1", "--islands=open", "--island=hutton", "--store=owned", "--ask=show"])
+	var kept := Array(QualityScript.play_args(args))
+	var problems := []
+	if kept != ["--quality=high", "--q-msaa=2", "--fps=1", "--ui-size=large"]:
+		problems.append("kept %s" % str(kept))
+	if QualityScript.dev_arg(args, "store", true) != "" or QualityScript.dev_arg(args, "store", false) != "owned":
+		problems.append("--store= is not a developer switch")
+	if Story.measurement_run(QualityScript.play_args(args)):
+		problems.append("a Play launch can still turn the story off")
+	expect.call(problems.is_empty(), "payment: the Play build reads only --quality / --q-* / --fps / --ui-size (no lab, demo, store or story switch)", "; ".join(problems))
+
+
+## The hutton island is for sale as island_hutton; the first island is free; every playable island
+## after the first has a product (else it would have no day limit).
+func check_products() -> void:
+	var problems := []
+	if IslandStore.product_of("hutton") != "island_hutton":
+		problems.append("hutton's product %s" % IslandStore.product_of("hutton"))
+	if IslandStore.product_of("mechanics") != "" or not IslandStore.owns("mechanics"):
+		problems.append("the first island is not free")
+	for id in Island.ids().slice(1):
+		if Island.by_id(id).playable() and IslandStore.product_of(id) == "":
+			problems.append("%s is playable with no product" % id)
+	if IslandStore.owns("hutton"):
+		problems.append("hutton owned with no store")
+	Island.set_dev_open(true)
+	if not IslandStore.owns("hutton"):
+		problems.append("--islands=open does not lift the day limit")
+	Island.set_dev_open(false)
+	expect.call(problems.is_empty(), "payment: hutton is sold as island_hutton, the first island is free, no paid island without a product", "; ".join(problems))
+
+
+## Only PURCHASED counts; a pending purchase is not bought; a purchase missing from a whole query is
+## gone (a refund); an unacknowledged one is acknowledged; the cache keeps what was bought until the
+## store answers.
+func check_store_states() -> void:
+	Island.use_index(_paid_index())
+	var problems := []
+	var store := _store("")
+	var acks := []
+	store.backend = Recorder.new(acks)
+	store.purchases_updated([{"product_ids": ["island_hutton"], "purchase_state": IslandStore.PENDING, "purchase_token": "p"}], false)
+	if IslandStore.owns("hutton") or not IslandStore.waiting("hutton"):
+		problems.append("pending: owns %s waiting %s" % [IslandStore.owns("hutton"), IslandStore.waiting("hutton")])
+	store.purchases_updated([{"product_ids": ["island_hutton"], "purchase_state": IslandStore.PURCHASED, "purchase_token": "t", "is_acknowledged": false}], false)
+	if not IslandStore.owns("hutton") or IslandStore.waiting("hutton"):
+		problems.append("purchased: owns %s waiting %s" % [IslandStore.owns("hutton"), IslandStore.waiting("hutton")])
+	if acks != ["t"]:
+		problems.append("acknowledged %s" % str(acks))
+	store.purchases_updated([{"product_ids": ["island_hutton"], "purchase_state": IslandStore.PURCHASED, "purchase_token": "t", "is_acknowledged": true}], true)
+	if acks != ["t"]:
+		problems.append("acknowledged again %s" % str(acks))
+	_drop(store)
+	# The cache: a store that cannot answer starts with what was bought.
+	var cached := IslandStore.new()
+	cached.cache_path = CACHE
+	cached.owned = {"island_hutton": true}
+	cached._save_cache()
+	var again := IslandStore.new()
+	again.cache_path = CACHE
+	tree.root.add_child(again)
+	if not IslandStore.owns("hutton"):
+		problems.append("the cache is not read")
+	again.purchases_updated([], true)   # the store's whole answer: nothing (a refund)
+	if IslandStore.owns("hutton"):
+		problems.append("a refund keeps the island")
+	cached.free()
+	_drop(again)
+	# The stand-in modes.
+	for pair in [["owned", true, false], ["none", false, false], ["pending", false, false]]:
+		var fake := _store(pair[0])
+		if IslandStore.owns("hutton") != pair[1] or IslandStore.price("hutton") != "₩990":
+			problems.append("--store=%s: owns %s price %s" % [pair[0], IslandStore.owns("hutton"), IslandStore.price("hutton")])
+		fake.buy("hutton")
+		var want_owned: bool = pair[0] != "pending"
+		if IslandStore.owns("hutton") != want_owned or IslandStore.waiting("hutton") != (pair[0] == "pending"):
+			problems.append("--store=%s after 구매: owns %s waiting %s" % [pair[0], IslandStore.owns("hutton"), IslandStore.waiting("hutton")])
+		_drop(fake)
+	var failing := _store("fail")
+	var reasons := []
+	failing.failed.connect(func(r: String) -> void: reasons.append(r))
+	failing.buy("hutton")
+	if IslandStore.owns("hutton") or reasons != ["failed"]:
+		problems.append("--store=fail: %s" % str(reasons))
+	_drop(failing)
+	Island.use_index([])
+	expect.call(problems.is_empty(), "payment: only PURCHASED opens, pending waits, a refund closes, acknowledged once, the cache until the store answers, the stand-in modes", "; ".join(problems))
+
+
+class Recorder:
+	extends RefCounted
+	var acks: Array
+
+	func _init(list: Array) -> void:
+		acks = list
+
+	func acknowledge(token: String) -> void:
+		acks.append(token)
+
+
+## One new spot a day (#77 Q1): the first entry into an unfound spot uses the day; that spot opens
+## again (the next day too); another waits for another date (forwards or back); a bought island has
+## no limit.
+func check_daily_limit() -> void:
+	Island.use_index(_paid_index())
+	ProgressStore.reset_all()
+	var problems := []
+	DailyLimit.today_override = "2026-11-08"
+	if not DailyLimit.allows("hutton", "a"):
+		problems.append("the first spot is closed")
+	DailyLimit.use("hutton", "a")
+	if not DailyLimit.allows("hutton", "a") or DailyLimit.allows("hutton", "b"):
+		problems.append("same day: a %s b %s" % [DailyLimit.allows("hutton", "a"), DailyLimit.allows("hutton", "b")])
+	if not DailyLimit.allows("mechanics", "b"):
+		problems.append("the free island is limited")
+	DailyLimit.today_override = "2026-11-09"
+	if not DailyLimit.allows("hutton", "a") or not DailyLimit.allows("hutton", "b"):
+		problems.append("next day: a %s b %s" % [DailyLimit.allows("hutton", "a"), DailyLimit.allows("hutton", "b")])
+	DailyLimit.use("hutton", "a")   # a again on the next day: the day is not used again
+	if not DailyLimit.allows("hutton", "b"):
+		problems.append("going back to yesterday's spot used today")
+	DailyLimit.use("hutton", "b")
+	if DailyLimit.allows("hutton", "c"):
+		problems.append("c opens the day b was entered")
+	DailyLimit.today_override = "2026-11-01"   # the clock set back: another date
+	if not DailyLimit.allows("hutton", "c"):
+		problems.append("an earlier date does not open the next spot")
+	DailyLimit.today_override = "2026-11-09"
+	var store := _store("owned")
+	if not DailyLimit.allows("hutton", "c"):
+		problems.append("a bought island is limited")
+	_drop(store)
+	ProgressStore.reset_all()
+	Island.use_index([])
+	expect.call(problems.is_empty(), "payment: one new spot a day on an island not bought (its spot again any day, the next on another date, none on a bought or free island)", "; ".join(problems))
+
+
+## The map's order with the day: the next spot opens only when today's new spot is it or unused.
+func check_story_today() -> void:
+	Island.use_index(_paid_index())
+	ProgressStore.reset_all()   # (forgets the island in use: before use_for_run)
+	Island.use_for_run("hutton")
+	Story.forget_loaded()
+	DailyLimit.today_override = "2026-11-08"
+	var problems := []
+	var order := Story.order()
+	var first: String = order[0]
+	var second: String = order[1]
+	if not Story.enterable({}, first):
+		problems.append("the first spot is closed")
+	DailyLimit.use("hutton", first)
+	var done := {first: MissionRound.missions(ExperimentRegistry.find(first)).get("stages", []).size()}
+	if Story.next_spot(done) != second or Story.enterable(done, second) or not Story.enterable(done, first):
+		problems.append("after the first spot today: next %s open %s" % [Story.next_spot(done), Story.enterable(done, second)])
+	DailyLimit.today_override = "2026-11-09"
+	if not Story.enterable(done, second):
+		problems.append("the next day the second spot is closed")
+	Island.forget_current()
+	Story.forget_loaded()
+	ProgressStore.reset_all()
+	Island.use_index([])
+	expect.call(problems.is_empty(), "payment: the map's next spot waits for tomorrow once today's new spot is used", "; ".join(problems))
+
+
+## 보호자 확인: a × b + c in its ranges, new each time; digits, 지우기, 확인; a wrong answer a new sum; the
+## third wrong one closes; the right one passes.
+func check_gate() -> void:
+	var problems := []
+	var gate := ParentalGate.new()
+	var sums := {}
+	for i in 60:
+		gate.new_sum()
+		if gate.a < 12 or gate.a > 19 or gate.b < 3 or gate.b > 9 or gate.c < 10 or gate.c > 49:
+			problems.append("out of range %d %d %d" % [gate.a, gate.b, gate.c])
+		sums[gate.sum_label.text] = true
+	if sums.size() < 20:
+		problems.append("only %d different sums" % sums.size())
+	for key in ["1", "2", "3", "4"]:
+		gate.press(key)
+	if gate.typed != "123":
+		problems.append("typed %s (three digits at most)" % gate.typed)
+	gate.press("erase")
+	if gate.typed != "12":
+		problems.append("erase left %s" % gate.typed)
+	var passed := [false]
+	var closed := [false]
+	gate.passed.connect(func() -> void: passed[0] = true)
+	gate.closed.connect(func() -> void: closed[0] = true)
+	for i in 2:
+		gate.typed = str(gate.answer() + 1)
+		var before := gate.sum_label.text
+		gate.press("ok")
+		if closed[0] or gate.typed != "" or gate.wrong != i + 1:
+			problems.append("wrong %d: closed %s typed %s" % [i + 1, closed[0], gate.typed])
+		if gate.note_label.text != Locale.t("guardian.gate_wrong"):
+			problems.append("no wrong note")
+		if before == gate.sum_label.text and i == 0:
+			pass   # the same sum may come again by chance
+	gate.typed = str(gate.answer())
+	gate.press("ok")
+	if not passed[0] or closed[0]:
+		problems.append("the right answer: passed %s closed %s" % [passed[0], closed[0]])
+	gate.free()
+	var third := ParentalGate.new()
+	var shut := [false]
+	third.closed.connect(func() -> void: shut[0] = true)
+	for i in 3:
+		third.typed = str(third.answer() + 1)
+		third.press("ok")
+	if not shut[0]:
+		problems.append("three wrong answers do not close")
+	third.free()
+	expect.call(problems.is_empty(), "payment: the guardian's check (a × b + c in range, keys, a new sum when wrong, closed after three)", "; ".join(problems))
+
+
+## The offer: price and 구매 from the store, waiting instead of the buttons, a bought island closes it,
+## no store: 구매 cannot be pressed. On phone, tablet and desktop the card and × are inside the view.
+func check_offer() -> void:
+	Island.use_index(_paid_index())
+	var problems := []
+	for mode in ["none", "pending", ""]:
+		var store := _store(mode)
+		for size_name in SIZES:
+			var host := Control.new()
+			host.theme = load(UI_THEME).build()
+			host.size = SIZES[size_name]
+			tree.root.add_child(host)
+			var offer := IslandOffer.new("hutton")
+			host.add_child(offer)
+			await _frames(3)
+			for r: Rect2 in offer.rects():
+				if not Rect2(Vector2.ZERO, host.size).encloses(r):
+					problems.append("%s %s: %s outside %s" % [mode, size_name, r, host.size])
+			if mode == "none" and (offer.price_label.text != "₩990" or offer.buy_button.disabled or offer.waiting_box.visible):
+				problems.append("none: price %s disabled %s" % [offer.price_label.text, offer.buy_button.disabled])
+			if mode == "" and (not offer.buy_button.disabled or offer.message.text != Locale.t("guardian.unavailable")):
+				problems.append("no store: 구매 %s message %s" % [offer.buy_button.disabled, offer.message.text])
+			if size_name == "desktop" and mode == "pending":
+				offer.buy_button.pressed.emit()
+				await _frames(1)
+				if not offer.waiting_box.visible or offer.buy_button.visible:
+					problems.append("pending: no waiting line")
+			if size_name == "desktop" and mode == "none":
+				offer.buy_button.pressed.emit()
+				await _frames(1)
+				if is_instance_valid(offer) and not offer.is_queued_for_deletion():
+					problems.append("bought: the offer stays")
+			host.queue_free()
+			await _frames(1)
+		_drop(store)
+	Island.use_index([])
+	expect.call(problems.is_empty(), "payment: the island's offer (store price, 구매, waiting for approval, closes when bought, no store: 구매 off) inside the view on phone, tablet and desktop", "; ".join(problems))
+
+
+## 섬 고르기: an open island not bought has 보호자 in its picture's top right, inside the card; it opens
+## the guardian's check; a bought (or free) island has none, and buying takes it away.
+func check_cards() -> void:
+	Island.use_index(_paid_index())
+	var full := {}
+	for spot in Island.by_id("mechanics").spots():
+		full[spot] = MissionRound.missions(ExperimentRegistry.find(spot)).get("stages", []).size()
+	ProgressStore.save(full)
+	var problems := []
+	var store := _store("none")
+	for size_name in SIZES:
+		var host := Control.new()
+		host.theme = load(UI_THEME).build()
+		host.size = SIZES[size_name]
+		tree.root.add_child(host)
+		var cards := IslandCards.new()
+		host.add_child(cards)
+		await _frames(4)
+		var guardian: Button = cards.guardians.get("hutton")
+		if guardian == null or cards.guardians.has("mechanics"):
+			problems.append("%s: guardians %s" % [size_name, cards.guardians.keys()])
+		else:
+			var picture := (cards.cards["hutton"] as Control).find_child("Picture", true, false) as Control
+			var r := guardian.get_global_rect()
+			if not picture.get_global_rect().encloses(r) or r.get_center().x < picture.get_global_rect().get_center().x \
+					or r.get_center().y > picture.get_global_rect().get_center().y:
+				problems.append("%s: 보호자 %s not in the picture's top right %s" % [size_name, r, picture.get_global_rect()])
+			if size_name == "desktop":   # the last size: buying takes 보호자 away
+				guardian.pressed.emit()
+				await _frames(1)
+				if cards.find_children("ParentalGate", "", true, false).is_empty():
+					problems.append("보호자 opens no check")
+				store.buy("hutton")
+				await _frames(1)
+				if guardian.visible:
+					problems.append("bought: 보호자 stays")
+		host.queue_free()
+		await _frames(1)
+	_drop(store)
+	ProgressStore.reset_all()
+	Island.use_index([])
+	expect.call(problems.is_empty(), "payment: 보호자 on an open island card not bought (picture's top right), opens the check, gone when bought", "; ".join(problems))
+
+
+## Puppy's box with 보호자 at its right end: inside the box, clear of the words, on every size; the box's
+## next open has none.
+func check_today_box() -> void:
+	var problems := []
+	for size_name in SIZES:
+		var host := Control.new()
+		host.theme = load(UI_THEME).build()
+		host.size = SIZES[size_name]
+		tree.root.add_child(host)
+		var box := DialogueBox.new("")
+		host.add_child(box)
+		box.set_speaker("puppy", "explain")
+		box.open("오늘 새 장소는 여기까지야. 내일 또 같이 찾자!")
+		var button := Ui.button(Locale.t("guardian.button"), "TitleButton", StoryDirector.GUARDIAN_HEIGHT)
+		box.set_side_button(button)
+		box.layout(Rect2(Vector2.ZERO, host.size), host.size.x - 16.0, 16.0)
+		await _frames(2)
+		var b := button.get_global_rect()
+		var inner := box.box.get_global_rect()
+		var widest := 0.0
+		for line in box.page_text(box.page).split("\n"):
+			widest = maxf(widest, box.line_width(line))
+		var words := Rect2(box.label.global_position, Vector2(widest, box.label.size.y))
+		if not inner.encloses(b):
+			problems.append("%s: 보호자 %s outside the box %s" % [size_name, b, inner])
+		if words.intersects(b):
+			problems.append("%s: 보호자 over the words" % size_name)
+		box.open("다음")
+		if is_instance_valid(button) and not button.is_queued_for_deletion():
+			problems.append("%s: 보호자 stays on the next line" % size_name)
+		host.queue_free()
+		await _frames(1)
+	expect.call(problems.is_empty(), "payment: Puppy's today box has 보호자 at its right end, inside the box and clear of the words, only for that line", "; ".join(problems))

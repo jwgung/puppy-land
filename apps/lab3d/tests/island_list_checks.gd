@@ -80,6 +80,13 @@ func check_current_island() -> void:
 	if Island.current_id() != "hutton" or ProgressStore.current_island() != "hutton":
 		problems.append("set hutton: %s, saved %s" % [Island.current_id(), ProgressStore.current_island()])
 	Island.forget_current()
+	if Island.current_id() != "mechanics":   # #77: a saved island that is not open is not used
+		problems.append("a saved island not open yet: %s" % Island.current_id())
+	var full := {}
+	for spot in Island.by_id("mechanics").spots():
+		full[spot] = MissionRound.missions(ExperimentRegistry.find(spot)).get("stages", []).size()
+	ProgressStore.save(full)
+	Island.forget_current()
 	if Island.current_id() != "hutton":
 		problems.append("the app opens on the last island: %s" % Island.current_id())
 	if Island.current().id != "hutton":
@@ -89,7 +96,8 @@ func check_current_island() -> void:
 	if Island.current_id() != "mechanics":
 		problems.append("an unknown saved island: %s" % Island.current_id())
 	Island.set_current("mechanics")
-	expect.call(problems.is_empty(), "islands: the island in use is saved ([map] island) and the app opens on it (else the first)",
+	ProgressStore.save({})
+	expect.call(problems.is_empty(), "islands: the island in use is saved ([map] island) and the app opens on it when it is open (else the first)",
 		"; ".join(problems))
 
 

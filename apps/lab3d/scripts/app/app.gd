@@ -21,7 +21,9 @@
 ##                       need not be experiments yet): nothing saved, no story, the bench store; not in
 ##                       the Play build
 ##   --islands=open     every island of the list open for this run (an island in the making too, #75):
-##                       its voyage, its card in 섬 고르기, its map; not in the Play build
+##                       its voyage, its card in 섬 고르기, its map, no day limit (#77); not in the Play build
+##   --store=owned|none|pending|fail  the stand-in store (#77, IslandStore.FakeStore); not in the Play build
+## The Play build reads only --quality=, --q-*, --fps= and --ui-size= (Quality.PLAY_ARGS, #77).
 ## plus the experiment screen's --camera / --ctl-<id> / --sidebar / --scroll-to / --auto-release / --auto-drag.
 class_name App
 extends Control
@@ -68,6 +70,7 @@ func _ready() -> void:
 	Locale.start()   # the child's language (saved), else the device's, else English
 	_definitions = ExperimentRegistry.load_all()
 	Island.set_dev_open(Quality.dev_value("islands") == "open")   # a developer switch: never in the Play build
+	add_child(IslandStore.make())   # #77: the islands bought (Play's billing, --store=, or none)
 	var dev_island := dev_island_of(Quality.all_args(), OS.has_feature("play"))
 	if dev_island != "":
 		Island.use_for_run(dev_island)
@@ -156,6 +159,8 @@ func go_back_requested() -> void:
 
 
 func _go_back() -> void:
+	if GuardianModal.close_top(self):
+		return   # the guardian's check or the island's offer closes first (#77)
 	if _screen is ExperimentScreen:
 		if not (_screen as ExperimentScreen).handle_back():   # an open box, card or sidebar closes first
 			show_list()

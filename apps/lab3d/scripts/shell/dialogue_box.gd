@@ -80,6 +80,10 @@ var card_align := Vector2(0.5, 0.5)
 ## Rects in the parent (the view) the card keeps clear of when it can (set_card_avoid, before layout()).
 var card_avoid: Array[Rect2] = []
 var card: Control
+## A small button at the box's right end for this open only (#77: 보호자 on Puppy's "today's new spot is
+## used" line); null when none. The words keep clear of it.
+var side_button: Button
+const SIDE_GAP := 14.0
 ## Portrait pictures swapped in (a new speaker or face; tests: a same-face line swaps nothing).
 var swaps := 0
 var _swap_t := -1.0
@@ -295,6 +299,9 @@ func layout(view: Rect2, right: float, margin: float) -> bool:
 	var left := view.position.x + margin
 	var width := right - margin - left
 	var text_width := width - BOX_PAD.x * 2.0 - PORTRAIT_SIZE * PORTRAIT_SHARE - box_style.get_minimum_size().x - MORE_ROOM
+	var side := side_button.get_combined_minimum_size() if side_button != null else Vector2.ZERO
+	if side_button != null:
+		text_width -= side.x + SIDE_GAP
 	if text_width < MIN_TEXT_WIDTH:
 		return false
 	var top := view.end.y - margin - height
@@ -312,6 +319,10 @@ func layout(view: Rect2, right: float, margin: float) -> bool:
 	name_tag.position = Vector2(text_left - 4.0, box.position.y - NAME_LIFT)
 	label.size = Vector2(text_width, line_h * LINES)
 	name_tag.size = name_tag.get_combined_minimum_size()
+	if side_button != null:
+		side_button.size = side
+		side_button.position = Vector2(width - box_style.get_margin(SIDE_RIGHT) - BOX_PAD.x - side.x,
+			box.position.y + (height - side.y) * 0.5)
 	_place_card(view)
 	if not is_equal_approx(text_width, _text_width):
 		_text_width = text_width
@@ -421,6 +432,7 @@ func set_words(new_words: String, new_face := "", new_picture := "") -> void:
 ## open shows the box's own words (and their face and picture) again. Each open is a new line: its
 ## own picture's card shows, or none.
 func open(once := "", once_face := "", once_picture := "") -> void:
+	set_side_button(null)
 	if once == "":
 		set_speaker(speaker, words_face)
 	elif once_face != "":
@@ -440,12 +452,22 @@ func _set_text(new_text: String) -> void:
 	page = 0
 
 
+## Puts `button` at the box's right end until the next open or close (null: none). Lay out again after.
+func set_side_button(button: Button) -> void:
+	if side_button != null and side_button != button:
+		side_button.queue_free()
+	side_button = button
+	if button != null and button.get_parent() == null:
+		add_child(button)
+
+
 ## Closes (instant: no `closed` signal, the caller is closing it).
 func close(quiet := false) -> void:
 	if not active:
 		return
 	active = false
 	visible = false
+	set_side_button(null)
 	_show_picture("")
 	_swap_t = -1.0
 	_draw_swap()   # a pop cut short ends on the whole picture
