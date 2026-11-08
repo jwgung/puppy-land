@@ -77,7 +77,7 @@ func check_data() -> void:
 	for d: Dictionary in ExperimentRegistry.load_all():
 		if PieceArt.of_experiment(str(d.id)) != PieceArt.STAR:
 			problems.append("%s gives %s" % [d.id, PieceArt.of_experiment(str(d.id))])
-	if ExperimentRegistry.island_labs("hutton").size() != 10:
+	if ExperimentRegistry.island_labs("hutton").size() != 11:
 		problems.append("%d hutton labs" % ExperimentRegistry.island_labs("hutton").size())
 	expect.call(problems.is_empty(), "sundial piece: the hutton island's file gives the sundial piece, the mechanics island the star; every hutton lab gives the sundial, every mechanics lab the star", "; ".join(problems))
 

@@ -273,11 +273,9 @@ func check_spot() -> void:
 		problems.append("day-night is not hutton's first spot")
 	if ExperimentRegistry.find(ID).is_empty():
 		problems.append("the spot is not an experiment")
-	if hutton.playable():
-		problems.append("hutton is playable before all its spots are labs")
 	if Story.SPEAKERS.get(Story.KEEPER, []).is_empty():
 		problems.append("the keeper %s is not a speaker" % Story.KEEPER)
-	expect.call(problems.is_empty(), "day-night: Hutton Island's first spot is an experiment (a lab on its map); the island is not playable until every spot is", "; ".join(problems))
+	expect.call(problems.is_empty(), "day-night: Hutton Island's first spot is an experiment (a lab on its map)", "; ".join(problems))
 
 
 # --- the opening ----------------------------------------------------------------------------------

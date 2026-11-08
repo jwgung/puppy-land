@@ -699,9 +699,9 @@ func check_spot() -> void:
 		problems.append("volcano is not hutton's last spot")
 	if ExperimentRegistry.find(ID).is_empty():
 		problems.append("the spot is not an experiment")
-	if hutton.playable():
-		problems.append("hutton is playable before all its spots are labs")
-	expect.call(problems.is_empty(), "volcano: Hutton Island's last spot is an experiment (a lab on its map); the island is not playable until every spot is", "; ".join(problems))
+	if not hutton.playable():
+		problems.append("hutton is not playable with every spot a lab")
+	expect.call(problems.is_empty(), "volcano: Hutton Island's last spot is an experiment (a lab on its map); with it every spot is, so the island is playable", "; ".join(problems))
 
 
 # --- the opening ----------------------------------------------------------------------------------
