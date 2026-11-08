@@ -21,6 +21,8 @@ const LINE_SIZE := 22
 var card: PanelContainer
 var body: Control
 var close_button: Button
+## The card at the top of the screen, not the middle (ParentalGate: the keyboard covers the bottom).
+var at_top := false
 
 
 func _init() -> void:
@@ -95,6 +97,8 @@ func _layout() -> void:
 	var room := Rect2(Vector2(inset.left + EDGE, inset.top + EDGE),
 		size - Vector2(inset.left + inset.right + 2.0 * EDGE, inset.top + inset.bottom + 2.0 * EDGE))
 	card.position = (room.position + (room.size - card.size) * 0.5).round()
+	if at_top:
+		card.position.y = room.position.y
 	close_button.size = close_button.get_combined_minimum_size()
 	close_button.position = card.position + Vector2(card.size.x - close_button.size.x - 14.0, 14.0)
 

@@ -27,7 +27,7 @@ func run() -> void:
 	check_store_states()
 	check_daily_limit()
 	check_story_today()
-	check_gate()
+	await check_gate()
 	await check_offer()
 	await check_cards()
 	await check_today_box()
@@ -241,8 +241,10 @@ func check_story_today() -> void:
 	expect.call(problems.is_empty(), "payment: the map's next spot waits for tomorrow once today's new spot is used", "; ".join(problems))
 
 
-## 보호자 확인: a × b + c in its ranges, new each time; digits, 지우기, 확인; a wrong answer a new sum; the
-## third wrong one closes; the right one passes.
+## 보호자 확인: a × b + c in its ranges, new each time; the answer typed in a number field (digits
+## only, three at most) and 확인 or the keyboard's done key; a wrong answer a new sum; the third wrong
+## one closes; the right one passes. On phone, tablet and desktop the card is at the top (the keyboard
+## covers the bottom half) and inside the view.
 func check_gate() -> void:
 	var problems := []
 	var gate := ParentalGate.new()
@@ -254,29 +256,29 @@ func check_gate() -> void:
 		sums[gate.sum_label.text] = true
 	if sums.size() < 20:
 		problems.append("only %d different sums" % sums.size())
-	for key in ["1", "2", "3", "4"]:
-		gate.press(key)
-	if gate.typed != "123":
-		problems.append("typed %s (three digits at most)" % gate.typed)
-	gate.press("erase")
-	if gate.typed != "12":
-		problems.append("erase left %s" % gate.typed)
+	if gate.field.virtual_keyboard_type != LineEdit.KEYBOARD_TYPE_NUMBER or gate.field.max_length != 3:
+		problems.append("field keyboard %d max %d" % [gate.field.virtual_keyboard_type, gate.field.max_length])
+	gate.field.text = "1a2"
+	gate.field.text_changed.emit("1a2")
+	if gate.field.text != "12":
+		problems.append("digits only: %s" % gate.field.text)
 	var passed := [false]
 	var closed := [false]
 	gate.passed.connect(func() -> void: passed[0] = true)
 	gate.closed.connect(func() -> void: closed[0] = true)
+	gate.field.text = ""
+	gate.submit()
+	if gate.wrong != 0:
+		problems.append("an empty answer counts as wrong")
 	for i in 2:
-		gate.typed = str(gate.answer() + 1)
-		var before := gate.sum_label.text
-		gate.press("ok")
-		if closed[0] or gate.typed != "" or gate.wrong != i + 1:
-			problems.append("wrong %d: closed %s typed %s" % [i + 1, closed[0], gate.typed])
+		gate.field.text = str(gate.answer() + 1)
+		gate.submit()
+		if closed[0] or gate.field.text != "" or gate.wrong != i + 1:
+			problems.append("wrong %d: closed %s typed %s" % [i + 1, closed[0], gate.field.text])
 		if gate.note_label.text != Locale.t("guardian.gate_wrong"):
 			problems.append("no wrong note")
-		if before == gate.sum_label.text and i == 0:
-			pass   # the same sum may come again by chance
-	gate.typed = str(gate.answer())
-	gate.press("ok")
+	gate.field.text = str(gate.answer())
+	gate.field.text_submitted.emit(gate.field.text)   # the keyboard's done key
 	if not passed[0] or closed[0]:
 		problems.append("the right answer: passed %s closed %s" % [passed[0], closed[0]])
 	gate.free()
@@ -284,12 +286,31 @@ func check_gate() -> void:
 	var shut := [false]
 	third.closed.connect(func() -> void: shut[0] = true)
 	for i in 3:
-		third.typed = str(third.answer() + 1)
-		third.press("ok")
+		third.field.text = str(third.answer() + 1)
+		third.ok_button.pressed.emit()
 	if not shut[0]:
 		problems.append("three wrong answers do not close")
 	third.free()
-	expect.call(problems.is_empty(), "payment: the guardian's check (a × b + c in range, keys, a new sum when wrong, closed after three)", "; ".join(problems))
+	for size_name in SIZES:
+		var host := Control.new()
+		host.theme = load(UI_THEME).build()
+		host.size = SIZES[size_name]
+		tree.root.add_child(host)
+		var shown := ParentalGate.new()
+		host.add_child(shown)
+		await _frames(3)
+		for r: Rect2 in shown.rects() + [shown.field.get_global_rect(), shown.ok_button.get_global_rect(), shown.note_label.get_global_rect()]:
+			if not Rect2(Vector2.ZERO, host.size).encloses(r):
+				problems.append("%s: %s outside %s" % [size_name, r, host.size])
+		if shown.card.get_global_rect().end.y > host.size.y * 0.5:
+			problems.append("%s: the card %s reaches under the keyboard (lower half)" % [size_name, shown.card.get_global_rect()])
+		if not shown.field.has_focus():
+			problems.append("%s: the answer field has no focus (no keyboard)" % size_name)
+		if shown.close_button.get_global_rect().intersects(shown.ok_button.get_global_rect()):
+			problems.append("%s: × over 확인" % size_name)
+		host.queue_free()
+		await _frames(1)
+	expect.call(problems.is_empty(), "payment: the guardian's check (a × b + c in range, number keyboard field, a new sum when wrong, closed after three, at the top)", "; ".join(problems))
 
 
 ## The offer: price and 구매 from the store, waiting instead of the buttons, a bought island closes it,
