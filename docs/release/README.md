@@ -81,17 +81,22 @@ apps/lab3d/tools/build.sh play
 값은 Godot 4.7.2 Android 템플릿 기본값이다(`export_presets.cfg`에 따로 적지 않음). 확인 방법: AAB를 `unzip`해 `base/lib/arm64-v8a/*.so`의 `readelf -lW` LOAD 정렬이 `0x4000`인지, `base/manifest/AndroidManifest.xml`의 `uses-permission`을, 빌드 뒤 `apps/lab3d/android/build/config.gradle`의 `targetSdk`·`minSdk`를 본다.
 
 - `targetSdk` 36, `minSdk` 24, arm64-v8a만, 네이티브 라이브러리 16KB 정렬.
-- 매니페스트에 `uses-permission`이 없다(`internet` 권한도 꺼져 있음). 바뀌면 Data safety 답을 다시 본다.
+- 매니페스트의 `uses-permission`은 결제 플러그인(#77, GodotGooglePlayBilling 3.3.0, Play Billing Library 9.1.0)이 가져온 것뿐이다: `com.android.vending.BILLING`, 그리고 결제 라이브러리의 의존성(`com.google.android.datatransport:transport-backend-cct`)이 넣는 `INTERNET`·`ACCESS_NETWORK_STATE`. 프리셋의 `permissions/internet`은 꺼져 있다(2026-11-08 Play 빌드로 확인). 바뀌면 Data safety 답을 다시 본다.
+- 두 Android 프리셋 모두 `user_data_backup/allow=true`(Android 자동 백업, #77): 새 기기·재설치 때 진행 기록이 돌아온다. 구매 사본(`purchases.cfg`)은 Android에서 앱의 캐시 폴더(`OS.get_cache_dir()`)에 두어 자동 백업에서 빠지고, 구매는 Play에 다시 묻는다(IslandStore).
+- "Android" 프리셋(기기 확인용, Gradle 아님)에는 결제 플러그인이 들어가지 않는다(`addons/GodotGooglePlayBilling/export_plugin.gd`가 Gradle 빌드에서만 AAR을 넣게 고침). 결제는 "Android Play" 빌드에서만 된다.
+- 결제 플러그인 출처: https://github.com/godot-sdk-integrations/godot-google-play-billing/releases/tag/3.3.0 의 `godot-google-play-billing.zip`(sha256 `20d75623d6f337f08d8283c83098b73678d5f575e39247af5a8eb80588b18568`). AAR sha256: release `b667b4ae3ecf91d7dea90bebd4ba5a7aef56cfc2cd7de4787aeb51a1927dcef7`, debug `f7f8f3f1c8099e58127332c8c27f353a7eea079e749682d2ebd83d1bd4bd6f3d`(2026-11-08 원본과 대조해 같음). 원본과 다른 파일은 `export_plugin.gd`(Gradle 빌드 조건)뿐이다. 판을 올릴 때 같은 방법으로 대조한다.
 
 ## 5. Play Console 순서 (개인 계정)
 
 1. 앱 만들기: 이름·기본 언어 한국어·앱(게임 아님/교육용인지 정책에 맞게 선택)·무료.
-2. 앱 콘텐츠: 개인정보처리방침 URL `https://jwgung.github.io/puppy-land/privacy/`(`site/privacy`. **main에 머지돼 Pages 배포가 끝난 뒤에야 열리므로** 그 뒤에 입력한다), 광고 없음, 대상 연령(아동 포함 → Families 정책), 콘텐츠 등급(IARC), 데이터 보안(수집·공유 없음), 앱 액세스(로그인 없음).
+2. 앱 콘텐츠: 개인정보처리방침 URL `https://jwgung.github.io/puppy-land/privacy/`(`site/privacy`. **main에 머지돼 Pages 배포가 끝난 뒤에야 열리므로** 그 뒤에 입력한다), 광고 없음, 대상 연령(아동 포함 → Families 정책), 콘텐츠 등급(IARC), 데이터 보안(수집·공유 없음. 구매 내역도 "수집 안 함": 구매 확인은 기기와 Google Play 사이에서만 한다. 결제 라이브러리의 인터넷 권한과 Android 백업이 '수집'에 드는지는 Console 도움말 전문으로 확인한다, #77), 앱 액세스(로그인 없음).
 3. 스토어 등록정보: `docs/release/store/` 의 그림·스크린샷. 한국어(기본)는 `feature-graphic-ko.png`·`screenshots/ko-*.png`, 영어(en-US)는 `feature-graphic-en.png`·`screenshots/en-*.png`를 쓴다. 그래픽은 Pillow가 필요하다(`pip install pillow`). `python3 docs/release/store/make_store_art.py`로 만든다(영어는 `scene-throw-en.png`가 있을 때). ko 그림은 `capture_store_shots.gd`가 만들고, 영어 그림은 영어 빌드를 태블릿에서 손으로 찍은 것이다.
 4. **비공개 테스트** 트랙에 AAB 업로드(태그를 push하면 3절의 `play` job이 올린다. 같은 versionCode를 Console에서 또 올리지 않는다. 서비스 계정을 아직 안 만들었다면 Console에서 직접 올린다) → 테스터 12명 이상이 **14일 연속** 참여해야 프로덕션을 신청할 수 있다(2023-11 이후 만든 개인 계정). 테스트를 가장 먼저 시작한다.
 5. 프로덕션 신청 → 심사.
 
 ## 6. 정책 메모
 
-- 광고·분석·추적 SDK를 넣지 않는다. 계정·서버·외부 결제 없음.
+- 광고·분석·추적 SDK를 넣지 않는다. 계정·서버 없음. 결제는 Google Play 결제만(ADR 0005, #77): 둘째 섬부터 섬마다 일회성 상품 `island_<섬 id>`.
+- 결제 안내는 보호자 확인(`a × b + c`, ParentalGate) 뒤에만 나온다. 아이에게 사라고 권하는 말을 쓰지 않는다(Families 정책: 감정을 이용한 결제 유도 금지).
+- 출시(Play) 빌드는 실행 인자 중 `--quality=`·`--q-*`·`--fps=`·`--ui-size=`만 읽는다(`Quality.PLAY_ARGS`). 측정·개발용 인자(`--experiment=`, `--demo-*`, `--islands=open`, `--store=` 등)는 "Android" 빌드에서만 된다.
 - 외부 링크·AI 앱으로 보내는 기능("AI에게 더 물어보기")은 보호자 확인(parental gate) 없이는 꺼 둔다(`ScienceNote.enabled = false`).

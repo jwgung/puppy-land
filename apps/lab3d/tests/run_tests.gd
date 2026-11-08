@@ -368,6 +368,11 @@ func _run() -> void:
 	_expect(islands != null and islands.can_instantiate(), "island list checks compile", "")
 	if islands != null and islands.can_instantiate():
 		await islands.new(self, _expect).run()
+	print("== the payment (#77: the Play build's args, the islands bought, one new spot a day, the guardian's check and offer) ==")
+	var payment: GDScript = load("res://tests/payment_checks.gd")
+	_expect(payment != null and payment.can_instantiate(), "payment checks compile", "")
+	if payment != null and payment.can_instantiate():
+		await payment.new(self, _expect).run()
 	print("== the hutton island's map (#72: its layout, grounds and features, never open while in the making) ==")
 	var hutton: GDScript = load("res://tests/hutton_map_checks.gd")
 	_expect(hutton != null and hutton.can_instantiate(), "hutton map checks compile", "")

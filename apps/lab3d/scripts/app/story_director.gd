@@ -39,8 +39,11 @@ class_name StoryDirector
 extends Node
 
 signal ended(part: String)
+## 보호자 on Puppy's "today's new spot is used" box was pressed (#77): the map opens the guardian's check.
+signal guardian_requested
 
 const NIGHT_TINT := Vector3(0.42, 0.5, 0.82)
+## The 보호자 button's height on Puppy's box (#77): small, the words stay the box's.
 const DARK_TINT := Vector3(0.26, 0.31, 0.6)
 const NIGHT_SEA := Color("1b4478")
 const DARK_SEA := Color("0e2649")
@@ -225,6 +228,11 @@ func locked(id: String) -> bool:
 	return next_id != "" and id != next_id and id not in found_ids
 
 
+## The next spot waits for tomorrow: an island not bought whose new spot of today is used (#77).
+func waits_for_tomorrow(id: String) -> bool:
+	return id == next_id and next_id != "" and not DailyLimit.allows(Island.current_id(), id)
+
+
 ## The spot's name shows on the map: its piece is found (an unfound spot's name stays a secret).
 func label_shown(id: String) -> bool:
 	return id in found_ids
@@ -257,6 +265,23 @@ func say_wrong() -> void:
 		return   # an island whose story has no such line yet
 	_say(Story.wrong_line(), Story.wrong_face())
 	wrongs_told += 1
+
+
+## The next spot waits for tomorrow (#77): Puppy's calm "that's all for today" with the small 보호자
+## button at his box's right end (the guardian's check, then the island's offer). Nothing urges buying.
+func say_today() -> void:
+	if cinematic():
+		return
+	_riddle_due = false
+	_riddle_open = false
+	if Story.today_line() == "":
+		return
+	_say(Story.today_line(), Story.today_face())
+	var guardian := GuardianModal.guardian_button()
+	guardian.name = "GuardianButton"
+	guardian.pressed.connect(guardian_requested.emit)
+	riddle.set_side_button(guardian)
+	_layout()
 
 
 ## The child is on the way to a spot: Puppy's box closes.

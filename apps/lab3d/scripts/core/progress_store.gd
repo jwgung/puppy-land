@@ -36,6 +36,8 @@ const CLUES := "clues"
 const PIECES := "pieces"
 ## The hand guides already shown (a lab id, or "map" for the map's tap): the first guide comes once.
 const GUIDES := "guides"
+## The day's new spot on an island not bought (#77, DailyLimit): [day] <island>.spot / <island>.date.
+const DAY := "day"
 ## The map (2026-10-29): [map] last_spot = the spot id the trio last walked to (they stand there when
 ## the map opens again; none: the square), per island (island_key); island = the island in use
 ## (#69: the app opens on it; Island.current_id).
@@ -153,6 +155,18 @@ static func mark(section: String, key: String) -> bool:
 
 
 static func set_mark(section: String, key: String, value: bool) -> void:
+	var config := _read()
+	config.set_value(section, key, value)
+	config.save(path)
+
+
+## A text value of the store's own sections ("" when missing or not text: the day's spot, #77).
+static func text(section: String, key: String) -> String:
+	var value: Variant = _read().get_value(section, key, "")
+	return value if value is String else ""
+
+
+static func set_text(section: String, key: String, value: String) -> void:
 	var config := _read()
 	config.set_value(section, key, value)
 	config.save(path)

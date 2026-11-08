@@ -127,6 +127,8 @@ func check_keys() -> void:
 	for id in Island.ids():   # the islands' names and fields (섬 고르기, IslandCards, #75)
 		named["island.%s.name" % id] = "t"
 		named["island.%s.about" % id] = "t"
+		if IslandStore.product_of(id) != "":   # an island for sale: its offer's line to the guardian (IslandOffer, #77)
+			named["island.%s.offer" % id] = "t"
 	var problems := []
 	var langs := DirAccess.get_directories_at(Locale.ROOT)
 	for code in langs:
