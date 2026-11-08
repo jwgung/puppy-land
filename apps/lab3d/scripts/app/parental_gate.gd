@@ -64,7 +64,7 @@ func _init() -> void:
 	ok_button = Ui.button(Locale.t("guardian.ok"), "TitleStartButton", OK_SIZE.y)
 	ok_button.name = "Ok"
 	ok_button.custom_minimum_size = OK_SIZE
-	ok_button.add_theme_font_size_override("font_size", 30)
+	ok_button.add_theme_font_size_override("font_size", GuardianModal.BUTTON_FONT)
 	ok_button.pressed.connect(submit)
 	row.add_child(ok_button)
 	column.add_child(row)

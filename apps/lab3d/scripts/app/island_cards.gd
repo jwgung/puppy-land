@@ -40,7 +40,6 @@ const PICTURE_RADIUS := 14
 const THUMB_ASPECT := 0.72
 const NAME_SIZE := 30
 ## 보호자 (#77): small, in the picture's top right corner (the star pieces are top left).
-const GUARDIAN_HEIGHT := 46.0
 const GUARDIAN_INSET := 8
 ## The star pieces found, small in the picture's corner.
 const EMBLEM_SCALE := 0.6
@@ -227,7 +226,7 @@ func _picture(entry: Dictionary) -> Panel:
 ## The small 보호자 at the picture's top right of an open island not bought (#77): the guardian's check,
 ## then the island's offer. Gone once the island is bought.
 func _guardian_button(id: String) -> Button:
-	var guardian := Ui.button(Locale.t("guardian.button"), "TitleButton", GUARDIAN_HEIGHT)
+	var guardian := GuardianModal.guardian_button()
 	guardian.name = "Guardian"
 	guardian.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT, Control.PRESET_MODE_MINSIZE, GUARDIAN_INSET)
 	guardian.grow_horizontal = Control.GROW_DIRECTION_BEGIN

@@ -44,7 +44,6 @@ signal guardian_requested
 
 const NIGHT_TINT := Vector3(0.42, 0.5, 0.82)
 ## The 보호자 button's height on Puppy's box (#77): small, the words stay the box's.
-const GUARDIAN_HEIGHT := 48.0
 const DARK_TINT := Vector3(0.26, 0.31, 0.6)
 const NIGHT_SEA := Color("1b4478")
 const DARK_SEA := Color("0e2649")
@@ -278,7 +277,7 @@ func say_today() -> void:
 	if Story.today_line() == "":
 		return
 	_say(Story.today_line(), Story.today_face())
-	var guardian := Ui.button(Locale.t("guardian.button"), "TitleButton", GUARDIAN_HEIGHT)
+	var guardian := GuardianModal.guardian_button()
 	guardian.name = "GuardianButton"
 	guardian.pressed.connect(guardian_requested.emit)
 	riddle.set_side_button(guardian)

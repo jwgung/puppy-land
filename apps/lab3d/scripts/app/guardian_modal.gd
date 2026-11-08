@@ -15,6 +15,11 @@ const CARD_LINE := 4
 const CARD_LIP := 9
 const EDGE := 16.0
 const CLOSE_SIZE := 56.0
+const CLOSE_INSET := 14.0
+## The words on the screens' wide buttons (닫기, 확인) and the ×.
+const BUTTON_FONT := 30
+## The small 보호자 button (Puppy's box on the map, 섬 고르기's card).
+const GUARDIAN_HEIGHT := 48.0
 const TITLE_SIZE := 40
 const LINE_SIZE := 22
 
@@ -41,7 +46,7 @@ func _init() -> void:
 	close_button = Ui.button("×", "TitleButton", CLOSE_SIZE)
 	close_button.name = "Close"
 	close_button.custom_minimum_size = Vector2(CLOSE_SIZE, CLOSE_SIZE)
-	close_button.add_theme_font_size_override("font_size", 30)
+	close_button.add_theme_font_size_override("font_size", BUTTON_FONT)
 	close_button.pressed.connect(close)
 	add_child(close_button)
 	resized.connect(_layout)
@@ -96,7 +101,12 @@ func _layout() -> void:
 		size - Vector2(inset.left + inset.right + 2.0 * EDGE, inset.top + inset.bottom + 2.0 * EDGE))
 	card.position = (room.position + (room.size - card.size) * 0.5).round()
 	close_button.size = close_button.get_combined_minimum_size()
-	close_button.position = card.position + Vector2(card.size.x - close_button.size.x - 14.0, 14.0)
+	close_button.position = card.position + Vector2(card.size.x - close_button.size.x - CLOSE_INSET, CLOSE_INSET)
+
+
+## The small 보호자 button that opens the guardian's check (#77): Puppy's box and 섬 고르기's card.
+static func guardian_button() -> Button:
+	return Ui.button(Locale.t("guardian.button"), "TitleButton", GUARDIAN_HEIGHT)
 
 
 ## A label in the screens' words: `size` px, bold or not, the ink colour or `color`.

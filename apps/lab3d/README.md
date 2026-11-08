@@ -390,7 +390,7 @@ Android 뒤로가기 한 번이 두 번 오는 문제(2026-10-29, SM-X115 Androi
 - **보호자 확인 → 안내**: 지도 말풍선과 섬 고르기의 사지 않은 열린 섬 카드(그림 오른쪽 위)의 **보호자**가 `ParentalGate`(`a × b + c`, a 12~19, b 3~9, c 10~49, 기기의 숫자 키보드로 입력하고 확인이나 키보드의 완료 키, 틀리면 새 문제, 세 번 틀리면 닫힘, 입력 저장 안 함)를 열고, 맞히면 `IslandOffer`(섬 그림, 보호자에게 하는 설명, Play가 준 가격, 구매·닫기)가 열린다. 보호자 화면의 숫자는 "화면에 숫자 없음"의 예외다. 안드로이드 뒤로가기는 이 화면들을 먼저 닫는다.
 - **플러그인**: `addons/GodotGooglePlayBilling`(godot-sdk-integrations 3.3.0, Play Billing Library 9.1.0, MIT). Godot Android 플러그인 v2라 Gradle 빌드("Android Play" 프리셋)에서만 들어간다. 일반 "Android" 프리셋에도 들어가지 않게 `export_plugin.gd`를 고쳤다(Gradle 빌드일 때만 AAR). 결제 라이브러리가 `INTERNET`·`ACCESS_NETWORK_STATE` 권한을 가져온다(`docs/release/README.md` 4절).
 - **개발용**: `--store=owned|none|pending|fail` 가짜 스토어(산 상태, 구매 즉시 성공, 승인 대기, 실패), `--islands=open`은 하루 제한도 없앤다. 둘 다 Play 빌드에서 무시한다. Play 빌드는 실행 인자 중 `--quality=`·`--q-*`·`--fps=`·`--ui-size=`만 읽는다(`Quality.PLAY_ARGS`): `--experiment=`, `--screen=`, `--demo-*`, `--progress=`, `--ctl-*`, `--camera`, `--sound=`, `--auto-*` 등은 측정용 "Android" 빌드에서만 된다.
-- **백업**: 두 Android 프리셋 모두 `user_data_backup/allow=true`(Android 자동 백업): 새 기기·재설치 때 진행 기록이 돌아온다. 여러 기기 맞추기는 #103.
+- **백업**: 두 Android 프리셋 모두 `user_data_backup/allow=true`(Android 자동 백업): 새 기기·재설치 때 진행 기록이 돌아온다. 구매 사본은 Android 캐시 폴더에 두어 백업에서 빠진다(백업으로 섬이 열리지 않음). 여러 기기 맞추기는 #103.
 - 시험: `tests/payment_checks.gd`.
 
 ### 대화 표정 (2026-10-29)

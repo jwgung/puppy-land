@@ -13,6 +13,10 @@ const NAME_SIZE := 50
 const PRICE_SIZE := 50
 const BUY_SIZE := Vector2(230.0, 84.0)
 const CLOSE_WIDTH := 200.0
+const ROW_GAP := 44
+const BUTTON_GAP := 26
+const WAITING_PAPER := Color("fdf1d8")
+const WAITING_SIZE := 28
 ## The price is Play's text in the guardian's currency: its signs are kept in the font subset
 ## (tools/subset_font.sh reads them here).
 const CURRENCY_SIGNS := "₩$€£¥₹₽₺₫₱฿₪₴₸₦₡₲₵₭₮"
@@ -20,10 +24,11 @@ const CURRENCY_SIGNS := "₩$€£¥₹₽₺₫₱฿₪₴₸₦₡₲₵₭�
 var island_id := ""
 var price_label: Label
 var buy_button: Button
-var close_wide: Button
+var close_text_button: Button
 var buttons: HBoxContainer
 var waiting_box: PanelContainer
 var message: Label
+var _picture_rect: TextureRect
 
 
 ## 보호자 → the gate → (passed) this offer, both over `host`.
@@ -41,7 +46,7 @@ func _init(id: String) -> void:
 	name = "IslandOffer"
 	island_id = id
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 44)
+	row.add_theme_constant_override("separation", ROW_GAP)
 	var frame := Panel.new()
 	frame.name = "Picture"
 	frame.custom_minimum_size = PICTURE_SIZE
@@ -75,22 +80,22 @@ func _init(id: String) -> void:
 	right.add_child(price_label)
 	buttons = HBoxContainer.new()
 	buttons.name = "Buttons"
-	buttons.add_theme_constant_override("separation", 26)
+	buttons.add_theme_constant_override("separation", BUTTON_GAP)
 	buy_button = Ui.button(Locale.t("guardian.buy"), "TitleStartButton", BUY_SIZE.y)
 	buy_button.name = "Buy"
 	buy_button.custom_minimum_size = BUY_SIZE
 	buy_button.pressed.connect(_buy)
 	buttons.add_child(buy_button)
-	close_wide = Ui.button(Locale.t("common.close"), "TitleButton", BUY_SIZE.y)
-	close_wide.name = "CloseWide"
-	close_wide.custom_minimum_size = Vector2(CLOSE_WIDTH, BUY_SIZE.y)
-	close_wide.add_theme_font_size_override("font_size", 30)
-	close_wide.pressed.connect(close)
-	buttons.add_child(close_wide)
+	close_text_button = Ui.button(Locale.t("common.close"), "TitleButton", BUY_SIZE.y)
+	close_text_button.name = "CloseWide"
+	close_text_button.custom_minimum_size = Vector2(CLOSE_WIDTH, BUY_SIZE.y)
+	close_text_button.add_theme_font_size_override("font_size", GuardianModal.BUTTON_FONT)
+	close_text_button.pressed.connect(close)
+	buttons.add_child(close_text_button)
 	waiting_box = PanelContainer.new()
 	waiting_box.name = "Waiting"
-	waiting_box.add_theme_stylebox_override("panel", UiTheme.outlined_box(Color("fdf1d8"), UiTheme.DIALOGUE_LINE, 18, Vector2(24, 16), 3, 0))
-	waiting_box.add_child(GuardianModal.text_label(Locale.t("guardian.waiting"), 28, true))
+	waiting_box.add_theme_stylebox_override("panel", UiTheme.outlined_box(WAITING_PAPER, UiTheme.DIALOGUE_LINE, 18, Vector2(24, 16), 3, 0))
+	waiting_box.add_child(GuardianModal.text_label(Locale.t("guardian.waiting"), WAITING_SIZE, true))
 	right.add_child(waiting_box)   # above 닫기 (the mock): in place of the price
 	right.add_child(buttons)
 	message = GuardianModal.text_label("", GuardianModal.LINE_SIZE - 2, false, UiTheme.MUTED, RIGHT_WIDTH)
@@ -99,9 +104,6 @@ func _init(id: String) -> void:
 	row.add_child(right)
 	set_body(row)
 	_picture_rect = picture
-
-
-var _picture_rect: TextureRect
 
 
 func _ready() -> void:
@@ -141,10 +143,16 @@ func _buy() -> void:
 	if IslandStore.instance != null:
 		IslandStore.instance.buy(island_id)
 	else:
-		_on_failed("unavailable")
+		_on_failed(IslandStore.UNAVAILABLE)
 
 
 func _on_failed(reason: String) -> void:
 	if not is_inside_tree():
 		return
-	message.text = Locale.t("guardian.failed") if reason == "failed" else (Locale.t("guardian.unavailable") if reason == "unavailable" else Locale.t("guardian.store_note"))
+	match reason:
+		IslandStore.FAILED:
+			message.text = Locale.t("guardian.failed")
+		IslandStore.UNAVAILABLE:
+			message.text = Locale.t("guardian.unavailable")
+		_:
+			message.text = Locale.t("guardian.store_note")

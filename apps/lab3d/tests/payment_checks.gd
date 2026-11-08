@@ -31,6 +31,7 @@ func run() -> void:
 	await check_offer()
 	await check_cards()
 	await check_today_box()
+	await check_map_flow()
 	DailyLimit.today_override = ""
 	Island.set_dev_open(false)
 	Island.use_index([])
@@ -406,7 +407,7 @@ func check_today_box() -> void:
 		host.add_child(box)
 		box.set_speaker("puppy", "explain")
 		box.open("오늘 새 장소는 여기까지야. 내일 또 같이 찾자!")
-		var button := Ui.button(Locale.t("guardian.button"), "TitleButton", StoryDirector.GUARDIAN_HEIGHT)
+		var button := GuardianModal.guardian_button()
 		box.set_side_button(button)
 		box.layout(Rect2(Vector2.ZERO, host.size), host.size.x - 16.0, 16.0)
 		await _frames(2)
@@ -426,3 +427,68 @@ func check_today_box() -> void:
 		host.queue_free()
 		await _frames(1)
 	expect.call(problems.is_empty(), "payment: Puppy's today box has 보호자 at its right end, inside the box and clear of the words, only for that line", "; ".join(problems))
+
+
+## The whole way on the map (#77 Q7): today's new spot used, the next spot tapped: Puppy says today is
+## done with 보호자 at his box's end; 보호자 opens the check, the right answer the island's offer;
+## Android back closes the offer and then nothing is left over the map.
+func check_map_flow() -> void:
+	var was_enabled := Story.enabled
+	Island.use_index(_paid_index())
+	ProgressStore.reset_all()
+	Island.use_for_run("hutton")
+	Story.forget_loaded()
+	Story.enabled = true
+	Story.mark_seen("prologue")
+	DailyLimit.today_override = "2026-11-08"
+	var problems := []
+	var host := Control.new()
+	host.theme = load(UI_THEME).build()
+	host.size = SIZES.phone
+	tree.root.add_child(host)
+	var screen: Control = load("res://scripts/app/island_home_screen.gd").new()
+	host.add_child(screen)
+	await _frames(4)
+	var story: StoryDirector = screen.story
+	var next: String = story.next_id
+	DailyLimit.use("hutton", Story.order()[1])   # today's new spot went elsewhere
+	var index := -1
+	for i in screen._spots.size():
+		if screen._spots[i].id == next:
+			index = i
+	if next == "" or index < 0 or not story.waits_for_tomorrow(next):
+		problems.append("next %s (index %d) does not wait for tomorrow" % [next, index])
+	else:
+		screen._walk_to_spot(index)
+		await _frames(2)
+		var guardian: Button = story.riddle.side_button
+		if guardian == null or story.riddle.text != Story.today_line():
+			problems.append("Puppy's today box: words %s, 보호자 %s" % [story.riddle.text if story.riddle != null else "none", guardian])
+		else:
+			guardian.pressed.emit()
+			await _frames(1)
+			var gates := screen.find_children("ParentalGate", "", true, false)
+			if gates.size() != 1:
+				problems.append("보호자 opens %d checks" % gates.size())
+			else:
+				var gate: ParentalGate = gates[0]
+				gate.field.text = str(gate.answer())
+				gate.submit()
+				await _frames(2)
+				if screen.find_children("IslandOffer", "", true, false).size() != 1:
+					problems.append("the right answer opens no offer")
+				if not GuardianModal.close_top(screen):
+					problems.append("back closes nothing")
+				await _frames(1)
+				if not screen.get_tree().get_nodes_in_group(GuardianModal.GROUP).filter(func(n: Node) -> bool: return not n.is_queued_for_deletion()).is_empty():
+					problems.append("a guardian screen stays after back")
+	host.queue_free()
+	await _frames(2)
+	Story.enabled = was_enabled
+	DailyLimit.today_override = ""
+	Island.forget_current()
+	Story.forget_loaded()
+	ProgressStore.reset_all()
+	Island.use_index([])
+	expect.call(problems.is_empty(), "payment: on the map, the next spot tapped after today's: Puppy's box with 보호자, the check, the offer, back closes it", "; ".join(problems))
+

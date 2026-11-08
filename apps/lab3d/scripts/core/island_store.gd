@@ -16,9 +16,8 @@
 ## comes back to the front; no restore button): a product counts as bought only in the PURCHASED
 ## state, and a purchase not yet acknowledged is acknowledged at once (Play refunds it after three
 ## days otherwise). A pending one (cash, a family member's approval) stays locked until it is
-## purchased. The bought products are also kept in CACHE_PATH, only for a start when the store cannot
-## answer (no connection): its next answer replaces them, so a copy restored by the device backup is
-## asked for again too. Everything is checked on the device (no server): a forged purchase is an
+## purchased. The bought products are also kept in cache_file() (left out of Android backups), only
+## for a start when the store cannot answer (no connection): its next answer replaces them. Everything is checked on the device (no server): a forged purchase is an
 ## accepted risk (ADR 0005).
 class_name IslandStore
 extends Node
@@ -29,7 +28,9 @@ signal changed
 signal failed(reason: String)
 
 const QualityScript := preload("res://scripts/core/quality.gd")
-const CACHE_PATH := "user://purchases.cfg"
+## The cache file: on Android in the app's cache folder, which Android Auto Backup leaves out, so a
+## backed-up or restored copy can never open an island (Play is asked again on a new device).
+const CACHE_NAME := "purchases.cfg"
 const FAKE_MODES := ["owned", "none", "pending", "fail"]
 ## The plugin's purchase states (BillingClient.PurchaseState).
 const PURCHASED := 1
@@ -38,6 +39,10 @@ const PENDING := 2
 const RESPONSE_OK := 0
 const USER_CANCELED := 1
 const ITEM_ALREADY_OWNED := 7
+## Why 구매 ended without a purchase (failed).
+const UNAVAILABLE := "unavailable"
+const CANCELLED := "cancelled"
+const FAILED := "failed"
 
 ## The store in use (App makes it; tests make their own). Null: no store, only free islands are bought.
 static var instance: IslandStore
@@ -51,7 +56,13 @@ var prices: Dictionary = {}
 ## The backend (PlayBilling, FakeStore, or null: no store).
 var backend: RefCounted
 ## The cache file in use (tests: their own).
-var cache_path := CACHE_PATH
+var cache_path := cache_file()
+
+
+## Where the cache lives: Android's cache folder (left out of backups), user:// elsewhere.
+static func cache_file() -> String:
+	var folder := OS.get_cache_dir() if OS.has_feature("android") else ""
+	return folder.path_join(CACHE_NAME) if folder != "" else "user://" + CACHE_NAME
 
 
 ## The store of this run: Play's in the Play build when the plugin is there, the stand-in of --store=
@@ -124,7 +135,7 @@ func buy(island_id: String) -> void:
 	if product == "" or owned.has(product):
 		return
 	if backend == null:
-		failed.emit("unavailable")
+		failed.emit(UNAVAILABLE)
 		return
 	backend.call("buy", product)
 
@@ -163,7 +174,7 @@ func prices_updated(new_prices: Dictionary) -> void:
 	changed.emit()
 
 
-## 구매 ended without a purchase: `reason` "cancelled" or "failed".
+## 구매 ended without a purchase: `reason` CANCELLED or FAILED.
 func purchase_failed(reason: String) -> void:
 	failed.emit(reason)
 
@@ -224,11 +235,11 @@ class PlayBilling:
 
 	func buy(product: String) -> void:
 		if client == null or not client.call("is_ready"):
-			store.purchase_failed("failed")
+			store.purchase_failed(IslandStore.FAILED)
 			return
 		var r: Dictionary = client.call("purchase", product)
 		if int(r.get("response_code", -1)) != IslandStore.RESPONSE_OK:
-			store.purchase_failed("failed")
+			store.purchase_failed(IslandStore.FAILED)
 
 	func acknowledge(token: String) -> void:
 		if client != null and token != "":
@@ -249,11 +260,11 @@ class PlayBilling:
 			IslandStore.RESPONSE_OK:
 				store.purchases_updated(r.get("purchases", []), false)
 			IslandStore.USER_CANCELED:
-				store.purchase_failed("cancelled")
+				store.purchase_failed(IslandStore.CANCELLED)
 			IslandStore.ITEM_ALREADY_OWNED:
 				refresh()
 			_:
-				store.purchase_failed("failed")
+				store.purchase_failed(IslandStore.FAILED)
 
 
 ## The stand-in store of --store=<mode> (FAKE_MODES): answers at once, no money, nothing saved but
@@ -263,6 +274,7 @@ class FakeStore:
 	const PRICE := "₩990"
 	var store: IslandStore
 	var mode := "none"
+	var _made: Array = []
 
 	func _init(owner_store: IslandStore, fake_mode: String) -> void:
 		store = owner_store
@@ -282,12 +294,10 @@ class FakeStore:
 		bought.append_array(_made)
 		store.purchases_updated(bought, true)
 
-	var _made: Array = []
-
 	func buy(product: String) -> void:
 		match mode:
 			"fail":
-				store.purchase_failed("failed")
+				store.purchase_failed(IslandStore.FAILED)
 			"pending":
 				_made.append({"product_ids": [product], "purchase_state": IslandStore.PENDING, "is_acknowledged": false})
 				store.purchases_updated(_made, false)

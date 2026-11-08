@@ -82,8 +82,9 @@ apps/lab3d/tools/build.sh play
 
 - `targetSdk` 36, `minSdk` 24, arm64-v8a만, 네이티브 라이브러리 16KB 정렬.
 - 매니페스트의 `uses-permission`은 결제 플러그인(#77, GodotGooglePlayBilling 3.3.0, Play Billing Library 9.1.0)이 가져온 것뿐이다: `com.android.vending.BILLING`, 그리고 결제 라이브러리의 의존성(`com.google.android.datatransport:transport-backend-cct`)이 넣는 `INTERNET`·`ACCESS_NETWORK_STATE`. 프리셋의 `permissions/internet`은 꺼져 있다(2026-11-08 Play 빌드로 확인). 바뀌면 Data safety 답을 다시 본다.
-- 두 Android 프리셋 모두 `user_data_backup/allow=true`(Android 자동 백업, #77): 새 기기·재설치 때 진행 기록이 돌아온다. 구매는 Play에 다시 묻는다(IslandStore).
+- 두 Android 프리셋 모두 `user_data_backup/allow=true`(Android 자동 백업, #77): 새 기기·재설치 때 진행 기록이 돌아온다. 구매 사본(`purchases.cfg`)은 Android에서 앱의 캐시 폴더(`OS.get_cache_dir()`)에 두어 자동 백업에서 빠지고, 구매는 Play에 다시 묻는다(IslandStore).
 - "Android" 프리셋(기기 확인용, Gradle 아님)에는 결제 플러그인이 들어가지 않는다(`addons/GodotGooglePlayBilling/export_plugin.gd`가 Gradle 빌드에서만 AAR을 넣게 고침). 결제는 "Android Play" 빌드에서만 된다.
+- 결제 플러그인 출처: https://github.com/godot-sdk-integrations/godot-google-play-billing/releases/tag/3.3.0 의 `godot-google-play-billing.zip`(sha256 `20d75623d6f337f08d8283c83098b73678d5f575e39247af5a8eb80588b18568`). AAR sha256: release `b667b4ae3ecf91d7dea90bebd4ba5a7aef56cfc2cd7de4787aeb51a1927dcef7`, debug `f7f8f3f1c8099e58127332c8c27f353a7eea079e749682d2ebd83d1bd4bd6f3d`(2026-11-08 원본과 대조해 같음). 원본과 다른 파일은 `export_plugin.gd`(Gradle 빌드 조건)뿐이다. 판을 올릴 때 같은 방법으로 대조한다.
 
 ## 5. Play Console 순서 (개인 계정)
 
