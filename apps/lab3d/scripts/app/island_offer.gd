@@ -1,8 +1,9 @@
 ## The island's offer to the guardian (#77, 2026-11-08 user-approved mock), after ParentalGate: the
 ## island's picture, its name, what buying changes (said plainly, to the guardian), the store's own
 ## price, 구매 and 닫기, and "결제는 Google Play에서 해요". 구매 opens the store's purchase screen
-## (IslandStore.buy). A purchase waiting for approval shows "결제 승인을 기다리고 있어요" instead of the
-## buttons; a bought island closes the offer. No store or no price yet: 구매 cannot be pressed and the
+## (IslandStore.buy). A purchase waiting for approval shows "결제 승인을 기다리고 있어요" in place of the
+## price and 구매 (닫기 stays); a bought island closes the offer. A failed purchase says so; a cancelled
+## one (the guardian's own choice) only shows the store line again. No store or no price yet: 구매 cannot be pressed and the
 ## offer says payment is not possible now.
 class_name IslandOffer
 extends GuardianModal

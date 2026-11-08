@@ -315,9 +315,9 @@ func check_gate() -> void:
 	expect.call(problems.is_empty(), "payment: the guardian's check (a × b + c in range, number keyboard field, a new sum when wrong, closed after three)", "; ".join(problems))
 
 
-## The offer: price and 구매 from the store, waiting instead of the buttons, a bought island closes it,
-## no store: 구매 cannot be pressed, a failed or cancelled purchase says so. On phone, tablet and
-## desktop the card and × are inside the view.
+## The offer: price and 구매 from the store, waiting in place of the price and 구매, a bought island
+## closes it, no store: 구매 cannot be pressed, a failed purchase says so and a cancelled one shows the
+## store line. On phone, tablet and desktop the card and × are inside the view.
 func check_offer() -> void:
 	Island.use_index(_paid_index())
 	var problems := []

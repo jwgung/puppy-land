@@ -24,7 +24,8 @@ extends Node
 
 ## A purchase, a price or a pending purchase changed (the cards and the offer sheet redraw).
 signal changed
-## 구매 ended without a purchase (cancelled, failed): the offer sheet says so.
+## 구매 ended without a purchase (CANCELLED, FAILED; UNAVAILABLE: no store): the offer sheet shows the
+## matching line.
 signal failed(reason: String)
 
 const QualityScript := preload("res://scripts/core/quality.gd")
