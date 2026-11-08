@@ -1,0 +1,183 @@
+{
+  "title": "What mountain does a volcano make?",
+  "category": "Land and sea",
+  "question": "What mountain does sticky lava make?",
+  "steps": [
+    "Press and hold the magma pump in front. The longer you press, the more magma comes up.",
+    "Watch how far the lava runs and how high it piles up.",
+    "Use the buttons at the bottom left to pick runny, normal or sticky magma."
+  ],
+  "observe": "Runny lava runs far and makes a low, wide mountain. Sticky lava can't go far, so it piles up into a tall, steep mountain. When lava reaches the sea, it cools and hardens into new land.",
+  "terms": [
+    {
+      "name": "Magma",
+      "description": "Rock deep under the ground, melted by great heat."
+    },
+    {
+      "name": "Lava",
+      "description": "Magma that has come out onto the ground. It hardens into rock when it cools."
+    },
+    {
+      "name": "Volcano",
+      "description": "A mountain made by magma coming out and piling up."
+    }
+  ],
+  "law": {
+    "equation": "stickier lava = taller, steeper mountain",
+    "title": "Sticky lava and the shape of a volcano",
+    "description": "Runny lava runs far and spreads out, so it makes a low, wide mountain. Sticky lava can't go far and piles up where it comes out, so it makes a tall, steep mountain. Lava that reaches the sea cools, hardens and becomes new land."
+  },
+  "tip": "Press and hold the pump's red button with one finger and magma comes up. The longer you press, the more comes up. Let go and the pump stops.",
+  "tip_short": "Press and hold the pump to bring up magma",
+  "controls": [
+    {
+      "label": "Magma",
+      "options": [
+        {
+          "label": "Runny magma"
+        },
+        {
+          "label": "Normal magma"
+        },
+        {
+          "label": "Sticky magma"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "label": "Start over"
+    }
+  ],
+  "predict": {
+    "question": "What mountain does sticky lava make?",
+    "choices": [
+      {
+        "label": "Tall and steep"
+      },
+      {
+        "label": "Low and wide"
+      }
+    ],
+    "reason": "Sticky lava can't run far, so it piles up close by. That makes a tall, steep mountain.",
+    "bridge": "Bring up some magma and see!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Pour runny lava from the little volcano and make a wide, low mountain!",
+        "say": "Runny lava runs far, like water. It spreads out wide and makes a low, wide mountain.",
+        "win": "A wide, flat mountain!",
+        "miss": "Press longer to let it run!",
+        "miss_conditions": "Pick the runny magma!"
+      },
+      {
+        "text": "Pile up sticky lava into a tall, steep mountain!",
+        "say": "Sticky lava can't go far, so it piles up right there. It piles up and up into a tall, steep mountain.",
+        "win": "A tall, pointy mountain!",
+        "miss": "Press and pile it higher!",
+        "miss_conditions": "Pick the sticky magma!"
+      },
+      {
+        "text": "Send the bubbling volcano's lava to the sea, not the village!",
+        "say": "If magma gets stuck, it can all burst out at once. Let it out bit by bit, and the lava reaches the sea and cools. Cooled, hardened lava becomes new land.",
+        "win": "New land! The needle came up!",
+        "miss": "Press so it reaches the sea!",
+        "miss_conditions": "Pick the normal magma!"
+      }
+    ]
+  },
+  "story": {
+    "keeper": "This is the volcano at the back of the island. It slept a long time, but lately it rumbles and bubbles under the ground…",
+    "clue": "The thump, the fallen cliff, the volcanic ash, the shaking from the volcano…",
+    "more": [
+      {
+        "text": "I got it! The volcano tossed and turned, and that broke the sundial!"
+      },
+      {
+        "text": "The volcano…? Then is the sundial's needle here too?"
+      },
+      {
+        "text": "Something's shining in the crater! It looks like the needle!"
+      }
+    ],
+    "map_clue": "At the back of the island, the mountain with smoke!"
+  },
+  "kid": {
+    "intro": "This is the volcano lab. Rock melted deep under the ground is called **magma**, and when it flows out onto the ground it is called **lava**.",
+    "intro_more": [
+      {
+        "text": "Runny lava flows far, and sticky lava piles up close by. Let's try it first with a little volcano model."
+      }
+    ],
+    "title": "Bring up magma and make mountains of lava!",
+    "place": "Volcano",
+    "say": "Runny lava runs far and makes a low, wide mountain. Sticky lava piles up close and makes a tall, steep one.",
+    "tip": "Press and hold the pump to bring up magma.",
+    "cards": {
+      "state": "What the lava made",
+      "amount": "Magma that came up",
+      "magma": "Magma"
+    },
+    "picks": {
+      "magma": [
+        {
+          "label": "Runny"
+        },
+        {
+          "label": "Normal"
+        },
+        {
+          "label": "Sticky"
+        }
+      ]
+    }
+  },
+  "note": {
+    "law": "Runny lava runs far and makes a low, wide mountain; sticky lava piles up close and makes a tall, steep one. Lava that cools in the sea becomes new land.",
+    "formula": "stickier lava = taller, steeper mountain",
+    "numbers": [
+      {
+        "label": "What the lava made"
+      },
+      {
+        "label": "Magma that came up"
+      },
+      {
+        "label": "Magma"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "label": "What the lava made"
+    },
+    {
+      "label": "Magma that came up"
+    },
+    {
+      "label": "Magma"
+    }
+  ],
+  "graph": {
+    "title": "The little volcano model: lava and the mountain's shape",
+    "x": {
+      "label": "Lava that came out"
+    },
+    "y": {
+      "label": "The mountain's height and how far it spread"
+    },
+    "series": [
+      {
+        "label": "Height"
+      },
+      {
+        "label": "Spread"
+      },
+      {
+        "label": "Now"
+      }
+    ]
+  }
+}

@@ -185,6 +185,11 @@
 ##    the judging of the three stages, the Jolt house posed on the model and falling with it, the
 ##    buttons, no number on the screen, the table and the house in view, the volcano's stripes, the
 ##    spot, the opening lines, the slingshot and the piece.
+## 24k. 화산 (tests/volcano_checks.gd, #98 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 11, the rules of the small model and the big volcano, the pump (press
+##    and hold), the judging of the three stages (the wrong magma's line), the magma button, the site
+##    (the big volcano at night on stage 3), no number on the screen, what matters in view, the spot,
+##    the opening lines (story.more), the hand and the piece (the needle pushed up).
 ## Times are engine fixed steps (60 Hz), independent of rendering FPS.
 extends SceneTree
 
@@ -453,6 +458,11 @@ func _run() -> void:
 	_expect(earthquake != null and earthquake.can_instantiate(), "earthquake checks compile", "")
 	if earthquake != null and earthquake.can_instantiate():
 		await earthquake.new(self, _expect).run()
+	print("== 화산 (#98): Hutton Island's volcano lab, its lines, rules, pump, judging, site, view, hand and piece ==")
+	var volcano: GDScript = load("res://tests/volcano_checks.gd")
+	_expect(volcano != null and volcano.can_instantiate(), "volcano checks compile", "")
+	if volcano != null and volcano.can_instantiate():
+		await volcano.new(self, _expect).run()
 	print("== the hand guide (2026-10-30: the gesture on the lab's object, once and after a quiet while; the map's tap) ==")
 	var hand: GDScript = load("res://tests/hand_guide_checks.gd")
 	_expect(hand != null and hand.can_instantiate(), "hand guide checks compile", "")

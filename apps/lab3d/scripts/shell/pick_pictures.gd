@@ -6,7 +6,7 @@
 ## a small or a big ball (blue, orange, the free fall's red), a big or a small drum, a weight, a short
 ## or a long string, a short or a long stick (#86), the Earth with its axis tilted or upright (#87), a weak
 ## or a strong sun (#91), a humid or a dry day's air (#92), a cold, warm or very warm sea (#94), rock or
-## sand ground and the block house without or with its brace (#97).
+## sand ground and the block house without or with its brace (#97), runny, normal or sticky magma (#98).
 ## `size` (0..1) and `count` say how much the drawing shows (kid.picks entries). The words under the
 ## picture say the same thing.
 ## A mass's picture (a ball, a box, a weight) is drawn like the lab draws the body (2026-10-28,
@@ -20,7 +20,8 @@ const KINDS := ["earth", "moon", "jupiter", "box", "slide_steel", "slide_wood", 
 	"slope", "pulley", "lever", "ball_blue", "ball_orange", "ball_red", "drum_big", "drum_small", "weight", "rope",
 	"stick", "earth_tilted", "earth_upright", "sun_weak", "sun_strong", "air_humid", "air_dry",
 	"coast_day", "coast_night", "sea_cold", "sea_warm", "sea_hot",
-	"ground_rock", "ground_sand", "house_plain", "house_brace"]
+	"ground_rock", "ground_sand", "house_plain", "house_brace",
+	"magma_runny", "magma_normal", "magma_sticky"]
 const OUTLINE := Color("8a6a46")   # PredictPictures.GROUND: the brown of the storybook lines
 const STEEL := ArtPalette.STEEL
 
@@ -139,6 +140,8 @@ static func draw(canvas: Control, kind: String, size := 0.5, count := 1) -> void
 			_sun(canvas, c, r.size.y, kind == "sun_strong")
 		"coast_day", "coast_night":   # #93 (바닷바람): the coast under the sun, or under the moon and stars
 			_coast(canvas, r, kind == "coast_night")
+		"magma_runny", "magma_normal", "magma_sticky":   # #98 (화산): how the magma pours and piles
+			_magma(canvas, r, ["magma_runny", "magma_normal", "magma_sticky"].find(kind))
 		"stick":   # #86 (그림자 시계): the yard's stick, `size` of the picture's height (short / long)
 			_ground(canvas, r)
 			var foot := Vector2(c.x, r.end.y - 2.0)
@@ -307,6 +310,39 @@ static func _block_house(canvas: Control, r: Rect2, brace: bool) -> void:
 		var x1 := c.x + w * 0.5 - post
 		canvas.draw_line(Vector2(x0, foot - 2.0), Vector2(x1, top + 2.0), ArtPalette.WOOD_GRAIN, 4.0, true)
 		canvas.draw_line(Vector2(x1, foot - 2.0), Vector2(x0, top + 2.0), ArtPalette.WOOD_GRAIN, 4.0, true)
+
+
+## Magma pouring from a little spout onto the ground (#98): runny (`stickiness` 0) a thin long
+## stream and a flat wide puddle, normal (1) between, sticky (2) a thick short drop and a tall heap;
+## the colours of the pump's tank (VolcanoProps.MAGMA).
+static func _magma(canvas: Control, r: Rect2, stickiness: int) -> void:
+	var k := clampi(stickiness, 0, 2)
+	var color: Color = VolcanoProps.MAGMA[k]
+	var top: Color = VolcanoProps.MAGMA_TOP[k]
+	var ground := r.end.y - 3.0
+	canvas.draw_line(Vector2(r.position.x + 4.0, ground), Vector2(r.end.x - 4.0, ground), OUTLINE, 3.0)
+	var c := r.get_center()
+	var spout := Vector2(c.x, r.position.y + 6.0)
+	canvas.draw_rect(Rect2(spout - Vector2(9.0, 6.0), Vector2(18.0, 8.0)), OUTLINE)
+	var half: float = [44.0, 28.0, 15.0][k]      # the heap's half width
+	var height: float = [7.0, 16.0, 30.0][k]     # and its height
+	var stream: float = [3.0, 6.0, 11.0][k]      # the pour's width
+	var heap := PackedVector2Array()
+	for n in 17:
+		var t := lerpf(-1.0, 1.0, float(n) / 16.0)
+		heap.append(Vector2(c.x + t * half, ground - height * (1.0 - absf(t)) * (0.85 + 0.15 * cos(t * PI * 0.5))))
+	heap.append(Vector2(c.x + half, ground))
+	heap.append(Vector2(c.x - half, ground))
+	canvas.draw_colored_polygon(heap, color)
+	var pour_end := ground - height + 2.0
+	if k == 2:   # sticky: a fat drop hangs under the spout, a gap, then the heap
+		canvas.draw_rect(Rect2(Vector2(c.x - stream * 0.5, spout.y + 2.0), Vector2(stream, 8.0)), color)
+		canvas.draw_circle(Vector2(c.x, spout.y + 14.0), stream * 0.75, color)
+		canvas.draw_circle(Vector2(c.x, spout.y + 26.0), stream * 0.6, color)
+	else:
+		canvas.draw_rect(Rect2(Vector2(c.x - stream * 0.5, spout.y + 2.0), Vector2(stream, pour_end - spout.y - 2.0)), color)
+	canvas.draw_circle(Vector2(c.x - half * 0.3, ground - height * 0.45), 2.5 + k, top)
+	canvas.draw_circle(Vector2(c.x + half * 0.25, ground - height * 0.25), 2.0 + k * 0.5, top)
 
 
 static func _ground(canvas: Control, r: Rect2) -> void:

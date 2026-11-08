@@ -98,6 +98,12 @@ var _ponds: Array = []               # [lab centre Vector2, lab radius, map spec
 var _yards: Array = []               # map specs of the yards (their fences are drawn)
 ## Built pieces, for tests: [kind, lab x, z, radius] of the far landmarks and trees.
 var far_things: Array = []
+## The lab's own say on the other zones' landmarks (its `hides_far_landmark(at: Vector2) -> bool`, lab
+## x/z): one standing right behind the lab's own big prop is left out (#98: the volcano's).
+var _hides := Callable()
+## And on its own trees (its `near_tree_at(at: Vector2) -> Vector2`): one standing in its big prop is
+## moved off it (#98: the volcano's slope).
+var _moves := Callable()
 
 
 ## The world of lab `lab_id` around `lab_center`; an unknown id stands in the meadow.
@@ -315,6 +321,10 @@ static func _under_fill(target: Color) -> Color:
 ## Builds the world under `parent`: "Island" (one mesh, MapIsland's material) and, when
 ## `extra_shadows` adds any, "IslandShadows" (the lab's own alpha blob shadows).
 func build(parent: Node3D, extra_shadows: Callable = Callable()) -> void:
+	if parent.has_method("hides_far_landmark"):
+		_hides = Callable(parent, "hides_far_landmark")
+	if parent.has_method("near_tree_at"):
+		_moves = Callable(parent, "near_tree_at")
 	var b := ArtKit.builder()
 	# What stands on the ground first, the ground, then the sea and the haze: the covered ground and
 	# sea fail the depth test before they are shaded (MapIsland.build).
@@ -348,7 +358,8 @@ func build(parent: Node3D, extra_shadows: Callable = Callable()) -> void:
 ## or on the coast's sand.
 func _add_near_decor(b: ArtMeshBuilder) -> void:
 	for t in ArtKit.TREES:
-		_tree(b, Vector2(_c.x + t[0], _c.y + t[1]), t[2])
+		var at := Vector2(_c.x + t[0], _c.y + t[1])
+		_tree(b, _moves.call(at) if _moves.is_valid() else at, t[2])
 	b.ao_min = 0.75
 	b.ao_height = 0.3
 	for r in ArtKit.ROCKS:
@@ -414,7 +425,8 @@ func _add_landmarks(b: ArtMeshBuilder) -> void:
 			var at := to_lab(_v2(s[1]))
 			var radius := MapLandmarks.stage_radius(s[0]) * LANDMARK_SCALE
 			if at.distance_to(_c) < CLEAR + radius + 2.0 or at.distance_to(_c) > coast_at((at - _c).angle()) - BEACH \
-					or absf(Vector2(0.0, -1.0).angle_to(at - _c)) > deg_to_rad(BEHIND_DEG):
+					or absf(Vector2(0.0, -1.0).angle_to(at - _c)) > deg_to_rad(BEHIND_DEG) \
+					or (_hides.is_valid() and _hides.call(at)):
 				continue
 			var y := ground_y(at)
 			if radius > 0.0:

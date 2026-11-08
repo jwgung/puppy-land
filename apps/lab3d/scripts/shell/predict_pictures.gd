@@ -33,7 +33,9 @@ const KINDS := ["long_arc", "same_arc", "fall_together", "fall_heavy_first", "li
 	# #96 (지층 쌓기): which layer is the oldest, the bottom one or the top one?
 	"strata_bottom", "strata_top",
 	# #97 (지진): which ground shakes more, rock or sand?
-	"quake_rock", "quake_sand"]
+	"quake_rock", "quake_sand",
+	# #98 (화산): what mountain does sticky lava make?
+	"mountain_tall", "mountain_wide"]
 const STRONG := Color("e2683c")
 const PALE := Color("c9b892")
 const GROUND := Color("8a6a46")
@@ -116,6 +118,8 @@ static func draw(canvas: Control, kind: String) -> void:
 			_strata(canvas, r, kind == "strata_bottom")
 		"quake_rock", "quake_sand":
 			_quake(canvas, r, kind == "quake_sand")
+		"mountain_tall", "mountain_wide":
+			_mountains(canvas, r, kind == "mountain_tall")
 		_:
 			_ground(canvas, r)
 
@@ -849,3 +853,28 @@ static func _strata(canvas: Control, r: Rect2, bottom: bool) -> void:
 	canvas.draw_polyline(ring, STRONG, 4.0, true)
 	var tip := Vector2(pick.end.x + 4.0, pick.get_center().y)
 	_arrow(canvas, tip + Vector2(r.size.x * 0.18, 0.0), tip, STRONG, 4.0)
+
+## Two mountains of lava side by side on the ground, a tall steep one and a low wide one: the one the
+## choice says in orange (lava running down it, a glowing top), the other pale (#98).
+static func _mountains(canvas: Control, r: Rect2, tall: bool) -> void:
+	_ground(canvas, r)
+	var ground := r.end.y - 1.5
+	var shapes := [[r.position.x + r.size.x * 0.27, r.size.x * 0.17, r.size.y * 0.78],
+		[r.position.x + r.size.x * 0.7, r.size.x * 0.27, r.size.y * 0.3]]
+	for i in 2:
+		var mine := (i == 0) == tall
+		var x: float = shapes[i][0]
+		var half: float = shapes[i][1]
+		var height: float = shapes[i][2]
+		var peak := PackedVector2Array([Vector2(x - half, ground), Vector2(x - half * 0.18, ground - height),
+			Vector2(x + half * 0.18, ground - height), Vector2(x + half, ground)])
+		canvas.draw_colored_polygon(peak, Color("c8501a") if mine else PALE)
+		if mine:
+			# The glowing top and two lava streams down its sides.
+			canvas.draw_colored_polygon(PackedVector2Array([Vector2(x - half * 0.32, ground - height * 0.8),
+				Vector2(x - half * 0.18, ground - height), Vector2(x + half * 0.18, ground - height),
+				Vector2(x + half * 0.32, ground - height * 0.8)]), SUN)
+			canvas.draw_line(Vector2(x - half * 0.1, ground - height), Vector2(x - half * 0.55, ground - height * 0.3), STRONG, 3.0, true)
+			canvas.draw_line(Vector2(x + half * 0.12, ground - height), Vector2(x + half * 0.5, ground - height * 0.4), STRONG, 3.0, true)
+		else:
+			canvas.draw_polyline(peak, GROUND, 1.5, true)
