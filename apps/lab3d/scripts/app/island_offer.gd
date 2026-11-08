@@ -17,6 +17,9 @@ const ROW_GAP := 44
 const BUTTON_GAP := 26
 const WAITING_PAPER := Color("fdf1d8")
 const WAITING_SIZE := 28
+const WAITING_RADIUS := 18
+const WAITING_PAD := Vector2(24, 16)
+const WAITING_LINE := 3
 ## The price is Play's text in the guardian's currency: its signs are kept in the font subset
 ## (tools/subset_font.sh reads them here).
 const CURRENCY_SIGNS := "₩$€£¥₹₽₺₫₱฿₪₴₸₦₡₲₵₭₮"
@@ -87,14 +90,14 @@ func _init(id: String) -> void:
 	buy_button.pressed.connect(_buy)
 	buttons.add_child(buy_button)
 	close_text_button = Ui.button(Locale.t("common.close"), "TitleButton", BUY_SIZE.y)
-	close_text_button.name = "CloseWide"
+	close_text_button.name = "CloseText"
 	close_text_button.custom_minimum_size = Vector2(CLOSE_WIDTH, BUY_SIZE.y)
 	close_text_button.add_theme_font_size_override("font_size", GuardianModal.BUTTON_FONT)
 	close_text_button.pressed.connect(close)
 	buttons.add_child(close_text_button)
 	waiting_box = PanelContainer.new()
 	waiting_box.name = "Waiting"
-	waiting_box.add_theme_stylebox_override("panel", UiTheme.outlined_box(WAITING_PAPER, UiTheme.DIALOGUE_LINE, 18, Vector2(24, 16), 3, 0))
+	waiting_box.add_theme_stylebox_override("panel", UiTheme.outlined_box(WAITING_PAPER, UiTheme.DIALOGUE_LINE, WAITING_RADIUS, WAITING_PAD, WAITING_LINE, 0))
 	waiting_box.add_child(GuardianModal.text_label(Locale.t("guardian.waiting"), WAITING_SIZE, true))
 	right.add_child(waiting_box)   # above 닫기 (the mock): in place of the price
 	right.add_child(buttons)

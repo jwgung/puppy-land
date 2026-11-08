@@ -160,11 +160,15 @@ func check_store_states() -> void:
 	var reasons := []
 	failing.failed.connect(func(r: String) -> void: reasons.append(r))
 	failing.buy("hutton")
-	if IslandStore.owns("hutton") or reasons != ["failed"]:
+	if IslandStore.owns("hutton") or reasons != [IslandStore.FAILED]:
 		problems.append("--store=fail: %s" % str(reasons))
 	_drop(failing)
+	if IslandStore.cache_file_in(true, "/data/user/0/app/cache") != "/data/user/0/app/cache/purchases.cfg" \
+			or IslandStore.cache_file_in(false, "/home/me/.cache") != "user://purchases.cfg" \
+			or IslandStore.cache_file_in(true, "") != "user://purchases.cfg" or IslandStore.cache_file() != "user://purchases.cfg":
+		problems.append("cache file: android %s, desktop %s" % [IslandStore.cache_file_in(true, "/data/user/0/app/cache"), IslandStore.cache_file()])
 	Island.use_index([])
-	expect.call(problems.is_empty(), "payment: only PURCHASED opens, pending waits, a refund closes, acknowledged once, the cache until the store answers, the stand-in modes", "; ".join(problems))
+	expect.call(problems.is_empty(), "payment: only PURCHASED opens, pending waits, a refund closes, acknowledged once, the cache until the store answers (Android: the cache folder, out of backups), the stand-in modes", "; ".join(problems))
 
 
 class Recorder:
@@ -312,11 +316,12 @@ func check_gate() -> void:
 
 
 ## The offer: price and 구매 from the store, waiting instead of the buttons, a bought island closes it,
-## no store: 구매 cannot be pressed. On phone, tablet and desktop the card and × are inside the view.
+## no store: 구매 cannot be pressed, a failed or cancelled purchase says so. On phone, tablet and
+## desktop the card and × are inside the view.
 func check_offer() -> void:
 	Island.use_index(_paid_index())
 	var problems := []
-	for mode in ["none", "pending", ""]:
+	for mode in ["none", "pending", "fail", ""]:
 		var store := _store(mode)
 		for size_name in SIZES:
 			var host := Control.new()
@@ -338,6 +343,13 @@ func check_offer() -> void:
 				await _frames(1)
 				if not offer.waiting_box.visible or offer.buy_button.visible:
 					problems.append("pending: no waiting line")
+			if size_name == "desktop" and mode == "fail":
+				offer.buy_button.pressed.emit()
+				await _frames(1)
+				var failed_text := offer.message.text
+				store.purchase_failed(IslandStore.CANCELLED)
+				if failed_text != Locale.t("guardian.failed") or offer.message.text != Locale.t("guardian.store_note"):
+					problems.append("fail: message %s, then cancelled %s" % [failed_text, offer.message.text])
 			if size_name == "desktop" and mode == "none":
 				offer.buy_button.pressed.emit()
 				await _frames(1)

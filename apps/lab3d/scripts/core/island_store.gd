@@ -61,8 +61,12 @@ var cache_path := cache_file()
 
 ## Where the cache lives: Android's cache folder (left out of backups), user:// elsewhere.
 static func cache_file() -> String:
-	var folder := OS.get_cache_dir() if OS.has_feature("android") else ""
-	return folder.path_join(CACHE_NAME) if folder != "" else "user://" + CACHE_NAME
+	return cache_file_in(OS.has_feature("android"), OS.get_cache_dir())
+
+
+## cache_file() for a device: on Android (`android`) inside `cache_dir` when there is one.
+static func cache_file_in(android: bool, cache_dir: String) -> String:
+	return cache_dir.path_join(CACHE_NAME) if android and cache_dir != "" else "user://" + CACHE_NAME
 
 
 ## The store of this run: Play's in the Play build when the plugin is there, the stand-in of --store=

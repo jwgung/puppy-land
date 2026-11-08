@@ -17,6 +17,16 @@ const FIELD_SIZE := Vector2(170.0, 76.0)
 const FIELD_FONT := 44
 const OK_SIZE := Vector2(150.0, 76.0)
 const WIDTH := 640.0
+const LINE_GAP := 12
+const ROW_GAP := 18
+## The answer box: rounded, outlined like the card, a little room round the digits.
+const FIELD_RADIUS := 16
+const FIELD_PAD := Vector2(14, 4)
+const FIELD_LINE := 4
+## The sum's numbers (Q4): a × b + c, answers 46..220.
+const A_RANGE := Vector2i(12, 19)
+const B_RANGE := Vector2i(3, 9)
+const C_RANGE := Vector2i(10, 49)
 
 var a := 0
 var b := 0
@@ -34,12 +44,12 @@ func _init() -> void:
 	name = "ParentalGate"
 	rng.randomize()
 	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 12)
+	column.add_theme_constant_override("separation", LINE_GAP)
 	column.custom_minimum_size.x = WIDTH
 	column.add_child(GuardianModal.text_label(Locale.t("guardian.gate_title"), GuardianModal.TITLE_SIZE, true))
 	column.add_child(GuardianModal.text_label(Locale.t("guardian.gate_lead"), GuardianModal.LINE_SIZE - 2, false, UiTheme.MUTED, WIDTH))
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 18)
+	row.add_theme_constant_override("separation", ROW_GAP)
 	sum_label = GuardianModal.text_label("", SUM_SIZE, true)
 	sum_label.name = "Sum"
 	sum_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -55,7 +65,7 @@ func _init() -> void:
 	field.add_theme_font_size_override("font_size", FIELD_FONT)
 	field.add_theme_color_override("font_color", UiTheme.INK)
 	field.add_theme_color_override("caret_color", UiTheme.INK)
-	var box := UiTheme.outlined_box(UiTheme.WHITE, UiTheme.DIALOGUE_LINE, 16, Vector2(14, 4), 4, 0)
+	var box := UiTheme.outlined_box(UiTheme.WHITE, UiTheme.DIALOGUE_LINE, FIELD_RADIUS, FIELD_PAD, FIELD_LINE, 0)
 	field.add_theme_stylebox_override("normal", box)
 	field.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	field.text_changed.connect(_digits_only)
@@ -82,9 +92,9 @@ func _ready() -> void:
 
 ## A new sum (the answer cleared).
 func new_sum() -> void:
-	a = rng.randi_range(12, 19)
-	b = rng.randi_range(3, 9)
-	c = rng.randi_range(10, 49)
+	a = rng.randi_range(A_RANGE.x, A_RANGE.y)
+	b = rng.randi_range(B_RANGE.x, B_RANGE.y)
+	c = rng.randi_range(C_RANGE.x, C_RANGE.y)
 	sum_label.text = "%d × %d + %d =" % [a, b, c]
 	field.text = ""
 
