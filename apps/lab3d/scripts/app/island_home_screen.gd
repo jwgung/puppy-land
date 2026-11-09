@@ -27,6 +27,12 @@ var env: WorldEnvironment
 ## The story "별 조각 찾기" (StoryDirector, only when Story.enabled): the prologue, the found pieces'
 ## flights to the lookout, the finale, the corner emblem. null in measurements and plain tests.
 var story: StoryDirector = null
+## The hutton island's sundial dial (#106: SundialDial at the sundial's foot; null without a sundial):
+## the wedges leaning on the drum before the finale, the whole dial after it. The story moves it.
+var dial: SundialDial = null
+## The grass on the new land (#106, MapIsland.new_land_grass; null without the new land): shown once the
+## finale was seen (the finale lets it sprout).
+var new_land_grass: MeshInstance3D = null
 ## App: play the prologue when the map opens (first launch, or 이야기 다시 보기).
 var play_prologue_on_open := false
 var _cinematic := false
@@ -145,7 +151,11 @@ func _ready() -> void:
 	env = MapIsland.make_environment()
 	view.viewport.add_child(env)
 	map = MapIsland.new(island)
+	var at_start := ProgressStore.load()
+	map.new_land = island.gnomon_spot() != "" and island.gnomon_spot() in island.found(at_start)
 	var built := map.build(world, island.map_spots())
+	if island.has_sundial():
+		_add_sundial_dial(at_start)
 	cat = CatActor.new(BreadCat.new())
 	world.add_child(cat)
 	dugi = DugiActor.new()
@@ -180,6 +190,33 @@ func _ready() -> void:
 			story.play_prologue()
 	if Quality.cmdline_value("demo-story").begins_with("map"):
 		get_tree().create_timer(1.5).timeout.connect(_print_spot_points)
+
+
+## The hutton sundial's dial (#106) at its foot: whole once the island's finale was seen, else the
+## wedges already at the square leaning on the drum (the ones whose flight still waits come later); the
+## new land's grass with it, shown after the finale.
+func _add_sundial_dial(progress: Dictionary) -> void:
+	dial = SundialDial.new()
+	dial.position = map.sundial_foot()
+	world.add_child(dial)
+	var finale := ProgressStore.mark(ProgressStore.STORY, ProgressStore.island_key(island.id, "finale"))
+	if finale:
+		dial.show_whole()
+	else:
+		dial.show_leaning(placed_wedges(progress))
+	if map.new_land:
+		new_land_grass = map.new_land_grass()
+		new_land_grass.visible = finale
+		world.add_child(new_land_grass)
+
+
+## The sundial wedges at the square now: the found pieces whose flight played (an old save: found),
+## past the gnomon's spot (its piece is the gnomon, not a wedge).
+func placed_wedges(progress: Dictionary) -> int:
+	var flying := ProgressStore.pending(ProgressStore.PIECES)
+	var gnomon := island.gnomon_spot()
+	var wedges := island.found(progress).filter(func(id: String) -> bool: return id not in flying and id != gnomon)
+	return mini(wedges.size(), SundialDial.WEDGES)
 
 
 ## The map's camera definition (CameraRig.configure): a 3/4 view from above by default, then almost

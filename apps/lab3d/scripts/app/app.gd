@@ -12,7 +12,8 @@
 ##   --demo-title        the title screen even in a measurement (screenshots, its fps): the bench store,
 ##                       never the child's progress
 ##   --demo-story=<part> screenshots of the story in the bench store only (never the child's progress):
-##                       prologue | clue:<id> | found:<id> | flight:<id> | finale | map[:<n>] (Story, _demo_story)
+##                       prologue | clue:<id> | found:<id> | flight:<id> | finale | finale:<island> | map[:<n>]
+##                       (Story, _demo_story; finale:hutton: the sundial finale, #106)
 ##   --progress=complete  writes the child's progress as all done, once (2026-11-02 user: "apk 다 깬걸로
 ##                       해줘. 보기 어렵다"): every stamp, the story's prologue, clues and finale seen, every
 ##                       piece flown and flag up, so every spot opens on a day map. For looking at the app.
@@ -310,6 +311,11 @@ func _demo_story(value: String) -> Dictionary:
 	var config := ConfigFile.new()   # a fresh bench store
 	config.save(ProgressStore.path)
 	Island.forget_current()   # the fresh store's island: the first
+	# finale:<island> (#106): another island's finale (the hutton sundial), that island open and in use.
+	if kind == "finale" and id != "" and not Island.entry(id).is_empty() and id != ProgressStore.FIRST_ISLAND:
+		Island.set_dev_open(not OS.has_feature("play"))
+		Island.set_current(id)
+		Story.mark_voyage_seen(id)
 	if kind != "prologue":
 		Story.mark_seen("prologue")
 	var store := {}
@@ -345,6 +351,14 @@ func _demo_story(value: String) -> Dictionary:
 			id = Island.current().lookout
 			for spot in Story.spots():
 				store[spot] = full.call(spot)
+			var gnomon := Island.current().gnomon_spot()
+			if gnomon != "":   # the sundial (#106): the last wedge's flight, the gnomon, then the finale
+				var order := Story.order()
+				for spot in [order[order.size() - 2], gnomon]:
+					ProgressStore.mark_flag_pending(spot)
+					ProgressStore.set_mark(ProgressStore.PIECES, spot, false)
+				ProgressStore.save(store)
+				return {}
 	if kind in ["flight", "finale"] and ExperimentRegistry.find(id).size() > 0:
 		store[id] = full.call(id)
 		ProgressStore.save(store)

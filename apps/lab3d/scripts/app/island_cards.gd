@@ -84,6 +84,7 @@ static func entries(progress: Dictionary) -> Array:
 		out.append({"id": id, "name": island_name(id), "about": Locale.t("island.%s.about" % id),
 			"open": Island.is_open(id, progress), "complete": island.complete(progress),
 			"pieces": island.found(progress).size(), "total": island.spots().size(), "piece": island.piece,
+			"finale": ProgressStore.mark(ProgressStore.STORY, ProgressStore.island_key(id, "finale")),
 			"current": id == Island.current_id(), "after": island_name(after) if after != "" else ""})
 	out.append({"id": "", "name": Locale.t("islands.next"), "about": "", "open": false, "complete": false,
 		"pieces": 0, "total": 0, "piece": PieceArt.STAR, "current": false, "after": island_name(str(ids[-1])) if not ids.is_empty() else ""})
@@ -216,6 +217,8 @@ func _picture(entry: Dictionary) -> Panel:
 	if not locked and int(entry.total) > 0:
 		var emblem := PieceArt.emblem(str(entry.piece), int(entry.total))
 		emblem.set_filled(int(entry.pieces))
+		if emblem is SundialEmblem and entry.get("finale", false):
+			(emblem as SundialEmblem).set_whole(true)   # #106: the sundial is whole after its finale
 		emblem.pivot_offset = Vector2.ZERO
 		emblem.scale = Vector2.ONE * EMBLEM_SCALE
 		emblem.position = EMBLEM_AT

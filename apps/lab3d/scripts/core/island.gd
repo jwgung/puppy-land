@@ -253,6 +253,19 @@ func look_of(zone: String) -> String:
 	return str(spec.get("look", spec.get("ground", "")))
 
 
+## The sundial's wedges (#101): the first SUNDIAL_WEDGES spots of the order each give one; the next
+## (the hutton island's last, the volcano) gives the gnomon (#106).
+const SUNDIAL_WEDGES := 10
+
+
+## The spot that gives the sundial's gnomon ("" on an island of star pieces, or with too few spots):
+## its piece never flies on the map (it stands on the new land until the finale, #106).
+func gnomon_spot() -> String:
+	if piece != PIECE_SUNDIAL or order.size() <= SUNDIAL_WEDGES:
+		return ""
+	return str(order[SUNDIAL_WEDGES])
+
+
 ## What is wrong with the data ("" when nothing).
 func _check() -> String:
 	if zones.is_empty():
