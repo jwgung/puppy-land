@@ -146,17 +146,20 @@ func check_flights() -> void:
 	var story: StoryDirector = home.story
 	var before: int = home.dial.leaning
 	var landed_at := -1
+	var open_gap := false   # the gnomon handled (nothing pending) while the finale has not started
 	for i in 200:
 		story.advance(0.05)
-		await tree.process_frame
+		open_gap = open_gap or (ProgressStore.pending(ProgressStore.PIECES).is_empty() and not story.cinematic())
+		await tree.process_frame   # (the map's own frame steps the story too)
+		open_gap = open_gap or (ProgressStore.pending(ProgressStore.PIECES).is_empty() and not story.cinematic())
 		if landed_at < 0 and home.dial.leaning == before + 1:
 			landed_at = story.flights_played
 		if story.cinematic():
 			break
 	var flown := ProgressStore.pending(ProgressStore.PIECES).is_empty()
-	expect.call(before == 9 and landed_at == 1 and story.flights_played == 1 and flown and story.cinematic(),
-		"hutton finale: the 10th wedge flies to lean on the drum (9 -> 10), the gnomon's piece does not fly (one flight), then the finale starts",
-		"before %d, landed at flight %d, flights %d, flown %s, finale %s" % [before, landed_at, story.flights_played, flown, story.cinematic()])
+	expect.call(before == 9 and landed_at == 1 and story.flights_played == 1 and flown and story.cinematic() and not open_gap,
+		"hutton finale: the 10th wedge flies to lean on the drum (9 -> 10), the gnomon's piece does not fly (one flight), then the finale starts in that same step (no open map in between)",
+		"before %d, landed at flight %d, flights %d, flown %s, finale %s, gap %s" % [before, landed_at, story.flights_played, flown, story.cinematic(), open_gap])
 	await _free(home)
 
 

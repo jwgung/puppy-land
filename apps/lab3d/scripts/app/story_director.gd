@@ -568,9 +568,10 @@ func play_finale() -> void:
 		_finale_intro()
 
 
-## The island's finale is the sundial's (#106: the hutton island's dial on the map), not the star's.
+## The island's finale is the sundial's (#106: the hutton island's dial on the map and its sundial
+## pieces, so its emblem is the dial), not the star's.
 func _sundial() -> bool:
-	return home.dial != null
+	return home.dial != null and emblem is SundialEmblem
 
 
 func _lookout() -> Dictionary:
@@ -1116,6 +1117,12 @@ func _next_flight() -> void:
 			placed_count += 1
 			emblem.set_filled(placed_count)
 			_night(map_night(), 1.2)
+			# The next flight or the finale in this same frame: the map takes no tap in between.
+			if not _flight_queue.is_empty():
+				_next_flight()
+			elif _finale_due:
+				_finale_due = false
+				play_finale()
 			return
 		var spot: Dictionary = {}
 		for s in home._spots:
