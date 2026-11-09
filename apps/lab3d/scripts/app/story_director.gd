@@ -100,6 +100,11 @@ const NEEDLE_LAND_SCALE := 2.4     # it stands big there (the volcano lab pushed
 const NEEDLE_HELD_SCALE := 1.3     # held up by the cat
 const NEEDLE_HOLD_Y := 0.95        # m over the cat's feet where it holds the gnomon's middle
 const PLANT_SHARE := 0.6           # of the way from the paws to the dial a drag must reach to plant
+## The child is helped after this many misses in a finale (#108, 2026-11-09 user): the star that came
+## back down, the gnomon let go short of the dial. Then the star reaches the sky with any pull past a tap
+## and the gnomon goes in from PLANT_SHARE_HELPED of the way.
+const HELP_AFTER_MISSES := 3
+const PLANT_SHARE_HELPED := 0.2
 const PLANT_PAGE := 4              # the page after which the child plants the gnomon (Dugi: 이제 바늘을 꽂아 봐요)
 const ASSEMBLE_STAGGER_S := 0.22   # between the wedges' take-offs
 const ASSEMBLE_FLIGHT_S := 0.9
@@ -151,6 +156,7 @@ var _flight: Dictionary = {}       # {id, node, from, to, t}
 var _lift := false                 # the finale's star rides above the cat's paws
 var launch_waits := false          # the finale waits for the child's pull on the star
 var launches := 0                  # pulls let go (tests)
+var misses := 0                    # this finale's misses (HELP_AFTER_MISSES)
 var _pull: Dictionary = {}         # {press, now} the finger pulling the star (screen, UI units)
 var _launch: Dictionary = {}       # {from, v, t} the star flying up
 var _retry_open := false           # Dugi's "pull harder" line is in the box
@@ -560,8 +566,8 @@ func _on_dialogue_closed() -> void:
 func play_finale() -> void:
 	if cinematic():
 		return
-	Story.mark_seen("finale")   # once, even if the app closes during it
-	_begin("finale")
+	misses = 0
+	_begin("finale")   # (seen once it ends or is skipped, _finish: left half way, it plays again, #108)
 	if _sundial():
 		_dial_intro()
 	else:
@@ -657,6 +663,20 @@ static func launch_speed(pixels: float) -> float:
 	return LAUNCH_V_MAX * clampf(pixels / LAUNCH_PULL_FULL, 0.0, 1.0)
 
 
+## The speed this finale's pull of `pixels` gives: launch_speed, and once the child was helped
+## (HELP_AFTER_MISSES) at least the speed that reaches the sky from the paws, sqrt(2 g (sky - y0)).
+func pull_speed(pixels: float) -> float:
+	var speed := launch_speed(pixels)
+	if speed > 0.0 and helped():
+		speed = maxf(speed, sqrt(2.0 * LAUNCH_G * maxf(SKY_HIGH.y - _paws_top().y, 0.0)) * 1.02)
+	return speed
+
+
+## The child missed HELP_AFTER_MISSES times in this finale: the easier rule.
+func helped() -> bool:
+	return misses >= HELP_AFTER_MISSES
+
+
 ## The star's highest point (y) when it leaves `from_y` at `speed` up: y0 + v^2 / 2g.
 static func launch_top(from_y: float, speed: float) -> float:
 	return from_y + speed * speed / (2.0 * LAUNCH_G)
@@ -680,7 +700,7 @@ func _launch_input(kind: String, position: Vector2) -> void:
 			var pixels: float = maxf(0.0, (_pull.now as Vector2).y - (_pull.press as Vector2).y)
 			_pull = {}
 			_hide_pull()
-			var speed := launch_speed(pixels)
+			var speed := pull_speed(pixels)
 			if speed > 0.0:
 				launch_star(speed)
 			elif launch_guide != null:
@@ -712,7 +732,7 @@ func _step_launch(delta: float) -> void:
 		var share := clampf(pixels / LAUNCH_PULL_FULL, 0.0, 1.0)
 		var cradle := _paws_top()
 		_star.position = cradle + Vector3.DOWN * LAUNCH_DIP_M * share   # (after _step_star: no lift lerp while pulling)
-		_show_pull(cradle, _star.position, launch_speed(pixels))
+		_show_pull(cradle, _star.position, pull_speed(pixels))
 	if _launch.is_empty() or _star == null:
 		return
 	_launch.t += delta
@@ -727,6 +747,7 @@ func _step_launch(delta: float) -> void:
 	elif t > v / LAUNCH_G and y <= from.y:
 		# It came back down (gravity): to the paws again, and Dugi says pull harder.
 		_launch = {}
+		misses += 1
 		_star.position.y = from.y
 		_lift = true
 		SoundBoard.play(&"land")
@@ -1012,9 +1033,11 @@ func _plant_input(kind: String, position: Vector2) -> void:
 				return
 			var k := plant_share(_plant.press, _plant.now) if kind == "release" else 0.0
 			_plant = {}
-			if k >= PLANT_SHARE:
+			if k >= (PLANT_SHARE_HELPED if helped() else PLANT_SHARE):
 				plant_needle()
 			else:
+				if kind == "release":
+					misses += 1
 				_ease_needle(_needle_held_xf(), Callable())
 				_show_plant_guide()
 
@@ -1311,6 +1334,7 @@ func _finish() -> void:
 		shield.visible = false
 		skip_button.visible = false
 	if which == "finale":
+		Story.mark_seen("finale")   # at its end or 건너뛰기 (#108: left half way, it plays again)
 		_finale_done = true
 	_night_s = 0.0
 	_set_night(map_night())   # prologue: the map's night; finale: day

@@ -3,7 +3,8 @@
 ## afterwards), Puppy's clue (once per spot, before Dugi's question, never again), the found piece
 ## (only on the round's completion: the cat lifts it, the card shows it), its flight to the lookout
 ## on the map (once; the emblem counts the pieces), old progress files (a finished spot is a found
-## piece, no flight), the finale (once, at 11; the star stays in the sky) and measurements (no story).
+## piece, no flight), the finale (once, at 11, seen only at its end: left half way it plays again; after 3 misses a weak
+## pull reaches the sky, #108; the star stays in the sky) and measurements (no story).
 ## Story.enabled is on only inside these checks (and restored).
 extends RefCounted
 
@@ -59,6 +60,7 @@ func run() -> void:
 	await check_piece_found()
 	await check_flight()
 	await check_finale()
+	await check_finale_leave_and_help()
 	await check_one_tap()
 	Story.enabled = was
 	await check_measurements()
@@ -364,7 +366,7 @@ func check_finale() -> void:
 	await tree.process_frame
 	var story: StoryDirector = home.story
 	var rig: CameraRig = home.view.rig
-	expect.call(story.cinematic() and story.part == "finale" and Story.finale_seen(), "finale: 11 pieces at the lookout start it (marked once)", story.part)
+	expect.call(story.cinematic() and story.part == "finale" and not Story.finale_seen(), "finale: 11 pieces at the lookout start it (marked seen only at its end, #108)", story.part)
 	var gathered := false
 	for i in 70:
 		story.advance(0.05)
@@ -431,6 +433,66 @@ func check_finale() -> void:
 	expect.call(not home.story.busy() and home.story.sky_star != null and almost == ProgressStore.load(), "finale: once (the next map has the star in the sky)", "")
 	await _free(home)
 	DirAccess.remove_absolute(ProgressStore.path)
+
+
+## #108 (2026-11-09 user): left half way (the map freed while it waits for the pull), the finale is not
+## seen and plays again on the next map; there, 3 weak pulls whose star comes back down help the
+## child: the same weak pull then reaches the sky. Before, a weak pull never does.
+func check_finale_leave_and_help() -> void:
+	DirAccess.remove_absolute(ProgressStore.path)
+	ProgressStore.set_mark(ProgressStore.STORY, "prologue", true)
+	var store := {}
+	for id in Story.spots():
+		store[id] = MissionRound.missions(ExperimentRegistry.find(id)).stages.size()
+	ProgressStore.save(store)
+	var home := await _home(TABLET, false)
+	await tree.process_frame
+	await _until_pull(home.story)
+	var left_unseen: bool = home.story.launch_waits and not Story.finale_seen()
+	await _free(home)
+	home = await _home(TABLET, false)
+	await tree.process_frame
+	var story: StoryDirector = home.story
+	var again := story.cinematic() and story.part == "finale" and not Story.finale_seen()
+	if not again:
+		expect.call(false, "finale: left half way it plays again on the next map (#108)", "left %s, part %s" % [left_unseen, story.part])
+		await _free(home)
+		return
+	await _until_pull(story)
+	var weak := 60.0
+	var backs := 0
+	for k in StoryDirector.HELP_AFTER_MISSES:
+		_pull(story, home._world_to_screen(story._star.global_position), weak)
+		for i in 80:
+			story.advance(0.05)
+			if story._retry_open:
+				break
+		backs += 1 if story._retry_open else 0
+		_tap_through(story.dialogue)
+		story.advance(0.05)
+	var helped := story.helped() and backs == StoryDirector.HELP_AFTER_MISSES
+	_pull(story, home._world_to_screen(story._star.global_position), weak)
+	var rose := 0.0
+	for i in 200:
+		story.advance(0.05)
+		if story._star != null:
+			rose = maxf(rose, story._star.position.y)
+	for i in 60:
+		story.advance(0.05)
+	expect.call(left_unseen and again and helped and rose >= StoryDirector.SKY_HIGH.y - 1e-3 and Story.finale_seen(),
+		"finale: left half way it is not seen and plays again; after 3 weak pulls came back down, the same weak pull reaches the sky; seen at its end (#108)",
+		"left %s, again %s, backs %d, rose %.1f, seen %s" % [left_unseen, again, backs, rose, Story.finale_seen()])
+	await _free(home)
+	DirAccess.remove_absolute(ProgressStore.path)
+
+
+func _until_pull(story: StoryDirector) -> void:
+	for i in 400:
+		if story.launch_waits and not (story.dialogue != null and story.dialogue.active):
+			return
+		story.advance(0.05)
+		if story.dialogue != null and story.dialogue.active:
+			_tap_through(story.dialogue)
 
 
 ## Measurements never play the story: their launch args turn it off; with it off the map has no
