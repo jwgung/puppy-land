@@ -39,7 +39,7 @@
 ## The sundial's finale (#106, 2026-11-09 user decisions; the hutton island, home.dial): the pages are
 ## its story file's 9 lines. The camera starts at the volcano where the gnomon stands on the new land
 ## (lines 1-2), glides over the new land, whose grass sprouts (3-4), to the square, where the wedges
-## leaning on the drum fly one by one into their places on the plate; Dugi says to plant the gnomon (5)
+## leaning on the base fly one by one into their places on the plate; Dugi says to plant the gnomon (5)
 ## and the child drags it from over the cat's paws into the dial's middle (a short drag back: it goes
 ## back to the paws, the paw shows it again). Then the day comes, the gnomon's shadow grows on the dial
 ## and the emblem gets its gnomon and face (6-9). No star: the hutton sky stays empty. The gnomon's own
@@ -923,7 +923,7 @@ func _dial_page_closed() -> void:
 		_end_cinematic()
 
 
-## The wedges leaning on the drum rise one by one and fly into their places on the plate; then the
+## The wedges leaning on the base rise one by one and fly into their places on the plate; then the
 ## plate is golden again and Dugi's "plant it" page opens.
 func _assemble_dial() -> void:
 	_move(_shot(_dial_top(), -20.0, -38.0, 5.0), 1.4)
@@ -1163,7 +1163,7 @@ func _next_flight() -> void:
 		part = "flight"
 		var from: Vector3 = spot.at + Vector3.UP * (float(spot.top) + 0.6)
 		var to := _lookout_point()
-		if _sundial():   # to its place leaning on the drum (#106)
+		if _sundial():   # to its place leaning on the base (#106)
 			to = (home.dial.transform * SundialDial.lean_transform(home.dial.leaning)).origin
 		var node := PieceArt.make(home.island.piece, PIECE_SIZE)
 		home.world.add_child(node)
@@ -1190,7 +1190,7 @@ func _step_flight(delta: float) -> void:
 	var node: Node3D = _flight.node
 	node.position = _arc(_flight.from, _flight.to, 4.0, k * k * (3.0 - 2.0 * k))
 	node.rotation.y += delta * 6.0
-	if _sundial():   # down to the size it leans on the drum with
+	if _sundial():   # down to the size it leans on the base with
 		node.scale = Vector3.ONE * lerpf(1.0, SundialDial.LEAN_SIZE / PIECE_SIZE, smoothstep(0.6, 1.0, k))
 	if k >= 1.0:
 		node.queue_free()

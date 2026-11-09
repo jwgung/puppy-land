@@ -323,8 +323,8 @@ static func lighthouse(b: ArtMeshBuilder, xf: Transform3D) -> void:
 	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, deck + 0.34, 0.0)), 0.3, 0.0, 0.32, 10, ArtPalette.RED)
 
 
-## The sundial's dial (#106): the stone plate's top at DIAL_Y over the drum's foot, its golden face
-## DIAL_RADIUS round (the ten wedges' dial, SundialArt.WEDGES), the gnomon standing on it.
+## The sundial's dial (#106, #110): the stone plate's top at DIAL_Y over the base's foot, the dial
+## DIAL_RADIUS round (a cream face in a golden band, SundialArt.WEDGES hour marks), the gnomon on it.
 const DIAL_Y := 0.53
 const DIAL_RADIUS := 0.5
 const DIAL_FACE := Color("fff1cf")    # the dial's cream face inside its golden band
@@ -334,7 +334,7 @@ const DIAL_BAND := 0.2                # the golden band's share of the dial's ra
 const GNOMON_FIN := [Vector2(0.2, 0.0), Vector2(-0.2, 0.0), Vector2(-0.2, 0.3)]
 const GNOMON_THICK := 0.03            # half its thickness
 const GNOMON_AT := Vector3(0.0, DIAL_Y, 0.0)
-const GNOMON_HEIGHT := 0.3
+const GNOMON_HEIGHT := 0.3            # GNOMON_FIN's tall corner over the dial
 ## How far the shadow of the gnomon's tall corner falls (#110): a low morning sun, so the shadow is long
 ## enough to read (the map's baked light is high: its short shadow hid behind the fin).
 const SHADOW_REACH := 0.32
@@ -346,7 +346,7 @@ const SHADOW_DIR := Vector2(1.0, -0.35)
 
 ## The sundial on the square, whole (the labs after the hutton finale) or broken (before it, and on
 ## the map, where SundialDial draws the dial itself): the stepped stone base and its plate; whole adds
-## the dial and the gnomon, SUNDIAL_HEIGHT high.
+## the dial, the gnomon and its shadow, about SUNDIAL_HEIGHT high.
 static func sundial(b: ArtMeshBuilder, xf: Transform3D, whole := true) -> void:
 	sundial_base(b, xf)
 	if whole:
@@ -385,7 +385,7 @@ static func sundial_dial(b: ArtMeshBuilder, xf: Transform3D) -> void:
 		var a := TAU * i / SundialArt.WEDGES
 		var mid := Vector3(cos(a), 0.0, sin(a)) * (inner - 0.05)
 		b.add_rounded_box(xf * Transform3D(Basis(Vector3.UP, -a), mid + Vector3.UP * (y + 0.006)), Vector3(0.09, 0.012, 0.026), 0.0, 0, SundialArt.LINE)
-	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, y, 0.0)), 0.07, 0.06, 0.03, 10, SundialArt.RIM)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, y, 0.0)), 0.07, 0.06, 0.008, 10, SundialArt.RIM)   # (under the shadow)
 
 
 ## The gnomon (해시계 바늘) standing on the dial at `xf` (the sundial's foot): a golden fin (GNOMON_FIN).
