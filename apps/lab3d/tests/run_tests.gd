@@ -108,7 +108,7 @@
 ##    the new land once the volcano is found, the gnomon's piece not flying, the finale page by page
 ##    (the gnomon on the new land, the grass, the wedges into the dial, the drag that plants the gnomon,
 ##    a short one putting it back, the day, the shadow, the emblem's gnomon and face, no star), 건너뛰기,
-##    once only.
+##    once only; left half way it plays again, after 3 short drags a short one plants (#108).
 ## 23a2. explanation pictures (tests/explain_picture_checks.gd, #73, 2026-11-06): a line's picture
 ##    field is a known kind (registry, Story.validate), its card shows with that line only, in the
 ##    middle of the view clear of the box and the chips (phone, tablet, zoomed phone), a tap on it turns

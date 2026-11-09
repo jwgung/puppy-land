@@ -368,7 +368,8 @@ static func finale_seen() -> bool:
 	return ProgressStore.mark(ProgressStore.STORY, _part_key("finale"))
 
 
-## The island's "prologue" or "finale" was played (once, even if the app closes during it).
+## The island's "prologue" or "finale" was played (at its end or 건너뛰기, StoryDirector._finish: left half way by back or the app
+## closing, it plays again next time, #108).
 static func mark_seen(part: String) -> void:
 	ProgressStore.set_mark(ProgressStore.STORY, _part_key(part), true)
 

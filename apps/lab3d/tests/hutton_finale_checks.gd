@@ -50,6 +50,7 @@ func run() -> void:
 	await check_flights()
 	await check_finale()
 	await check_skip()
+	await check_leave_and_help()
 	Story.enabled = was
 	Island.set_dev_open(false)
 	Island.forget_current()
@@ -172,8 +173,8 @@ func check_finale() -> void:
 	var home := await _home(PHONE)
 	var story: StoryDirector = home.story
 	var rig: CameraRig = home.view.rig
-	if not (story.cinematic() and story.part == "finale" and Story.finale_seen()):
-		problems.append("the finale does not start (%s)" % story.part)
+	if not (story.cinematic() and story.part == "finale" and not Story.finale_seen()):
+		problems.append("the finale does not start, or is marked seen at its start (%s)" % story.part)
 	_advance(story, 0.5)
 	var needle_land: bool = story.needle != null and home.map.new_land \
 		and story.needle.position.distance_to(home.map.new_land_point(StoryDirector.NEEDLE_LAND_AT, 0.0)) < 3.0
@@ -242,6 +243,8 @@ func check_finale() -> void:
 		problems.append("the end: busy %s, sky star %s, whole %s, night %.2f" % [story.busy(), story.sky_star != null, home.dial.whole, story.night])
 	if not home.find_child("MapButtons", true, false).visible:
 		problems.append("the map buttons do not come back")
+	if not Story.finale_seen():
+		problems.append("not marked seen at its end")
 	await _free(home)
 	# Once: the next map plays nothing and is whole.
 	home = await _home(PHONE)
@@ -274,6 +277,48 @@ func check_skip() -> void:
 	expect.call(ok, "hutton finale: 건너뛰기 while it waits for the plant ends it as played (whole dial and shadow, day, grass, emblem; no star)",
 		"waited %s, busy %s, whole %s" % [waited, story.busy(), home.dial.whole])
 	await _free(home)
+
+
+## #108 (2026-11-09 user): left half way (the map freed while it waits for the plant: Android back, the
+## app closed), the finale is not seen and plays again from the start on the next map; there, 3 drags
+## let go short of the dial help the child: a drag of 30 % of the way (short of PLANT_SHARE) then plants.
+func check_leave_and_help() -> void:
+	var problems := []
+	DirAccess.remove_absolute(ProgressStore.path)
+	Story.mark_seen("prologue")
+	ProgressStore.save(_all_stamps())
+	var home := await _home(TABLET)
+	await _until_plant(home.story)
+	if not home.story.plant_waits or Story.finale_seen():
+		problems.append("first map: waits %s, seen %s" % [home.story.plant_waits, Story.finale_seen()])
+	await _free(home)
+	home = await _home(TABLET)
+	var story: StoryDirector = home.story
+	if not (story.cinematic() and story.part == "finale" and story.page <= 0 and home.dial.leaning == SundialDial.WEDGES and not home.dial.whole):
+		problems.append("left half way, the next map: finale %s page %d, leaning %d" % [story.cinematic(), story.page, home.dial.leaning])
+	await _until_plant(story)
+	var paws: Vector2 = home._world_to_screen(story._needle_point())
+	var dial_at: Vector2 = home._world_to_screen(story._dial_top())
+	for i in StoryDirector.HELP_AFTER_MISSES:
+		_drag(story, paws, paws.lerp(dial_at, 0.3))
+		_advance(story, 0.6)
+	var kept := story.plants == 0 and story.plant_waits and story.helped()
+	_drag(story, paws, paws.lerp(dial_at, 0.3))
+	_advance(story, 0.6)
+	if not kept or story.plants != 1:
+		problems.append("help: kept after %d short drags %s, then planted %d" % [StoryDirector.HELP_AFTER_MISSES, kept, story.plants])
+	await _free(home)
+	expect.call(problems.is_empty(), "hutton finale: left half way it is not seen and plays again from the start; after 3 short drags a short drag plants the gnomon (#108)",
+		"; ".join(problems))
+
+
+func _until_plant(story: StoryDirector) -> void:
+	for i in 400:
+		if story.plant_waits:
+			return
+		story.advance(0.05)
+		if story.dialogue.active:
+			_tap_through(story.dialogue)
 
 
 # --- helpers ---------------------------------------------------------------------------------------
