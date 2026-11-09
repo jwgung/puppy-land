@@ -38,7 +38,6 @@ const SMOKE := Color("e4e7ee")        # the thin smoke over the crater
 const RIVER := Color("4cb5f2")        # the river's middle (the pond's water)
 const RIVER_EDGE := Color("8fd3ff")   # its light edges
 const ROCK_TOP := Color("c4cad6")     # the broken sundial's empty plate (#106)
-const SUNDIAL_SHADOW := Color("8a5a2a")   # the gnomon's shadow on the golden dial (#106)
 const NEW_LAND := Color("6b5a52")     # the new land of cooled lava (#106): a dark grey-brown
 const NEW_LAND_TOP := Color("7d6b62")  # its lighter faces and the round rocks on its edge
 

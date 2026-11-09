@@ -323,79 +323,106 @@ static func lighthouse(b: ArtMeshBuilder, xf: Transform3D) -> void:
 	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, deck + 0.34, 0.0)), 0.3, 0.0, 0.32, 10, ArtPalette.RED)
 
 
-## The sundial's dial (#106): the stone plate's top at DIAL_Y over the drum's foot, its golden face
-## DIAL_RADIUS round (the ten wedges' dial, SundialArt.WEDGES), the gnomon standing on it.
+## The sundial's dial (#106, #110): the stone plate's top at DIAL_Y over the base's foot, the dial
+## DIAL_RADIUS round (a cream face in a golden band, SundialArt.WEDGES hour marks), the gnomon on it.
 const DIAL_Y := 0.53
 const DIAL_RADIUS := 0.5
-const GNOMON_HALF := Vector2(0.3, 0.025)
-const GNOMON_AT := Vector3(0.0, DIAL_Y, -0.12)
-const GNOMON_HEIGHT := SUNDIAL_HEIGHT - 0.54   # its high end over its foot
-## The gnomon's fixed shadow on the dial after the finale (#106): from the gnomon's middle across the
-## dial, away from the morning sun (towards the map's screen left, a little to the front), this long.
-const SHADOW_LENGTH := 0.4
-const SHADOW_YAW := deg_to_rad(-161.0)
+const DIAL_FACE := Color("fff1cf")    # the dial's cream face inside its golden band
+const DIAL_BAND := 0.2                # the golden band's share of the dial's radius
+## The gnomon (해시계 바늘): a golden fin standing on the dial's north-south line, its thin edge to the
+## south (+z, near the middle) and its tall upright edge to the north (-z): [z, y] over the dial.
+const GNOMON_FIN := [Vector2(0.2, 0.0), Vector2(-0.2, 0.0), Vector2(-0.2, 0.3)]
+const GNOMON_THICK := 0.03            # half its thickness
+const GNOMON_AT := Vector3(0.0, DIAL_Y, 0.0)
+const GNOMON_HEIGHT := 0.3            # GNOMON_FIN's tall corner over the dial
+## How far the shadow of the gnomon's tall corner falls (#110): a low morning sun, so the shadow is long
+## enough to read (the map's baked light is high: its short shadow hid behind the fin).
+const SHADOW_REACH := 0.32
+## The shadow's way across the dial (x, z): to the right of the fin and a little back, away from the
+## map's light from the left (ArtKit.SUN_DIR), turned sideways so the fin does not hide it in the map's
+## default view (a shadow straight back lies behind the fin).
+const SHADOW_DIR := Vector2(1.0, -0.35)
 
 
 ## The sundial on the square, whole (the labs after the hutton finale) or broken (before it, and on
-## the map, where SundialDial draws the dial itself): the stone drum and plate; whole adds the golden
-## dial and the gnomon, SUNDIAL_HEIGHT high.
+## the map, where SundialDial draws the dial itself): the stepped stone base and its plate; whole adds
+## the dial, the gnomon and its shadow, about SUNDIAL_HEIGHT high.
 static func sundial(b: ArtMeshBuilder, xf: Transform3D, whole := true) -> void:
 	sundial_base(b, xf)
 	if whole:
 		sundial_dial(b, xf)
 		gnomon(b, xf)
+		gnomon_shadow(b, xf)
 
 
-## The broken sundial (#106: before the finale the dial is gone): the stone drum and its plate, the
-## plate's top an empty grey ring round a darker hollow where the dial sat.
+## The sundial's stone base (#106): a low wide step, a narrower one, a short column and the round plate
+## on top (an empty grey plate while the dial is broken).
 static func sundial_base(b: ArtMeshBuilder, xf: Transform3D) -> void:
 	b.ao_min = 0.8
 	b.ao_height = 0.3
-	b.add_cylinder(xf, 0.34, 0.3, 0.45, 10, ArtPalette.ROCK)
-	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, 0.45, 0.0)), 0.55, 0.55, 0.08, 16, ArtPalette.ROCK, true, ArtPalette.ROCK_TOP)
+	b.add_cylinder(xf, 0.66, 0.64, 0.08, 16, ArtPalette.ROCK, true, ArtPalette.ROCK_TOP)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, 0.08, 0.0)), 0.5, 0.48, 0.08, 16, ArtPalette.ROCK, true, ArtPalette.ROCK_TOP)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, 0.16, 0.0)), 0.26, 0.24, 0.29, 12, ArtPalette.ROCK)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, 0.45, 0.0)), 0.56, 0.54, 0.08, 20, ArtPalette.ROCK, true, ArtPalette.ROCK_TOP)
 	b.ao_min = 1.0
 
 
-## The golden dial on the plate: ten wedges (SundialArt's gold, every other one a touch lighter), the
-## lines between them, and the deeper golden band round the rim, just over the plate.
+## The dial on the plate: a cream face, a golden band round it with ten hour marks (one per wedge
+## found) and a small golden hub where the gnomon stands.
 static func sundial_dial(b: ArtMeshBuilder, xf: Transform3D) -> void:
 	var y := DIAL_Y + 0.006
-	var n := SundialArt.WEDGES
-	var steps := 4
-	for i in n:
-		var face := SundialArt.FACE if i % 2 == 0 else SundialArt.FACE.lerp(SundialArt.LIGHT, 0.35)
-		for s in steps:
-			var a0 := TAU * (i + float(s) / steps) / n
-			var a1 := TAU * (i + float(s + 1) / steps) / n
-			var p0 := Vector3(cos(a0), 0.0, sin(a0))
-			var p1 := Vector3(cos(a1), 0.0, sin(a1))
-			var inner := DIAL_RADIUS * (1.0 - SundialArt.BAND)
-			b.add_triangle([xf * Vector3(0.0, y, 0.0), xf * (p1 * inner + Vector3.UP * y), xf * (p0 * inner + Vector3.UP * y)], [face, face, face])
-			var rim := SundialArt.RIM
-			b.add_triangle([xf * (p0 * inner + Vector3.UP * y), xf * (p1 * inner + Vector3.UP * y), xf * (p1 * DIAL_RADIUS + Vector3.UP * y)], [rim, rim, rim])
-			b.add_triangle([xf * (p0 * inner + Vector3.UP * y), xf * (p1 * DIAL_RADIUS + Vector3.UP * y), xf * (p0 * DIAL_RADIUS + Vector3.UP * y)], [rim, rim, rim])
-	for i in n:
-		var a := TAU * i / n
-		var mid := Vector3(cos(a), 0.0, sin(a)) * DIAL_RADIUS * 0.5
-		b.add_rounded_box(xf * Transform3D(Basis(Vector3.UP, -a), mid + Vector3.UP * (y + 0.006)), Vector3(DIAL_RADIUS, 0.012, 0.018), 0.0, 0, SundialArt.LINE)
+	var up := Vector3.UP * y
+	var inner := DIAL_RADIUS * (1.0 - DIAL_BAND)
+	var sides := 40
+	for k in sides:
+		var p0 := Vector3(cos(TAU * k / sides), 0.0, sin(TAU * k / sides))
+		var p1 := Vector3(cos(TAU * (k + 1) / sides), 0.0, sin(TAU * (k + 1) / sides))
+		b.add_triangle([xf * up, xf * (p1 * inner + up), xf * (p0 * inner + up)], [DIAL_FACE, DIAL_FACE, DIAL_FACE])
+		var band := SundialArt.FACE
+		b.add_triangle([xf * (p0 * inner + up), xf * (p1 * inner + up), xf * (p1 * DIAL_RADIUS + up)], [band, band, band])
+		b.add_triangle([xf * (p0 * inner + up), xf * (p1 * DIAL_RADIUS + up), xf * (p0 * DIAL_RADIUS + up)], [band, band, band])
+	for i in SundialArt.WEDGES:
+		var a := TAU * i / SundialArt.WEDGES
+		var mid := Vector3(cos(a), 0.0, sin(a)) * (inner - 0.05)
+		b.add_rounded_box(xf * Transform3D(Basis(Vector3.UP, -a), mid + Vector3.UP * (y + 0.006)), Vector3(0.09, 0.012, 0.026), 0.0, 0, SundialArt.LINE)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, y, 0.0)), 0.07, 0.06, 0.008, 10, SundialArt.RIM)   # (under the shadow)
 
 
-## The gnomon (해시계 바늘) standing on the dial at `xf` (the sundial's foot): a thin golden wedge from
-## the dial's middle, rising towards -z. Also the carried needle of the finale (SundialDial.needle_node).
+## The gnomon (해시계 바늘) standing on the dial at `xf` (the sundial's foot): a golden fin (GNOMON_FIN).
+## Also the carried needle of the finale (SundialDial.needle_node).
 static func gnomon(b: ArtMeshBuilder, xf: Transform3D) -> void:
-	_wedge(b, xf * Transform3D(Basis(Vector3.UP, PI * 0.5), GNOMON_AT), GNOMON_HALF, GNOMON_HEIGHT, ArtPalette.YELLOW, ArtPalette.YELLOW_TOP)
+	var y := DIAL_Y + 0.01
+	var pts: Array = GNOMON_FIN.map(func(p: Vector2) -> Vector3: return Vector3(0.0, y + p.y, p.x))
+	var side := Vector3(GNOMON_THICK, 0.0, 0.0)
+	var top := ArtPalette.YELLOW_TOP
+	var c := ArtPalette.YELLOW
+	for s: float in [1.0, -1.0]:
+		var o := side * s
+		var tri := [xf * (pts[0] + o), xf * (pts[1] + o), xf * (pts[2] + o)]
+		if s < 0.0:
+			tri = [tri[0], tri[2], tri[1]]
+		b.add_triangle(tri, [top, top, top], xf.basis * Vector3(s, 0.0, 0.0))
+	for k in 3:
+		var a: Vector3 = pts[k]
+		var e: Vector3 = pts[(k + 1) % 3]
+		var n := (e - a).cross(Vector3.RIGHT).normalized()
+		b.add_triangle([xf * (a + side), xf * (e + side), xf * (e - side)], [c, c, c], xf.basis * n)
+		b.add_triangle([xf * (a + side), xf * (e - side), xf * (a - side)], [c, c, c], xf.basis * n)
 
 
-## The gnomon's shadow on the dial (#106, after the finale): a long thin dark triangle from its foot.
+## The gnomon's shadow on the dial (#106, #110 after the finale): a triangle from the fin's foot line to
+## the shadow of its tall corner, SHADOW_REACH along SHADOW_DIR (away from the map's light), in the
+## labs' cast-shadow colour (ArtPalette.CAST_SHADOW).
 static func gnomon_shadow(b: ArtMeshBuilder, xf: Transform3D) -> void:
-	var y := DIAL_Y + 0.02
-	var dir := Vector3(cos(SHADOW_YAW), 0.0, -sin(SHADOW_YAW))
-	var side := Vector3(-dir.z, 0.0, dir.x) * 0.065
-	var foot := Vector3(GNOMON_AT.x, y, GNOMON_AT.z)
-	var tip := foot + dir * SHADOW_LENGTH
-	var c := ArtPalette.SUNDIAL_SHADOW
-	b.add_triangle([xf * (foot + side), xf * tip, xf * (foot - side)], [c, c, c])
-	b.add_triangle([xf * (foot - side), xf * tip, xf * (foot + side)], [c, c, c])   # (either winding: it shows from above)
+	var y := DIAL_Y + 0.016
+	var away := SHADOW_DIR.normalized()
+	var top: Vector2 = GNOMON_FIN[2]
+	var tip := Vector3(away.x * SHADOW_REACH, y, top.x + away.y * SHADOW_REACH)
+	var a := Vector3(0.0, y, (GNOMON_FIN[0] as Vector2).x)
+	var e := Vector3(0.0, y, (GNOMON_FIN[1] as Vector2).x)
+	var c := ArtPalette.CAST_SHADOW
+	b.add_triangle([xf * a, xf * e, xf * tip], [c, c, c])
+	b.add_triangle([xf * a, xf * tip, xf * e], [c, c, c])
 
 
 ## The globe landmark's lands [direction from its centre, radius] (a few big blobs that read at

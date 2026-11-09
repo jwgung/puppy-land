@@ -873,7 +873,7 @@ func _add_marks(b: ArtMeshBuilder) -> void:
 		MapLandmarks.sundial_base(b, Transform3D(Basis(), sundial_foot()))
 
 
-## The sundial's foot on the square (its drum's bottom; SundialDial draws its dial there, #106).
+## The sundial's foot on the square (its stone base's bottom; SundialDial draws its dial there, #106).
 func sundial_foot() -> Vector3:
 	var info := home_lookout()
 	return info.at - Vector3.UP * float(info.top)

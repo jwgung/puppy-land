@@ -1,6 +1,6 @@
 ## The hutton island's sundial dial on the map (#106, 2026-11-09 user decisions): before the finale the
-## sundial is broken (the map's static mesh draws only its stone drum and empty plate) and the golden
-## wedges found so far lean round the drum, glinting (they arrive there from the spots); the finale
+## sundial is broken (the map's static mesh draws only its stone base and empty plate) and the golden
+## wedges found so far lean round the base, glinting (they arrive there from the spots); the finale
 ## flies them one by one into their places on the plate, the bread cat brings the gnomon (해시계 바늘) and
 ## the child plants it; after the finale the dial is whole with the gnomon's shadow on it.
 ##
@@ -12,18 +12,18 @@ class_name SundialDial
 extends Node3D
 
 const WEDGES := SundialArt.WEDGES
-## A wedge lying in its place on the plate, and one leaning on the drum: SundialArt sizes (its point
+## A wedge lying in its place on the plate, and one leaning on the base: SundialArt sizes (its point
 ## SPAN from the arc, the dial's radius in the plate).
 const SLOT_SIZE := MapLandmarks.DIAL_RADIUS / SundialArt.SPAN
 const LEAN_SIZE := 0.22
-const LEAN_RADIUS := 0.62          # m from the drum's middle to a leaning wedge's point
-const LEAN_TILT := deg_to_rad(16.0)   # its lean towards the drum
+const LEAN_RADIUS := 0.72          # m from the base's middle to a leaning wedge's point (outside its wide step)
+const LEAN_TILT := deg_to_rad(16.0)   # its lean towards the base
 const LEAN_FRONT := 0.9            # its face turned this much towards the front (+z: the map's default view)
-## The leaning wedges' places round the drum (deg, 0 = +x, the map's screen right, 90 = +z the front):
+## The leaning wedges' places round the base (deg, 0 = +x, the map's screen right, 90 = +z the front):
 ## on its two sides, filling in turn (the front is the three friends' row, the back hides behind it).
 const LEAN_ANGLES := [181.0, -1.0, 163.0, 17.0, 199.0, -19.0, 145.0, 35.0, 217.0, -37.0]
 
-var leaning := 0                   # wedges leaning on the drum now
+var leaning := 0                   # wedges leaning on the base now
 var whole := false
 var loose: Node3D = null           # the merged leaning wedges
 var plate: MeshInstance3D          # the golden dial on the plate (no gnomon)
@@ -52,7 +52,7 @@ func _init() -> void:
 	show_leaning(0)
 
 
-## Before the finale: `count` wedges lean on the drum (the first `count` of LEAN_ANGLES), no dial.
+## Before the finale: `count` wedges lean on the base (the first `count` of LEAN_ANGLES), no dial.
 func show_leaning(count: int) -> void:
 	leaning = clampi(count, 0, WEDGES)
 	whole = false
@@ -86,17 +86,15 @@ func show_whole(lit := true) -> void:
 	shadow.transform = Transform3D.IDENTITY
 
 
-## The shadow grows from the gnomon's foot as the sun rises (`share` 0..1 of its length).
+## The shadow widens sideways from the gnomon's foot line as the sun rises (`share` 0..1 of its reach).
 func grow_shadow(share: float) -> void:
 	var k := clampf(share, 0.0, 1.0)
 	shadow.visible = k > 0.0
-	# Scaled in x and z about the gnomon's foot (the shadow starts there); y stays.
-	var foot := Vector3(MapLandmarks.GNOMON_AT.x, 0.0, MapLandmarks.GNOMON_AT.z)
-	var s := maxf(k, 0.001)
-	shadow.transform = Transform3D(Basis().scaled(Vector3(s, 1.0, s)), foot - foot * s)
+	# Widened sideways from the fin's foot line (x = 0, where the shadow starts) to its full reach.
+	shadow.transform = Transform3D(Basis().scaled(Vector3(maxf(k, 0.001), 1.0, 1.0)), Vector3.ZERO)
 
 
-## Wedge `i` leaning on the drum, standing on its point, its face outwards and to the front (local).
+## Wedge `i` leaning on the base, standing on its point, its face outwards and to the front (local).
 static func lean_transform(i: int) -> Transform3D:
 	var a := deg_to_rad(float(LEAN_ANGLES[i % LEAN_ANGLES.size()]))
 	var out := Vector3(cos(a), 0.0, sin(a))
@@ -149,4 +147,4 @@ static func needle_node() -> MeshInstance3D:
 ## The gnomon's middle (local to needle_node): to hold it by.
 static func needle_middle() -> Vector3:
 	var g := MapLandmarks.GNOMON_AT
-	return Vector3(g.x, g.y + MapLandmarks.GNOMON_HEIGHT * 0.4, g.z)
+	return Vector3(g.x, g.y + MapLandmarks.GNOMON_HEIGHT * 0.4, g.z - 0.05)   # (about the fin's middle: its tall edge is north, -z)
