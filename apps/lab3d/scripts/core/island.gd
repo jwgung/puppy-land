@@ -125,7 +125,7 @@ static func by_id(island_id: String) -> Island:
 		var e := entry(island_id)
 		var island := load_file(ROOT.path_join(str(e.file))) if e.has("file") else from_data({})
 		island.id = island_id
-		if island.problem != "":
+		if island.problem != "" and (e.has("file") or e.is_empty()):   # (a listed entry with no map file yet is an island in the making, not an error)
 			push_error("Island %s: %s" % [island_id, island.problem])
 		_islands[island_id] = island
 	return _islands[island_id]
