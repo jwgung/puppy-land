@@ -14,11 +14,11 @@ extends Control
 signal chosen(island: String)
 signal back_requested
 
-const CARD_MAX := 300.0
+const CARD_MAX := 340.0
 const GAP := 24.0
 const EDGE := 16.0
 const TOP := 18.0                  # the heading and ← 돌아가기 from the top
-const ROW_GAP := 12.0              # the cards under the heading
+const ROW_GAP := 18.0              # the cards under the heading
 const ROW_LIFT := 6.0              # the row a little above the middle of the room left
 ## The heading: a red ribbon with white words outlined in the storybook brown.
 const HEADING_RADIUS := 18
@@ -42,12 +42,11 @@ const NAME_SIZE := 30
 ## 보호자 (#77): small, in the picture's top right corner (the star pieces are top left).
 const GUARDIAN_INSET := 8
 ## The star pieces found, small in the picture's corner.
-const EMBLEM_SCALE := 0.6
+const EMBLEM_SCALE := 0.8
 const EMBLEM_AT := Vector2(8.0, 8.0)
 ## The card's button: 이어서 하기 (the ribbon red, bigger) or 다시 가기 (cream); a locked card keeps its room.
 const GO_WIDTH := 200.0
 const CONTINUE_HEIGHT := 62.0
-const AGAIN_HEIGHT := 56.0
 const CONTINUE_FONT := 26
 const BACK_HEIGHT := 56.0
 ## The thumbnails' render size (px) and camera (the title's 3/4 view of the island).
@@ -95,8 +94,11 @@ static func island_name(id: String) -> String:
 	return Locale.t("island.%s.name" % id)
 
 
-## The condition on a locked card.
+## The line under a locked card's name: what opens it; 다음 섬 promises nothing yet (2026-11-09: no
+## island opens after the last one, so not "collect them all and it opens").
 static func locked_line(entry: Dictionary) -> String:
+	if str(entry.id) == "":
+		return Locale.t("islands.soon")
 	return Locale.t("islands.locked") % str(entry.after)
 
 
@@ -175,7 +177,20 @@ func _card(entry: Dictionary) -> PanelContainer:
 	else:
 		buttons[entry.id] = _go_button(entry)
 		col.add_child(buttons[entry.id])
+		# The whole card goes there too (a tap on the island's picture or name, 2026-11-09).
+		var id: String = entry.id
+		card.gui_input.connect(func(event: InputEvent) -> void:
+			if _tapped(event):
+				chosen.emit(id))
 	return card
+
+
+## A finger or the left button let go on the card (a press that was not a drag of the row).
+static func _tapped(event: InputEvent) -> bool:
+	if event is InputEventScreenTouch:
+		return not event.pressed and not event.canceled
+	return event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed \
+		and event.device != InputEvent.DEVICE_ID_EMULATION
 
 
 ## The card's picture: the island (grey when locked) or, for 다음 섬, a far grey island; the lock on a
@@ -266,16 +281,16 @@ func _add_words(col: VBoxContainer, entry: Dictionary) -> void:
 	col.add_child(sub)
 
 
-## 이어서 하기 (pieces left) or 다시 가기 (all found): `chosen` with the island.
+## The way in, the same big red button on every open island (2026-11-09: one look; the island in use
+## is the gold edge): 가 보기 (nothing found yet), 이어서 하기 (pieces left) or 다시 가기 (all found).
+## `chosen` with the island.
 func _go_button(entry: Dictionary) -> Button:
-	var again: bool = entry.complete
-	var go := Ui.button(Locale.t("islands.again" if again else "islands.continue"), "TitleButton" if again else "TitleStartButton",
-		AGAIN_HEIGHT if again else CONTINUE_HEIGHT)
+	var key := "islands.again" if entry.complete else ("islands.go" if int(entry.pieces) == 0 else "islands.continue")
+	var go := Ui.button(Locale.t(key), "TitleStartButton", CONTINUE_HEIGHT)
 	go.name = "Go"
 	go.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	go.custom_minimum_size.x = GO_WIDTH
-	if not again:
-		go.add_theme_font_size_override("font_size", CONTINUE_FONT)
+	go.add_theme_font_size_override("font_size", CONTINUE_FONT)
 	var id: String = entry.id
 	go.pressed.connect(func() -> void: chosen.emit(id))
 	return go
@@ -286,7 +301,6 @@ func _layout() -> void:
 		return
 	var inset := Ui.safe_insets(self)
 	heading.size = heading.get_combined_minimum_size()
-	heading.position = Vector2((size.x - heading.size.x) * 0.5, TOP + inset.top)
 	back_button.size = back_button.get_combined_minimum_size()
 	back_button.position = Vector2(EDGE + inset.left, TOP + inset.top)
 	var w := card_width()
@@ -298,8 +312,13 @@ func _layout() -> void:
 		(card.find_child("About", true, false) as Label).custom_minimum_size.x = inner
 	row.reset_size()
 	row.size = row.get_combined_minimum_size()
-	var top := heading.position.y + heading.size.y + ROW_GAP
-	row.position = Vector2((size.x - row.size.x) * 0.5, maxf(top, top + (size.y - top - row.size.y) * 0.5 - ROW_LIFT))
+	# The heading sits just over the cards, the two as one block in the middle (2026-11-09 user: the
+	# heading alone at the top looked too high); never over ← 돌아가기's line.
+	var block := heading.size.y + ROW_GAP + row.size.y
+	var lowest: float = TOP + inset.top
+	var top := maxf(lowest, (size.y - block) * 0.5 - ROW_LIFT)
+	heading.position = Vector2((size.x - heading.size.x) * 0.5, top)
+	row.position = Vector2((size.x - row.size.x) * 0.5, top + heading.size.y + ROW_GAP)
 
 
 ## The island's picture: its map rendered once in its own small world from the title's 3/4 view.

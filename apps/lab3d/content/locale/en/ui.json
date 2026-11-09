@@ -108,6 +108,8 @@
   "islands.back": "← Back",
   "islands.continue": "Continue",
   "islands.locked": "Opens when every piece of %s is found",
+  "islands.go": "Let's go",
+  "islands.soon": "Coming soon!",
   "islands.next": "Next island",
   "kid.units": {
     "": ["", ""],

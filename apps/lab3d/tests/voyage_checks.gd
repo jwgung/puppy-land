@@ -159,7 +159,7 @@ func _free(app: Control) -> void:
 func check_voyage_flow(_quality_script: GDScript) -> void:
 	_first_done()
 	var app := await _app(["--islands=open"])
-	var title_first: bool = app._screen is TitleScreen and (app._screen as TitleScreen).islands_button == null
+	var title_first: bool = app._screen is TitleScreen and not TitleScreen.picks_island()
 	(app._screen as TitleScreen).start_button.pressed.emit()
 	await tree.process_frame
 	var voyage: VoyageScreen = app._screen as VoyageScreen
@@ -305,20 +305,23 @@ func check_skip_and_replay(_quality_script: GDScript) -> void:
 		"%s %s %s" % [replay, replay_prologue, first_replay])
 
 
-## 섬 고르기 on the title: only after a voyage; the cards; choosing; back; 시작하기 to the island in use.
+## 섬 고르기 (one way in since 2026-11-09): 시작하기 goes straight to the island before any voyage and
+## opens the cards after one; the cards; a tap on a card or its button chooses; back closes them.
 func check_title_islands(_quality_script: GDScript) -> void:
 	_first_done()
 	var app := await _app([])
-	var hidden := (app._screen as TitleScreen).islands_button == null
+	(app._screen as TitleScreen).start_button.pressed.emit()
+	await tree.process_frame
+	var hidden: bool = not (app._screen is TitleScreen) and not TitleScreen.picks_island()   # (straight on: the map or the voyage)
 	await _free(app)
 	Story.mark_voyage_seen(NEXT)
 	# The next island in the making: its card locked, with the first island's name in the condition.
 	_in_making()
 	app = await _app([])
 	var title := app._screen as TitleScreen
-	var shown := title.islands_button != null and title.islands_button.visible
-	title.islands_button.pressed.emit()
+	title.start_button.pressed.emit()
 	await tree.process_frame
+	var shown: bool = TitleScreen.picks_island() and app._screen == title and title.island_cards != null and title.find_child("IslandsButton", true, false) == null
 	var cards := title.island_cards
 	var problems := []
 	if cards == null or title.logo.visible:
@@ -338,8 +341,8 @@ func check_title_islands(_quality_script: GDScript) -> void:
 		if not IslandCards.island_name(ProgressStore.FIRST_ISLAND) in next_line:
 			problems.append("condition %s" % next_line)
 		var last_line := (cards.cards[""].find_child("About", true, false) as Label).text
-		if not IslandCards.island_name(NEXT) in last_line:
-			problems.append("next condition %s" % last_line)
+		if last_line != Locale.t("islands.soon"):   # (no island opens after the last: no promise)
+			problems.append("next line %s" % last_line)
 		if (cards.buttons[ProgressStore.FIRST_ISLAND] as Button).text != Locale.t("islands.again"):
 			problems.append("the finished island's button %s" % (cards.buttons[ProgressStore.FIRST_ISLAND] as Button).text)
 	# Back closes the cards first.
@@ -354,22 +357,27 @@ func check_title_islands(_quality_script: GDScript) -> void:
 	title.show_islands()
 	await tree.process_frame
 	var go: Button = title.island_cards.buttons.get(NEXT)
-	var open_card := go != null and go.text == Locale.t("islands.continue")
+	var open_card := go != null and go.text == Locale.t("islands.go")   # (nothing found there yet)
 	if go != null:
 		go.pressed.emit()
 	await tree.process_frame
 	var chosen: bool = app._screen is IslandHomeScreen and (app._screen as IslandHomeScreen).island.id == NEXT and ProgressStore.current_island() == NEXT
-	# 시작하기 goes to the island in use (the last one).
+	# A tap on the first island's card itself (not its button) chooses it too.
 	app.show_title()
 	await tree.process_frame
-	(app._screen as TitleScreen).start_button.pressed.emit()
+	title = app._screen as TitleScreen
+	title.start_button.pressed.emit()
 	await tree.process_frame
-	var start_last: bool = app._screen is IslandHomeScreen and (app._screen as IslandHomeScreen).island.id == NEXT
+	var release := InputEventScreenTouch.new()
+	release.pressed = false
+	(title.island_cards.cards[ProgressStore.FIRST_ISLAND] as Control).gui_input.emit(release)
+	await tree.process_frame
+	var start_last: bool = app._screen is IslandHomeScreen and (app._screen as IslandHomeScreen).island.id == ProgressStore.FIRST_ISLAND
 	await _free(app)
-	expect.call(hidden and shown, "섬 고르기: on the title only after a voyage was seen", "%s %s" % [hidden, shown])
-	expect.call(problems.is_empty() and back_closes, "섬 고르기: a card per island and 다음 섬; a locked one grey with a lock, its condition, no button; 다시 가기 on a finished island; back closes the cards",
+	expect.call(hidden and shown, "섬 고르기: 시작하기 goes straight on before a voyage, opens the cards after one (no separate 섬 고르기 button)", "%s %s" % [hidden, shown])
+	expect.call(problems.is_empty() and back_closes, "섬 고르기: a card per island and 다음 섬; a locked one grey with a lock, its condition (다음 섬: 곧 만나요), no button; 다시 가기 on a finished island; back closes the cards",
 		"; ".join(problems) + " back %s" % back_closes)
-	expect.call(open_card and chosen and start_last, "섬 고르기: an open island's 이어서 하기 makes it the island in use and opens its map; 시작하기 then goes there",
+	expect.call(open_card and chosen and start_last, "섬 고르기: an open island's 가 보기 makes it the island in use and opens its map; a tap on a card itself does the same",
 		"%s %s %s" % [open_card, chosen, start_last])
 
 
@@ -392,8 +400,8 @@ func check_layout() -> void:
 		var screen := Rect2(Vector2.ZERO, size)
 		var problems := []
 		var rects := title.rects()
-		if rects.size() != 5:
-			problems.append("no 섬 고르기")
+		if rects.size() != 4:
+			problems.append("title rects %d" % rects.size())
 		for r in rects:
 			if not screen.encloses(r):
 				problems.append("title %s off screen" % r)

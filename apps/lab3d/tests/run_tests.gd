@@ -101,8 +101,8 @@
 ##    per line (files, tags, no re-pop, stable box), Dugi's explanation per stage, Puppy's words.
 ## 23a1. the voyage and 섬 고르기 (tests/voyage_checks.gd, #75, 2026-11-06): the voyage due after the
 ##    finale once the next island opens (never while it is in the making), its shots, skip, back and
-##    replay, the next island's map and prologue; 섬 고르기 only after a voyage, the cards (locked: lock,
-##    condition, no button), choosing, back, 시작하기 to the island in use; phone and tablet layouts.
+##    replay, the next island's map and prologue; 시작하기 opens 섬 고르기 only after a voyage, the cards (locked: lock,
+##    condition, no button), choosing (its button or the card itself), back; phone and tablet layouts.
 ## 23a1b. the hutton finale (tests/hutton_finale_checks.gd, #106, 2026-11-09): its 9 lines (as in
 ##    docs/islands/hutton-lines.md; English in content/locale/en), the broken sundial with the found wedges leaning on it,
 ##    the new land once the volcano is found, the gnomon's piece not flying, the finale page by page
