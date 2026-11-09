@@ -90,10 +90,8 @@ func show_whole(lit := true) -> void:
 func grow_shadow(share: float) -> void:
 	var k := clampf(share, 0.0, 1.0)
 	shadow.visible = k > 0.0
-	# Scaled in x and z about the gnomon's foot (the shadow starts there); y stays.
-	var foot := Vector3(MapLandmarks.GNOMON_AT.x, 0.0, MapLandmarks.GNOMON_AT.z)
-	var s := maxf(k, 0.001)
-	shadow.transform = Transform3D(Basis().scaled(Vector3(s, 1.0, s)), foot - foot * s)
+	# Widened sideways from the fin's foot line (x = 0, where the shadow starts) to its full reach.
+	shadow.transform = Transform3D(Basis().scaled(Vector3(maxf(k, 0.001), 1.0, 1.0)), Vector3.ZERO)
 
 
 ## Wedge `i` leaning on the drum, standing on its point, its face outwards and to the front (local).
@@ -149,4 +147,4 @@ static func needle_node() -> MeshInstance3D:
 ## The gnomon's middle (local to needle_node): to hold it by.
 static func needle_middle() -> Vector3:
 	var g := MapLandmarks.GNOMON_AT
-	return Vector3(g.x, g.y + MapLandmarks.GNOMON_HEIGHT * 0.4, g.z)
+	return Vector3(g.x, g.y + MapLandmarks.GNOMON_HEIGHT * 0.4, g.z - 0.05)
