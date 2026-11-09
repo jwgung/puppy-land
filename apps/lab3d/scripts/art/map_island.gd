@@ -831,6 +831,8 @@ func features_clear(p: Vector2, radius: float) -> bool:
 		return false
 	if f.has("lighthouse") and p.distance_to(_v2(f.lighthouse)) < LIGHTHOUSE_CLEAR + radius:
 		return false
+	if f.has("volcano") and not new_land_clear(p, radius):
+		return false
 	return true
 
 
@@ -843,6 +845,8 @@ func _add_features(b: ArtMeshBuilder) -> void:
 	_add_marks(b)
 	if not river_points.is_empty():
 		_add_river(b)
+	if new_land:
+		_add_new_land(b)
 
 
 ## The volcano on the ground at its middle, its foot sunk under the lowest ground round it.
@@ -866,8 +870,131 @@ func _add_marks(b: ArtMeshBuilder) -> void:
 		var at := _v2(island.features.lighthouse)
 		MapLandmarks.lighthouse(b, Transform3D(Basis(), Vector3(at.x, height_at(at.x, at.y), at.y)))
 	if island.has_sundial():
-		var info := home_lookout()
-		MapLandmarks.sundial(b, Transform3D(Basis(), info.at - Vector3.UP * float(info.top)))
+		MapLandmarks.sundial_base(b, Transform3D(Basis(), sundial_foot()))
+
+
+## The sundial's foot on the square (its drum's bottom; SundialDial draws its dial there, #106).
+func sundial_foot() -> Vector3:
+	var info := home_lookout()
+	return info.at - Vector3.UP * float(info.top)
+
+
+# --- the new land (#106: the hutton finale) -----------------------------------------------------
+
+## The volcano's new land: a tongue of cooled lava from the volcano's west flank down to the sea and
+## a little out into it (the volcano lab's big scene made it), on the map once the volcano spot is
+## found (IslandHomeScreen sets `new_land` before build). Its line [x, z] from the flank, as offsets
+## from the volcano's middle, and its width along the way.
+const NEW_LAND_LINE := [[-1.7, 0.45], [-3.1, -0.35], [-4.5, -1.35], [-5.8, -2.35], [-6.7, -3.0]]
+const NEW_LAND_WIDTH := [0.9, 1.4, 1.7, 1.9, 1.6]
+const NEW_LAND_LIFT := 0.07          # m over the ground (and over the sea where it runs out into it)
+const NEW_LAND_ROCKS := 7            # round rocks along each edge
+## The small grass tufts that sprout on it at the finale (NewLandGrass): [share along, share across].
+const NEW_LAND_TUFTS := [[0.22, -0.2], [0.3, 0.25], [0.45, -0.05], [0.55, 0.3], [0.62, -0.3], [0.74, 0.1], [0.84, -0.15]]
+
+## True when the map draws the new land (the volcano spot found).
+var new_land := false
+var _new_land_line: Array = []
+
+
+## The new land's middle line on the map (x, z), sampled PATH_STEP apart, and its width at each.
+func new_land_line() -> Array:
+	if not _new_land_line.is_empty():
+		return _new_land_line
+	if not island.features.has("volcano"):
+		_new_land_line = [PackedVector2Array(), PackedFloat32Array()]
+		return _new_land_line
+	var at := _v2(island.features.volcano.at)
+	var raw: Array = NEW_LAND_LINE.map(func(p: Array) -> Array: return [at.x + float(p[0]), at.y + float(p[1])])
+	var points := path_samples(raw, PATH_STEP)
+	var widths := PackedFloat32Array()
+	var total := 0.0
+	for k in range(1, raw.size()):
+		total += _v2(raw[k]).distance_to(_v2(raw[k - 1]))
+	var along := 0.0
+	for k in points.size():
+		if k > 0:
+			along += points[k].distance_to(points[k - 1])
+		var s := clampf(along / maxf(total, 0.001), 0.0, 1.0) * (NEW_LAND_WIDTH.size() - 1)
+		var i := mini(int(s), NEW_LAND_WIDTH.size() - 2)
+		widths.append(lerpf(NEW_LAND_WIDTH[i], NEW_LAND_WIDTH[i + 1], s - i))
+	_new_land_line = [points, widths]
+	return _new_land_line
+
+
+## The new land's surface height at (x, z): over the ground, and over the sea where it runs out.
+func new_land_height(x: float, z: float) -> float:
+	return maxf(height_at(x, z), SEA_Y) + NEW_LAND_LIFT
+
+
+## True when `p` is within `radius` of the new land (decoration keeps clear of it, found or not: the
+## flowers and trees stay where they were when it appears).
+func new_land_clear(p: Vector2, radius: float) -> bool:
+	var line: Array = new_land_line()
+	var points: PackedVector2Array = line[0]
+	var widths: PackedFloat32Array = line[1]
+	for k in points.size():
+		if p.distance_to(points[k]) < widths[k] * 0.5 + 0.3 + radius:
+			return false
+	return true
+
+
+## A point on the new land: `along` (0 at the flank, 1 at its sea end) and `across` (-0.5 .. 0.5 of
+## its width), on its surface.
+func new_land_point(along: float, across: float) -> Vector3:
+	var line: Array = new_land_line()
+	var points: PackedVector2Array = line[0]
+	var widths: PackedFloat32Array = line[1]
+	if points.is_empty():
+		return Vector3.ZERO
+	var k := clampi(int(round(along * (points.size() - 1))), 0, points.size() - 1)
+	var t := (points[mini(k + 1, points.size() - 1)] - points[maxi(k - 1, 0)]).normalized()
+	var q := points[k] + Vector2(-t.y, t.x) * widths[k] * across
+	return Vector3(q.x, new_land_height(q.x, q.y), q.y)
+
+
+## The new land: a dark ribbon (lighter in its middle) with round rocks along its edges.
+func _add_new_land(b: ArtMeshBuilder) -> void:
+	var line: Array = new_land_line()
+	var points: PackedVector2Array = line[0]
+	if points.is_empty():
+		return
+	var rows := ribbon_rows(points, line[1], func(q: Vector2) -> float: return new_land_height(q.x, q.y))
+	var edge := ArtPalette.NEW_LAND
+	var mid := ArtPalette.NEW_LAND_TOP
+	for k in rows.size() - 1:
+		var a: Array = rows[k]
+		var c: Array = rows[k + 1]
+		b.add_triangle([a[0], c[0], c[1]], [edge, edge, mid])
+		b.add_triangle([a[0], c[1], a[1]], [edge, mid, mid])
+		b.add_triangle([a[1], c[1], c[2]], [mid, mid, edge])
+		b.add_triangle([a[1], c[2], a[2]], [mid, edge, edge])
+	b.add_sphere(Transform3D(Basis().scaled(Vector3(1.0, 0.55, 1.0)), (rows[0][1] as Vector3)), float(line[1][0]) * 0.5, 3, 8, edge)
+	for side: float in [-0.5, 0.5]:
+		for r in NEW_LAND_ROCKS:
+			var along := (r + 0.5) / NEW_LAND_ROCKS
+			var at := new_land_point(along, side)
+			var size := 0.16 + 0.07 * (_hash(r, int(side * 2.0), 11) * 0.5 + 0.5)
+			b.add_sphere(Transform3D(Basis().scaled(Vector3(1.0, 0.7, 1.0)), at), size, 3, 6, mid if r % 2 == 0 else edge)
+
+
+## The grass tufts on the new land (after the finale; NEW_LAND_TUFTS), their own mesh so the finale
+## can let them sprout (scaled up from the land's middle, the node's origin) and the map show them once
+## it was seen: three small blades each.
+func new_land_grass() -> MeshInstance3D:
+	var b := ArtKit.builder()
+	var middle := new_land_point(0.55, 0.0)
+	for i in NEW_LAND_TUFTS.size():
+		var tuft: Array = NEW_LAND_TUFTS[i]
+		var at := new_land_point(tuft[0], tuft[1]) - middle
+		for blade in 3:
+			var a := TAU * blade / 3.0 + i
+			var foot := at + Vector3(cos(a), 0.0, sin(a)) * 0.07
+			b.add_cylinder(Transform3D(Basis(Vector3(sin(a), 0.0, -cos(a)), 0.25), foot), 0.05, 0.0, 0.28, 4, ArtPalette.LEAF_LIGHT if blade == 0 else ArtPalette.GRASS_TOP)
+	var mi := ArtKit.instance(b.commit(), material())
+	mi.name = "NewLandGrass"
+	mi.position = middle
+	return mi
 
 
 ## The river: a ribbon on the ground from its source to under the sea, widening towards the mouth,

@@ -125,7 +125,7 @@ static func by_id(island_id: String) -> Island:
 		var e := entry(island_id)
 		var island := load_file(ROOT.path_join(str(e.file))) if e.has("file") else from_data({})
 		island.id = island_id
-		if island.problem != "":
+		if island.problem != "" and (e.has("file") or e.is_empty()):   # (a listed entry with no map file yet is an island in the making, not an error)
 			push_error("Island %s: %s" % [island_id, island.problem])
 		_islands[island_id] = island
 	return _islands[island_id]
@@ -251,6 +251,19 @@ func found(progress: Dictionary) -> Array:
 func look_of(zone: String) -> String:
 	var spec: Dictionary = zones.get(zone, {})
 	return str(spec.get("look", spec.get("ground", "")))
+
+
+## The sundial's wedges (#101): the first SUNDIAL_WEDGES spots of the order each give one; the next
+## (the hutton island's last, the volcano) gives the gnomon (#106).
+const SUNDIAL_WEDGES := 10
+
+
+## The spot that gives the sundial's gnomon ("" on an island of star pieces, or with too few spots):
+## its piece never flies on the map (it stands on the new land until the finale, #106).
+func gnomon_spot() -> String:
+	if piece != PIECE_SUNDIAL or order.size() <= SUNDIAL_WEDGES:
+		return ""
+	return str(order[SUNDIAL_WEDGES])
 
 
 ## What is wrong with the data ("" when nothing).

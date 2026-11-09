@@ -21,5 +21,16 @@
     { "text": "A big boom… That's strange." },
     { "text": "Don't worry. We'll find all the pieces. And we'll find out why it broke!" },
     { "text": "…Really? Thank you. I'll show you the way." }
+  ],
+  "finale": [
+    { "text": "The needle came up… Now we have all the pieces!" },
+    { "text": "Let's go to the sundial!" },
+    { "text": "The lava cooled in the sea and made new land. Land doesn't only break apart. It can be made new, like this." },
+    { "text": "I thought volcanoes were only scary… But they help the island grow, too." },
+    { "text": "Now put the needle in." },
+    { "text": "A shadow! The needle has a shadow!" },
+    { "text": "The sun is back in its place… The island's time is moving again!" },
+    { "text": "Thank you so much. It's all thanks to you." },
+    { "text": "We'll come and play again!" }
   ]
 }

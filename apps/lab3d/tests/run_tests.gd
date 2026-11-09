@@ -103,6 +103,12 @@
 ##    finale once the next island opens (never while it is in the making), its shots, skip, back and
 ##    replay, the next island's map and prologue; 섬 고르기 only after a voyage, the cards (locked: lock,
 ##    condition, no button), choosing, back, 시작하기 to the island in use; phone and tablet layouts.
+## 23a1b. the hutton finale (tests/hutton_finale_checks.gd, #106, 2026-11-09): its 9 lines (as in
+##    docs/islands/hutton-lines.md; English in content/locale/en), the broken sundial with the found wedges leaning on it,
+##    the new land once the volcano is found, the gnomon's piece not flying, the finale page by page
+##    (the gnomon on the new land, the grass, the wedges into the dial, the drag that plants the gnomon,
+##    a short one putting it back, the day, the shadow, the emblem's gnomon and face, no star), 건너뛰기,
+##    once only.
 ## 23a2. explanation pictures (tests/explain_picture_checks.gd, #73, 2026-11-06): a line's picture
 ##    field is a known kind (registry, Story.validate), its card shows with that line only, in the
 ##    middle of the view clear of the box and the chips (phone, tablet, zoomed phone), a tap on it turns
@@ -559,6 +565,11 @@ func _run() -> void:
 	_expect(voyage != null and voyage.can_instantiate(), "voyage checks compile", "")
 	if voyage != null and voyage.can_instantiate():
 		await voyage.new(self, _expect).run()
+	print("== the hutton finale (#106): the sundial broken then whole, the new land, the gnomon planted ==")
+	var hutton_finale: GDScript = load("res://tests/hutton_finale_checks.gd")
+	_expect(hutton_finale != null and hutton_finale.can_instantiate(), "hutton finale checks compile", "")
+	if hutton_finale != null and hutton_finale.can_instantiate():
+		await hutton_finale.new(self, _expect).run()
 	var faces: GDScript = load("res://tests/faces_checks.gd")
 	_expect(faces != null and faces.can_instantiate(), "faces checks compile", "")
 	if faces != null and faces.can_instantiate():

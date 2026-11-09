@@ -544,7 +544,8 @@ func _add_marks(b: ArtMeshBuilder) -> void:
 		if mark[0] == "lighthouse":
 			MapLandmarks.lighthouse(b, xf)
 		else:
-			MapLandmarks.sundial(b, xf)
+			# Broken until the island's finale put it back together (#106), as on the map.
+			MapLandmarks.sundial(b, xf, ProgressStore.mark(ProgressStore.STORY, ProgressStore.island_key(map.island.id, "finale")))
 		far_things.append([mark[0], at.x, at.y, 2.0])
 
 
