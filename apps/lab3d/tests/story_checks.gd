@@ -367,6 +367,10 @@ func check_finale() -> void:
 	var story: StoryDirector = home.story
 	var rig: CameraRig = home.view.rig
 	expect.call(story.cinematic() and story.part == "finale" and not Story.finale_seen(), "finale: 11 pieces at the lookout start it (marked seen only at its end, #108)", story.part)
+	var seen_at_end := []   # Story.finale_seen() when "ended" fires (App's voyage check reads it then)
+	story.ended.connect(func(part: String) -> void:
+		if part == "finale":
+			seen_at_end.append(Story.finale_seen()))
 	var gathered := false
 	for i in 70:
 		story.advance(0.05)
@@ -427,6 +431,7 @@ func check_finale() -> void:
 		and story.sea.lanterns.all(func(l: Node3D) -> bool: return l.visible) and story.night == 0.0
 		and str(rig.get_state()) == str(_default_state(rig)) and rig.is_processing(),
 		"finale: afterwards the star stays in the map's sky (in the child's default view), the lanterns lit, the child's camera", str(on_view))
+	expect.call(seen_at_end == [true], "finale: already marked seen when it ends (the voyage to the next island checks it then, #108)", str(seen_at_end))
 	await _free(home)
 	home = await _home(TABLET, false)
 	await tree.process_frame
@@ -479,9 +484,24 @@ func check_finale_leave_and_help() -> void:
 			rose = maxf(rose, story._star.position.y)
 	for i in 60:
 		story.advance(0.05)
-	expect.call(left_unseen and again and helped and rose >= StoryDirector.SKY_HIGH.y - 1e-3 and Story.finale_seen(),
+	var end_seen := Story.finale_seen()
+	await _free(home)
+	# 건너뛰기 half way marks it seen too (the next map plays nothing).
+	DirAccess.remove_absolute(ProgressStore.path)
+	ProgressStore.set_mark(ProgressStore.STORY, "prologue", true)
+	ProgressStore.save(store)
+	home = await _home(TABLET, false)
+	await tree.process_frame
+	await _until_pull(home.story)
+	home.story.skip()
+	var skipped_seen := Story.finale_seen()
+	await _free(home)
+	home = await _home(TABLET, false)
+	await tree.process_frame
+	expect.call(skipped_seen and not home.story.busy(), "finale: 건너뛰기 half way marks it seen; the next map plays nothing (#108)", "seen %s, busy %s" % [skipped_seen, home.story.busy()])
+	expect.call(left_unseen and again and helped and rose >= StoryDirector.SKY_HIGH.y - 1e-3 and end_seen,
 		"finale: left half way it is not seen and plays again; after 3 weak pulls came back down, the same weak pull reaches the sky; seen at its end (#108)",
-		"left %s, again %s, backs %d, rose %.1f, seen %s" % [left_unseen, again, backs, rose, Story.finale_seen()])
+		"left %s, again %s, backs %d, rose %.1f, seen %s" % [left_unseen, again, backs, rose, end_seen])
 	await _free(home)
 	DirAccess.remove_absolute(ProgressStore.path)
 
