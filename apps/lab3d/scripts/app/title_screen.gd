@@ -13,7 +13,8 @@
 ## voyage to another island was seen (Story.any_voyage_seen) 시작하기 opens the island cards
 ## (IslandCards) over the turning island, the logo and the buttons hidden meanwhile; a card emits
 ## `island_chosen` (App: that island in use, its map). Before, with one island, 시작하기 goes straight
-## to it. There is no separate 섬 고르기 button any more.
+## to it. There is no separate 섬 고르기 button any more, and 이야기 다시 보기 moves onto each island's
+## card then (`island_story_chosen`): with two islands the title's one could not say whose story.
 class_name TitleScreen
 extends Control
 
@@ -21,6 +22,8 @@ signal start_requested
 signal story_requested
 signal settings_requested
 signal island_chosen(island: String)
+## 이야기 다시 보기 on an island's card: that island's story (2026-11-09).
+signal island_story_chosen(island: String)
 
 ## Headless test runs build App without a title unless a check turns it on (like Story.app_may_enable).
 static var app_may_show := true
@@ -115,6 +118,9 @@ func _ready() -> void:
 	story_button.name = "StoryButton"
 	story_button.pressed.connect(story_requested.emit)
 	row.add_child(story_button)
+	# With two islands the story to see again is chosen on the island's card (IslandCards), not here
+	# (2026-11-09 user: "이야기 다시보기도 애매해짐": which island's?).
+	story_button.visible = not picks_island()
 	settings_button = Ui.button(Locale.t("common.settings"), "TitleButton", 56)
 	settings_button.name = "SettingsButton"
 	settings_button.custom_minimum_size.x = 110.0
@@ -165,7 +171,10 @@ static func picks_island() -> bool:
 
 ## The logo's rect and the buttons' rects (tests: inside the screen, no overlap).
 func rects() -> Array[Rect2]:
-	return [logo.get_rect(), start_button.get_global_rect(), story_button.get_global_rect(), settings_button.get_global_rect()]
+	var out: Array[Rect2] = [logo.get_rect(), start_button.get_global_rect(), settings_button.get_global_rect()]
+	if story_button.visible:
+		out.insert(2, story_button.get_global_rect())
+	return out
 
 
 ## 섬 고르기: the island cards over the turning island (the logo and the buttons hide meanwhile).
@@ -174,6 +183,7 @@ func show_islands() -> void:
 		return
 	island_cards = IslandCards.new()
 	island_cards.chosen.connect(island_chosen.emit)
+	island_cards.story_chosen.connect(island_story_chosen.emit)
 	island_cards.back_requested.connect(hide_islands)
 	add_child(island_cards)
 	logo.visible = false

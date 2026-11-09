@@ -373,7 +373,29 @@ func check_title_islands(_quality_script: GDScript) -> void:
 	(title.island_cards.cards[ProgressStore.FIRST_ISLAND] as Control).gui_input.emit(release)
 	await tree.process_frame
 	var tap_chose_first: bool = app._screen is IslandHomeScreen and (app._screen as IslandHomeScreen).island.id == ProgressStore.FIRST_ISLAND
+	# 이야기 다시 보기: not on the title any more (two islands), on each open card: the next island's
+	# plays its voyage again, the first island's its prologue on its map.
+	app.show_title()
+	await tree.process_frame
+	title = app._screen as TitleScreen
+	var no_title_story := not title.story_button.visible
+	title.start_button.pressed.emit()
+	await tree.process_frame
+	(title.island_cards.story_buttons[NEXT] as Button).pressed.emit()
+	await tree.process_frame
+	var next_story: bool = app._screen is VoyageScreen and Island.current_id() == NEXT
+	app.show_title()
+	await tree.process_frame
+	title = app._screen as TitleScreen
+	title.start_button.pressed.emit()
+	await tree.process_frame
+	(title.island_cards.story_buttons[ProgressStore.FIRST_ISLAND] as Button).pressed.emit()
+	await tree.process_frame
+	var first_story: bool = app._screen is IslandHomeScreen and (app._screen as IslandHomeScreen).island.id == ProgressStore.FIRST_ISLAND \
+		and (app._screen as IslandHomeScreen).play_prologue_on_open
 	await _free(app)
+	expect.call(no_title_story and next_story and first_story, "섬 고르기: 이야기 다시 보기 is on each island's card (not the title): the next island's plays its voyage again, the first island's its prologue",
+		"%s %s %s" % [no_title_story, next_story, first_story])
 	expect.call(hidden and shown, "섬 고르기: 시작하기 goes straight on before a voyage, opens the cards after one (no separate 섬 고르기 button)", "%s %s" % [hidden, shown])
 	expect.call(problems.is_empty() and back_closes, "섬 고르기: a card per island and 다음 섬; a locked one grey with a lock, its condition (다음 섬: 곧 만나요), no button; 다시 가기 on a finished island; back closes the cards",
 		"; ".join(problems) + " back %s" % back_closes)
@@ -400,7 +422,7 @@ func check_layout() -> void:
 		var screen := Rect2(Vector2.ZERO, size)
 		var problems := []
 		var rects := title.rects()
-		if rects.size() != 4:
+		if rects.size() != 3:   # (a voyage seen: 이야기 다시 보기 is on the island cards, not the title)
 			problems.append("title rects %d" % rects.size())
 		for r in rects:
 			if not screen.encloses(r):

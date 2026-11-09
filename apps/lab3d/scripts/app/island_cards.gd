@@ -14,6 +14,8 @@ class_name IslandCards
 extends Control
 
 signal chosen(island: String)
+## 이야기 다시 보기 under an open island's button (2026-11-09): that island's story again.
+signal story_chosen(island: String)
 signal back_requested
 
 const CARD_MAX := 340.0
@@ -50,6 +52,8 @@ const EMBLEM_AT := Vector2(8.0, 8.0)
 const GO_WIDTH := 200.0
 const GO_HEIGHT := 62.0
 const GO_FONT := 26
+const STORY_HEIGHT := 44.0         # 이야기 다시 보기 under it, small
+const STORY_FONT := 18
 const BACK_HEIGHT := 56.0
 ## The thumbnails' render size (px) and camera (the title's 3/4 view of the island).
 const THUMB_PIXELS := Vector2i(400, 288)
@@ -67,6 +71,8 @@ var row: HBoxContainer
 ## Island id ("" for 다음 섬) -> its card's button (null when locked) (tests).
 var buttons: Dictionary = {}
 var cards: Dictionary = {}
+## Island id -> its 이야기 다시 보기 (open islands; tests).
+var story_buttons: Dictionary = {}
 ## Island id -> its 보호자 button (an open island not bought, #77; tests).
 var guardians: Dictionary = {}
 var _entries: Array = []
@@ -174,11 +180,13 @@ func _card(entry: Dictionary) -> PanelContainer:
 	if locked:
 		buttons[entry.id] = null
 		var room := Control.new()
-		room.custom_minimum_size.y = GO_HEIGHT
+		room.custom_minimum_size.y = GO_HEIGHT + STORY_HEIGHT + CARD_SEPARATION
 		col.add_child(room)
 	else:
 		buttons[entry.id] = _go_button(entry)
 		col.add_child(buttons[entry.id])
+		story_buttons[entry.id] = _story_button(entry)
+		col.add_child(story_buttons[entry.id])
 		# The whole card goes there too (a tap on the island's picture or name, 2026-11-09).
 		var id: String = entry.id
 		card.gui_input.connect(func(event: InputEvent) -> void:
@@ -281,6 +289,18 @@ func _add_words(col: VBoxContainer, entry: Dictionary) -> void:
 	sub.add_theme_font_size_override("font_size", UiTheme.SIZE_SMALL)
 	sub.add_theme_color_override("font_color", UiTheme.SUBTLE if locked else UiTheme.MUTED)
 	col.add_child(sub)
+
+
+## 이야기 다시 보기 of the island (small, under its button; 2026-11-09 user: the title's one was unclear
+## with two islands): `story_chosen` with the island.
+func _story_button(entry: Dictionary) -> Button:
+	var story := Ui.button(Locale.t("common.replay_story"), "TitleButton", STORY_HEIGHT)
+	story.name = "Story"
+	story.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	story.add_theme_font_size_override("font_size", STORY_FONT)
+	var id: String = entry.id
+	story.pressed.connect(func() -> void: story_chosen.emit(id))
+	return story
 
 
 ## The way in, the same big red button on every open island (2026-11-09: one look; the island in use
