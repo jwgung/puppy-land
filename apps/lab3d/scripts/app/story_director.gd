@@ -17,6 +17,10 @@
 ##   (its top y0 + v^2 / 2g reaches SKY_HIGH.y) stays there: the sea sparkles, the boats light their lanterns and sail.
 ##   The star then stays in the map's sky.
 ##
+## The finale is saved as seen only at its end or 건너뛰기 (#108, 2026-11-09 user): left half way (back,
+## the app closed) it plays again the next time the map opens. After HELP_AFTER_MISSES misses in it the
+## child is helped (an easier pull or drag, helped).
+##
 ## The camera: while a prologue or the finale plays the director draws the rig itself (the rig's own
 ## easing is paused; the child's view, goal_* and pan, is never touched) with eased moves between
 ## shots, and at the end it eases back to the child's view and hands the rig back exactly there
@@ -105,6 +109,7 @@ const PLANT_SHARE := 0.6           # of the way from the paws to the dial a drag
 ## and the gnomon goes in from PLANT_SHARE_HELPED of the way.
 const HELP_AFTER_MISSES := 3
 const PLANT_SHARE_HELPED := 0.2
+const HELP_SKY_MARGIN := 1.02     # the helped star's speed this much over the one that just reaches the sky (float error)
 const PLANT_PAGE := 4              # the page after which the child plants the gnomon (Dugi: 이제 바늘을 꽂아 봐요)
 const ASSEMBLE_STAGGER_S := 0.22   # between the wedges' take-offs
 const ASSEMBLE_FLIGHT_S := 0.9
@@ -156,7 +161,7 @@ var _flight: Dictionary = {}       # {id, node, from, to, t}
 var _lift := false                 # the finale's star rides above the cat's paws
 var launch_waits := false          # the finale waits for the child's pull on the star
 var launches := 0                  # pulls let go (tests)
-var misses := 0                    # this finale's misses (HELP_AFTER_MISSES)
+var misses := 0                    # this finale's misses: the star came back down, the gnomon let go short (HELP_AFTER_MISSES)
 var _pull: Dictionary = {}         # {press, now} the finger pulling the star (screen, UI units)
 var _launch: Dictionary = {}       # {from, v, t} the star flying up
 var _retry_open := false           # Dugi's "pull harder" line is in the box
@@ -664,15 +669,17 @@ static func launch_speed(pixels: float) -> float:
 
 
 ## The speed this finale's pull of `pixels` gives: launch_speed, and once the child was helped
-## (HELP_AFTER_MISSES) at least the speed that reaches the sky from the paws, sqrt(2 g (sky - y0)).
+## (HELP_AFTER_MISSES) at least the speed that reaches the sky from the paws, sqrt(2 g (sky - y0))
+## (times HELP_SKY_MARGIN).
 func pull_speed(pixels: float) -> float:
 	var speed := launch_speed(pixels)
 	if speed > 0.0 and helped():
-		speed = maxf(speed, sqrt(2.0 * LAUNCH_G * maxf(SKY_HIGH.y - _paws_top().y, 0.0)) * 1.02)
+		speed = maxf(speed, sqrt(2.0 * LAUNCH_G * maxf(SKY_HIGH.y - _paws_top().y, 0.0)) * HELP_SKY_MARGIN)
 	return speed
 
 
-## The child missed HELP_AFTER_MISSES times in this finale: the easier rule.
+## The child missed HELP_AFTER_MISSES times in this finale: the easier rule (any pull past a tap reaches
+## the sky, pull_speed; the gnomon goes in from PLANT_SHARE_HELPED of the way).
 func helped() -> bool:
 	return misses >= HELP_AFTER_MISSES
 
@@ -1036,7 +1043,7 @@ func _plant_input(kind: String, position: Vector2) -> void:
 			if k >= (PLANT_SHARE_HELPED if helped() else PLANT_SHARE):
 				plant_needle()
 			else:
-				if kind == "release":
+				if kind == "release":   # (a cancelled touch is not the child's miss)
 					misses += 1
 				_ease_needle(_needle_held_xf(), Callable())
 				_show_plant_guide()
