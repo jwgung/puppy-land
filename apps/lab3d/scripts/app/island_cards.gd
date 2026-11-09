@@ -1,13 +1,15 @@
-## 섬 고르기 (#75, 2026-11-06 user-approved mock B1): the title's island picker, one card per island
-## of the list (Island) and a last card for the island still to come. A card shows the island (its
-## map rendered once, from the title's 3/4 view), its name and field, the star pieces found on it and
-## 이어서 하기 (still pieces to find) or 다시 가기 (all found); the island in use has a gold edge. An
-## island not open yet (Island.is_open) is grey with a lock and the condition ("뉴턴섬 조각을 다 모으면
-## 열려요"); the last card, 다음 섬, has no picture of its own (a grey island and a lock) and opens after
-## the last island of the list. A card's button emits `chosen` (App makes it the island in use and
-## opens its map); ← 돌아가기 emits `back_requested` (TitleScreen closes the cards). Android back
-## closes them too, through App (TitleScreen.hide_islands, no signal). The payment (#77):
-## an open island not bought has a small 보호자 in its picture's corner (ADR 0005: IslandOffer).
+## 섬 고르기 (#75, 2026-11-06 user-approved mock B1; since 2026-11-09 the title's 시작하기 opens it once
+## there is a second island): one card per island of the list (Island) and a last card for the island
+## still to come. A card shows the island (its map rendered once, from the title's 3/4 view), its name
+## and field, the pieces found on it and the same big red button on every open island: 가 보기 (nothing
+## found yet), 이어서 하기 (pieces left) or 다시 가기 (all found); the island in use has the gold edge.
+## An island not open yet (Island.is_open) is grey with a lock and the condition ("뉴턴섬 조각을 다
+## 모으면 열려요"); the last card, 다음 섬, has no picture of its own (a grey island and a lock) and says
+## 곧 만나요 (no island opens after the last yet). A card's button or a tap on the open card itself
+## emits `chosen` (App makes it the island in use and opens its map); ← 돌아가기 emits `back_requested`
+## (TitleScreen closes the cards). Android back closes them too, through App (TitleScreen.hide_islands,
+## no signal). The payment (#77): an open island not bought has a small 보호자 in its picture's corner
+## (ADR 0005: IslandOffer; its button takes its own taps, never the card's).
 class_name IslandCards
 extends Control
 
@@ -44,10 +46,10 @@ const GUARDIAN_INSET := 8
 ## The star pieces found, small in the picture's corner.
 const EMBLEM_SCALE := 0.8
 const EMBLEM_AT := Vector2(8.0, 8.0)
-## The card's button: 이어서 하기 (the ribbon red, bigger) or 다시 가기 (cream); a locked card keeps its room.
+## The card's button (the same red one on every open island); a locked card keeps its room.
 const GO_WIDTH := 200.0
-const CONTINUE_HEIGHT := 62.0
-const CONTINUE_FONT := 26
+const GO_HEIGHT := 62.0
+const GO_FONT := 26
 const BACK_HEIGHT := 56.0
 ## The thumbnails' render size (px) and camera (the title's 3/4 view of the island).
 const THUMB_PIXELS := Vector2i(400, 288)
@@ -172,7 +174,7 @@ func _card(entry: Dictionary) -> PanelContainer:
 	if locked:
 		buttons[entry.id] = null
 		var room := Control.new()
-		room.custom_minimum_size.y = CONTINUE_HEIGHT
+		room.custom_minimum_size.y = GO_HEIGHT
 		col.add_child(room)
 	else:
 		buttons[entry.id] = _go_button(entry)
@@ -285,12 +287,12 @@ func _add_words(col: VBoxContainer, entry: Dictionary) -> void:
 ## is the gold edge): 가 보기 (nothing found yet), 이어서 하기 (pieces left) or 다시 가기 (all found).
 ## `chosen` with the island.
 func _go_button(entry: Dictionary) -> Button:
-	var key := "islands.again" if entry.complete else ("islands.go" if int(entry.pieces) == 0 else "islands.continue")
-	var go := Ui.button(Locale.t(key), "TitleStartButton", CONTINUE_HEIGHT)
+	var words := Locale.t("islands.again") if entry.complete else (Locale.t("islands.go") if int(entry.pieces) == 0 else Locale.t("islands.continue"))
+	var go := Ui.button(words, "TitleStartButton", GO_HEIGHT)
 	go.name = "Go"
 	go.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	go.custom_minimum_size.x = GO_WIDTH
-	go.add_theme_font_size_override("font_size", CONTINUE_FONT)
+	go.add_theme_font_size_override("font_size", GO_FONT)
 	var id: String = entry.id
 	go.pressed.connect(func() -> void: chosen.emit(id))
 	return go

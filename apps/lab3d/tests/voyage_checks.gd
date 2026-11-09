@@ -2,10 +2,10 @@
 ## island is due once that island is open and the finale of the one before was seen, plays once
 ## (again with 이야기 다시 보기 there), its pages set the shots (the keeper only at the landing, the
 ## next island flickering), 건너뛰기 and Android back skip it, and it ends on the next island's map with
-## its prologue; the finale's end leads to it. The title shows 섬 고르기 only after a voyage; the cards
-## show every island and 다음 섬, a locked one with its lock and condition and no button, an open one's
-## button makes it the island in use; ← and Android back close the cards; 시작하기 goes to the island
-## in use. The developer switch --islands=open is ignored in the Play build. Phone and tablet layouts.
+## its prologue; the finale's end leads to it. The title's 시작하기 opens 섬 고르기 only after a voyage
+## (before, it goes straight on); the cards show every island and 다음 섬 (곧 만나요), a locked one with
+## its lock and condition and no button, an open one's button (가 보기 · 이어서 하기 · 다시 가기) or the
+## card itself makes it the island in use; ← and Android back close the cards. The developer switch --islands=open is ignored in the Play build. Phone and tablet layouts.
 extends RefCounted
 
 var tree: SceneTree
@@ -372,13 +372,13 @@ func check_title_islands(_quality_script: GDScript) -> void:
 	release.pressed = false
 	(title.island_cards.cards[ProgressStore.FIRST_ISLAND] as Control).gui_input.emit(release)
 	await tree.process_frame
-	var start_last: bool = app._screen is IslandHomeScreen and (app._screen as IslandHomeScreen).island.id == ProgressStore.FIRST_ISLAND
+	var tap_chose_first: bool = app._screen is IslandHomeScreen and (app._screen as IslandHomeScreen).island.id == ProgressStore.FIRST_ISLAND
 	await _free(app)
 	expect.call(hidden and shown, "섬 고르기: 시작하기 goes straight on before a voyage, opens the cards after one (no separate 섬 고르기 button)", "%s %s" % [hidden, shown])
 	expect.call(problems.is_empty() and back_closes, "섬 고르기: a card per island and 다음 섬; a locked one grey with a lock, its condition (다음 섬: 곧 만나요), no button; 다시 가기 on a finished island; back closes the cards",
 		"; ".join(problems) + " back %s" % back_closes)
-	expect.call(open_card and chosen and start_last, "섬 고르기: an open island's 가 보기 makes it the island in use and opens its map; a tap on a card itself does the same",
-		"%s %s %s" % [open_card, chosen, start_last])
+	expect.call(open_card and chosen and tap_chose_first, "섬 고르기: an open island's 가 보기 makes it the island in use and opens its map; a tap on a card itself does the same",
+		"%s %s %s" % [open_card, chosen, tap_chose_first])
 
 
 ## Phone, tablet, phone zoomed: the title's buttons with 섬 고르기, the cards and the voyage's box and
