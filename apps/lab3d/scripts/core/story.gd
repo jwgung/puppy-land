@@ -117,7 +117,8 @@ static func voyage_due(progress: Dictionary) -> String:
 	return ""
 
 
-## Some voyage was played: the title shows 섬 고르기 (#75: the picker comes after the first voyage).
+## Some voyage was played: the title's 시작하기 opens 섬 고르기 (#75: the picker comes after the first
+## voyage; TitleScreen.picks_island).
 static func any_voyage_seen() -> bool:
 	return Island.ids().any(func(id: String) -> bool: return voyage_seen(id))
 

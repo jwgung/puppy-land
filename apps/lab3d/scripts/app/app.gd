@@ -141,6 +141,9 @@ func show_title() -> void:
 	screen.island_chosen.connect(func(island: String) -> void:
 		Island.set_current(island)
 		show_list())
+	screen.island_story_chosen.connect(func(island: String) -> void:   # its story again (2026-11-09)
+		Island.set_current(island)
+		show_list(true))
 	_swap(screen, "title")
 
 
