@@ -38,6 +38,7 @@ func run() -> void:
 	await check_skip_and_replay(quality_script)
 	await check_title_islands(quality_script)
 	await check_map_back()
+	await check_sail()
 	await check_layout()
 	TitleScreen.app_may_show = false
 	Story.app_may_enable = false
@@ -362,7 +363,8 @@ func check_title_islands(_quality_script: GDScript) -> void:
 	if go != null:
 		go.pressed.emit()
 	await tree.process_frame
-	var chosen: bool = app._screen is IslandHomeScreen and (app._screen as IslandHomeScreen).island.id == NEXT and ProgressStore.current_island() == NEXT
+	var sailed: bool = await _sail_through(app)   # another island: the sail first (#114)
+	var chosen: bool = sailed and app._screen is IslandHomeScreen and (app._screen as IslandHomeScreen).island.id == NEXT and ProgressStore.current_island() == NEXT
 	# A tap on the first island's card itself (not its button) chooses it too.
 	app.show_title()
 	await tree.process_frame
@@ -373,6 +375,7 @@ func check_title_islands(_quality_script: GDScript) -> void:
 	release.pressed = false
 	(title.island_cards.cards[ProgressStore.FIRST_ISLAND] as Control).gui_input.emit(release)
 	await tree.process_frame
+	await _sail_through(app)
 	var tap_chose_first: bool = app._screen is IslandHomeScreen and (app._screen as IslandHomeScreen).island.id == ProgressStore.FIRST_ISLAND
 	# 이야기 다시 보기: not on the title any more (two islands), on each open card: the next island's
 	# plays its voyage again, the first island's its prologue on its map.
@@ -402,6 +405,78 @@ func check_title_islands(_quality_script: GDScript) -> void:
 		"; ".join(problems) + " back %s" % back_closes)
 	expect.call(open_card and chosen and tap_chose_first, "섬 고르기: an open island's 가 보기 makes it the island in use and opens its map; a tap on a card itself does the same",
 		"%s %s %s" % [open_card, chosen, tap_chose_first])
+
+
+## A sail on the screen now (VoyageScreen.sail): skipped by a tap; true when there was one.
+func _sail_through(app: Control) -> bool:
+	if not app._screen is VoyageScreen or not (app._screen as VoyageScreen).sail:
+		return false
+	(app._screen as VoyageScreen).tap_page()
+	await tree.process_frame
+	return true
+
+
+## The island cards' sail (#114 2026-11-10, the user's A): choosing another island than the one in use
+## plays a short boat scene with no words and no keeper; it ends by itself (SAIL_S) on that island's
+## map, the voyage's mark untouched; a tap or Android back ends it at once; choosing the island in use
+## opens its map straight away. --demo-story=islands counts every island's prologue as seen too.
+func check_sail() -> void:
+	_first_done()
+	Story.mark_voyage_seen(NEXT)
+	ProgressStore.set_mark(ProgressStore.STORY, ProgressStore.island_key(NEXT, "prologue"), true)
+	var app := await _app(["--islands=open"])
+	var title := app._screen as TitleScreen
+	title.show_islands()
+	await tree.process_frame
+	var problems := []
+	# The island in use: its map at once.
+	(title.island_cards.buttons[ProgressStore.FIRST_ISLAND] as Button).pressed.emit()
+	await tree.process_frame
+	if not app._screen is IslandHomeScreen:
+		problems.append("the island in use did not open at once (%s)" % app._screen)
+	# Another: the sail, no words, no keeper; it ends by itself on its map.
+	app.show_title(true)
+	await tree.process_frame
+	((app._screen as TitleScreen).island_cards.buttons[NEXT] as Button).pressed.emit()
+	await tree.process_frame
+	var voyage := app._screen as VoyageScreen
+	if voyage == null or not voyage.sail or voyage.from != ProgressStore.FIRST_ISLAND or voyage.to != NEXT:
+		problems.append("no sail from the island in use (%s)" % app._screen)
+	else:
+		var start: float = voyage.way
+		for i in 60:
+			await tree.process_frame
+		if voyage.dialogue.active or voyage.keeper.visible or voyage.way <= start:
+			problems.append("the sail: words %s, keeper %s, way %.2f" % [voyage.dialogue.active, voyage.keeper.visible, voyage.way])
+		for i in roundi(VoyageScreen.SAIL_S * 60.0) + 30:
+			if not app._screen is VoyageScreen:
+				break
+			await tree.process_frame
+	if not (app._screen is IslandHomeScreen and Island.current_id() == NEXT and not (app._screen as IslandHomeScreen).play_prologue_on_open):
+		problems.append("the sail did not end on %s's map (%s)" % [NEXT, app._screen])
+	# Back: a tap and Android back end it at once.
+	for how: String in ["tap", "back"]:
+		app.show_title(true)
+		await tree.process_frame
+		var other := ProgressStore.FIRST_ISLAND if Island.current_id() == NEXT else NEXT
+		((app._screen as TitleScreen).island_cards.buttons[other] as Button).pressed.emit()
+		await tree.process_frame
+		if how == "tap":
+			(app._screen as VoyageScreen).tap_page()
+		else:
+			app._go_back()
+		await tree.process_frame
+		if not (app._screen is IslandHomeScreen and Island.current_id() == other):
+			problems.append("%s did not end the sail on %s" % [how, other])
+	await _free(app)
+	# --demo-story=islands: the next island's prologue counts as seen (the sail lands on its map).
+	ProgressStore.reset_all()
+	app = await _app(["--demo-story=islands", "--islands=open"])
+	if not ProgressStore.mark(ProgressStore.STORY, ProgressStore.island_key(NEXT, "prologue")):
+		problems.append("--demo-story=islands left %s's prologue unseen" % NEXT)
+	await _free(app)
+	expect.call(problems.is_empty(), "섬 고르기 sail: another island plays the boat with no words (it ends by itself on its map; a tap or back at once), the island in use opens at once; --demo-story=islands sees every prologue",
+		"; ".join(problems))
 
 
 ## The map's ← (top left, #114) and Android back on the map: the island cards once a voyage was seen,
