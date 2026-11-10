@@ -12,6 +12,9 @@
 ##   While it rains (held, heavy) drops fall from it into the pond.
 ## - the day sign on the beach between the sea and the land: a bar with a sun at its left end and a
 ##   moon at its right, filled with the day's sunshine left (no number, no clock),
+## - once the pond is full, a stream from the pond's outlet (a gap in its stones) over the land and the
+##   beach back into the sea, ripples running down it (#114 2026-11-10 user: "연못에서 왜 물이 다시
+##   바다로 안가지? 그래야 여행이되지"),
 ## - the bread cat on the land beside the pond.
 ## Visual only: no body, nothing the model or the mission reads.
 class_name WaterCycleProps
@@ -78,6 +81,17 @@ const RAIN_SPEED := 7.0
 const RAIN_TAIL_S := 5.0
 const DROP := Color("4aa8f5")
 const DROP_LENGTH := 0.26
+## The stream from the full pond back to the sea: its middle line (the pond's water, over the outlet,
+## the land, down the beach, into the shallows), its width, the ripples running down it.
+## It runs out of the pond's front left and along the front of the table, in front of the day sign's
+## posts, so the whole of it is seen.
+const STREAM := [Vector3(2.4, 0.89, 1.15), Vector3(1.85, 0.63, 1.85), Vector3(0.9, 0.62, 2.3),
+	Vector3(-0.1, 0.62, 2.62), Vector3(-0.6, 0.52, 2.66), Vector3(-1.3, 0.61, 2.55)]
+const STREAM_WIDTH := 0.55
+const STREAM_RIPPLES := 6
+const STREAM_RIPPLE_S := 2.2
+## The pond's stone left out for the stream's outlet (its ring's index: the one at its front left).
+const OUTLET_STONE := 8
 ## The vapour: wisps rising from the sea along a curve to the cloud, how many (a weak sun shows
 ## WEAK_WISPS of them), how long one takes.
 const WISPS := 10
@@ -111,6 +125,8 @@ var _more_clouds: Array[MeshInstance3D] = []
 var _rain: MeshInstance3D
 var _wisps: Array[MeshInstance3D] = []
 var _day_fill: MeshInstance3D
+var stream: Node3D              # the full pond's stream to the sea
+var _ripples: Array[MeshInstance3D] = []
 var _t := 0.0
 var _rain_until := -1.0         # the rain's tail ends then (game clock; -1: no tail)
 var _key := []
@@ -123,6 +139,7 @@ var shown_cloud := 0.0
 var shown_pond := 0.0
 var shown_day := 1.0
 var shown_sunset := false
+var shown_stream := false
 
 
 func build(lab: Node3D) -> void:
@@ -184,6 +201,16 @@ func build(lab: Node3D) -> void:
 		more.scale = Vector3.ONE * 0.62
 		cloud.add_child(more)
 		_more_clouds.append(more)
+	stream = ArtKit.instance(_stream_mesh())
+	stream.name = "Stream"
+	stream.visible = false
+	lab.add_child(stream)
+	var ripple := _ripple_mesh()
+	for i in STREAM_RIPPLES:
+		var r := ArtKit.instance(ripple, bright_material)
+		r.name = "StreamRipple%d" % i
+		stream.add_child(r)
+		_ripples.append(r)
 	_rain = ArtKit.instance(_rain_mesh(), bright_material)
 	_rain.name = "Rain"
 	lab.add_child(_rain)
@@ -233,6 +260,8 @@ func show(strong: bool, heating: bool, cloud_share: float, has_cloud: bool, pond
 		_rain_until = -1.0
 	elif _rain.visible and _rain_until < 0.0:
 		_rain_until = _t + RAIN_TAIL_S
+	shown_stream = pond >= 1.0
+	stream.visible = shown_stream
 	pond_water.visible = pond > 0.0
 	pond_water.position = POND_AT + Vector3.UP * (0.02 + (POND_DEPTH - 0.06) * pond)
 	pond_water.scale = Vector3(lerpf(0.72, 1.0, pond), 1.0, lerpf(0.72, 1.0, pond))
@@ -259,6 +288,9 @@ func animate(delta: float) -> void:
 		var u := fposmod(_t / WISP_S + float(i) / float(shown), 1.0)
 		w.position = wisp_point(i, u)
 		w.scale = Vector3.ONE * (1.0 + 1.0 * sin(PI * u))
+	if stream.visible:
+		for i in _ripples.size():
+			_ripples[i].position = stream_point(fposmod(_t / STREAM_RIPPLE_S + float(i) / _ripples.size(), 1.0)) + Vector3.UP * 0.035
 	var bob := Vector3.UP * CLOUD_BOB * sin(TAU * _t / CLOUD_BOB_S)
 	_white_cloud.position = bob
 	_grey_cloud.position = bob
@@ -275,6 +307,22 @@ static func wisp_point(i: int, u: float) -> Vector3:
 	var a := from.lerp(bend, u)
 	var b := bend.lerp(to, u)
 	return a.lerp(b, u)
+
+
+## The stream's middle line at `u` (0 in the pond .. 1 in the sea), evenly along its length.
+static func stream_point(u: float) -> Vector3:
+	var lengths: Array[float] = []
+	var total := 0.0
+	for k in STREAM.size() - 1:
+		var l: float = (STREAM[k + 1] as Vector3).distance_to(STREAM[k])
+		lengths.append(l)
+		total += l
+	var at := clampf(u, 0.0, 1.0) * total
+	for k in lengths.size():
+		if at <= lengths[k] or k == lengths.size() - 1:
+			return (STREAM[k] as Vector3).lerp(STREAM[k + 1], clampf(at / lengths[k], 0.0, 1.0))
+		at -= lengths[k]
+	return STREAM[-1]
 
 
 # --- the table, the sea and the land ----------------------------------------------------------------
@@ -302,7 +350,7 @@ func _table_mesh() -> Mesh:
 	# The land: a grass top on the right of the table.
 	var land_w := c.x + TABLE_HALF.x - 0.2 - LAND_LEFT
 	b.add_rounded_box(Transform3D(Basis(), Vector3(LAND_LEFT + land_w * 0.5, LAND_TOP - 0.04, c.z)), Vector3(land_w, 0.1, TABLE_HALF.y * 2.0 - 0.3), 0.05, 1, ArtPalette.GRASS, ArtPalette.GRASS_TOP)
-	for t: Array in [[0.6, -2.2, 0.5], [5.3, -2.1, 0.45], [6.0, -0.4, 0.4], [0.8, 2.4, 0.35]]:   # small bushes on the land
+	for t: Array in [[0.6, -2.2, 0.5], [5.3, -2.1, 0.45], [6.0, -0.4, 0.4], [2.2, -2.2, 0.35]]:   # small bushes on the land
 		b.add_sphere(Transform3D(Basis.from_scale(Vector3(1.0, 0.8, 1.0)), Vector3(t[0], LAND_TOP + float(t[2]) * 0.6, t[1])), t[2], 3, 8, ArtPalette.LEAF_LIGHT)
 	return b.commit()
 
@@ -327,6 +375,8 @@ func _pond_mesh() -> Mesh:
 	b.ao_height = POND_DEPTH
 	var stones := 22
 	for k in stones:
+		if k == OUTLET_STONE:
+			continue   # (the stream's outlet)
 		var a := TAU * k / stones
 		var r := 0.2 + 0.05 * float(k % 3)
 		var at := POND_AT + Vector3(cos(a), 0.0, sin(a)) * (POND_RADIUS + 0.08) + Vector3.UP * r * 0.75
@@ -350,6 +400,29 @@ func _water_mesh() -> Mesh:
 			var p0 := Vector3(cos(a0) * r, 0.055, sin(a0) * r)
 			var p1 := Vector3(cos(a1) * r, 0.055, sin(a1) * r)
 			b.add_rounded_box(Transform3D(Basis(Vector3.UP, -(a0 + a1) * 0.5 + PI * 0.5), (p0 + p1) * 0.5), Vector3(p0.distance_to(p1), 0.008, 0.03), 0.0, 1, FOAM)
+	return b.commit()
+
+
+## The stream: a flat water band along STREAM, a light edge on each side, round joins.
+static func _stream_mesh() -> Mesh:
+	var b := ArtKit.builder()
+	b.ao_min = 1.0
+	for k in STREAM.size() - 1:
+		var a: Vector3 = STREAM[k]
+		var c: Vector3 = STREAM[k + 1]
+		var along := c - a
+		var basis := Basis.looking_at(along.normalized(), Vector3.UP)
+		b.add_rounded_box(Transform3D(basis, (a + c) * 0.5), Vector3(STREAM_WIDTH + 0.08, 0.03, along.length()), 0.01, 1, POND_WATER_TOP.lightened(0.35))
+		b.add_rounded_box(Transform3D(basis, (a + c) * 0.5 + Vector3.UP * 0.01), Vector3(STREAM_WIDTH, 0.04, along.length()), 0.01, 1, SEA_DEEP, SEA_LIGHT)
+		b.add_cylinder(Transform3D(Basis(), c - Vector3.UP * 0.01), STREAM_WIDTH * 0.5, STREAM_WIDTH * 0.5, 0.05, 12, SEA_DEEP, true, SEA_LIGHT)
+	return b.commit()
+
+
+## A ripple running down the stream: a short white dash across it.
+static func _ripple_mesh() -> Mesh:
+	var b := ArtKit.builder()
+	b.ao_min = 1.0
+	b.add_rounded_box(Transform3D(), Vector3(0.06, 0.012, 0.26), 0.0, 1, FOAM)
 	return b.commit()
 
 

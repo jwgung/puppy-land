@@ -10,7 +10,9 @@
 ##   condition button: its start, kept across reset()).
 ## - "heat": seconds of sunshine so far today (0..DAY_S). A held sun glides it towards DAY_S at one
 ##   second per second (heat_on); letting go stops it where it is (heat_off). It never goes back
-##   except by reset() (다시, a new condition, the next stage).
+##   except by reset() (다시, a new condition, the next stage). With `cloud_stop` (the first stage, #114
+##   2026-11-10: it only asks for a cloud, and a held sun went on into rain) the sun stops by itself the
+##   moment the first cloud forms (cloud_stopped).
 ##
 ## The water (pure functions of the two inputs, in cloud units: one unit is one small cloud's water):
 ## - evaporated() = sun * heat: all the water that went up from the sea today;
@@ -44,6 +46,9 @@ const POND_FULL := 3.0
 ## The sun's day goes by at one second of sunshine per second held.
 const HEAT_RATE := 1.0
 
+## The sun stops at the first cloud (WaterCycleLab sets it in the first stage).
+var cloud_stop := false
+
 
 func _init() -> void:
 	define_input("sun", WEAK_SUN)
@@ -55,9 +60,20 @@ static func is_strong(rate: float) -> bool:
 	return rate > (WEAK_SUN + STRONG_SUN) * 0.5
 
 
-## The sun shines on the sea from now (a finger holds it): the day's sunshine runs on to its end.
+## The sun shines on the sea from now (a finger holds it): the day's sunshine runs on to its end (or,
+## with cloud_stop, to the first cloud).
 func heat_on() -> void:
-	glide_to("heat", DAY_S)
+	glide_to("heat", maxf(input("heat"), cloud_heat()) if cloud_stop else DAY_S)
+
+
+## The sunshine that makes the first cloud with this sun (s; a hair over, so the cloud is there).
+func cloud_heat() -> float:
+	return minf(CLOUD_AT / input("sun") + 1e-6, DAY_S)
+
+
+## The sun stopped by itself at the first cloud (cloud_stop): nothing more happens under the finger.
+func cloud_stopped() -> bool:
+	return cloud_stop and not animating() and evaporated() >= CLOUD_AT
 
 
 ## The sun is let go: the sunshine stops where it is.
