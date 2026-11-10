@@ -87,9 +87,10 @@ const TAP_SLOP := 14.0               # UI units a press may move and still count
 ## hops along the dirt paths as they are drawn (route: the shortest way on them, off the stages,
 ## stepping on and off at the nearest clear point) at WALK_SPEED, the whole walk taking at least
 ## WALK_MIN_S and at most WALK_MAX_S (a far spot: a little quicker, never a long wait), speeding up
-## and slowing down over WALK_RAMP_S at its ends (walk_share). Puppy and Dugi follow FOLLOW_LAG m behind on
-## the same way, FOLLOW_SIDE m to its left and right (stepping aside when the cat comes their way,
-## never nearer each other than KEEP_APART), each facing where it goes with its own hop.
+## and slowing down over WALK_RAMP_S at its ends (walk_share). Puppy and Dugi follow in single file on
+## the same way (Puppy FOLLOW_LAG m behind, Dugi twice that, FOLLOW_SIDE m off its middle; stepping
+## aside when the cat comes their way, never nearer each other than KEEP_APART), each facing where it
+## goes with its own hop.
 ## Taps on spots are ignored until they arrive; then the lab opens.
 const WALK_SPEED := 2.5              # m/s along the way
 const WALK_MIN_S := 1.5
@@ -100,8 +101,13 @@ const ROUTE_CLEAR := 0.1             # m a step on or off the paths keeps off a 
 const WALK_IN_PLACE_S := 0.7         # the spot they stand at: a hop in place
 const HOP_HEIGHT := 0.16             # m the cat rises on a hop (the followers: their own share)
 const HOP_HZ := 2.2                  # hops per second while walking
-const FOLLOW_LAG := 0.8              # m behind the cat along the way
-const FOLLOW_SIDE := 0.34            # m to the left (Puppy) and right (Dugi) of the way (0.42 before 2026-11-01: the path's edge)
+## Puppy, then Dugi, follow the cat in single file on the path (#114, 2026-11-10 user: side by side they
+## walked on the grass; the path is MapIsland.PATH_WIDTH 0.8 m wide): FOLLOW_LAG m behind it along the
+## way each (Dugi twice), FOLLOW_SIDE m off its middle (Puppy left, Dugi right: a little life, still on it).
+const FOLLOW_LAG := 0.8              # m behind the one ahead along the way
+const FOLLOW_SIDE := 0.1             # m off the way's middle (0.34 before #114: off the path)
+## Two places nearer than this go straight there (a short step on the square); farther, by the paths.
+const ROUTE_STRAIGHT_MAX := 1.2
 const FOLLOW_HOPS := {"Puppy": [0.33, 0.8], "Dugi": [0.66, 0.65]}   # phase (share of a hop), height share
 const FOLLOW_SPEED := 4.0            # m/s a follower may go to keep its place
 const KEEP_APART := 0.68             # m: no two of the three nearer than this while walking
@@ -630,7 +636,7 @@ func trio() -> Array:
 ## a path's end joined to the nearest point of every other path it touches, no piece of it under a
 ## stage. The ends step on at the nearest point of a path whose step crosses no stage, the shortest
 ## way runs between them, and its joins are smoothed (two Chaikin passes, the ends kept). Ends
-## nearer each other than to the paths (and nothing between them): straight.
+## nearer each other than to the paths and than ROUTE_STRAIGHT_MAX (and nothing between them): straight.
 func route(from: Vector2, to: Vector2) -> PackedVector2Array:
 	var nodes := PackedVector2Array()
 	var links: Array = []   # node index -> neighbour indices
@@ -663,8 +669,39 @@ func route(from: Vector2, to: Vector2) -> PackedVector2Array:
 				if nodes[row[best]].distance_to(nodes[end]) < ROUTE_JOIN:
 					for k in range(maxi(0, best - 1), mini(row.size(), best + 2)):   # (and its neighbours: no step back at the join)
 						join.call(end, row[k])
+	# Paths that meet under a stage (the hutton island's paths run from spot to spot, #114): each one's
+	# last point clear of that stage joined to the others' by steps round its edge, so the way goes round
+	# the landmark instead of stopping at it (and then cutting over the grass).
+	for spot in _spots:
+		var r := float(spot.radius)
+		if r <= 0.0:
+			continue
+		var c := Vector2(spot.at.x, spot.at.z)
+		var exits: Array[int] = []
+		for row: Array in lines:
+			for ends: Array in [[0, 1], [row.size() - 1, -1]]:
+				if nodes[row[ends[0]]].distance_to(c) >= r:
+					continue
+				var k: int = ends[0]
+				while k >= 0 and k < row.size() and nodes[row[k]].distance_to(c) < r + ROUTE_RING * 0.5:
+					k += ends[1]
+				if k >= 0 and k < row.size():
+					exits.append(row[k])
+		for i in exits.size():
+			for j in range(i + 1, exits.size()):
+				var a0 := (nodes[exits[i]] - c).angle()
+				var turn := angle_difference(a0, (nodes[exits[j]] - c).angle())
+				var steps := maxi(1, ceili(absf(turn) / ROUTE_RING_STEP))
+				var last := exits[i]
+				for k in range(1, steps):
+					var m: int = add_node.call(c + Vector2.from_angle(a0 + turn * k / steps) * (r + ROUTE_RING))
+					links[last].append(m)
+					links[m].append(last)
+					last = m
+				links[last].append(exits[j])
+				links[exits[j]].append(last)
 	# Onto the paths: the nearest point of a link whose step from `p` crosses no stage.
-	var attach := func(p: Vector2) -> Array:
+	var nearest := func(p: Vector2) -> Array:
 		var best := [INF, Vector2.ZERO, -1, -1]
 		for i in links.size():
 			for k: int in links[i]:
@@ -673,18 +710,38 @@ func route(from: Vector2, to: Vector2) -> PackedVector2Array:
 				var q := Geometry2D.get_closest_point_to_segment(p, nodes[i], nodes[k])
 				if p.distance_to(q) < best[0] and not _crosses_stage(p, q, ROUTE_CLEAR):
 					best = [p.distance_to(q), q, i, k]
+		return best
+	var attach := func(p: Vector2) -> Array:
+		var best: Array = nearest.call(p)
+		var ring := PackedVector2Array()   # the steps round a stage first (#114), when it stands in the way
 		if best[2] < 0:
-			return [-1, INF]
+			# A stand on the far side of its own stage from the paths (the hutton island's spots face away
+			# from the path that comes to them): round the stage's edge to where a clear step reaches a path
+			# (2026-11-10 user: they walked straight over the grass).
+			ring = _round_stage(p, func(w: Vector2) -> bool: return (nearest.call(w) as Array)[2] >= 0)
+			if ring.is_empty():
+				return [-1, INF]
+			best = nearest.call(ring[ring.size() - 1])
 		var n: int = add_node.call(best[1])
 		links[n] = [best[2], best[3]]
 		links[best[2]].append(n)
 		links[best[3]].append(n)
-		return [n, best[0]]
+		var first := n
+		var length: float = best[0]
+		for k in range(ring.size() - 1, -1, -1):   # chained from the path back to the stand's side
+			var m: int = add_node.call(ring[k])
+			links[m].append(first)
+			links[first].append(m)
+			length += nodes[m].distance_to(nodes[first])
+			first = m
+		if not ring.is_empty():
+			length += p.distance_to(ring[0])   # (the whole way from `p` to the path)
+		return [first, length]
 	var straight := not _crosses_stage(from, to, ROUTE_CLEAR)
 	var start: Array = attach.call(from)
 	var end: Array = attach.call(to)
 	var points := PackedVector2Array([from])
-	if start[0] >= 0 and end[0] >= 0 and not (straight and from.distance_to(to) <= float(start[1]) + float(end[1])):
+	if start[0] >= 0 and end[0] >= 0 and not (straight and from.distance_to(to) <= minf(ROUTE_STRAIGHT_MAX, float(start[1]) + float(end[1]))):
 		# Dijkstra over the samples (a few hundred: cheap, once per tap).
 		var a: int = start[0]
 		var b: int = end[0]
@@ -727,6 +784,36 @@ func route(from: Vector2, to: Vector2) -> PackedVector2Array:
 		points = out
 	return points
 
+
+
+## The steps round the stage `p` stands by (ROUTE_RING m out from its edge), turning the shorter way
+## until `clear` holds at a step (a clear step onto a path from there): [first step .. last step], or
+## empty (no stage there, or no clear step all round).
+const ROUTE_RING := 0.35
+const ROUTE_RING_STEP := deg_to_rad(20.0)
+func _round_stage(p: Vector2, clear: Callable) -> PackedVector2Array:
+	var stage: Dictionary = {}
+	for spot in _spots:
+		var c := Vector2(spot.at.x, spot.at.z)
+		if float(spot.radius) > 0.0 and p.distance_to(c) < float(spot.radius) + 1.0 \
+				and (stage.is_empty() or p.distance_to(c) < p.distance_to(Vector2(stage.at.x, stage.at.z))):
+			stage = spot
+	if stage.is_empty():
+		return PackedVector2Array()
+	var c := Vector2(stage.at.x, stage.at.z)
+	var r := float(stage.radius) + ROUTE_RING
+	var from := (p - c).angle()
+	var best := PackedVector2Array()
+	for turn: float in [1.0, -1.0]:
+		var steps := PackedVector2Array()
+		for k in range(1, int(TAU / ROUTE_RING_STEP)):
+			var w := c + Vector2.from_angle(from + turn * ROUTE_RING_STEP * k) * r
+			steps.append(w)
+			if clear.call(w):
+				if best.is_empty() or steps.size() < best.size():
+					best = steps
+				break
+	return best
 
 
 ## The segment a-b comes within `margin` m of a spot's stage (its round plate).
@@ -801,16 +888,16 @@ func _step_walk(delta: float) -> void:
 	var top_speed := maxf(FOLLOW_SPEED, 1.6 * length / maxf(_walk_total, 0.01))
 	var settle := smoothstep(1.0 - SETTLE_SHARE, 1.0, k)
 	var spots := {}
-	for entry in [[puppy, 1.0], [dugi, -1.0]]:
+	for entry in [[puppy, 1.0, 1.0], [dugi, -1.0, 2.0]]:
 		var actor: Node3D = entry[0]
 		if actor == null:
 			continue
 		var side: float = entry[1]
-		var behind: Array = _along(s - FOLLOW_LAG)
+		var lag: float = FOLLOW_LAG * float(entry[2])
+		var behind: Array = _along(maxf(s - lag, 0.0))
 		var dir: Vector2 = behind[1] if behind[1] != Vector2.ZERO else cat_dir
 		var goal: Vector2 = behind[0] + Vector2(dir.y, -dir.x) * FOLLOW_SIDE * side   # (dir.y, -dir.x): the walker's left
-		if s < FOLLOW_LAG:   # behind the way's start
-			goal += -cat_dir * (FOLLOW_LAG - s)
+		# (behind the way's start: they wait for their turn where they stand, not further back off the way)
 		var place: Vector3 = group[actor]
 		goal = goal.lerp(Vector2(place.x, place.z), settle)
 		var now: Vector3 = _walk_last.get(actor, actor.position)

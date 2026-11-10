@@ -366,6 +366,7 @@ func check_walk_group() -> void:
 	var max_lag := 0.0
 	var worst_face := 0.0
 	var worst_at := ""
+	var off_path := 0.0   # #114: the followers' farthest step off the way the cat walks (mid-walk)
 	for id in order:
 		var index: int = screen._spot_index(id)
 		screen._walk_to_spot(index)
@@ -388,6 +389,12 @@ func check_walk_group() -> void:
 				max_lag = maxf(max_lag, _flat(actor.position).distance_to(_flat(screen.cat.position)))
 				if screen.map.water_at(actor.position.x, actor.position.z):
 					problems.append("%s in the pond on the way to %s" % [actor.name, id])
+				if t > 0.6 and t < total * (1.0 - float((load(HOME_SCREEN) as GDScript).get_script_constant_map().SETTLE_SHARE)):   # (not stepping off at the start or into the group's places)
+					var near := INF
+					for k in screen._route.size() - 1:
+						var q := Geometry2D.get_closest_point_to_segment(_flat(actor.position), screen._route[k], screen._route[k + 1])
+						near = minf(near, q.distance_to(_flat(actor.position)))
+					off_path = maxf(off_path, near)
 			# Facing: against the way it went over the last 0.3 s (18 frames), while it walks on (> 0.6 m/s).
 			for actor: Node3D in actors:
 				var trail: Array = last.get(actor, [])
@@ -414,9 +421,11 @@ func check_walk_group() -> void:
 		problems.append("two of them came %.2f m close" % min_apart)
 	if max_lag > 2.5:
 		problems.append("a follower fell %.1f m behind" % max_lag)
+	if off_path > MapIsland.PATH_WIDTH * 0.5 + 0.15:   # (its middle within the path plus a body; side by side before #114: 0.7)
+		problems.append("a follower walked %.2f m off the way (on the grass)" % off_path)
 	if worst_face > 45.0:
 		problems.append("an actor faced %.0f deg off where it went (%s)" % [worst_face, worst_at])
-	expect.call(problems.is_empty(), "map walk: Puppy and Dugi walk with the cat (a step behind, %.2f m apart at the closest, at most %.1f m behind), facing their way (worst %.0f deg), to the group's places; taps wait" % [min_apart, max_lag, worst_face],
+	expect.call(problems.is_empty(), "map walk: Puppy and Dugi walk with the cat (a step behind, %.2f m apart at the closest, at most %.1f m behind), facing their way (worst %.0f deg), on the path (at most %.2f m off its middle), to the group's places; taps wait" % [min_apart, max_lag, worst_face, off_path],
 		"; ".join(problems))
 	await _free(screen)
 

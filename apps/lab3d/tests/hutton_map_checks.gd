@@ -324,6 +324,20 @@ func check_hutton_map() -> void:
 				problems.append("a tap on %s walks or opens something" % screen._spots[i].id)
 			break
 	var lab: int = screen._spots.map(func(spot: Dictionary) -> String: return spot.id).find(EXPERIMENTS[0])
+	# The walks on the hutton island go by the paths (#114, 2026-11-10 user: straight over the grass): from
+	# the square and spot to spot in the order, never a straight step and never over a stage.
+	var places: Array = [Vector2(map.home.x, map.home.y)]
+	for id in ORDER:
+		var stand: Vector3 = screen._spots[screen._spot_index(id)].stand
+		places.append(Vector2(stand.x, stand.z))
+	for k in places.size() - 1:
+		var way: PackedVector2Array = screen.route(places[k], places[k + 1])
+		if way.size() <= 2 and places[k].distance_to(places[k + 1]) > 1.2:
+			problems.append("a straight walk over the grass to %s" % ORDER[k])
+		for i in way.size() - 1:
+			if screen._crosses_stage(way[i], way[i + 1], -0.05):
+				problems.append("the walk to %s goes over a stage" % ORDER[k])
+				break
 	screen._walk_to_spot(lab)
 	if not (screen._walking or not opened.is_empty()):
 		problems.append("a tap on %s neither walks nor opens it" % EXPERIMENTS[0])
