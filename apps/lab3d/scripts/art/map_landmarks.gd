@@ -387,7 +387,7 @@ static func sundial_dial(b: ArtMeshBuilder, xf: Transform3D, sectors := SundialA
 		b.add_triangle([xf * (p0 * inner + up), xf * (p1 * inner + up), xf * (p1 * DIAL_RADIUS + up)], [band, band, band])
 		b.add_triangle([xf * (p0 * inner + up), xf * (p1 * DIAL_RADIUS + up), xf * (p0 * DIAL_RADIUS + up)], [band, band, band])
 	# The marks between the filled sectors and at their two ends (all ten round a whole dial).
-	var marks := SundialArt.WEDGES if filled == SundialArt.WEDGES else (filled + 1 if filled > 0 else 0)
+	var marks := 0 if filled == 0 else mini(filled + 1, SundialArt.WEDGES)
 	for i in marks:
 		var a := TAU * i / SundialArt.WEDGES
 		var mid := Vector3(cos(a), 0.0, sin(a)) * (inner - 0.05)

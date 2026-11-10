@@ -162,7 +162,7 @@ var _cat_hop: Dictionary = {}      # {from, to, t, s, height}
 var _boats_wander := false
 var _boats_sail := -1.0
 var _flight_queue: Array = []
-var _flight: Dictionary = {}       # {id, node, from, to, t}
+var _flight: Dictionary = {}       # {id, node, from, to, slot (the sundial's sector), spin, t}
 var _lift := false                 # the finale's star rides above the cat's paws
 var launch_waits := false          # the finale waits for the child's pull on the star
 var launches := 0                  # pulls let go (tests)
@@ -230,6 +230,9 @@ func _ready() -> void:
 		_set_night(map_night())
 	_layout()
 	home.resized.connect(_layout)
+	var back: Control = home.find_child("MapBackButton", true, false)
+	if back != null:
+		back.minimum_size_changed.connect(_layout)   # the emblem keeps right of the map's ← (#114)
 
 
 func _exit_tree() -> void:

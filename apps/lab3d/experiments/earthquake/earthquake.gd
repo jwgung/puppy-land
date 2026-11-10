@@ -13,7 +13,7 @@
 ## posed on the model's frame every step (racking with the model's drift), so the engine house is the
 ## model's to the millimetre. The step the model's house falls, the blocks are let go (unfrozen with
 ## their frame's velocity and a small seeded push, SEED) and Jolt brings them down on the shaking slab;
-## the result is still the model's ("fell" from that step).
+## the result is still the model's ("toppled" or "fell" from that step).
 ##
 ## The hand: one knob ("table") round the handle's knob, the slingshot's object (manipulation.slingshot):
 ## a press on it and a pull to the left along the rod (the surface "pull", a line through the knob)
