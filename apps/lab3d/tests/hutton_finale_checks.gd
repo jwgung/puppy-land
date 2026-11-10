@@ -1,8 +1,8 @@
 ## The hutton island's finale "해시계 다시 세우기" (#106, 2026-11-09 user decisions): its 9 lines word for
-## word (docs/islands/hutton-lines.md, in English too), the broken sundial before it (no dial on the
-## drum; the wedges at the square lean on it), the new land on the map once the volcano is found, the
+## word (docs/islands/hutton-lines.md, in English too), the broken sundial before it (each wedge found
+## fills its own sector of the dial, #114), the new land on the map once the volcano is found, the
 ## gnomon's piece never flying, the finale itself (the gnomon on the new land, the grass sprouting, the
-## wedges flying into their places, the child's drag planting the gnomon: a short drag puts it back on
+## filled dial glinting, the child's drag planting the gnomon: a short drag puts it back on
 ## the cat's paws), then the day, the gnomon's shadow, the emblem's gnomon and face, no star in the sky;
 ## 건너뛰기 to the same end; once only (the next map is whole). The mechanics finale stays the star's
 ## (tests/story_checks.gd).
@@ -84,6 +84,24 @@ func _all_stamps() -> Dictionary:
 	return store
 
 
+## The dial's plate mesh covers the first `count` sectors and none of the others: a point in each
+## sector's face (half way out, at its middle angle) is inside the mesh's triangles for those only.
+func _sectors_filled(dial: SundialDial, count: int) -> bool:
+	var faces := dial.plate.mesh.get_faces()
+	for i in SundialDial.WEDGES:
+		var a := TAU * (i + 0.5) / SundialDial.WEDGES
+		var p := Vector2(cos(a), sin(a)) * MapLandmarks.DIAL_RADIUS * 0.45
+		var inside := false
+		for k in range(0, faces.size(), 3):
+			var tri := PackedVector2Array([Vector2(faces[k].x, faces[k].z), Vector2(faces[k + 1].x, faces[k + 1].z), Vector2(faces[k + 2].x, faces[k + 2].z)])
+			if Geometry2D.is_point_in_polygon(p, tri):
+				inside = true
+				break
+		if inside != (i < count):
+			return false
+	return true
+
+
 ## Spots found: the first `count` of the order (as a child finds them), their flights played.
 func _found(count: int) -> Dictionary:
 	var all := _all_stamps()
@@ -93,8 +111,9 @@ func _found(count: int) -> Dictionary:
 	return store
 
 
-## Before the finale: no dial on the drum (the map draws only its base); the wedges at the square lean
-## on it; no new land before the volcano is found, the new land (grass hidden) after.
+## Before the finale: the dial drawn only as far as its wedges were found (a sector each, #114: "원래
+## 판에 하나씩 맞춰지게"), no gnomon; no new land before the volcano is found, the new land (grass hidden)
+## after.
 func check_before() -> void:
 	var problems := []
 	DirAccess.remove_absolute(ProgressStore.path)
@@ -102,10 +121,10 @@ func check_before() -> void:
 	ProgressStore.save(_found(6))
 	var home := await _home(TABLET)
 	var dial: SundialDial = home.dial
-	if dial == null or dial.whole or dial.leaning != 6 or dial.full.visible or dial.plate.visible or dial.shadow.visible:
-		problems.append("6 found: dial %s" % (str([dial.whole, dial.leaning]) if dial != null else "none"))
-	if dial != null and (dial.loose == null or dial.loose.find_children("*", "MeshInstance3D", true, false).size() != 2):
-		problems.append("the leaning wedges are not one body and one outline")
+	if dial == null or dial.whole or dial.filled != 6 or dial.full.visible or not dial.plate.visible or dial.shadow.visible:
+		problems.append("6 found: dial %s" % (str([dial.whole, dial.filled]) if dial != null else "none"))
+	elif dial.plate.mesh == null or not _sectors_filled(dial, 6):
+		problems.append("the plate does not show the 6 found sectors and no more")
 	if home.map.new_land or home.new_land_grass != null:
 		problems.append("new land before the volcano")
 	await _free(home)
@@ -129,12 +148,12 @@ func check_before() -> void:
 	if home.story.sky_star != null or not (home.story.emblem as SundialEmblem).whole:
 		problems.append("after the finale: a star in the sky, or the emblem without the gnomon")
 	await _free(home)
-	expect.call(problems.is_empty(), "hutton finale: before it the sundial is broken and the wedges at the square lean on it (one merged pair); no new land before the volcano, the new land from the volcano into the sea after it (nothing on it); after it the dial is whole with its shadow, no star, the emblem's gnomon",
+	expect.call(problems.is_empty(), "hutton finale: before it the dial shows only the found wedges' sectors (6 of 10), no gnomon; no new land before the volcano, the new land from the volcano into the sea after it (nothing on it); after it the dial is whole with its shadow, no star, the emblem's gnomon",
 		"; ".join(problems))
 
 
-## The flights: a wedge flies to its place leaning on the drum (one more leaning); the gnomon's piece
-## (the volcano's) never flies.
+## The flights: a wedge flies into its own sector of the dial (one more filled, the piece landing on
+## the slot); the gnomon's piece (the volcano's) never flies.
 func check_flights() -> void:
 	DirAccess.remove_absolute(ProgressStore.path)
 	Story.mark_seen("prologue")
@@ -145,22 +164,26 @@ func check_flights() -> void:
 		ProgressStore.set_mark(ProgressStore.PIECES, id, id not in [order[9], order[10]])
 	var home := await _home(TABLET)
 	var story: StoryDirector = home.story
-	var before: int = home.dial.leaning
+	var before: int = home.dial.filled
 	var landed_at := -1
+	var slot_gap := INF
 	var open_gap := false   # the gnomon handled (nothing pending) while the finale has not started
 	for i in 200:
 		story.advance(0.05)
 		open_gap = open_gap or (ProgressStore.pending(ProgressStore.PIECES).is_empty() and not story.cinematic())
 		await tree.process_frame   # (the map's own frame steps the story too)
 		open_gap = open_gap or (ProgressStore.pending(ProgressStore.PIECES).is_empty() and not story.cinematic())
-		if landed_at < 0 and home.dial.leaning == before + 1:
+		if not story._flight.is_empty() and story._flight.t > 0.0:
+			var slot: Transform3D = home.dial.transform * SundialDial.slot_transform(before)
+			slot_gap = minf(slot_gap, (story._flight.node as Node3D).global_position.distance_to(slot.origin))
+		if landed_at < 0 and home.dial.filled == before + 1:
 			landed_at = story.flights_played
 		if story.cinematic():
 			break
 	var flown := ProgressStore.pending(ProgressStore.PIECES).is_empty()
-	expect.call(before == 9 and landed_at == 1 and story.flights_played == 1 and flown and story.cinematic() and not open_gap,
-		"hutton finale: the 10th wedge flies to lean on the drum (9 -> 10), the gnomon's piece does not fly (one flight), then the finale starts in that same step (no open map in between)",
-		"before %d, landed at flight %d, flights %d, flown %s, finale %s, gap %s" % [before, landed_at, story.flights_played, flown, story.cinematic(), open_gap])
+	expect.call(before == 9 and landed_at == 1 and slot_gap < 0.1 and story.flights_played == 1 and flown and story.cinematic() and not open_gap,
+		"hutton finale: the 10th wedge flies into its own sector of the dial (9 -> 10 filled, it comes down on the slot), the gnomon's piece does not fly (one flight), then the finale starts in that same step (no open map in between)",
+		"before %d, landed at flight %d, slot gap %.2f, flights %d, flown %s, finale %s, gap %s" % [before, landed_at, slot_gap, story.flights_played, flown, story.cinematic(), open_gap])
 	await _free(home)
 
 
@@ -180,11 +203,11 @@ func check_finale() -> void:
 		and story.needle.position.distance_to(home.map.new_land_point(StoryDirector.NEEDLE_LAND_AT, 0.0)) < 3.0
 	if not needle_land:
 		problems.append("the gnomon does not stand on the new land")
-	if home.dial.leaning != SundialDial.WEDGES:
-		problems.append("%d wedges lean on the drum at the start" % home.dial.leaning)
+	if home.dial.filled != SundialDial.WEDGES or not home.dial.plate.visible:
+		problems.append("%d of the dial's wedges in at the start" % home.dial.filled)
 	var words := []
 	var grass_grew := false
-	var assembled := false
+	var glinted := false
 	var guide := ""
 	var short_kept := false
 	var planted := false
@@ -202,10 +225,12 @@ func check_finale() -> void:
 			grass_grew = home.new_land_grass != null and home.new_land_grass.visible
 		_tap_through(story.dialogue)
 		if p == 3:
-			_advance(story, 0.3)
-			var flying: bool = story._assembly.size() == SundialDial.WEDGES and not home.dial.plate.visible
-			_advance(story, 4.0)
-			assembled = flying and story._assembly.is_empty() and home.dial.plate.visible and not home.dial.full.visible
+			# The dial the wedges filled glints (no assembly any more, #114): it swells a little and back.
+			var swell := 0.0
+			for i in 60:
+				story.advance(0.05)
+				swell = maxf(swell, home.dial.plate.scale.x)
+			glinted = swell > 1.02 and home.dial.plate.visible and home.dial.filled == SundialDial.WEDGES and not home.dial.full.visible
 		if p == StoryDirector.PLANT_PAGE:
 			_advance(story, 1.0)
 			guide = story.launch_guide.kind if story.launch_guide != null else ""
@@ -232,8 +257,8 @@ func check_finale() -> void:
 		problems.append("words %s" % str(words))
 	if not grass_grew:
 		problems.append("no grass sprouting at line 4")
-	if not assembled:
-		problems.append("the wedges did not fly into their places")
+	if not glinted:
+		problems.append("the filled dial did not glint before the plant")
 	if guide != "drag" or not short_kept:
 		problems.append("the plant: guide %s, short drag kept %s" % [guide, short_kept])
 	if not (planted and shadow_grew and day_after_plant and emblem_whole):
@@ -271,7 +296,7 @@ func check_skip() -> void:
 	var waited := story.plant_waits
 	story.skip()
 	await tree.process_frame
-	var ok: bool = waited and not story.busy() and story.needle == null and story._assembly.is_empty() and home.dial.whole \
+	var ok: bool = waited and not story.busy() and story.needle == null and home.dial.whole \
 		and home.dial.shadow.visible and story.night == 0.0 and story.sky_star == null and (story.emblem as SundialEmblem).whole \
 		and home.new_land_grass.visible and Story.finale_seen()
 	expect.call(ok, "hutton finale: 건너뛰기 while it waits for the plant ends it as played (whole dial and shadow, day, grass, emblem; no star)",
@@ -294,8 +319,8 @@ func check_leave_and_help() -> void:
 	await _free(home)
 	home = await _home(TABLET)
 	var story: StoryDirector = home.story
-	if not (story.cinematic() and story.part == "finale" and story.page <= 0 and home.dial.leaning == SundialDial.WEDGES and not home.dial.whole):
-		problems.append("left half way, the next map: finale %s page %d, leaning %d" % [story.cinematic(), story.page, home.dial.leaning])
+	if not (story.cinematic() and story.part == "finale" and story.page <= 0 and home.dial.filled == SundialDial.WEDGES and not home.dial.whole):
+		problems.append("left half way, the next map: finale %s page %d, filled %d" % [story.cinematic(), story.page, home.dial.filled])
 	await _until_plant(story)
 	var paws: Vector2 = home._world_to_screen(story._needle_point())
 	var dial_at: Vector2 = home._world_to_screen(story._dial_top())

@@ -6,14 +6,14 @@
 ## and the house (버팀대 없음 / 버팀대).
 ##
 ## Model and judging: EarthquakeModel (the table, the ground and the house as fixed-step oscillators,
-## no random number): the stages are judged on its status ("stood", "held", "strongest", "fell"),
+## no random number): the stages are judged on its status ("stood", "held", "strongest", "toppled", "fell"),
 ## never on the engine. The house is ten Jolt rigid bodies (EarthquakeProps.blocks: the posts' cubes,
 ## the back wall's planks, the beam and the roof) on an AnimatableBody3D slab, the way the collision lab
 ## poses its engine balls on its formula: while the house stands its blocks are frozen (kinematic) and
 ## posed on the model's frame every step (racking with the model's drift), so the engine house is the
 ## model's to the millimetre. The step the model's house falls, the blocks are let go (unfrozen with
 ## their frame's velocity and a small seeded push, SEED) and Jolt brings them down on the shaking slab;
-## the result is still the model's ("fell" from that step).
+## the result is still the model's ("toppled" or "fell" from that step).
 ##
 ## The hand: one knob ("table") round the handle's knob, the slingshot's object (manipulation.slingshot):
 ## a press on it and a pull to the left along the rod (the surface "pull", a line through the knob)
@@ -43,7 +43,7 @@ var blocks: Array = []
 var slab_body: AnimatableBody3D
 var collapsed := false
 ## The pull's level the next release lets go (the slingshot's control, not a sidebar one).
-var pull := EarthquakeModel.PULL_STEP
+var pull := EarthquakeModel.PULL_MIN
 ## The pull's level while a finger pulls (INF: none).
 var preview := INF
 var _surface: ManipSurface
@@ -269,18 +269,19 @@ func _knob_pose(_id: String) -> Transform3D:
 
 
 ## The pull's level for a finger `pull_x` m along the rod from the press (left: negative): the length
-## to the left over PULL_REACH, on the PULL_STEP levels, at least the first one.
+## to the left over PULL_REACH, on the PULL_STEP levels, at least PULL_MIN.
 static func pull_level(pull_x: float) -> float:
 	return EarthquakeModel.snapped_pull(-pull_x / EarthquakeProps.PULL_REACH)
 
 
-## The pull's word ("살짝" .. "가장 세게"): no number on the screen.
+## The pull's word ("살짝" .. "가장 세게"): no number on the screen. "살짝" is every pull the plain
+## house stands on rock (up to half, stages 1-2 "살짝 흔들어", #114).
 static func shake_word(level: float) -> String:
 	if level >= EarthquakeModel.FULL - 1e-9:
 		return "biggest"
-	if level > 0.65:
+	if level > 0.75:
 		return "big"
-	if level > 0.35:
+	if level > EarthquakeModel.LIGHT_MAX + 1e-9:
 		return "medium"
 	return "small"
 

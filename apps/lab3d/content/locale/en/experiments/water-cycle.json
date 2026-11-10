@@ -82,7 +82,7 @@
       },
       {
         "text": "Switch to the strong sun and fill the pond to the top!",
-        "say": "The stronger the sun, the more water evaporates. More clouds grow and more rain falls.",
+        "say": "The stronger the sun, the more water evaporates. More clouds grow and more rain falls. The water that filled the pond flows back to the sea as a stream.",
         "win": "The pond is full! The piece floated up!",
         "miss": "Hold it a little longer!",
         "miss_conditions": "Pick the strong sun!"

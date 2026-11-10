@@ -13,7 +13,8 @@
 ## The hand: one knob ("sun"), a pickable box on the sun, with the hold rule (manipulation.objects[]
 ## "hold": true): a press on it starts the sunshine (Experiment.hold_started), lifting the finger stops
 ## it (hold_ended). Nothing moves under the finger. While the finger is down the lab is not settled
-## (nothing is judged), also after the day's sunshine has run out under it. The sunshine adds up over
+## (nothing is judged), also after the day's sunshine has run out under it; in the first stage the
+## sun stops at the first cloud (WaterCycleModel.cloud_stop, #114) and that cloud is judged at once. The sunshine adds up over
 ## several presses until 다시, a new condition or the next stage (the run starts over).
 class_name WaterCycleLab
 extends EarthLab
@@ -45,6 +46,11 @@ func _build_world() -> void:
 	game.build()
 
 
+func set_game_stage(stage_now: int, stamps: int, just_cleared: bool) -> void:
+	super(stage_now, stamps, just_cleared)
+	(model as WaterCycleModel).cloud_stop = stage_now == 0
+
+
 ## The sun's strength: weak or strong (the model's start: kept across 다시).
 func _apply_control(id: String, value: Variant) -> void:
 	if id == SUN_CONTROL:
@@ -74,9 +80,10 @@ func hold_ended(_id: String) -> void:
 	_update_status()
 
 
-## Nothing is judged while a finger holds the sun (also once the day ran out under it).
+## Nothing is judged while a finger holds the sun (also once the day ran out under it), unless the
+## sun stopped by itself at the first cloud (the first stage).
 func settled() -> bool:
-	return not pressing and super()
+	return (not pressing or (model as WaterCycleModel).cloud_stopped()) and super()
 
 
 func reset_run() -> void:

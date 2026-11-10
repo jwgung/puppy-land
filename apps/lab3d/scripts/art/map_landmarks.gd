@@ -329,6 +329,7 @@ const DIAL_Y := 0.53
 const DIAL_RADIUS := 0.5
 const DIAL_FACE := Color("fff1cf")    # the dial's cream face inside its golden band
 const DIAL_BAND := 0.2                # the golden band's share of the dial's radius
+const DIAL_SIDES := 40                # the dial's round edge (SundialArt.WEDGES sectors of it)
 ## The gnomon (해시계 바늘): a golden fin standing on the dial's north-south line, its thin edge to the
 ## south (+z, near the middle) and its tall upright edge to the north (-z): [z, y] over the dial.
 const GNOMON_FIN := [Vector2(0.2, 0.0), Vector2(-0.2, 0.0), Vector2(-0.2, 0.3)]
@@ -368,24 +369,31 @@ static func sundial_base(b: ArtMeshBuilder, xf: Transform3D) -> void:
 
 
 ## The dial on the plate: a cream face, a golden band round it with ten hour marks (one per wedge
-## found) and a small golden hub where the gnomon stands.
-static func sundial_dial(b: ArtMeshBuilder, xf: Transform3D) -> void:
+## found) and a small golden hub where the gnomon stands. `sectors`: only the first that many of its
+## SundialArt.WEDGES sectors (a found wedge each, filling the plate before the finale, #114: sector i
+## spans TAU * i / WEDGES .. TAU * (i + 1) / WEDGES, SundialDial.slot_transform's place), the hub once
+## all are in.
+static func sundial_dial(b: ArtMeshBuilder, xf: Transform3D, sectors := SundialArt.WEDGES) -> void:
 	var y := DIAL_Y + 0.006
 	var up := Vector3.UP * y
 	var inner := DIAL_RADIUS * (1.0 - DIAL_BAND)
-	var sides := 40
-	for k in sides:
+	var sides := DIAL_SIDES
+	var filled := clampi(sectors, 0, SundialArt.WEDGES)
+	for k in sides / SundialArt.WEDGES * filled:
 		var p0 := Vector3(cos(TAU * k / sides), 0.0, sin(TAU * k / sides))
 		var p1 := Vector3(cos(TAU * (k + 1) / sides), 0.0, sin(TAU * (k + 1) / sides))
 		b.add_triangle([xf * up, xf * (p1 * inner + up), xf * (p0 * inner + up)], [DIAL_FACE, DIAL_FACE, DIAL_FACE])
 		var band := SundialArt.FACE
 		b.add_triangle([xf * (p0 * inner + up), xf * (p1 * inner + up), xf * (p1 * DIAL_RADIUS + up)], [band, band, band])
 		b.add_triangle([xf * (p0 * inner + up), xf * (p1 * DIAL_RADIUS + up), xf * (p0 * DIAL_RADIUS + up)], [band, band, band])
-	for i in SundialArt.WEDGES:
+	# The marks between the filled sectors and at their two ends (all ten round a whole dial).
+	var marks := 0 if filled == 0 else mini(filled + 1, SundialArt.WEDGES)
+	for i in marks:
 		var a := TAU * i / SundialArt.WEDGES
 		var mid := Vector3(cos(a), 0.0, sin(a)) * (inner - 0.05)
 		b.add_rounded_box(xf * Transform3D(Basis(Vector3.UP, -a), mid + Vector3.UP * (y + 0.006)), Vector3(0.09, 0.012, 0.026), 0.0, 0, SundialArt.LINE)
-	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, y, 0.0)), 0.07, 0.06, 0.008, 10, SundialArt.RIM)   # (under the shadow)
+	if filled >= SundialArt.WEDGES:
+		b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, y, 0.0)), 0.07, 0.06, 0.008, 10, SundialArt.RIM)   # (under the shadow)
 
 
 ## The gnomon (해시계 바늘) standing on the dial at `xf` (the sundial's foot): a golden fin (GNOMON_FIN).

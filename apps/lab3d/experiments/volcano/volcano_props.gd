@@ -18,6 +18,9 @@
 ## - the night (stage 3, VolcanoLab: the lab's own clear colour and the shaders' story tint) with
 ##   stars over the sea; the lava, the crater, the windows, the steam and the stars glow (unshaded,
 ##   StarArt.glow_material: no night tint);
+## - while the lava comes out (the pump pushes or the lava still glides) it spurts up in a fountain of
+##   glowing blobs: from the model's vent over the cone, and from the big volcano's crater for the runny
+##   and the normal magma (the sticky one plugs it; #114 2026-11-10 user: "솟아나오는 느낌이 적다");
 ## - the bread cat in front, watching the pump.
 ## Visual only: no body, nothing the model or the mission reads.
 class_name VolcanoProps
@@ -117,6 +120,18 @@ const NIGHT_SKY := Color("15204a")
 const PUFFS := 9
 const PUFF_S := 2.6
 const BURST_S := 4.0
+## The lava fountains: their blobs, one blob's flight (s), the height of the jet over its mouth and
+## how far the blobs fall out (m) at the model's vent and the big crater, a blob's size; the glowing
+## spout under them (its share of the jet's height, its width in blobs, its pulse).
+const FOUNTAIN_BLOBS := 14
+const FOUNTAIN_S := 0.85
+const VENT_JET := Vector2(1.8, 0.7)
+const CRATER_JET := Vector2(3.6, 1.5)
+const VENT_BLOB := 0.17
+const CRATER_BLOB := 0.34
+const SPOUT_SHARE := 0.6
+const SPOUT_WIDTH := 1.6
+const SPOUT_HZ := 2.2
 const STEAM := Color("f2f5fa")
 const SMOKE := Color("b7bcc8")
 
@@ -159,6 +174,10 @@ var _magma_meshes: Array[Mesh] = []
 var _bubbles: Array[MeshInstance3D] = []
 var _plug_k := 0.0            # the plug's growth (0 just plugged .. 1 a full pump)
 var _puffs: Array = []        # [node, source id, phase]
+## The fountains: id -> {"at": its mouth, "jet": Vector2(height, spread), "size": m, "on": bool,
+## "blobs": Array[MeshInstance3D]}; shown_jets: the ids spurting now (tests).
+var _fountains := {}
+var shown_jets: Array[String] = []
 var _sources := {}            # source id -> {"at": Vector3, "rate": puffs per s share 0..1, "size": m}
 var _t := 0.0
 
@@ -214,6 +233,7 @@ func build(lab: Node3D) -> void:
 	stars.visible = false
 	lab.add_child(stars)
 	_build_puffs(lab)
+	_build_fountains(lab)
 	cat = CatActor.new(BreadCat.new())
 	cat.name = "Cat"
 	lab.add_child(cat)
@@ -258,6 +278,8 @@ func show(model: VolcanoModel, pressed: bool, pumped: float, flowing: bool) -> v
 	_set_source("crater", crater_top() + Vector3(0.0, smoke_y, 0.0), 1.0 if plugged else 0.35, 1.3 if plugged else 0.9)
 	_set_source("shore", shore() + flow_dir() * 0.6, 1.0 if shown_front >= 1.0 else 0.0, 1.0)
 	_set_source("vent", VENT + Vector3(0.0, shown_height + 0.1, 0.0), 0.6 if flowing and not big else 0.0, 0.35)
+	_set_fountain("vent", VENT + Vector3(0.0, maxf(shown_height, 0.05), 0.0), flowing and not big)
+	_set_fountain("crater", crater_top() + Vector3(0.0, -0.2, 0.0), flowing and big and kind != 2 and model.input("lava") > 0.0)
 
 
 ## The new land's share (0 none .. 1 all of it): it grows from the shore along the flow.
@@ -303,6 +325,81 @@ func advance(delta: float) -> void:
 	if plug.visible:
 		_pose_plug()
 	_advance_puffs()
+	_advance_fountains()
+
+
+# --- the lava fountains -----------------------------------------------------------------------------
+
+func _build_fountains(lab: Node3D) -> void:
+	var b := ArtKit.builder()
+	b.ao_min = 1.0
+	b.add_sphere(Transform3D(), 1.0, 2, 8, LAVA_HOT)
+	b.add_sphere(Transform3D(Basis(), Vector3(-0.2, 0.3, 0.4)), 0.45, 2, 6, LAVA_CORE)
+	var mesh := b.commit()
+	var c := ArtKit.builder()
+	c.ao_min = 1.0
+	c.add_cylinder(Transform3D(), 1.0, 0.45, 1.0, 10, LAVA_HOT, true, LAVA_CORE)
+	c.add_cylinder(Transform3D(), 0.55, 0.2, 1.08, 8, LAVA_CORE)
+	var spout_mesh := c.commit()
+	for pair: Array in [["vent", VENT_JET, VENT_BLOB], ["crater", CRATER_JET, CRATER_BLOB]]:
+		var spout := ArtKit.instance(spout_mesh, glow_material)
+		spout.name = "Spout_%s" % pair[0]
+		spout.visible = false
+		lab.add_child(spout)
+		var blobs: Array[MeshInstance3D] = []
+		for k in FOUNTAIN_BLOBS:
+			var blob := ArtKit.instance(mesh, glow_material)
+			blob.name = "Jet_%s_%d" % [pair[0], k]
+			blob.visible = false
+			lab.add_child(blob)
+			blobs.append(blob)
+		_fountains[pair[0]] = {"at": Vector3.ZERO, "jet": pair[1], "size": pair[2], "on": false, "blobs": blobs, "spout": spout}
+
+
+func _set_fountain(id: String, at: Vector3, on: bool) -> void:
+	var f: Dictionary = _fountains[id]
+	f.at = at
+	f.on = on
+	shown_jets.erase(id)
+	if on:
+		shown_jets.append(id)
+
+
+## Each blob flies up out of the mouth and falls back out round it (a parabola over FOUNTAIN_S, each
+## one a little out of step, its own way round and its own height), shrinking as it cools; the spout
+## under them pulses up and down.
+func _advance_fountains() -> void:
+	for id: String in _fountains:
+		var f: Dictionary = _fountains[id]
+		var jet: Vector2 = f.jet
+		var spout: MeshInstance3D = f.spout
+		spout.visible = f.on
+		if f.on:
+			var pulse := 0.8 + 0.2 * sin(_t * TAU * SPOUT_HZ)
+			spout.position = f.at
+			var w := float(f.size) * SPOUT_WIDTH
+			spout.scale = Vector3(w, jet.x * SPOUT_SHARE * pulse, w)
+		for k in FOUNTAIN_BLOBS:
+			var blob: MeshInstance3D = f.blobs[k]
+			blob.visible = f.on
+			if not f.on:
+				continue
+			var u := fposmod(_t / FOUNTAIN_S + float(k) / FOUNTAIN_BLOBS, 1.0)
+			var a := TAU * fposmod(k * 0.618, 1.0)
+			var out := jet.y * u * (0.45 + 0.55 * fposmod(k * 0.37, 1.0))
+			var up := jet.x * 4.0 * u * (1.0 - u) * (0.65 + 0.35 * fposmod(k * 0.29, 1.0))
+			blob.position = (f.at as Vector3) + Vector3(cos(a) * out, up, sin(a) * out)
+			blob.scale = Vector3.ONE * float(f.size) * (1.0 - 0.45 * u)
+
+
+## The highest blob over its mouth now (m; 0 when it does not spurt: tests).
+func jet_height(id: String) -> float:
+	var f: Dictionary = _fountains[id]
+	var top := 0.0
+	for blob: MeshInstance3D in f.blobs:
+		if blob.visible:
+			top = maxf(top, blob.position.y - (f.at as Vector3).y)
+	return top
 
 
 # --- the table and the pump --------------------------------------------------------------------------

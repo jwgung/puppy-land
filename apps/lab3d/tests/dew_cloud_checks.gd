@@ -74,6 +74,7 @@ func run() -> void:
 	await check_condition_button()
 	await check_no_numbers()
 	await check_in_view()
+	check_way_clear()
 	check_spot()
 	await check_pictures()
 	check_opening()
@@ -554,6 +555,27 @@ func check_in_view() -> void:
 
 ## The question's dew pictures (PredictPictures) and the condition buttons' day pictures
 ## (PickPictures) draw on a canvas of their button's size without errors.
+## No tree of the lab's own stands in front of the air's way (#114 2026-11-10 user: "세번쨰 실험에서,
+## 공기가 어딨는지 안보여. 나무에 가려져서"): every one LabWorld places (moved by DewCloudLab.near_tree_at)
+## is clear of the sight lines from the front view's eye to the way, and the one that stood there was
+## moved.
+func check_way_clear() -> void:
+	var lab := _lab()
+	var problems := []
+	var moved := 0
+	for t: Array in ArtKit.TREES:
+		var at := Vector2(DewCloudProps.WORLD_CENTER.x + float(t[0]), DewCloudProps.WORLD_CENTER.z + float(t[1]))
+		var put := lab.near_tree_at(at)
+		if put != at:
+			moved += 1
+		if lab.hides_way(put):
+			problems.append("a tree at %s hides the way" % str(put))
+	if moved == 0:
+		problems.append("no tree moved (the one in front of the way stays)")
+	expect.call(problems.is_empty(), "dew-cloud: no tree of the lab's own in front of the air's way up the mountain (%d moved)" % moved, "; ".join(problems))
+	lab.free()
+
+
 func check_pictures() -> void:
 	var canvas := Control.new()
 	canvas.size = Vector2(190.0, 100.0)

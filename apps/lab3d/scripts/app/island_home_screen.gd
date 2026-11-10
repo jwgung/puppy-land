@@ -15,6 +15,8 @@ extends Control
 
 signal experiment_chosen(definition: Dictionary)
 signal settings_requested
+## The map's ← (top left, #114): App goes back as Android back does (the island cards or the title).
+signal back_requested
 
 var definitions: Array[Dictionary] = []
 var view: View3D
@@ -28,7 +30,7 @@ var env: WorldEnvironment
 ## flights to the lookout, the finale, the corner emblem. null in measurements and plain tests.
 var story: StoryDirector = null
 ## The hutton island's sundial dial (#106: SundialDial at the sundial's foot; null without a sundial):
-## the wedges leaning on the drum before the finale, the whole dial after it. The story moves it.
+## the found wedges in their sectors before the finale (#114), the whole dial after it. The story moves it.
 var dial: SundialDial = null
 ## The grass on the new land (#106, MapIsland.new_land_grass; null without the new land): shown once the
 ## finale was seen (the finale lets it sprout).
@@ -87,9 +89,10 @@ const TAP_SLOP := 14.0               # UI units a press may move and still count
 ## hops along the dirt paths as they are drawn (route: the shortest way on them, off the stages,
 ## stepping on and off at the nearest clear point) at WALK_SPEED, the whole walk taking at least
 ## WALK_MIN_S and at most WALK_MAX_S (a far spot: a little quicker, never a long wait), speeding up
-## and slowing down over WALK_RAMP_S at its ends (walk_share). Puppy and Dugi follow FOLLOW_LAG m behind on
-## the same way, FOLLOW_SIDE m to its left and right (stepping aside when the cat comes their way,
-## never nearer each other than KEEP_APART), each facing where it goes with its own hop.
+## and slowing down over WALK_RAMP_S at its ends (walk_share). Puppy and Dugi follow in single file on
+## the same way (Puppy FOLLOW_LAG m behind, Dugi twice that, FOLLOW_SIDE m off its middle; stepping
+## aside when the cat comes their way, never nearer each other than KEEP_APART), each facing where it
+## goes with its own hop.
 ## Taps on spots are ignored until they arrive; then the lab opens.
 const WALK_SPEED := 2.5              # m/s along the way
 const WALK_MIN_S := 1.5
@@ -100,8 +103,13 @@ const ROUTE_CLEAR := 0.1             # m a step on or off the paths keeps off a 
 const WALK_IN_PLACE_S := 0.7         # the spot they stand at: a hop in place
 const HOP_HEIGHT := 0.16             # m the cat rises on a hop (the followers: their own share)
 const HOP_HZ := 2.2                  # hops per second while walking
-const FOLLOW_LAG := 0.8              # m behind the cat along the way
-const FOLLOW_SIDE := 0.34            # m to the left (Puppy) and right (Dugi) of the way (0.42 before 2026-11-01: the path's edge)
+## Puppy, then Dugi, follow the cat in single file on the path (#114, 2026-11-10 user: side by side they
+## walked on the grass; the path is MapIsland.PATH_WIDTH 0.8 m wide): FOLLOW_LAG m behind it along the
+## way each (Dugi twice), FOLLOW_SIDE m off its middle (Puppy left, Dugi right: a little life, still on it).
+const FOLLOW_LAG := 0.8              # m behind the one ahead along the way
+const FOLLOW_SIDE := 0.1             # m off the way's middle (0.34 before #114: off the path)
+## Two places nearer than this go straight there (a short step on the square); farther, by the paths.
+const ROUTE_STRAIGHT_MAX := 1.2
 const FOLLOW_HOPS := {"Puppy": [0.33, 0.8], "Dugi": [0.66, 0.65]}   # phase (share of a hop), height share
 const FOLLOW_SPEED := 4.0            # m/s a follower may go to keep its place
 const KEEP_APART := 0.68             # m: no two of the three nearer than this while walking
@@ -129,7 +137,8 @@ var island := Island.current()
 ## view like a group photo, the cat in the middle, Puppy on its left, Dugi on its right, TRIO_GAP m
 ## apart, all three facing the same way: the default camera (+z). They stand still when the map
 ## turns ("don't turn their bodies with the camera"). The signpost stands outside the row's reach
-## (MapIsland: 1.3 m from the square's middle > TRIO_GAP + a body).
+## (MapIsland: 1.3 m from the square's middle > TRIO_GAP + a body). With a sundial in the square's
+## middle the row stands behind it (MapIsland.trio_row), facing it and the view (#114).
 const TRIO_GAP := 0.85
 const TRIO_YAW := 0.0   # rad about +y from +z: every actor's model faces +z at 0 (BreadCat, labs' cast)
 
@@ -193,7 +202,7 @@ func _ready() -> void:
 
 
 ## The hutton sundial's dial (#106) at its foot: whole once the island's finale was seen, else the
-## wedges already at the square leaning on the drum (the ones whose flight still waits come later); the
+## wedges already at the square in their sectors (#114; the ones whose flight still waits come later); the
 ## new land's grass with it, shown after the finale.
 func _add_sundial_dial(progress: Dictionary) -> void:
 	dial = SundialDial.new()
@@ -203,7 +212,7 @@ func _add_sundial_dial(progress: Dictionary) -> void:
 	if finale:
 		dial.show_whole()
 	else:
-		dial.show_leaning(placed_wedges(progress))
+		dial.show_filled(placed_wedges(progress))
 	if map.new_land:
 		new_land_grass = map.new_land_grass()
 		new_land_grass.visible = finale
@@ -273,9 +282,11 @@ func _add_spot(world: Node3D, zone: String, id: String, info: Dictionary) -> voi
 
 
 ## The map's own buttons, 단서 and 설정, floating over its top right corner (2026-10-31 user: no top bar,
-## the app's name need not show; the bar ran edge to edge and a phone's rounded corners cut it). They
-## keep MAP_EDGE units, plus the screen's safe-area inset, from the edges.
+## the app's name need not show; the bar ran edge to edge and a phone's rounded corners cut it), and
+## its ← alone in the top left (#114: back to the island cards; an arrow, no word). They keep MAP_EDGE
+## units, plus the screen's safe-area inset, from the edges; the story's emblem sits right of ←.
 const MAP_EDGE := 20.0
+const BACK_GAP := 12.0              # between ← and the emblem
 
 
 func _build_map_buttons() -> void:
@@ -295,6 +306,12 @@ func _build_map_buttons() -> void:
 	settings.pressed.connect(settings_requested.emit)
 	row.add_child(settings)
 	row.minimum_size_changed.connect(_layout)   # its size comes with the theme: placed again then
+	var back := Ui.button(Locale.t("map.back"), "", 60)
+	back.name = "MapBackButton"
+	back.custom_minimum_size.x = 60.0
+	back.pressed.connect(back_requested.emit)
+	add_child(back)
+	back.minimum_size_changed.connect(_layout)
 	_layout.call_deferred()
 
 
@@ -305,6 +322,17 @@ func _layout() -> void:
 	var inset := Ui.safe_insets(self)
 	row.size = row.get_combined_minimum_size()
 	row.position = Vector2(size.x - row.size.x - MAP_EDGE - inset.right, MAP_EDGE + inset.top)
+	var back: Control = find_child("MapBackButton", true, false)
+	if back != null:
+		back.size = back.get_combined_minimum_size()
+		back.position = Vector2(MAP_EDGE + inset.left, MAP_EDGE + inset.top)
+
+
+## Where the story's corner emblem starts (x): right of ← (its place even while ← hides in the story).
+func emblem_left() -> float:
+	var back: Control = find_child("MapBackButton", true, false)
+	var left: float = MAP_EDGE + Ui.safe_insets(self).left
+	return left + (back.get_combined_minimum_size().x + BACK_GAP if back != null else 0.0)
 
 
 ## The stamps of every spot from the store (one file read), and the flags they stand.
@@ -542,9 +570,10 @@ func _place_trio(yaw: float) -> void:
 ## placed again when it ends), taps go to the story.
 func set_cinematic(on: bool) -> void:
 	_cinematic = on
-	var row: Control = find_child("MapButtons", true, false)
-	if row != null:
-		row.visible = not on
+	for name in ["MapButtons", "MapBackButton"]:
+		var node: Control = find_child(name, true, false)
+		if node != null:
+			node.visible = not on
 	for id in _labels:
 		(_labels[id] as Control).visible = not on and _label_shown(str(id))
 	if not on:
@@ -568,10 +597,9 @@ func trio_home() -> void:
 func trio_spot(actor: Node3D) -> Vector3:
 	if rest_spot >= 0:
 		return group_at(_spots[rest_spot]).get(actor, _spots[rest_spot].stand)
-	var home := island.home
 	var right := Vector2(cos(TRIO_YAW), -sin(TRIO_YAW))
 	var place := {puppy: -1.0, cat: 0.0, dugi: 1.0}
-	var at: Vector2 = home + right * TRIO_GAP * float(place.get(actor, 0.0))
+	var at: Vector2 = map.trio_row() + right * TRIO_GAP * float(place.get(actor, 0.0))
 	return Vector3(at.x, map.walk_height(at.x, at.y), at.y)
 
 
@@ -630,7 +658,7 @@ func trio() -> Array:
 ## a path's end joined to the nearest point of every other path it touches, no piece of it under a
 ## stage. The ends step on at the nearest point of a path whose step crosses no stage, the shortest
 ## way runs between them, and its joins are smoothed (two Chaikin passes, the ends kept). Ends
-## nearer each other than to the paths (and nothing between them): straight.
+## nearer each other than to the paths and than ROUTE_STRAIGHT_MAX (and nothing between them): straight.
 func route(from: Vector2, to: Vector2) -> PackedVector2Array:
 	var nodes := PackedVector2Array()
 	var links: Array = []   # node index -> neighbour indices
@@ -663,8 +691,37 @@ func route(from: Vector2, to: Vector2) -> PackedVector2Array:
 				if nodes[row[best]].distance_to(nodes[end]) < ROUTE_JOIN:
 					for k in range(maxi(0, best - 1), mini(row.size(), best + 2)):   # (and its neighbours: no step back at the join)
 						join.call(end, row[k])
+	# Paths that meet under a stage (the hutton island's paths run from spot to spot, #114): each one's
+	# last point clear of that stage joined to the others' by steps round its edge, so the way goes round
+	# the landmark instead of stopping at it (and then cutting over the grass).
+	for stage: Array in _stages():
+		var c: Vector2 = stage[0]
+		var r: float = stage[1]
+		var exits: Array[int] = []
+		for row: Array in lines:
+			for ends: Array in [[0, 1], [row.size() - 1, -1]]:
+				if nodes[row[ends[0]]].distance_to(c) >= r:
+					continue
+				var k: int = ends[0]
+				while k >= 0 and k < row.size() and nodes[row[k]].distance_to(c) < r + ROUTE_RING * 0.5:
+					k += ends[1]
+				if k >= 0 and k < row.size():
+					exits.append(row[k])
+		for i in exits.size():
+			for j in range(i + 1, exits.size()):
+				var a0 := (nodes[exits[i]] - c).angle()
+				var turn := angle_difference(a0, (nodes[exits[j]] - c).angle())
+				var steps := maxi(1, ceili(absf(turn) / ROUTE_RING_STEP))
+				var last := exits[i]
+				for k in range(1, steps):
+					var m: int = add_node.call(c + Vector2.from_angle(a0 + turn * k / steps) * (r + ROUTE_RING))
+					links[last].append(m)
+					links[m].append(last)
+					last = m
+				links[last].append(exits[j])
+				links[exits[j]].append(last)
 	# Onto the paths: the nearest point of a link whose step from `p` crosses no stage.
-	var attach := func(p: Vector2) -> Array:
+	var nearest := func(p: Vector2) -> Array:
 		var best := [INF, Vector2.ZERO, -1, -1]
 		for i in links.size():
 			for k: int in links[i]:
@@ -673,18 +730,38 @@ func route(from: Vector2, to: Vector2) -> PackedVector2Array:
 				var q := Geometry2D.get_closest_point_to_segment(p, nodes[i], nodes[k])
 				if p.distance_to(q) < best[0] and not _crosses_stage(p, q, ROUTE_CLEAR):
 					best = [p.distance_to(q), q, i, k]
+		return best
+	var attach := func(p: Vector2) -> Array:
+		var best: Array = nearest.call(p)
+		var ring := PackedVector2Array()   # the steps round a stage first (#114), when it stands in the way
 		if best[2] < 0:
-			return [-1, INF]
+			# A stand on the far side of its own stage from the paths (the hutton island's spots face away
+			# from the path that comes to them): round the stage's edge to where a clear step reaches a path
+			# (2026-11-10 user: they walked straight over the grass).
+			ring = _round_stage(p, func(w: Vector2) -> bool: return (nearest.call(w) as Array)[2] >= 0)
+			if ring.is_empty():
+				return [-1, INF]
+			best = nearest.call(ring[ring.size() - 1])
 		var n: int = add_node.call(best[1])
 		links[n] = [best[2], best[3]]
 		links[best[2]].append(n)
 		links[best[3]].append(n)
-		return [n, best[0]]
+		var first := n
+		var length: float = best[0]
+		for k in range(ring.size() - 1, -1, -1):   # chained from the path back to the stand's side
+			var m: int = add_node.call(ring[k])
+			links[m].append(first)
+			links[first].append(m)
+			length += nodes[m].distance_to(nodes[first])
+			first = m
+		if not ring.is_empty():
+			length += p.distance_to(ring[0])   # (the whole way from `p` to the path)
+		return [first, length]
 	var straight := not _crosses_stage(from, to, ROUTE_CLEAR)
 	var start: Array = attach.call(from)
 	var end: Array = attach.call(to)
 	var points := PackedVector2Array([from])
-	if start[0] >= 0 and end[0] >= 0 and not (straight and from.distance_to(to) <= float(start[1]) + float(end[1])):
+	if start[0] >= 0 and end[0] >= 0 and not (straight and from.distance_to(to) <= minf(ROUTE_STRAIGHT_MAX, float(start[1]) + float(end[1]))):
 		# Dijkstra over the samples (a few hundred: cheap, once per tap).
 		var a: int = start[0]
 		var b: int = end[0]
@@ -729,16 +806,56 @@ func route(from: Vector2, to: Vector2) -> PackedVector2Array:
 
 
 
-## The segment a-b comes within `margin` m of a spot's stage (its round plate).
+## The steps round a stage: ROUTE_RING m out from its edge, ROUTE_RING_STEP apart.
+const ROUTE_RING := 0.35
+const ROUTE_RING_STEP := deg_to_rad(20.0)
+
+
+## The steps round the stage `p` stands by (ROUTE_RING m out from its edge), turning the shorter way
+## until `clear` holds at a step (a clear step onto a path from there): [first step .. last step], or
+## empty (no stage there, or no clear step all round).
+func _round_stage(p: Vector2, clear: Callable) -> PackedVector2Array:
+	var stage: Array = []
+	for s: Array in _stages():
+		if p.distance_to(s[0]) < float(s[1]) + 1.0 and (stage.is_empty() or p.distance_to(s[0]) < p.distance_to(stage[0])):
+			stage = s
+	if stage.is_empty():
+		return PackedVector2Array()
+	var c: Vector2 = stage[0]
+	var r: float = float(stage[1]) + ROUTE_RING
+	var from := (p - c).angle()
+	var best := PackedVector2Array()
+	for turn: float in [1.0, -1.0]:
+		var steps := PackedVector2Array()
+		for k in range(1, int(TAU / ROUTE_RING_STEP)):
+			var w := c + Vector2.from_angle(from + turn * ROUTE_RING_STEP * k) * r
+			steps.append(w)
+			if clear.call(w):
+				if best.is_empty() or steps.size() < best.size():
+					best = steps
+				break
+	return best
+
+
+## The segment a-b comes within `margin` m of a spot's stage (its round plate) or the sundial (_stages).
 func _crosses_stage(a: Vector2, b: Vector2, margin: float) -> bool:
-	for spot in _spots:
-		var r := float(spot.radius)
-		if r <= 0.0:
-			continue
-		var c := Vector2(spot.at.x, spot.at.z)
-		if Geometry2D.get_closest_point_to_segment(c, a, b).distance_to(c) < r + margin:
+	for stage: Array in _stages():
+		var c: Vector2 = stage[0]
+		if Geometry2D.get_closest_point_to_segment(c, a, b).distance_to(c) < float(stage[1]) + margin:
 			return true
 	return false
+
+
+## What the three's ways go round: [middle (x, z), radius] of every spot's round plate and of the
+## square's sundial (MapIsland.SUNDIAL_CLEAR, #114: it stands in the square's middle now).
+func _stages() -> Array:
+	var out := []
+	for spot in _spots:
+		if float(spot.radius) > 0.0:
+			out.append([Vector2(spot.at.x, spot.at.z), float(spot.radius)])
+	if island.has_sundial():
+		out.append([island.home, MapIsland.SUNDIAL_CLEAR])
+	return out
 
 
 ## The share of the way walked `t` s into a walk of `total` s: it speeds up over WALK_RAMP_S, goes
@@ -801,16 +918,16 @@ func _step_walk(delta: float) -> void:
 	var top_speed := maxf(FOLLOW_SPEED, 1.6 * length / maxf(_walk_total, 0.01))
 	var settle := smoothstep(1.0 - SETTLE_SHARE, 1.0, k)
 	var spots := {}
-	for entry in [[puppy, 1.0], [dugi, -1.0]]:
+	for entry in [[puppy, 1.0, 1.0], [dugi, -1.0, 2.0]]:
 		var actor: Node3D = entry[0]
 		if actor == null:
 			continue
 		var side: float = entry[1]
-		var behind: Array = _along(s - FOLLOW_LAG)
+		var lag: float = FOLLOW_LAG * float(entry[2])
+		var behind: Array = _along(maxf(s - lag, 0.0))
 		var dir: Vector2 = behind[1] if behind[1] != Vector2.ZERO else cat_dir
 		var goal: Vector2 = behind[0] + Vector2(dir.y, -dir.x) * FOLLOW_SIDE * side   # (dir.y, -dir.x): the walker's left
-		if s < FOLLOW_LAG:   # behind the way's start
-			goal += -cat_dir * (FOLLOW_LAG - s)
+		# (behind the way's start: they wait for their turn where they stand, not further back off the way)
 		var place: Vector3 = group[actor]
 		goal = goal.lerp(Vector2(place.x, place.z), settle)
 		var now: Vector3 = _walk_last.get(actor, actor.position)

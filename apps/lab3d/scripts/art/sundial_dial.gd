@@ -1,44 +1,36 @@
-## The hutton island's sundial dial on the map (#106, 2026-11-09 user decisions): before the finale the
-## sundial is broken (the map's static mesh draws only its stone base and empty plate) and the golden
-## wedges found so far lean round the base, glinting (they arrive there from the spots); the finale
-## flies them one by one into their places on the plate, the bread cat brings the gnomon (해시계 바늘) and
-## the child plants it; after the finale the dial is whole with the gnomon's shadow on it.
+## The hutton island's sundial dial on the map (#106, 2026-11-09 user decisions; #114 2026-11-10 user:
+## "해시계 조각을 수집하는데, 이걸 바닥에 놓지말구 원래 판에 하나씩 맞춰지게 해줘. 진행하면서 채워지는게
+## 보이도록"): before the finale the sundial is broken (the map's static mesh draws only its stone base and
+## empty plate) and every golden wedge found so far fills its own sector of the dial (it flies there from
+## its spot: slot_transform), so the dial fills as the island is explored; the finale's dial is whole but
+## for the gnomon (해시계 바늘), which the bread cat brings and the child plants; after the finale the dial
+## is whole with the gnomon's shadow on it.
 ##
-## Draws: the leaning wedges are ONE merged pair (body and outline in the star pieces' glow and outline materials, StarArt: two draws
-## whatever their number); the whole dial is the golden plate and the gnomon in the map's material (one
-## draw) and the shadow (one draw, shown once the sun is back). Placed at the sundial's foot
-## (MapIsland.sundial_foot); local +y up. Visual only.
+## Draws: the filled sectors are one mesh in the map's material (rebuilt when a wedge lands); the whole
+## dial is the plate and the gnomon (one draw) and the shadow (one draw, shown once the sun is back).
+## Placed at the sundial's foot (MapIsland.sundial_foot); local +y up. Visual only.
 class_name SundialDial
 extends Node3D
 
 const WEDGES := SundialArt.WEDGES
-## A wedge lying in its place on the plate, and one leaning on the base: SundialArt sizes (its point
-## SPAN from the arc, the dial's radius in the plate).
+## A wedge lying in its place on the plate: SundialArt sizes (its point SPAN from the arc, the dial's
+## radius in the plate).
 const SLOT_SIZE := MapLandmarks.DIAL_RADIUS / SundialArt.SPAN
-const LEAN_SIZE := 0.22
-const LEAN_RADIUS := 0.72          # m from the base's middle to a leaning wedge's point (outside its wide step)
-const LEAN_TILT := deg_to_rad(16.0)   # its lean towards the base
-const LEAN_FRONT := 0.9            # its face turned this much towards the front (+z: the map's default view)
-## The leaning wedges' places round the base (deg, 0 = +x, the map's screen right, 90 = +z the front):
-## on its two sides, filling in turn (the front is the three friends' row, the back hides behind it).
-const LEAN_ANGLES := [181.0, -1.0, 163.0, 17.0, 199.0, -19.0, 145.0, 35.0, 217.0, -37.0]
 
-var leaning := 0                   # wedges leaning on the base now
+var filled := 0                    # wedges in their places on the plate now
 var whole := false
-var loose: Node3D = null           # the merged leaning wedges
-var plate: MeshInstance3D          # the golden dial on the plate (no gnomon)
+var plate: MeshInstance3D          # the filled sectors of the dial (all of them: no gnomon yet)
 var full: MeshInstance3D           # the dial with the gnomon
 var shadow: MeshInstance3D
 
 
 func _init() -> void:
 	name = "SundialDial"
-	var b := ArtKit.builder()
-	MapLandmarks.sundial_dial(b, Transform3D.IDENTITY)
-	plate = ArtKit.instance(b.commit(), MapIsland.material())
+	plate = MeshInstance3D.new()
 	plate.name = "Plate"
+	plate.material_override = MapIsland.material()
 	add_child(plate)
-	b = ArtKit.builder()
+	var b := ArtKit.builder()
 	MapLandmarks.sundial_dial(b, Transform3D.IDENTITY)
 	MapLandmarks.gnomon(b, Transform3D.IDENTITY)
 	full = ArtKit.instance(b.commit(), MapIsland.material())
@@ -49,37 +41,29 @@ func _init() -> void:
 	shadow = ArtKit.instance(b.commit(), MapIsland.material())
 	shadow.name = "Shadow"
 	add_child(shadow)
-	show_leaning(0)
+	show_filled(0)
 
 
-## Before the finale: `count` wedges lean on the base (the first `count` of LEAN_ANGLES), no dial.
-func show_leaning(count: int) -> void:
-	leaning = clampi(count, 0, WEDGES)
+## Before the finale: the first `count` wedges in their sectors of the dial, no gnomon.
+func show_filled(count: int) -> void:
+	filled = clampi(count, 0, WEDGES)
 	whole = false
-	plate.visible = false
 	full.visible = false
 	shadow.visible = false
-	if loose != null:
-		loose.queue_free()
-		loose = null
-	if leaning > 0:
-		var places: Array = []
-		for i in leaning:
-			places.append(lean_transform(i))
-		loose = merged(places)
-		loose.name = "Leaning"
-		add_child(loose)
+	var b := ArtKit.builder()
+	MapLandmarks.sundial_dial(b, Transform3D.IDENTITY, filled)
+	plate.mesh = b.commit() if filled > 0 else null
+	plate.visible = filled > 0
 
 
-## The plate is golden again (the wedges in their places), the gnomon not yet planted.
+## The plate is whole again (every wedge in its place), the gnomon not yet planted.
 func show_plate() -> void:
-	show_leaning(0)
-	plate.visible = true
+	show_filled(WEDGES)
 
 
 ## The whole sundial: the dial and the gnomon; its shadow when `lit` (the sun is back).
 func show_whole(lit := true) -> void:
-	show_leaning(0)
+	show_filled(0)
 	whole = true
 	full.visible = true
 	shadow.visible = lit
@@ -94,18 +78,6 @@ func grow_shadow(share: float) -> void:
 	shadow.transform = Transform3D(Basis().scaled(Vector3(maxf(k, 0.001), 1.0, 1.0)), Vector3.ZERO)
 
 
-## Wedge `i` leaning on the base, standing on its point, its face outwards and to the front (local).
-static func lean_transform(i: int) -> Transform3D:
-	var a := deg_to_rad(float(LEAN_ANGLES[i % LEAN_ANGLES.size()]))
-	var out := Vector3(cos(a), 0.0, sin(a))
-	var up := Vector3.UP * cos(LEAN_TILT) - out * sin(LEAN_TILT)
-	var facing := (out + Vector3.BACK * LEAN_FRONT).normalized()
-	var side := up.cross(facing).normalized()
-	var basis := Basis(side, up, side.cross(up)).scaled(Vector3.ONE * LEAN_SIZE)
-	var point := out * LEAN_RADIUS + Vector3.UP * 0.02
-	return Transform3D(basis, point + up * LEAN_SIZE)   # the point 1 size below the wedge's centre
-
-
 ## Wedge `i` lying in its place on the plate, its point at the dial's middle, face up (local).
 static func slot_transform(i: int) -> Transform3D:
 	var a := TAU * (i + 0.5) / WEDGES
@@ -117,20 +89,6 @@ static func slot_transform(i: int) -> Transform3D:
 ## The gnomon planted (local): where the carried needle (needle_node) ends.
 static func gnomon_transform() -> Transform3D:
 	return Transform3D.IDENTITY
-
-
-## The wedges at `places` (local transforms of a radius-1 wedge) as one body and one outline.
-static func merged(places: Array) -> Node3D:
-	var meshes := SundialArt.piece_meshes()
-	var root := Node3D.new()
-	for k in 2:
-		var st := SurfaceTool.new()
-		for xf: Transform3D in places:
-			st.append_from(meshes[k], 0, xf)
-		var mi := ArtKit.instance(st.commit(), StarArt.glow_material() if k == 0 else StarArt.outline_material())
-		mi.name = "Body" if k == 0 else "Outline"
-		root.add_child(mi)
-	return root
 
 
 ## The gnomon as a node of its own (the finale: it stands on the new land, the cat carries it, the

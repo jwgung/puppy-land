@@ -15,6 +15,9 @@
 ## - no number on the screen: the observations are words, no units, the card is the water's journey;
 ## - the hand: a press on the sun holds it (no drag), the sunshine runs while it is held and adds up
 ##   over presses, stops when let go and at the day's end; the hand guide shows a hold;
+## - the first stage (#114): the held sun stops by itself at the first cloud (no rain), judged at once;
+##   the next stages go on into rain;
+## - the stream (#114): the full pond flows back to the sea, not before;
 ## - what matters is big and in view on the phone, the desktop and the tablet: the sun, the cloud, the
 ##   pond with its frogs and piece, the day sign, clear of the top band and the dialogue box;
 ## - the spot, the opening (the fox first on a first visit) and the piece (stuck in the mud until the
@@ -63,6 +66,8 @@ func run() -> void:
 	await check_condition_button()
 	await check_no_numbers()
 	await check_hold()
+	await check_cloud_stop()
+	check_stream()
 	await check_in_view()
 	check_spot()
 	await check_pictures()
@@ -474,6 +479,67 @@ func check_hold() -> void:
 		"; ".join(problems))
 	host.queue_free()
 	await tree.process_frame
+
+
+## The first stage asks for one cloud (#114 2026-11-10 user: "첫번째 실험을 하는데 갑자기 비가 내림"):
+## the held sun stops by itself as the first cloud forms, no rain, and it is judged while the finger is
+## still down; a longer hold changes nothing. From the second stage the held sun goes on into rain.
+func check_cloud_stop() -> void:
+	var definition := _definition()
+	var lab := _lab()
+	tree.root.add_child(lab)
+	await tree.process_frame
+	var problems := []
+	for sun: String in ["weak", "strong"]:   # (the strong one: the wrong sun for the stage, not judged)
+		lab.set_game_stage(0, 0, false)
+		_put(lab, sun, 0.0)
+		lab.hold_started(WaterCycleLab.KNOB_ID)
+		for i in 480:   # (8 s held: past the rain on either sun)
+			await tree.physics_frame
+		var m := lab.model as WaterCycleModel
+		if lab.status() != "cloud" or m.raining() or lab.props.shown_raining or lab.props.shown_heating or not lab.pressing \
+				or not lab.settled() or (sun == "weak" and MissionRound.judge(definition, 0, lab.status(), lab, lab.observations()) != 1):
+			problems.append("%s sun held in stage 1: %s, %.2f s, raining %s, settled %s" % [sun, lab.status(), m.input("heat"), m.raining(), lab.settled()])
+		lab.hold_ended(WaterCycleLab.KNOB_ID)
+	lab.set_game_stage(1, 1, false)
+	_put(lab, "weak", 0.0)
+	lab.hold_started(WaterCycleLab.KNOB_ID)
+	for i in 330:
+		await tree.physics_frame
+	if lab.status() != "rain" or lab.settled():
+		problems.append("stage 2 held 5.5 s: %s settled %s" % [lab.status(), lab.settled()])
+	lab.hold_ended(WaterCycleLab.KNOB_ID)
+	expect.call(problems.is_empty(), "water-cycle stage 1: the held sun stops at the first cloud (no rain, the sun no longer shines), judged with the finger still down; stage 2's held sun goes on into rain",
+		"; ".join(problems))
+	lab.queue_free()
+	await tree.process_frame
+
+
+## The full pond flows back to the sea (#114 2026-11-10 user: "연못에서 왜 물이 다시 바다로 안가지? 그래야
+## 여행이되지"): the stream shows only once the pond is full, it runs from inside the pond's ring out to
+## the sea, and its ripples move along it.
+func check_stream() -> void:
+	var lab := _lab()
+	tree.root.add_child(lab)
+	var problems := []
+	_put(lab, "strong", 4.0)
+	if lab.props.stream.visible or lab.props.shown_stream:
+		problems.append("a stream before the pond is full")
+	_put(lab, "strong", WaterCycleModel.DAY_S)
+	if not lab.props.stream.visible:
+		problems.append("no stream from the full pond")
+	var from: Vector3 = WaterCycleProps.stream_point(0.0)
+	var to: Vector3 = WaterCycleProps.stream_point(1.0)
+	var pond := Vector2(WaterCycleProps.POND_AT.x, WaterCycleProps.POND_AT.z)
+	if Vector2(from.x, from.z).distance_to(pond) >= WaterCycleProps.POND_RADIUS or to.x >= WaterCycleProps.SEA_RIGHT:
+		problems.append("the stream from %s to %s" % [str(from), str(to)])
+	var ripple: Node3D = lab.props.stream.get_child(0)
+	var before := ripple.position
+	lab.props.animate(0.3)
+	if ripple.position.distance_to(before) < 0.05:
+		problems.append("the ripples do not run")
+	expect.call(problems.is_empty(), "water-cycle stream: only from the full pond, from inside its ring into the sea, its ripples running down it", "; ".join(problems))
+	lab.queue_free()
 
 
 # --- in view --------------------------------------------------------------------------------------

@@ -535,7 +535,7 @@ func _add_marks(b: ArtMeshBuilder) -> void:
 	if map.island.features.has("lighthouse"):
 		marks.append(["lighthouse", to_lab(_v2(map.island.features.lighthouse))])
 	if map.island.has_sundial():
-		marks.append(["sundial", to_lab(map.home + MapIsland.SUNDIAL_AT)])
+		marks.append(["sundial", to_lab(map.home)])
 	for mark in marks:
 		var at: Vector2 = mark[1]
 		if at.distance_to(_c) < CLEAR + MARK_CLEAR or at.distance_to(_c) > coast_at((at - _c).angle()) - SHORE_W or not _ahead(at):

@@ -11,8 +11,8 @@
 ## - on the right, the striped cliff: StrataModel.CLIFF's layers stacked (the grey ash one under the
 ##   top), each a little in or out of the next (ledges), grass on top, a dark crack down its face where
 ##   it fell (rubble at its right foot) and a glint deep in the crack on the line between two layers
-##   ("어느 줄인지 모르겠어"). A dug layer shows a dark dent (the layer under the ash: a hole, the piece
-##   in it, StrataGame);
+##   ("어느 줄인지 모르겠어"). When the tank copies it (the third stage) a hole opens in the layer under the
+##   ash with the piece in it (show_hole, StrataGame);
 ## - the bread cat between the tank and the cliff, watching the tank.
 ## Visual only: no body, nothing the model or the mission reads.
 class_name StrataProps
@@ -60,12 +60,12 @@ const CLIFF_Z := 0.25
 const CLIFF_DEPTH := 2.2
 const CLIFF_LAYER_H := 0.72
 ## How far each cliff layer's face stands out (m, bottom first): the ledges.
-const LEDGES := [0.1, -0.04, 0.06, 0.0, -0.06]
+const LEDGES := [0.1, -0.04, 0.0, 0.06]
 const CRACK_X := 4.95
 const DENT := Color("4a3324")
-## The cat sits on the cliff's grass, at its right end (clear of the layers a finger taps and of the
-## mission strip over the left of the view).
-const CAT_AT := Vector3(5.5, CLIFF_LAYER_H * 5.0 + 0.16, -0.45)
+## The cat sits on the cliff's grass, at its right end (clear of the cliff's layers and of the mission
+## strip over the left of the view).
+const CAT_AT := Vector3(5.5, CLIFF_LAYER_H * 4.0 + 0.16, -0.45)
 ## The materials' colours (face, light top) and their grains.
 const COLORS := {
 	"gravel": [Color("9b8c7c"), Color("b3a593")],
@@ -86,10 +86,10 @@ var buckets := {}
 var shell: Node3D
 var _layers: MeshInstance3D
 var _stream: MeshInstance3D
-var _dents: MeshInstance3D
+var _hole: MeshInstance3D
 var glint: Node3D
 var _tank_key: Array = []
-var _dent_key: Array = []
+var _hole_open := -1.0
 ## What is drawn now (tests): the tank's layers bottom first, their heights, the shell's place.
 var shown_layers: Array = []
 var shown_heights: Array = []
@@ -129,10 +129,11 @@ static func cliff_top() -> float:
 	return CLIFF_LAYER_H * StrataModel.CLIFF.size()
 
 
-## Where a dent of cliff layer `i` is (world, on its face): staggered along the layer, left of the crack.
-static func dent_at(i: int) -> Vector3:
-	var c := cliff_layer_center(i)
-	return Vector3(CLIFF_X0 + 0.6 + 0.25 * ((i * 2) % 5), c.y, c.z + 0.012)
+## Where the piece's hole in the cliff is (world, on the face of the layer under the ash), left of the
+## crack.
+static func hole_at() -> Vector3:
+	var c := cliff_layer_center(StrataModel.TARGET)
+	return Vector3(CLIFF_X0 + 1.1, c.y, c.z + 0.012)
 
 
 func build(lab: Node3D) -> void:
@@ -167,10 +168,10 @@ func build(lab: Node3D) -> void:
 	cliff = ArtKit.instance(_cliff_mesh())
 	cliff.name = "Cliff"
 	lab.add_child(cliff)
-	_dents = MeshInstance3D.new()
-	_dents.name = "Dents"
-	_dents.material_override = ArtKit.lit_material()
-	lab.add_child(_dents)
+	_hole = MeshInstance3D.new()
+	_hole.name = "Hole"
+	_hole.material_override = ArtKit.lit_material()
+	lab.add_child(_hole)
 	glint = ArtKit.instance(_glint_mesh(), DayNightProps.lit_towards(Vector3.BACK, Color.WHITE, Color.WHITE))
 	glint.name = "Glint"
 	glint.position = Vector3(CRACK_X, CLIFF_LAYER_H * (StrataModel.TARGET + 1), CLIFF_Z + 0.1)
@@ -185,9 +186,8 @@ func build(lab: Node3D) -> void:
 
 ## Draws the model: the tank's layers (`layers` bottom first, the newest growing by `settle`), the shell
 ## (`shell_at` layers under it, -1 none; sinking while it is the newest), the buckets at `places`
-## (id -> world centre: home or a finger) with the newest one pouring, the dug cliff layers (`dug`,
-## the newest opening by `dig`, `last_dig`).
-func show(layers: Array, newest: String, settle: float, shell_at: int, places: Dictionary, dug: Dictionary, last_dig: int, dig: float) -> void:
+## (id -> world centre: home or a finger) with the newest one pouring.
+func show(layers: Array, newest: String, settle: float, shell_at: int, places: Dictionary) -> void:
 	var pouring := newest if newest in StrataModel.MATERIALS and settle < 1.0 else ""
 	for material: String in buckets:
 		var bucket: Node3D = buckets[material]
@@ -208,10 +208,6 @@ func show(layers: Array, newest: String, settle: float, shell_at: int, places: D
 	if shell_at < 0:
 		shell.position = places.get("shell", shell_home())
 		shell.rotation = Vector3.ZERO
-	var dkey := [dug.keys(), last_dig, snappedf(dig, 0.02)]
-	if dkey != _dent_key:
-		_dent_key = dkey
-		_dents.mesh = _dents_mesh(dug, last_dig, dig)
 
 
 func _draw_tank(layers: Array, newest: String, settle: float, shell_at: int) -> void:
@@ -449,24 +445,29 @@ func _cliff_mesh() -> Mesh:
 	return b.commit()
 
 
-## The dug layers' dents (the newest opening by `dig`): the layer under the ash a big dark hole, the
-## others a small dent with crumbs under it.
-func _dents_mesh(dug: Dictionary, last_dig: int, dig: float) -> Mesh:
+## The piece's hole in the layer under the ash, `open` (0 none .. 1 open): a dark hole with a light rim
+## and crumbs under it.
+func show_hole(open: float) -> void:
+	open = clampf(open, 0.0, 1.0)
+	if is_equal_approx(open, _hole_open):
+		return
+	_hole_open = open
 	var b := ArtKit.builder()
 	b.ao_min = 1.0
-	for i: int in dug:
-		var open := LabGame.smooth(dig) if i == last_dig else 1.0
-		if open <= 0.01:
-			continue
-		var at := dent_at(i)
-		var big := i == StrataModel.TARGET
-		var r := (0.3 if big else 0.2) * open
-		_oval(b, at, Vector2(1.3, 0.85) * (r + 0.05), COLORS[StrataModel.CLIFF[i]][1].lightened(0.15))
+	if open > 0.01:
+		var at := hole_at()
+		var colors: Array = COLORS[StrataModel.CLIFF[StrataModel.TARGET]]
+		var r := 0.3 * LabGame.smooth(open)
+		_oval(b, at, Vector2(1.3, 0.85) * (r + 0.05), colors[1].lightened(0.15))
 		_oval(b, at + Vector3(0.0, -0.01, 0.006), Vector2(1.3, 0.85) * r, DENT)
 		_oval(b, at + Vector3(0.0, -0.04 * open, 0.012), Vector2(1.1, 0.6) * r * 0.75, DENT.darkened(0.35))
 		for k in 3:
-			b.add_sphere(Transform3D(Basis(), Vector3(at.x - 0.15 + 0.15 * k, CLIFF_LAYER_H * i + 0.06, at.z + 0.18)), 0.06 * open, 2, 6, COLORS[StrataModel.CLIFF[i]][0])
-	return b.commit()
+			b.add_sphere(Transform3D(Basis(), Vector3(at.x - 0.15 + 0.15 * k, CLIFF_LAYER_H * StrataModel.TARGET + 0.06, at.z + 0.18)), 0.06 * open, 2, 6, colors[0])
+	_hole.mesh = b.commit()
+
+
+func hole_open() -> float:
+	return maxf(_hole_open, 0.0)
 
 
 ## The glint in the crack: a small four-pointed sparkle facing the camera.

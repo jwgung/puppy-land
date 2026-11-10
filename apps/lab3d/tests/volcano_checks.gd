@@ -77,6 +77,7 @@ func run() -> void:
 	check_rules()
 	check_big_rules()
 	await check_pump()
+	await check_fountain()
 	await check_judging()
 	await check_condition_button()
 	await check_site()
@@ -375,6 +376,53 @@ func check_pump() -> void:
 		problems.append("a new press kept the lava %.2f" % lab.model.input("lava"))
 	lab.hold_ended(VolcanoLab.KNOB_ID)
 	expect.call(problems.is_empty(), "volcano pump: the press time sets the amount (fixed steps: %.0f s is a full pump, no more), nothing settles while held, the lava finishes within a second after the finger lets go; runny 1 s is a small mountain, 2.5 s a wide one; sticky 2.5 s a tall one; a new press or magma starts over" % VolcanoModel.PUMP_S,
+		"; ".join(problems))
+	lab.queue_free()
+	await tree.process_frame
+
+
+## The lava spurts up while it comes out (#114 2026-11-10 user: "솟아나오는 느낌이 적다. 좀 더
+## 솟아나오게"): on the model a fountain over the vent while the pump is held, high over the cone;
+## none once the lava has finished; on the big volcano a high fountain over the crater for the normal
+## magma, none for the sticky one (it plugs the crater).
+func check_fountain() -> void:
+	var lab := _lab()
+	tree.root.add_child(lab)
+	await tree.process_frame
+	var problems := []
+	lab.set_game_stage(0, 0, false)
+	lab.set_control("magma", "runny")
+	lab.hold_started(VolcanoLab.KNOB_ID)
+	var top := 0.0
+	for i in 60:
+		await tree.process_frame
+		top = maxf(top, lab.props.jet_height("vent"))
+	if not "vent" in lab.props.shown_jets or top < VolcanoProps.VENT_JET.x * 0.8:
+		problems.append("pumping on the model: jets %s, %.2f m high" % [str(lab.props.shown_jets), top])
+	lab.hold_ended(VolcanoLab.KNOB_ID)
+	for i in 120:
+		await tree.physics_frame
+	await tree.process_frame
+	if not lab.props.shown_jets.is_empty() or lab.props.jet_height("vent") > 0.0:
+		problems.append("still spurting after the lava finished: %s" % str(lab.props.shown_jets))
+	lab.set_game_stage(2, 2, false)
+	lab.reset_run()
+	for magma: String in ["normal", "sticky"]:
+		lab.set_control("magma", magma)
+		lab.hold_started(VolcanoLab.KNOB_ID)
+		top = 0.0
+		for i in 60:
+			await tree.process_frame
+			top = maxf(top, lab.props.jet_height("crater"))
+		var spurts: bool = "crater" in lab.props.shown_jets
+		if magma == "normal" and (not spurts or top < VolcanoProps.CRATER_JET.x * 0.8):
+			problems.append("normal magma on the big volcano: %.2f m high" % top)
+		if magma == "sticky" and spurts:
+			problems.append("the sticky magma spurts out of its plug")
+		lab.hold_ended(VolcanoLab.KNOB_ID)
+		for i in 120:
+			await tree.physics_frame
+	expect.call(problems.is_empty(), "volcano fountain: the lava spurts high over the model's vent while pumped and over the big crater (normal magma; not the sticky plug), and stops once it has finished",
 		"; ".join(problems))
 	lab.queue_free()
 	await tree.process_frame

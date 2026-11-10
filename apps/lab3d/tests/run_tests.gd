@@ -104,9 +104,9 @@
 ##    replay, the next island's map and prologue; 시작하기 opens 섬 고르기 only after a voyage, the cards (locked: lock,
 ##    condition, no button), choosing (its button or the card itself), back; phone and tablet layouts.
 ## 23a1b. the hutton finale (tests/hutton_finale_checks.gd, #106, 2026-11-09): its 9 lines (as in
-##    docs/islands/hutton-lines.md; English in content/locale/en), the broken sundial with the found wedges leaning on it,
+##    docs/islands/hutton-lines.md; English in content/locale/en), the broken sundial filling sector by sector with the found wedges (#114),
 ##    the new land once the volcano is found, the gnomon's piece not flying, the finale page by page
-##    (the gnomon on the new land, the grass, the wedges into the dial, the drag that plants the gnomon,
+##    (the gnomon on the new land, the grass, the filled dial's glint, the drag that plants the gnomon,
 ##    a short one putting it back, the day, the shadow, the emblem's gnomon and face, no star), 건너뛰기,
 ##    once only; left half way it plays again, after 3 short drags a short one plants (#108).
 ## 23a2. explanation pictures (tests/explain_picture_checks.gd, #73, 2026-11-06): a line's picture
@@ -197,6 +197,9 @@
 ##    and hold), the judging of the three stages (the wrong magma's line), the magma button, the site
 ##    (the big volcano at night on stage 3), no number on the screen, what matters in view, the spot,
 ##    the opening lines (story.more), the hand and the piece (the needle pushed up).
+## 24l. the hutton cast (tests/hutton_cast_checks.gd, #114 2026-11-10): in every Hutton lab on the
+##    tablet and the phone, Puppy's result bubble clear of Dugi's open box and portrait, Puppy at most
+##    half under them.
 ## Times are engine fixed steps (60 Hz), independent of rendering FPS.
 extends SceneTree
 
@@ -470,6 +473,11 @@ func _run() -> void:
 	_expect(volcano != null and volcano.can_instantiate(), "volcano checks compile", "")
 	if volcano != null and volcano.can_instantiate():
 		await volcano.new(self, _expect).run()
+	print("== the hutton cast (#114): Puppy and his bubble clear of Dugi's box in every lab ==")
+	var hutton_cast: GDScript = load("res://tests/hutton_cast_checks.gd")
+	_expect(hutton_cast != null and hutton_cast.can_instantiate(), "hutton cast checks compile", "")
+	if hutton_cast != null and hutton_cast.can_instantiate():
+		await hutton_cast.new(self, _expect).run()
 	print("== the hand guide (2026-10-30: the gesture on the lab's object, once and after a quiet while; the map's tap) ==")
 	var hand: GDScript = load("res://tests/hand_guide_checks.gd")
 	_expect(hand != null and hand.can_instantiate(), "hand guide checks compile", "")

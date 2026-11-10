@@ -6,8 +6,9 @@
 ##   question, its choices, reason and bridge, the riddle, every stage's conditions, mission,
 ##   explanation, win, miss and wrong-condition line) with the doc's faces; Puppy's result lines are
 ##   short with no science words, digits or symbols; English has every line;
-## - the model: the pull's levels; the plain house stands on rock up to half the pull and on sand up to
-##   0.2 (sand shakes twice as far), the braced one stands the full pull on both; the same run twice is
+## - the model: the pull's levels (from PULL_MIN); the plain house stands on rock up to half the pull
+##   and falls on sand at every pull (sand shakes twice as far), the braced one stands the full pull on
+##   both; the same run twice is
 ##   the same to the bit; the statuses; a reset clears the run and keeps the conditions;
 ## - the judging (MissionRound on the real lab): each stage's hits and misses over every pull level, the
 ##   wrong conditions' lines, nothing while shaking or while the finger pulls;
@@ -248,20 +249,23 @@ func check_model() -> void:
 	for ground in [EarthquakeModel.ROCK, EarthquakeModel.SAND]:
 		for brace in [false, true]:
 			var up := []
-			for k in range(1, 11):
+			for k in range(3, 11):
 				var out := EarthquakeModel.outcome(k * 0.1, ground, brace)
-				if out[0] != "fell":
+				if not out[0] in ["toppled", "fell"]:
 					up.append(k)
 			stands["%d%s" % [int(ground), "b" if brace else ""]] = up
-	# The plain house: rock up to 0.5, sand up to 0.2; the braced one stands every pull.
-	if stands["0"] != [1, 2, 3, 4, 5] or stands["1"] != [1, 2] or stands["0b"].size() != 10 or stands["1b"].size() != 10:
+	# The plain house: rock up to 0.5, sand never (one condition per stage, #114: the light shake that
+	# rock stands brings it down on sand); the braced one stands every pull.
+	if stands["0"] != [3, 4, 5] or stands["1"] != [] or stands["0b"].size() != 8 or stands["1b"].size() != 8:
 		problems.append("stands %s" % str(stands))
-	# Sand shakes twice as far as rock under the same pull (the ground's surface), and its plain house sways more.
+	# Sand shakes twice as far as rock under the same pull (the ground's surface), and its house sways more.
 	var rock := EarthquakeModel.new()
 	var sand := EarthquakeModel.new()
 	sand.set_start("ground", EarthquakeModel.SAND)
-	rock.release(0.2)
-	sand.release(0.2)
+	for braced in [rock, sand]:   # (braced: the plain house on sand falls, its sway stops counting)
+		braced.set_start("brace", 1.0)
+	rock.release(0.3)
+	sand.release(0.3)
 	var swing := Vector2.ZERO
 	while rock.running:
 		rock.step(1.0 / 60.0)
@@ -276,7 +280,7 @@ func check_model() -> void:
 		problems.append("not repeatable %s %s" % [str(a), str(b)])
 	# Statuses and the reset.
 	var m := EarthquakeModel.new()
-	if m.status() != "ready" or EarthquakeModel.snapped_pull(0.0) != 0.1 or EarthquakeModel.snapped_pull(1.4) != 1.0 or absf(EarthquakeModel.snapped_pull(0.46) - 0.5) > 1e-9:
+	if m.status() != "ready" or EarthquakeModel.snapped_pull(0.0) != EarthquakeModel.PULL_MIN or absf(EarthquakeModel.snapped_pull(0.12) - 0.3) > 1e-9 or EarthquakeModel.snapped_pull(1.4) != 1.0 or absf(EarthquakeModel.snapped_pull(0.46) - 0.5) > 1e-9:
 		problems.append("start %s / levels" % m.status())
 	m.set_start("ground", EarthquakeModel.SAND)
 	m.set_start("brace", 1.0)
@@ -290,15 +294,17 @@ func check_model() -> void:
 	while m.running:
 		m.step(1.0 / 60.0)
 	var strongest := m.status()
-	m.release(0.1)
-	while m.running:
-		m.step(1.0 / 60.0)
-	var stood := m.status()
 	m.reset()
+	var on_rock := EarthquakeModel.new()
+	on_rock.set_start("brace", 1.0)
+	on_rock.release(0.3)
+	while on_rock.running:
+		on_rock.step(1.0 / 60.0)
+	var stood := on_rock.status()
 	if mid != "shaking" or held != "held" or strongest != "strongest" or stood != "stood" or m.status() != "ready" \
 			or m.input("ground") != EarthquakeModel.SAND or m.input("brace") != 1.0 or m.steps != 0:
 		problems.append("statuses %s %s %s %s, after reset %s" % [mid, held, strongest, stood, m.status()])
-	expect.call(problems.is_empty(), "earthquake model: the plain house stands rock up to half the pull and sand up to 0.2, the braced one the full pull on both; sand's ground swings twice as far; the same run is the same to the bit; shaking / stood / held / strongest; a reset keeps the conditions",
+	expect.call(problems.is_empty(), "earthquake model: the lightest pull is 0.3; the plain house stands rock up to half the pull and falls on sand at every pull, the braced one the full pull on both; sand's ground swings twice as far; the same run is the same to the bit; shaking / stood / held / strongest; a reset keeps the conditions",
 		"; ".join(problems))
 
 
@@ -311,7 +317,8 @@ func check_judging() -> void:
 	await tree.process_frame
 	var problems := []
 	# stage -> [ground, brace, the pull levels (tenths) that win]
-	var wins := [["rock", "none", [1, 2, 3, 4, 5]], ["sand", "brace", [3, 4, 5, 6, 7, 8, 9, 10]], ["sand", "brace", [10]]]
+	# (a pull under PULL_MIN is PULL_MIN: 0.1 and 0.2 are the lightest shake)
+	var wins := [["rock", "none", [1, 2, 3, 4, 5]], ["sand", "none", [1, 2, 3, 4, 5]], ["sand", "brace", [10]]]
 	for stage in 3:
 		for k in range(1, 11):
 			_run(lab, wins[stage][0], wins[stage][1], k * 0.1)
@@ -321,7 +328,7 @@ func check_judging() -> void:
 			var want: bool = k in wins[stage][2]
 			if (stamps == stage + 1) != want or (not want and not missed):
 				problems.append("stage %d at %d (%s): stamps %d missed %s" % [stage + 1, k, status, stamps, missed])
-	var lines := [["sand", "brace", "바위 땅에 버팀대 없이 해 봐!"], ["rock", "brace", "모래 땅에 버팀대를 골라 봐!"], ["sand", "none", "모래 땅에 버팀대를 골라 봐!"]]
+	var lines := [["sand", "brace", "바위 땅에 버팀대 없이 해 봐!"], ["rock", "brace", "모래 땅에 버팀대 없이 해 봐!"], ["sand", "none", "모래 땅에 버팀대를 골라 봐!"]]
 	for i in 3:
 		_run(lab, lines[i][0], lines[i][1], 0.1)
 		var off := not MissionRound.conditions_met(definition.missions.stages[i].conditions, lab)
@@ -341,7 +348,7 @@ func check_judging() -> void:
 	if lab.settled():
 		problems.append("settled while the finger pulls")
 	lab.manipulation_cancelled(EarthquakeLab.KNOB_ID)
-	expect.call(problems.is_empty(), "earthquake judging: stage 1 (rock, no brace) wins pulls 0.1-0.5 and misses from 0.6 (it falls); stage 2 (sand, brace) wins from 0.3 (the plain house would fall) and misses 0.1-0.2; stage 3 wins the full pull only; the wrong buttons say the doc's lines; nothing while shaking or pulling",
+	expect.call(problems.is_empty(), "earthquake judging: stage 1 (rock, no brace) wins the light pulls (up to 0.5) and misses from 0.6 (it falls); stage 2 (sand, no brace: the ground alone changed) wins the same light pulls (the house falls: toppled) and misses the harder ones (아까만큼 살짝); stage 3 (sand, brace: the brace alone changed) wins the full pull only; the wrong buttons say the doc's lines; nothing while shaking or pulling",
 		"; ".join(problems))
 	lab.queue_free()
 	await tree.process_frame

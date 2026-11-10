@@ -43,9 +43,12 @@ const GLASS_COLD := Color(0.93, 0.98, 1.0, 0.42)
 const GLASS_SHINE := Color(1.0, 1.0, 1.0, 0.55)
 const RIM := Color("e8f6ff")
 const WATER_COLD := Color("bfe8ff")
-## Dew: DEW_DROPS drops on the cup's front, DEW_R their radius at full dew; the puddle at full dew.
-const DEW_DROPS := 40
+## Dew: DEW_DROPS beads on the cup's front (DEW_SPREAD rad either side of it), DEW_R a big one's
+## radius at full dew; from DEW_TRICKLE on the big ones run down and the puddle lies at the foot.
+const DEW_DROPS := 48
 const DEW_R := 0.1
+const DEW_SPREAD := 1.0
+const DEW_TRICKLE := 0.6
 const DEW := Color("f2faff")
 const DEW_RIM := Color("4f9fe0")
 const DEW_SHINE := Color("ffffff")
@@ -382,26 +385,40 @@ static func _cup_point(a: float, y: float, out: float) -> Vector3:
 	return Vector3(cos(a) * r, y, sin(a) * r)
 
 
-## The dew on the glass: drops (white with a blue rim: they read over the blue water) over its front (more and bigger as `dew` grows 0..1), each with a
-## light shine, and the puddle at its foot when it is wet all over.
+## The dew on the glass (#114 2026-11-10 user: "컵 둘레에 물방울 생기는 모양이 이상함"; they stood out of
+## its sides as lumps): beads lying flat on the glass, only on the part facing the camera (DEW_SPREAD
+## either side of the front, so none sticks out of its outline), a ring of their own blue round a pale
+## middle and a white glint; small ones everywhere and a few big ones, those a little teardrop-long
+## (more and bigger as `dew` grows 0..1). Wet all over (DEW_TRICKLE on), the big ones run down in
+## trickles and a little puddle lies at the cup's foot.
 func _dew_mesh(dew: float) -> Mesh:
 	var b := ArtKit.builder()
 	b.ao_min = 1.0
 	var count := int(round(dew * DEW_DROPS))
 	for i in count:
-		# A fixed scatter over the front of the glass (golden angle on the half cylinder).
-		var u := fposmod(i * 0.618034, 1.0)
-		var v := fposmod(i * 0.381966 + 0.13, 1.0)
-		var a := PI * 0.5 + (u - 0.5) * PI * 0.95
-		var y := lerpf(0.15, CUP_HEIGHT - 0.12, v)
-		var r := DEW_R * lerpf(0.55, 1.0, dew) * (0.75 + 0.25 * float(i % 3))
-		var at := _cup_point(a, y, r * 0.55)
-		var basis := Basis.from_scale(Vector3(1.0, 1.25, 0.75))
-		b.add_sphere(Transform3D(basis, at - Vector3(0.0, 0.0, r * 0.25)), r * 1.22, 3, 8, DEW_RIM)
-		b.add_sphere(Transform3D(basis, at), r, 3, 8, DEW)
-		b.add_sphere(Transform3D(Basis(), at + Vector3(-r * 0.3, r * 0.4, r * 0.45)), r * 0.32, 2, 6, DEW_SHINE)
-	if dew >= 0.6:
-		var k := (dew - 0.6) / 0.4
+		# A fixed even scatter over the front of the glass (the R2 sequence: the old golden-angle pair
+		# 0.618 / 0.382 summed to 1, so every drop fell on one slanted line).
+		var u := fposmod(0.5 + i * 0.7548777, 1.0)
+		var v := fposmod(0.5 + i * 0.5698403, 1.0)
+		var a := PI * 0.5 + (u - 0.5) * 2.0 * DEW_SPREAD
+		var y := lerpf(0.12, CUP_HEIGHT - 0.1, v)
+		var big := i % 7 == 3
+		var r := DEW_R * lerpf(0.6, 1.0, dew) * (1.0 if big else 0.5 + 0.15 * float(i % 3))
+		var out := Vector3(cos(a), 0.0, sin(a))
+		var at := _cup_point(a, y, 0.006)
+		# Flat on the glass: its face along the glass, thin out of it; the big ones hang a little long.
+		var face := Basis(out.cross(Vector3.UP).normalized(), Vector3.UP, out)
+		var long := 1.35 if big else 1.0
+		b.add_sphere(Transform3D(face.scaled_local(Vector3(r * 1.12, r * 1.12 * long, r * 0.3)), at), 1.0, 4, 14, DEW_RIM)
+		b.add_sphere(Transform3D(face.scaled_local(Vector3(r * 0.9, r * 0.9 * long, r * 0.34)), at + out * 0.004), 1.0, 4, 14, DEW)
+		b.add_sphere(Transform3D(face.scaled_local(Vector3(r * 0.28, r * 0.28, r * 0.12)), at + out * (r * 0.32) + face.x * (-r * 0.35) + Vector3.UP * r * 0.35), 1.0, 3, 8, DEW_SHINE)
+		if big and dew >= DEW_TRICKLE and y > 0.45:
+			# Its trickle: a thin streak down the glass under it.
+			var low := y - lerpf(0.25, 0.55, fposmod(i * 0.29, 1.0))
+			var mid := (y + low) * 0.5
+			b.add_sphere(Transform3D(face.scaled_local(Vector3(r * 0.32, (y - low) * 0.5, r * 0.2)), _cup_point(a, mid, 0.005)), 1.0, 2, 8, DEW_RIM.lightened(0.25))
+	if dew >= DEW_TRICKLE:
+		var k := (dew - DEW_TRICKLE) / (1.0 - DEW_TRICKLE)
 		ArtKit.flat_disc(b, Vector3(0.0, 0.005, 0.0), CUP_BOTTOM + 0.12 + 0.2 * k, PUDDLE, 24)
 	return b.commit()
 
