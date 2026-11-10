@@ -471,6 +471,14 @@ func check_sail() -> void:
 	await tree.process_frame
 	await tree.process_frame
 	map = (app._screen as TitleScreen).island_cards
+	# A drag that ends on an island chooses nothing; a locked island or the one still to come never.
+	var island_at := map._island_rect(ProgressStore.FIRST_ISLAND).get_center()
+	map._on_pointer("press", island_at + Vector2(IslandCards.TAP_SLOP * 3.0, 0.0))
+	map._on_pointer("release", island_at)
+	map.choose("")
+	map.choose("nowhere")
+	if not map.sail.is_empty() or not app._screen is TitleScreen:
+		problems.append("a drag or a locked / unknown island started a sail")
 	map._on_pointer("release", map._island_rect(ProgressStore.FIRST_ISLAND).get_center())
 	await tree.process_frame
 	var tap_sails := not map.sail.is_empty()

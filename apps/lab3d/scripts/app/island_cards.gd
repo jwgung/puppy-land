@@ -374,6 +374,9 @@ func _on_pointer(event_type: String, at: Vector2) -> void:
 	if event_type == "press":
 		_pressed_at = at
 		return
+	if event_type == "cancel":
+		_pressed_at = Vector2.INF
+		return
 	if event_type != "release":
 		return
 	if is_finite(_pressed_at.x) and _pressed_at.distance_to(at) > TAP_SLOP:
