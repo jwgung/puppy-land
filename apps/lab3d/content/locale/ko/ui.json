@@ -120,6 +120,7 @@
   "list.lead": "질문을 고르고, 조건을 바꾸며 무슨 일이 일어나는지 관찰해요.",
   "list.start": "실험 시작",
   "list.title": "실험 선택",
+  "map.back": "←",
   "map.clue": "단서",
   "mission.line": "%s 미션: %s",
   "mission.ordinal_n": "%d번째",

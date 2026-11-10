@@ -37,6 +37,7 @@ func run() -> void:
 	await check_finale_leads_on(quality_script)
 	await check_skip_and_replay(quality_script)
 	await check_title_islands(quality_script)
+	await check_map_back()
 	await check_layout()
 	TitleScreen.app_may_show = false
 	Story.app_may_enable = false
@@ -401,6 +402,51 @@ func check_title_islands(_quality_script: GDScript) -> void:
 		"; ".join(problems) + " back %s" % back_closes)
 	expect.call(open_card and chosen and tap_chose_first, "섬 고르기: an open island's 가 보기 makes it the island in use and opens its map; a tap on a card itself does the same",
 		"%s %s %s" % [open_card, chosen, tap_chose_first])
+
+
+## The map's ← (top left, #114) and Android back on the map: the island cards once a voyage was seen,
+## the title before. The story's emblem sits right of ←, both clear of the top left edges.
+func check_map_back() -> void:
+	_first_done()
+	var app := await _app([])
+	app._show_map()   # (the map itself, not the voyage due)
+	await tree.process_frame
+	await tree.process_frame
+	var home := app._screen as IslandHomeScreen
+	var back: Button = home.find_child("MapBackButton", true, false) if home != null else null
+	var problems := []
+	if back == null or not back.visible:
+		problems.append("no ←")
+	else:
+		var rect := back.get_global_rect()
+		if rect.position.x < IslandHomeScreen.MAP_EDGE - 0.5 or rect.position.y < IslandHomeScreen.MAP_EDGE - 0.5 or rect.get_center().x > home.size.x * 0.25:
+			problems.append("← not in the top left %s" % str(rect))
+		if back.text != "←":
+			problems.append("← text %s" % back.text)
+		if home.story != null and home.story.emblem.visible and home.story.emblem.get_global_rect().intersects(rect):
+			problems.append("the emblem over ← %s" % str(home.story.emblem.get_global_rect()))
+		back.pressed.emit()
+	await tree.process_frame
+	var title_before: bool = app._screen is TitleScreen and (app._screen as TitleScreen).island_cards == null
+	await _free(app)
+	Story.mark_voyage_seen(NEXT)
+	_in_making()
+	app = await _app([])
+	app._show_map()   # (the map itself, not the voyage due)
+	await tree.process_frame
+	(app._screen.find_child("MapBackButton", true, false) as Button).pressed.emit()
+	await tree.process_frame
+	var cards_button: bool = app._screen is TitleScreen and (app._screen as TitleScreen).island_cards != null
+	app._show_map()   # (the map itself, not the voyage due)
+	await tree.process_frame
+	app._go_back()
+	await tree.process_frame
+	var cards_android: bool = app._screen is TitleScreen and (app._screen as TitleScreen).island_cards != null
+	await _free(app)
+	_made()
+	expect.call(problems.is_empty() and title_before and cards_button and cards_android,
+		"map ←: top left, the emblem beside it; ← and Android back go to the title before a voyage, to the island cards after one",
+		"; ".join(problems) + " %s %s %s" % [title_before, cards_button, cards_android])
 
 
 ## Phone, tablet, phone zoomed: the title's buttons with 섬 고르기, the cards and the voyage's box and

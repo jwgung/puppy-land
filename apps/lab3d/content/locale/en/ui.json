@@ -125,6 +125,7 @@
   "list.lead": "Pick a question, change the conditions and watch what happens.",
   "list.start": "Start",
   "list.title": "Choose an experiment",
+  "map.back": "←",
   "map.clue": "Clue",
   "mission.line": "%s mission: %s",
   "mission.ordinal_n": "Mission %d",

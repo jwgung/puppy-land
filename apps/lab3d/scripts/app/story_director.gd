@@ -1432,10 +1432,10 @@ func tap_page() -> void:
 func _layout() -> void:
 	var view_size := home.view.size if home.view != null else home.size
 	if emblem != null:
-		# Top left (2026-10-30 user), as far from the edges as the map's buttons (no top bar since
-		# 2026-10-31); the finale's 건너뛰기 is top right.
+		# Top left (2026-10-30 user), right of the map's ← (#114), as far from the top as the map's
+		# buttons (no top bar since 2026-10-31); the finale's 건너뛰기 is top right.
 		var inset := Ui.safe_insets(home)
-		emblem.position = Vector2(IslandHomeScreen.MAP_EDGE + inset.left, IslandHomeScreen.MAP_EDGE + inset.top)
+		emblem.position = Vector2(home.emblem_left(), IslandHomeScreen.MAP_EDGE + inset.top)
 	if skip_button != null:
 		skip_button.size = skip_button.get_combined_minimum_size()
 		skip_button.position = Vector2(view_size.x - skip_button.size.x - DIALOGUE_MARGIN, DIALOGUE_MARGIN)

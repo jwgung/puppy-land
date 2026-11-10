@@ -133,7 +133,8 @@ static func demo_title(args: PackedStringArray) -> bool:
 
 ## The title (on launch): 시작하기 = the prologue the first time (the map plays it), else the map;
 ## 이야기 다시 보기 = the prologue again (as the settings' entry); 설정 = the settings, back to the title.
-func show_title() -> void:
+## `islands`: with its island cards open (the map's back, #114).
+func show_title(islands := false) -> void:
 	var screen := TitleScreen.new()
 	screen.start_requested.connect(func() -> void: show_list())
 	screen.story_requested.connect(func() -> void: show_list(true))
@@ -145,6 +146,8 @@ func show_title() -> void:
 		Island.set_current(island)
 		show_list(true))
 	_swap(screen, "title")
+	if islands:
+		screen.show_islands()
 
 
 func _notification(what: int) -> void:
@@ -180,9 +183,15 @@ func _go_back() -> void:
 	elif _screen is IslandHomeScreen and (_screen as IslandHomeScreen).handle_back():
 		pass   # Puppy's open box closed first (2026-10-29)
 	elif _screen is IslandHomeScreen and TitleScreen.app_may_show:
-		show_title()   # the map goes back to the title (2026-10-29 decision)
+		_map_back()
 	else:
 		quit.call()   # the title quits (and the map when the title may not show: tests)
+
+
+## The map's back (its ← and Android back): the island cards when there are islands to choose (#114),
+## else the title (2026-10-29 decision).
+func _map_back() -> void:
+	show_title(TitleScreen.picks_island())
 
 
 ## The home is the 3D island (Plan G2): tap a spot, the cat hops over, the experiment opens. The
@@ -207,6 +216,9 @@ func _show_map(replay := false) -> void:
 	screen.play_prologue_on_open = Story.should_play_prologue(replay)
 	screen.experiment_chosen.connect(show_experiment)
 	screen.settings_requested.connect(show_settings)
+	screen.back_requested.connect(func() -> void:
+		if TitleScreen.app_may_show:
+			_map_back())
 	_swap(screen, "home")
 	if screen.story != null:
 		# The finale just played and the next island is open: the voyage there.

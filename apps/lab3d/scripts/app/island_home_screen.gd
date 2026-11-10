@@ -15,6 +15,8 @@ extends Control
 
 signal experiment_chosen(definition: Dictionary)
 signal settings_requested
+## The map's ← (top left, #114): App goes back as Android back does (the island cards or the title).
+signal back_requested
 
 var definitions: Array[Dictionary] = []
 var view: View3D
@@ -279,9 +281,11 @@ func _add_spot(world: Node3D, zone: String, id: String, info: Dictionary) -> voi
 
 
 ## The map's own buttons, 단서 and 설정, floating over its top right corner (2026-10-31 user: no top bar,
-## the app's name need not show; the bar ran edge to edge and a phone's rounded corners cut it). They
-## keep MAP_EDGE units, plus the screen's safe-area inset, from the edges.
+## the app's name need not show; the bar ran edge to edge and a phone's rounded corners cut it), and
+## its ← alone in the top left (#114: back to the island cards; an arrow, no word). They keep MAP_EDGE
+## units, plus the screen's safe-area inset, from the edges; the story's emblem sits right of ←.
 const MAP_EDGE := 20.0
+const BACK_GAP := 12.0              # between ← and the emblem
 
 
 func _build_map_buttons() -> void:
@@ -301,6 +305,12 @@ func _build_map_buttons() -> void:
 	settings.pressed.connect(settings_requested.emit)
 	row.add_child(settings)
 	row.minimum_size_changed.connect(_layout)   # its size comes with the theme: placed again then
+	var back := Ui.button(Locale.t("map.back"), "", 60)
+	back.name = "MapBackButton"
+	back.custom_minimum_size.x = 60.0
+	back.pressed.connect(back_requested.emit)
+	add_child(back)
+	back.minimum_size_changed.connect(_layout)
 	_layout.call_deferred()
 
 
@@ -311,6 +321,19 @@ func _layout() -> void:
 	var inset := Ui.safe_insets(self)
 	row.size = row.get_combined_minimum_size()
 	row.position = Vector2(size.x - row.size.x - MAP_EDGE - inset.right, MAP_EDGE + inset.top)
+	var back: Control = find_child("MapBackButton", true, false)
+	if back != null:
+		back.size = back.get_combined_minimum_size()
+		back.position = Vector2(MAP_EDGE + inset.left, MAP_EDGE + inset.top)
+	if story != null:
+		story._layout()   # the emblem keeps right of ←
+
+
+## Where the story's corner emblem starts (x): right of ← (its place even while ← hides in the story).
+func emblem_left() -> float:
+	var back: Control = find_child("MapBackButton", true, false)
+	var left: float = MAP_EDGE + Ui.safe_insets(self).left
+	return left + (back.get_combined_minimum_size().x + BACK_GAP if back != null else 0.0)
 
 
 ## The stamps of every spot from the store (one file read), and the flags they stand.
@@ -548,9 +571,10 @@ func _place_trio(yaw: float) -> void:
 ## placed again when it ends), taps go to the story.
 func set_cinematic(on: bool) -> void:
 	_cinematic = on
-	var row: Control = find_child("MapButtons", true, false)
-	if row != null:
-		row.visible = not on
+	for name in ["MapButtons", "MapBackButton"]:
+		var node: Control = find_child(name, true, false)
+		if node != null:
+			node.visible = not on
 	for id in _labels:
 		(_labels[id] as Control).visible = not on and _label_shown(str(id))
 	if not on:
