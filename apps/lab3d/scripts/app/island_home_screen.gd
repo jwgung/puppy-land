@@ -15,7 +15,7 @@ extends Control
 
 signal experiment_chosen(definition: Dictionary)
 signal settings_requested
-## The map's ← (top left, #114): App goes back as Android back does (the island cards or the title).
+## The map's ← 돌아가기 (top left, #114): App goes back as Android back does (the islands' map or the title).
 signal back_requested
 
 var definitions: Array[Dictionary] = []

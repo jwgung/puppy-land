@@ -3,9 +3,10 @@
 ## (again with 이야기 다시 보기 there), its pages set the shots (the keeper only at the landing, the
 ## next island flickering), 건너뛰기 and Android back skip it, and it ends on the next island's map with
 ## its prologue; the finale's end leads to it. The title's 시작하기 opens 섬 고르기 only after a voyage
-## (before, it goes straight on); the cards show every island and 다음 섬 (곧 만나요), a locked one with
-## its lock and condition and no button, an open one's button (출발! · 이어서 하기 · 다시 가기) or the
-## card itself makes it the island in use; ← and Android back close the cards. The developer switch --islands=open is ignored in the Play build. Phone and tablet layouts.
+## (before, it goes straight on); the islands' map (#116) shows every island on one sea with its tag
+## and 다음 섬 (곧 만나요), a locked one with its lock and condition and no button, an open one's button
+## (출발! · 이어서 하기 · 다시 가기), its tag or the island itself makes it the island in use (another one
+## after the boat's sail on the map); ← 돌아가기 and Android back close the map. The developer switch --islands=open is ignored in the Play build. Phone and tablet layouts.
 extends RefCounted
 
 var tree: SceneTree
@@ -497,7 +498,7 @@ func check_sail() -> void:
 		"; ".join(problems))
 
 
-## The map's ← (top left, #114) and Android back on the map: the island cards once a voyage was seen,
+## The map's ← (top left, #114) and Android back on the map: the islands' map once a voyage was seen,
 ## the title before. The story's emblem sits right of ←, both clear of the top left edges.
 func check_map_back() -> void:
 	_first_done()
@@ -538,11 +539,11 @@ func check_map_back() -> void:
 	await _free(app)
 	_made()
 	expect.call(problems.is_empty() and title_before and cards_button and cards_android,
-		"map ← 돌아가기 (worded as the islands' map's, #116): top left, the emblem beside it; ← and Android back go to the title before a voyage, to the island cards after one",
+		"map ← 돌아가기 (worded as the islands' map's, #116): top left, the emblem beside it; ← and Android back go to the title before a voyage, to the islands' map after one",
 		"; ".join(problems) + " %s %s %s" % [title_before, cards_button, cards_android])
 
 
-## Phone, tablet, phone zoomed: the title's buttons with 섬 고르기, the cards and the voyage's box and
+## Phone, tablet, phone zoomed: the title's buttons, 섬 고르기's map (its tags) and the voyage's box and
 ## 건너뛰기 all on screen, nothing overlapping.
 func check_layout() -> void:
 	_first_done()
@@ -561,7 +562,7 @@ func check_layout() -> void:
 		var screen := Rect2(Vector2.ZERO, size)
 		var problems := []
 		var rects := title.rects()
-		if rects.size() != 3:   # (a voyage seen: 이야기 다시 보기 is on the island cards, not the title)
+		if rects.size() != 3:   # (a voyage seen: 이야기 다시 보기 is on the islands' map's tags, not the title)
 			problems.append("title rects %d" % rects.size())
 		for r in rects:
 			if not screen.encloses(r):

@@ -329,7 +329,7 @@ static func _panel_variation(theme: Theme, name: String, box: StyleBox) -> void:
 ## alone is drawn in `lip_color`. The bottom content margin grows by the lip so the text stays
 ## centred on the face.
 ## A rounded box with an outline all round and a thicker bottom (the "lip" of a pressable thing):
-## the title's ribbons and the island cards (IslandCards).
+## the title's ribbons and the islands' map (IslandCards).
 static func outlined_box(bg: Color, line: Color, radius: int, margin: Vector2, border: int, lip: int) -> StyleBoxFlat:
 	return _box(bg, line, radius, margin.x, margin.y, Color.TRANSPARENT, border, lip)
 

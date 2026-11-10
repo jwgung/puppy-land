@@ -203,7 +203,6 @@ func _place_boat(k: float) -> void:
 
 # --- pages ---------------------------------------------------------------------------------------
 
-
 func _open_page(i: int) -> void:
 	if i >= _pages.size():
 		finish()

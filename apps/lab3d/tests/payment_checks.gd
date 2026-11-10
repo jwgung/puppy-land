@@ -1,7 +1,7 @@
 ## The payment (#77, ADR 0005, 2026-11-08 decisions): the Play build's launch args, the islands bought
 ## (IslandStore: PURCHASED only, pending, refunds, acknowledge, the cache), one new spot a day on an
 ## island not bought (DailyLimit, Story.enterable), Puppy's "today" line with 보호자 on the map, the
-## guardian's check (ParentalGate), the island's offer (IslandOffer) and 보호자 on 섬 고르기's card.
+## guardian's check (ParentalGate), the island's offer (IslandOffer) and 보호자 on 섬 고르기's island tags (#116).
 extends RefCounted
 
 const UI_THEME := "res://scripts/app/ui_theme.gd"

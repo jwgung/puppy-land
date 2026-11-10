@@ -44,8 +44,6 @@ const TAG_SEPARATION := 4
 const TAG_WIDTH := 250.0
 const NAME_SIZE := 28
 const LOCK_SIZE := 54.0
-## 보호자 (#77): small, in the tag's top right corner.
-const GUARDIAN_INSET := 6
 const EMBLEM_SCALE := 0.62
 ## The tag's button (the same red one on every open island); a locked tag keeps its room.
 const GO_WIDTH := 190.0
@@ -59,6 +57,25 @@ const BACK_HEIGHT := 56.0
 ## and the tags under it fit (VIEW_MARGIN of the width each side); a tag hangs under its island's
 ## front coast.
 const SLOT := 46.0
+## Each island's own sea sinks this much under the one before (no fight between the seas).
+const SEA_SINK := 0.02
+## An island's coast radius when it is not known (m), where the sea way leaves its coast (m out and
+## m towards the camera), how far the way bends towards the camera (m) and its dots' size and lift.
+const DEFAULT_REACH := 12.0
+const SHORE_OUT := 1.5
+const SHORE_FRONT := 4.0
+const WAY_BEND := 5.0
+const DOT_RADIUS := 0.32
+const DOT_LIFT := 0.05
+## The camera's aim (a little in front of the row), its first distance and how much a fitting pass
+## may bring it nearer at most; a tag hangs at this share of its island's coast radius in front.
+const AIM := Vector3(0.0, 0.0, 6.0)
+const FIRST_DISTANCE := 60.0
+const FIT_PASSES := 4
+const FIT_MIN := 0.6
+const TAG_UNDER := 0.85
+## A tap on the map moves less than this (UI units) between press and release (a drag chooses nothing).
+const TAP_SLOP := 18.0
 const PITCH_DEG := -52.0
 const VIEW_MARGIN := 0.04
 const TAG_GAP := 6.0
@@ -101,6 +118,7 @@ var sail := {}
 var _entries: Array = []
 var _middles: Dictionary = {}      # id -> its island's middle (world)
 var _reach: Dictionary = {}        # id -> its island's coast radius (m, the widest)
+var _pressed_at := Vector2.INF     # where the finger came down on the map (INF: none)
 
 
 ## The islands, in order: per island {id, name, about, open, complete, pieces, total, piece (its kind,
@@ -127,7 +145,7 @@ static func island_name(id: String) -> String:
 	return Locale.t("island.%s.name" % id)
 
 
-## The line under a locked card's name: what opens it; 다음 섬 promises nothing yet (2026-11-09: no
+## The line under a locked island's name: what opens it; 다음 섬 promises nothing yet (2026-11-09: no
 ## island opens after the last one, so not "collect them all and it opens").
 static func locked_line(entry: Dictionary) -> String:
 	if str(entry.id) == "":
@@ -179,7 +197,7 @@ func _build_world() -> void:
 	var n := _entries.size()
 	for k in n:
 		var entry: Dictionary = _entries[k]
-		var middle := Vector3((k - (n - 1) * 0.5) * SLOT, -0.02 * k, 0.0)
+		var middle := Vector3((k - (n - 1) * 0.5) * SLOT, -SEA_SINK * k, 0.0)
 		_middles[entry.id] = Vector3(middle.x, 0.0, middle.z)
 		var holder := Node3D.new()
 		holder.name = "Island_%s" % (entry.id if entry.id != "" else "next")
@@ -213,7 +231,7 @@ func _build_world() -> void:
 		var steps := maxi(1, int(a.distance_to(c) / DOT_STEP))
 		for i in steps + 1:
 			var p := _way(a, c, float(i) / steps)
-			ArtKit.flat_disc(b, p + Vector3.UP * 0.05, 0.32, DOT, 10)
+			ArtKit.flat_disc(b, p + Vector3.UP * DOT_LIFT, DOT_RADIUS, DOT, 10)
 	var dots := ArtKit.instance(b.commit(), MapIsland.material())
 	dots.name = "SeaWay"
 	world.add_child(dots)
@@ -244,12 +262,12 @@ static func _far_island_mesh() -> Mesh:
 ## The island `id`'s shore on the sea way: its east (`side` +1) or west (-1) coast.
 func _shore(id: String, side: float) -> Vector3:
 	var middle: Vector3 = _middles.get(id, Vector3.ZERO)
-	return Vector3(middle.x + side * (float(_reach.get(id, 12.0)) + 1.5), MapIsland.SEA_Y, middle.z + 4.0)
+	return Vector3(middle.x + side * (float(_reach.get(id, DEFAULT_REACH)) + SHORE_OUT), MapIsland.SEA_Y, middle.z + SHORE_FRONT)
 
 
 ## The sea way at `k` (0..1) from `a` to `b`: bent a little towards the camera (+z).
 static func _way(a: Vector3, b: Vector3, k: float) -> Vector3:
-	return a.lerp(b, k) + Vector3(0.0, 0.0, sin(PI * k) * 5.0)
+	return a.lerp(b, k) + Vector3(0.0, 0.0, sin(PI * k) * WAY_BEND)
 
 
 ## The boat at the shore of island `id` (the one in use), bow towards the next island.
@@ -350,10 +368,18 @@ static func _tapped(event: InputEvent) -> bool:
 		and event.device != InputEvent.DEVICE_ID_EMULATION
 
 
-## A tap on the map: on an open island, as its button; during a sail, it ends the sail.
+## A tap on the map: on an open island, as its button; during a sail, it ends the sail. A drag (more
+## than TAP_SLOP between press and release) chooses nothing.
 func _on_pointer(event_type: String, at: Vector2) -> void:
+	if event_type == "press":
+		_pressed_at = at
+		return
 	if event_type != "release":
 		return
+	if is_finite(_pressed_at.x) and _pressed_at.distance_to(at) > TAP_SLOP:
+		_pressed_at = Vector2.INF
+		return
+	_pressed_at = Vector2.INF
 	if not sail.is_empty():
 		_end_sail()
 		return
@@ -432,8 +458,8 @@ func _go_button(entry: Dictionary) -> Button:
 
 ## The child chose island `id`: the island in use at once, another after the boat has sailed there.
 func choose(id: String) -> void:
-	if not sail.is_empty():
-		return
+	if not sail.is_empty() or not bool(_entries[_index(id)].open) or _entries[_index(id)].id != id:
+		return   # (sailing already, or not an open island of the map)
 	if id == Island.current_id():
 		chosen.emit(id)
 		return
@@ -472,7 +498,7 @@ func _end_sail() -> void:
 ## The screen rect of island `id` (its coast round its middle, at sea level).
 func _island_rect(id: String) -> Rect2:
 	var middle: Vector3 = _middles.get(id, Vector3.ZERO)
-	var r := float(_reach.get(id, 12.0))
+	var r := float(_reach.get(id, DEFAULT_REACH))
 	var out := Rect2(_screen(middle), Vector2.ZERO)
 	for corner in [Vector3(-r, 0.0, -r), Vector3(r, 0.0, -r), Vector3(-r, 0.0, r), Vector3(r, 0.0, r)]:
 		out = out.expand(_screen(middle + corner))
@@ -497,13 +523,13 @@ func _layout() -> void:
 	var last: Vector3 = _middles[_entries[-1].id]
 	var half := (last.x - first.x) * 0.5 + float(_reach[_entries[0].id])
 	var pitch := deg_to_rad(PITCH_DEG)
-	var target := Vector3(0.0, 0.0, 6.0)
+	var target := AIM
 	var tag_h := 0.0
 	for tag: Control in cards.values():
 		tag.size = tag.get_combined_minimum_size()
 		tag_h = maxf(tag_h, tag.size.y)
-	var distance := 60.0
-	for pass_i in 4:   # back off until the row fits the width and the tags fit under it
+	var distance := FIRST_DISTANCE
+	for _pass in FIT_PASSES:   # back off until the row fits the width and the tags fit under it
 		var eye := target + Vector3(0.0, -sin(pitch), cos(pitch)) * distance
 		view.rig.look_at_from_position(eye, target)
 		var left := _screen(Vector3(-half, 0.0, 0.0)).x
@@ -511,16 +537,16 @@ func _layout() -> void:
 		var front := _screen(Vector3(0.0, 0.0, float(_reach[_entries[0].id]))).y
 		var want := size.x * (1.0 - 2.0 * VIEW_MARGIN)
 		var grow := maxf((right - left) / want, (front + TAG_GAP + tag_h) / (size.y - EDGE - inset.bottom))
-		distance *= maxf(grow, 0.6)
+		distance *= maxf(grow, FIT_MIN)
 	for entry in _entries:
 		var tag: Control = cards[entry.id]
 		var middle: Vector3 = _middles[entry.id]
-		var under := _screen(middle + Vector3(0.0, 0.0, float(_reach[entry.id]) * 0.85))
+		var under := _screen(middle + Vector3(0.0, 0.0, float(_reach[entry.id]) * TAG_UNDER))
 		var at := Vector2(under.x - tag.size.x * 0.5, minf(under.y + TAG_GAP, size.y - tag.size.y - EDGE - inset.bottom))
 		tag.position = Vector2(clampf(at.x, EDGE + inset.left, size.x - tag.size.x - EDGE - inset.right), at.y)
 
 
-## The picture of `id`, its small world under `host` (the cards, the island's offer: IslandOffer).
+## The picture of `id`, its small world under `host` (the island's offer: IslandOffer).
 static func thumbnail(host: Node, id: String) -> Texture2D:
 	var sub := SubViewport.new()
 	sub.name = "Thumb_%s" % id
