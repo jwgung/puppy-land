@@ -6,7 +6,7 @@
 ## and the house (버팀대 없음 / 버팀대).
 ##
 ## Model and judging: EarthquakeModel (the table, the ground and the house as fixed-step oscillators,
-## no random number): the stages are judged on its status ("stood", "held", "strongest", "fell"),
+## no random number): the stages are judged on its status ("stood", "held", "strongest", "toppled", "fell"),
 ## never on the engine. The house is ten Jolt rigid bodies (EarthquakeProps.blocks: the posts' cubes,
 ## the back wall's planks, the beam and the roof) on an AnimatableBody3D slab, the way the collision lab
 ## poses its engine balls on its formula: while the house stands its blocks are frozen (kinematic) and
@@ -281,7 +281,7 @@ static func shake_word(level: float) -> String:
 		return "biggest"
 	if level > 0.75:
 		return "big"
-	if level > 0.55:
+	if level > EarthquakeModel.LIGHT_MAX + 1e-9:
 		return "medium"
 	return "small"
 

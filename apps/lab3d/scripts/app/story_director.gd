@@ -1155,7 +1155,7 @@ func _next_flight() -> void:
 		var node := PieceArt.make(home.island.piece, PIECE_SIZE)
 		home.world.add_child(node)
 		node.position = from
-		_flight = {"id": id, "node": node, "from": from, "to": to, "slot": slot, "t": -FLIGHT_IN_S}
+		_flight = {"id": id, "node": node, "from": from, "to": to, "slot": slot, "spin": 0.0, "t": -FLIGHT_IN_S}
 		var box := AABB(from, Vector3.ZERO).expand(to).expand(spot.at).grow(1.5)
 		home.view.rig.focus({"box": box, "fill": 0.55, "anchor": Vector2(0.5, 0.55),
 			"in_s": FLIGHT_IN_S, "hold_s": FLIGHT_S + 0.2, "out_s": FLIGHT_OUT_S})
@@ -1176,9 +1176,10 @@ func _step_flight(delta: float) -> void:
 	var k := clampf(_flight.t / FLIGHT_S, 0.0, 1.0)
 	var node: Node3D = _flight.node
 	node.position = _arc(_flight.from, _flight.to, 4.0, k * k * (3.0 - 2.0 * k))
-	node.rotation.y += delta * 6.0
-	if _sundial():   # it turns and shrinks into its sector over the last part of the way
-		_flight.spin = float(_flight.get("spin", 0.0)) + delta * 6.0
+	if not _sundial():
+		node.rotation.y += delta * 6.0
+	else:   # it turns and shrinks into its sector over the last part of the way
+		_flight.spin += delta * 6.0
 		var spin := Transform3D(Basis(Vector3.UP, _flight.spin).scaled(Vector3.ONE * PIECE_SIZE), node.position)
 		var slot: Transform3D = _flight.slot
 		var settle := _blend(spin, slot, smoothstep(0.65, 1.0, k))

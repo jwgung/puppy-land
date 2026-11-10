@@ -116,7 +116,7 @@ func check_keys() -> void:
 		named["strata.status." + id] = "t"
 	for id in StrataModel.MATERIALS + ["none"]:   # the strata's bottom and top layer words
 		named["strata.layer." + id] = "t"
-	for id in ["ready", "shaking", "stood", "held", "strongest", "fell"]:   # the house card's words (EarthquakeLab.observations)
+	for id in ["ready", "shaking", "stood", "held", "strongest", "toppled", "fell"]:   # the house card's words (EarthquakeLab.observations)
 		named["earthquake.status." + id] = "t"
 	for word in ["small", "medium", "big", "biggest"]:   # the shake's words and the pull's readout (EarthquakeLab.shake_word)
 		named["earthquake.shake." + word] = "t"

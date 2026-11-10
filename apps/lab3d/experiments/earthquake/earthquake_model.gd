@@ -20,8 +20,9 @@
 ## stage): every light shake that rock stands (0.3-0.5, stage 1) brings the plain house down on sand
 ## (stage 2), and the brace holds it there even at the full pull (stage 3).
 ##
-## Status ("ready" until a pull is let go, "shaking" for RUN_S, then the result): "fell" (the house
-## fell), "strongest" (it stood the full pull), "held" (it stood a shake the plain house on that
+## Status ("ready" until a pull is let go, "shaking" for RUN_S, then the result): "toppled" (the house
+## fell under a light shake, LIGHT_MAX at most: stage 2's "똑같이 살짝", #114), "fell" (it fell under a
+## harder one), "strongest" (it stood the full pull), "held" (it stood a shake the plain house on that
 ## ground does not), "stood" (it stood a shake the plain house also stands).
 ## Inputs: "pull" (the shake of the run), "ground" (0 rock, 1 sand) and "brace" (0 none, 1 brace):
 ## the two conditions are starts (set_start), kept across reset().
@@ -48,6 +49,8 @@ const HOUSE_HEIGHT := 1.8
 const PULL_STEP := 0.1
 const PULL_MIN := 0.3
 const FULL := 1.0
+## The light shakes ("살짝"): every pull the plain house stands on rock, up to half the full pull.
+const LIGHT_MAX := 0.5
 ## One run of the shake (s) and the substeps per fixed step (the oscillators' accuracy).
 const RUN_S := 4.0
 const SUBSTEPS := 4
@@ -81,7 +84,7 @@ func _init() -> void:
 	define_input("brace", 0.0)
 
 
-## The pull let go at `level` (snapped to the PULL_STEP levels, at least one): the run starts.
+## The pull let go at `level` (snapped to the PULL_STEP levels, at least PULL_MIN): the run starts.
 func release(level: float) -> void:
 	_clear_run()
 	set_input("pull", snapped_pull(level))
@@ -175,7 +178,7 @@ func status() -> String:
 	if running:
 		return "shaking"
 	if fell():
-		return "fell"
+		return "toppled" if input("pull") <= LIGHT_MAX + 1e-9 else "fell"
 	if input("pull") >= FULL - 1e-9:
 		return "strongest"
 	return "held" if plain_fell else "stood"

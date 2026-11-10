@@ -63,8 +63,8 @@ const CLIFF_LAYER_H := 0.72
 const LEDGES := [0.1, -0.04, 0.0, 0.06]
 const CRACK_X := 4.95
 const DENT := Color("4a3324")
-## The cat sits on the cliff's grass, at its right end (clear of the layers a finger taps and of the
-## mission strip over the left of the view).
+## The cat sits on the cliff's grass, at its right end (clear of the cliff's layers and of the mission
+## strip over the left of the view).
 const CAT_AT := Vector3(5.5, CLIFF_LAYER_H * 4.0 + 0.16, -0.45)
 ## The materials' colours (face, light top) and their grains.
 const COLORS := {

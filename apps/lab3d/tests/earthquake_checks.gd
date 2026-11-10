@@ -251,7 +251,7 @@ func check_model() -> void:
 			var up := []
 			for k in range(3, 11):
 				var out := EarthquakeModel.outcome(k * 0.1, ground, brace)
-				if out[0] != "fell":
+				if not out[0] in ["toppled", "fell"]:
 					up.append(k)
 			stands["%d%s" % [int(ground), "b" if brace else ""]] = up
 	# The plain house: rock up to 0.5, sand never (one condition per stage, #114: the light shake that
@@ -318,7 +318,7 @@ func check_judging() -> void:
 	var problems := []
 	# stage -> [ground, brace, the pull levels (tenths) that win]
 	# (a pull under PULL_MIN is PULL_MIN: 0.1 and 0.2 are the lightest shake)
-	var wins := [["rock", "none", [1, 2, 3, 4, 5]], ["sand", "none", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]], ["sand", "brace", [10]]]
+	var wins := [["rock", "none", [1, 2, 3, 4, 5]], ["sand", "none", [1, 2, 3, 4, 5]], ["sand", "brace", [10]]]
 	for stage in 3:
 		for k in range(1, 11):
 			_run(lab, wins[stage][0], wins[stage][1], k * 0.1)
@@ -348,7 +348,7 @@ func check_judging() -> void:
 	if lab.settled():
 		problems.append("settled while the finger pulls")
 	lab.manipulation_cancelled(EarthquakeLab.KNOB_ID)
-	expect.call(problems.is_empty(), "earthquake judging: stage 1 (rock, no brace) wins the light pulls (up to 0.5) and misses from 0.6 (it falls); stage 2 (sand, no brace: the ground alone changed) wins every pull (the house falls); stage 3 (sand, brace: the brace alone changed) wins the full pull only; the wrong buttons say the doc's lines; nothing while shaking or pulling",
+	expect.call(problems.is_empty(), "earthquake judging: stage 1 (rock, no brace) wins the light pulls (up to 0.5) and misses from 0.6 (it falls); stage 2 (sand, no brace: the ground alone changed) wins the same light pulls (the house falls: toppled) and misses the harder ones (아까만큼 살짝); stage 3 (sand, brace: the brace alone changed) wins the full pull only; the wrong buttons say the doc's lines; nothing while shaking or pulling",
 		"; ".join(problems))
 	lab.queue_free()
 	await tree.process_frame

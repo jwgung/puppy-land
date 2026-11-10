@@ -326,8 +326,6 @@ func _layout() -> void:
 	if back != null:
 		back.size = back.get_combined_minimum_size()
 		back.position = Vector2(MAP_EDGE + inset.left, MAP_EDGE + inset.top)
-	if story != null:
-		story._layout()   # the emblem keeps right of ←
 
 
 ## Where the story's corner emblem starts (x): right of ← (its place even while ← hides in the story).
@@ -808,11 +806,14 @@ func route(from: Vector2, to: Vector2) -> PackedVector2Array:
 
 
 
+## The steps round a stage: ROUTE_RING m out from its edge, ROUTE_RING_STEP apart.
+const ROUTE_RING := 0.35
+const ROUTE_RING_STEP := deg_to_rad(20.0)
+
+
 ## The steps round the stage `p` stands by (ROUTE_RING m out from its edge), turning the shorter way
 ## until `clear` holds at a step (a clear step onto a path from there): [first step .. last step], or
 ## empty (no stage there, or no clear step all round).
-const ROUTE_RING := 0.35
-const ROUTE_RING_STEP := deg_to_rad(20.0)
 func _round_stage(p: Vector2, clear: Callable) -> PackedVector2Array:
 	var stage: Array = []
 	for s: Array in _stages():

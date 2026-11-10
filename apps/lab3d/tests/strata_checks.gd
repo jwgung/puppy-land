@@ -93,7 +93,7 @@ func _lab() -> StrataLab:
 	return lab
 
 
-## Lets the newest pour or dent settle (the model's glides).
+## Lets the newest pour or shell settle (the model's glides).
 static func _settle(model: StrataModel) -> void:
 	while model.animating():
 		model.step(1.0 / 60.0)
