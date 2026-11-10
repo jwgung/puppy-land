@@ -177,7 +177,8 @@ func rects() -> Array[Rect2]:
 	return out
 
 
-## 섬 고르기: the island cards over the turning island (the logo and the buttons hide meanwhile).
+## 섬 고르기: the islands' map (IslandCards, #116) over the title; the title's own island view, logo
+## and buttons hide meanwhile (one 3D view drawn at a time).
 func show_islands() -> void:
 	if island_cards != null:
 		return
@@ -186,6 +187,7 @@ func show_islands() -> void:
 	island_cards.story_chosen.connect(island_story_chosen.emit)
 	island_cards.back_requested.connect(hide_islands)
 	add_child(island_cards)
+	view.visible = false
 	logo.visible = false
 	_buttons.visible = false
 
@@ -196,6 +198,7 @@ func hide_islands() -> bool:
 		return false
 	island_cards.queue_free()
 	island_cards = null
+	view.visible = true
 	logo.visible = true
 	_buttons.visible = true
 	return true

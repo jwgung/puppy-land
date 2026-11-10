@@ -283,7 +283,7 @@ func _add_spot(world: Node3D, zone: String, id: String, info: Dictionary) -> voi
 
 ## The map's own buttons, 단서 and 설정, floating over its top right corner (2026-10-31 user: no top bar,
 ## the app's name need not show; the bar ran edge to edge and a phone's rounded corners cut it), and
-## its ← alone in the top left (#114: back to the island cards; an arrow, no word). They keep MAP_EDGE
+## its ← 돌아가기 alone in the top left (#114: back to the islands' map; worded as that map's own, #116). They keep MAP_EDGE
 ## units, plus the screen's safe-area inset, from the edges; the story's emblem sits right of ←.
 const MAP_EDGE := 20.0
 const BACK_GAP := 12.0              # between ← and the emblem
@@ -306,9 +306,8 @@ func _build_map_buttons() -> void:
 	settings.pressed.connect(settings_requested.emit)
 	row.add_child(settings)
 	row.minimum_size_changed.connect(_layout)   # its size comes with the theme: placed again then
-	var back := Ui.button(Locale.t("map.back"), "", 60)
+	var back := Ui.button(Locale.t("islands.back"), "", 60)   # (as the island map's, 2026-11-10 user: "돌아가기로 맞추자")
 	back.name = "MapBackButton"
-	back.custom_minimum_size.x = 60.0
 	back.pressed.connect(back_requested.emit)
 	add_child(back)
 	back.minimum_size_changed.connect(_layout)

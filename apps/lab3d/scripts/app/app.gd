@@ -139,12 +139,9 @@ func show_title(islands := false) -> void:
 	screen.start_requested.connect(func() -> void: show_list())
 	screen.story_requested.connect(func() -> void: show_list(true))
 	screen.settings_requested.connect(func() -> void: show_settings(true))
-	screen.island_chosen.connect(func(island: String) -> void:
-		if island != Island.current_id() and Story.enabled:
-			show_sail(island)   # another island: the boat there first (#114)
-		else:
-			Island.set_current(island)
-			show_list())
+	screen.island_chosen.connect(func(island: String) -> void:   # (the islands' map sailed there first, #116)
+		Island.set_current(island)
+		show_list())
 	screen.island_story_chosen.connect(func(island: String) -> void:   # its story again (2026-11-09)
 		Island.set_current(island)
 		show_list(true))
@@ -235,14 +232,6 @@ func _show_map(replay := false) -> void:
 func show_voyage(island: String, replay := false) -> void:
 	var screen := VoyageScreen.new(island)
 	screen.finished.connect(func(_to: String) -> void: _show_map(replay))
-	_swap(screen, "voyage")
-
-
-## The sail from the island in use to `island` (the island cards, #114): the boat with no words, then
-## that island's map (its prologue if not seen yet).
-func show_sail(island: String) -> void:
-	var screen := VoyageScreen.new(island, Island.current_id())
-	screen.finished.connect(func(_to: String) -> void: show_list())
 	_swap(screen, "voyage")
 
 
@@ -357,7 +346,7 @@ func _demo_story(value: String) -> Dictionary:
 			for island in Island.ids():
 				if island != ProgressStore.FIRST_ISLAND:
 					Story.mark_voyage_seen(island)
-					# (and its prologue: the cards' sail lands on its map, not its story, #114)
+					# (and its prologue: the islands' map lands on its map, not its story, #114)
 					ProgressStore.set_mark(ProgressStore.STORY, ProgressStore.island_key(island, "prologue"), true)
 			return {"islands": true}
 		return {}

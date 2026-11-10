@@ -109,7 +109,7 @@
   "islands.back": "← Back",
   "islands.continue": "Continue",
   "islands.locked": "Opens when every piece of %s is found",
-  "islands.go": "Let's go",
+  "islands.go": "Set sail!",
   "islands.soon": "Coming soon!",
   "islands.next": "Next island",
   "kid.units": {
@@ -126,7 +126,6 @@
   "list.lead": "Pick a question, change the conditions and watch what happens.",
   "list.start": "Start",
   "list.title": "Choose an experiment",
-  "map.back": "←",
   "map.clue": "Clue",
   "mission.line": "%s mission: %s",
   "mission.ordinal_n": "Mission %d",
