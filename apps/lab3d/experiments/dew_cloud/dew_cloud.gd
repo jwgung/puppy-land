@@ -44,6 +44,9 @@ const AIR_LEFT := 1.6
 const AIR_RIGHT := 1.6
 const AIR_UP := 2.6
 ## The cup's and the parcel's words: "cold" past these shares of their range, "icy" past ICE_WORD.
+## The lab's own trees keep this clear (m, x/z) of the line from the front view's eye to the air's
+## way up the mountain (#114 2026-11-10 user: "세번쨰 실험에서, 공기가 어딨는지 안보여. 나무에 가려져서").
+const WAY_CLEAR := 3.8
 const COOL_WORD := 0.15
 const COLD_WORD := 0.45
 const ICY_WORD := 0.75
@@ -140,6 +143,31 @@ func manipulation_placed(id: String, transform: Transform3D) -> void:
 
 
 ## The stage changed (DewCloudGame.show_stage): the knob in play and the parcel's showing follow it.
+## LabWorld asks (its near_tree_at hook, as the volcano's): a tree of the lab's own standing between the
+## front view's eye and the air's way up the mountain is moved to the right until it is clear of it.
+func near_tree_at(at: Vector2) -> Vector2:
+	var moved := at
+	for k in 24:
+		if not hides_way(moved):
+			return moved
+		moved.x += 0.5
+	return moved
+
+
+## A tree at `at` (x/z) stands in front of the air's way, within WAY_CLEAR of a sight line from the
+## front eye to it.
+func hides_way(at: Vector2) -> bool:
+	var eye3 := IslandCast.front_eye(definition.camera() if definition != null else {})
+	var eye := Vector2(eye3.x, eye3.z)
+	for k in 11:
+		var p3 := DewCloudProps.parcel_point(k / 10.0)
+		var p := Vector2(p3.x, p3.z)
+		var closest := Geometry2D.get_closest_point_to_segment(at, eye, p)
+		if closest.distance_to(at) < WAY_CLEAR and (at - p).dot(eye - p) > 0.0:   # (in front of the way)
+			return true
+	return false
+
+
 func stage_changed() -> void:
 	if is_inside_tree():
 		_show()
