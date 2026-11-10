@@ -38,8 +38,9 @@
 ##
 ## The sundial's finale (#106, 2026-11-09 user decisions; the hutton island, home.dial): the pages are
 ## its story file's 9 lines. The camera starts at the volcano where the gnomon stands on the new land
-## (lines 1-2), glides over the new land, whose grass sprouts (3-4), to the square, where the wedges
-## leaning on the base fly one by one into their places on the plate; Dugi says to plant the gnomon (5)
+## (lines 1-2), glides over the new land, whose grass sprouts (3-4), to the square, where the dial the
+## found wedges filled one by one (each in its own sector as it flew in, #114) glints; Dugi says to
+## plant the gnomon (5)
 ## and the child drags it from over the cat's paws into the dial's middle (a short drag back: it goes
 ## back to the paws, the paw shows it again). Then the day comes, the gnomon's shadow grows on the dial
 ## and the emblem gets its gnomon and face (6-9). No star: the hutton sky stays empty. The gnomon's own
@@ -111,8 +112,11 @@ const HELP_AFTER_MISSES := 3
 const PLANT_SHARE_HELPED := 0.2
 const HELP_SKY_MARGIN := 1.02     # the helped star's speed this much over the one that just reaches the sky (float error)
 const PLANT_PAGE := 4              # the page after which the child plants the gnomon (Dugi: 이제 바늘을 꽂아 봐요)
-const ASSEMBLE_STAGGER_S := 0.22   # between the wedges' take-offs
-const ASSEMBLE_FLIGHT_S := 0.9
+## The filled dial's glint before Dugi's "plant it" (#114: the wedges are in their places already):
+## the camera's glide to it, the swell of the glint and how long it lasts.
+const DIAL_GLINT_IN_S := 1.4
+const DIAL_GLINT_SWELL := 0.08
+const DIAL_GLINT_S := 0.6
 const NEEDLE_MOVE_S := 0.35        # the gnomon easing into the dial (or back to the paws)
 const SHADOW_GROW_S := 1.6
 const GRASS_GROW_S := 0.8
@@ -132,6 +136,7 @@ var _sky_t := 0.0     # the sky star's and the guiding star's sway clocks (StarA
 var _star_t := 0.0
 var tint := Vector3.ONE
 var placed_count := 0              # pieces at the lookout shown on the emblem
+var _glint_t := -1.0               # the filled dial's glint before the plant (s; -1: none)
 var flights_played := 0            # (tests)
 var _night_from := 0.0
 var _night_to := 0.0
@@ -178,7 +183,6 @@ var plants := 0                    # the gnomon planted (tests)
 var _plant: Dictionary = {}        # {press, now} the finger dragging the gnomon (screen, UI units)
 var _needle_motion: Dictionary = {}   # {from, to, t, s, then} an eased move of the needle, `then` called at its end
 var _held := false                 # the needle rides over the cat's paws
-var _assembly: Array = []          # [{node, from: Transform3D, to: Transform3D, t, s, landed}] wedges to their places
 var _shadow_t := -1.0              # the gnomon's shadow growing (s since the sun came back; -1: not)
 var _grass_t := -1.0               # the new land's grass sprouting (s; -1: not)
 ## The night map's exploration (refresh): the next spot ("" when all are found) and the found ones.
@@ -868,7 +872,7 @@ static func _shot(target: Vector3, yaw: float, pitch: float, dist: float) -> Dic
 func _dial_intro() -> void:
 	page = -1
 	home.trio_home()
-	home.dial.show_leaning(SundialDial.WEDGES)   # (every wedge is at the square by now)
+	home.dial.show_plate()   # (every wedge is in its place by now)
 	needle = SundialDial.needle_node()
 	home.world.add_child(needle)
 	needle.transform = _needle_land_xf()
@@ -910,11 +914,11 @@ func _plant_shot() -> Dictionary:
 	return _shot(home.cat.position.lerp(_dial_top(), 0.5) + Vector3.UP * 0.3, -20.0, -28.0, 5.0)
 
 
-## The words of a page of the sundial's finale closed: the wedges to their places before Dugi's
-## "plant it", the child's drag after it, the end after the last.
+## The words of a page of the sundial's finale closed: the dial glints before Dugi's "plant it", the
+## child's drag after it, the end after the last.
 func _dial_page_closed() -> void:
 	if page == PLANT_PAGE - 1:
-		_assemble_dial()
+		_glint_dial()
 	elif page == PLANT_PAGE:
 		_wait_plant()
 	elif page < Story.pages("finale").size() - 1:
@@ -923,45 +927,24 @@ func _dial_page_closed() -> void:
 		_end_cinematic()
 
 
-## The wedges leaning on the base rise one by one and fly into their places on the plate; then the
-## plate is golden again and Dugi's "plant it" page opens.
-func _assemble_dial() -> void:
-	_move(_shot(_dial_top(), -20.0, -38.0, 5.0), 1.4)
-	home.dial.show_leaning(0)
-	_clear_assembly()
-	for i in SundialDial.WEDGES:
-		var node := PieceArt.make(PieceArt.SUNDIAL, 1.0)
-		home.world.add_child(node)
-		var from := home.dial.transform * SundialDial.lean_transform(i)
-		node.transform = from
-		_assembly.append({"node": node, "from": from, "to": home.dial.transform * SundialDial.slot_transform(i),
-			"t": -1.2 - ASSEMBLE_STAGGER_S * i, "s": ASSEMBLE_FLIGHT_S, "landed": false})
-	var total := 1.2 + ASSEMBLE_STAGGER_S * (SundialDial.WEDGES - 1) + ASSEMBLE_FLIGHT_S
-	_beat(total + 0.1, func() -> void:
-		_clear_assembly()
-		home.dial.show_plate()
-		SoundBoard.play(&"piece_fly"))
-	_beat(total + 0.8, func() -> void: _open_page(PLANT_PAGE))
+## The camera to the dial the wedges filled; it glints (a short swell); then Dugi's "plant it" page.
+func _glint_dial() -> void:
+	_move(_shot(_dial_top(), -20.0, -38.0, 5.0), DIAL_GLINT_IN_S)
+	_beat(DIAL_GLINT_IN_S, func() -> void:
+		SoundBoard.play(&"glint")
+		_glint_t = 0.0)
+	_beat(DIAL_GLINT_IN_S + DIAL_GLINT_S + 0.2, func() -> void: _open_page(PLANT_PAGE))
 
 
-func _step_assembly(delta: float) -> void:
-	for a in _assembly:
-		var node: Node3D = a.node
-		a.t += delta
-		var k := clampf(float(a.t) / float(a.s), 0.0, 1.0)   # (before its take-off it leans where it was)
-		var e := k * k * (3.0 - 2.0 * k)
-		var xf := _blend(a.from, a.to, e)
-		xf.origin = _arc((a.from as Transform3D).origin, (a.to as Transform3D).origin, 0.7, e)   # up and over
-		node.transform = xf
-		if k >= 1.0 and not a.landed:
-			a.landed = true
-			SoundBoard.play(&"glint")
-
-
-func _clear_assembly() -> void:
-	for a in _assembly:
-		(a.node as Node3D).queue_free()
-	_assembly.clear()
+func _step_dial_glint(delta: float) -> void:
+	if _glint_t < 0.0 or home.dial == null:
+		return
+	_glint_t += delta
+	var k := _glint_t / DIAL_GLINT_S
+	home.dial.plate.scale = Vector3.ONE * (1.0 + DIAL_GLINT_SWELL * sin(PI * minf(k, 1.0)))
+	if k >= 1.0:
+		home.dial.plate.scale = Vector3.ONE
+		_glint_t = -1.0
 
 
 ## The new land's grass sprouts (a short pop).
@@ -1118,7 +1101,9 @@ func _end_dial() -> void:
 	if needle != null:
 		needle.queue_free()
 		needle = null
-	_clear_assembly()
+	_glint_t = -1.0
+	if home.dial != null:
+		home.dial.plate.scale = Vector3.ONE
 	plant_waits = false
 	_plant = {}
 	_held = false
@@ -1163,12 +1148,14 @@ func _next_flight() -> void:
 		part = "flight"
 		var from: Vector3 = spot.at + Vector3.UP * (float(spot.top) + 0.6)
 		var to := _lookout_point()
-		if _sundial():   # to its place leaning on the base (#106)
-			to = (home.dial.transform * SundialDial.lean_transform(home.dial.leaning)).origin
+		var slot := Transform3D()
+		if _sundial():   # to its own sector of the dial (#114)
+			slot = home.dial.transform * SundialDial.slot_transform(home.dial.filled)
+			to = slot.origin
 		var node := PieceArt.make(home.island.piece, PIECE_SIZE)
 		home.world.add_child(node)
 		node.position = from
-		_flight = {"id": id, "node": node, "from": from, "to": to, "t": -FLIGHT_IN_S}
+		_flight = {"id": id, "node": node, "from": from, "to": to, "slot": slot, "t": -FLIGHT_IN_S}
 		var box := AABB(from, Vector3.ZERO).expand(to).expand(spot.at).grow(1.5)
 		home.view.rig.focus({"box": box, "fill": 0.55, "anchor": Vector2(0.5, 0.55),
 			"in_s": FLIGHT_IN_S, "hold_s": FLIGHT_S + 0.2, "out_s": FLIGHT_OUT_S})
@@ -1190,14 +1177,18 @@ func _step_flight(delta: float) -> void:
 	var node: Node3D = _flight.node
 	node.position = _arc(_flight.from, _flight.to, 4.0, k * k * (3.0 - 2.0 * k))
 	node.rotation.y += delta * 6.0
-	if _sundial():   # down to the size it leans on the base with
-		node.scale = Vector3.ONE * lerpf(1.0, SundialDial.LEAN_SIZE / PIECE_SIZE, smoothstep(0.6, 1.0, k))
+	if _sundial():   # it turns and shrinks into its sector over the last part of the way
+		_flight.spin = float(_flight.get("spin", 0.0)) + delta * 6.0
+		var spin := Transform3D(Basis(Vector3.UP, _flight.spin).scaled(Vector3.ONE * PIECE_SIZE), node.position)
+		var slot: Transform3D = _flight.slot
+		var settle := _blend(spin, slot, smoothstep(0.65, 1.0, k))
+		node.transform = Transform3D(settle.basis.scaled(Vector3.ONE / PIECE_SIZE), node.position)
 	if k >= 1.0:
 		node.queue_free()
 		_flight = {}
 		placed_count += 1
 		if _sundial():
-			home.dial.show_leaning(home.dial.leaning + 1)
+			home.dial.show_filled(home.dial.filled + 1)
 		emblem.set_filled(placed_count, true)
 		_night(map_night(), 1.2)   # the night lifts a step
 		SoundBoard.play(&"glint")
@@ -1216,7 +1207,7 @@ func skip_flights() -> void:
 		placed_count = Story.placed(ProgressStore.load()).size()
 		emblem.set_filled(placed_count)
 		if _sundial() and not home.dial.whole:
-			home.dial.show_leaning(home.placed_wedges(ProgressStore.load()))
+			home.dial.show_filled(home.placed_wedges(ProgressStore.load()))
 		_night_s = 0.0
 		_set_night(map_night())
 		home.view.rig.cut_focus()
@@ -1254,7 +1245,7 @@ func advance(delta: float) -> void:
 	_step_star(delta)
 	_step_launch(delta)
 	_step_needle(delta)
-	_step_assembly(delta)
+	_step_dial_glint(delta)
 	_step_shadow(delta)
 	_step_grass(delta)
 	_step_pieces(delta)

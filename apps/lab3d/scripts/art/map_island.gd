@@ -47,8 +47,10 @@ const MEADOW_FLOWERS := 22
 const OTHER_FLOWERS := 18
 ## The hutton island's features (#72). The valley's ground rises VALLEY_HEIGHT m (a zone's `height`
 ## overrides it) to its volcano, falling off over the zone; the river is a ribbon RIVER_WIDTH m wide
-## at its source, RIVER_MOUTH m where it meets the sea; the sundial stands SUNDIAL_AT from the square's
-## middle, behind the three friends' row.
+## at its source, RIVER_MOUTH m where it meets the sea; the sundial stands in the square's middle and
+## the three friends' row TRIO_BACK m behind it (−z, away from the default view), facing it and the
+## view (#114 2026-11-10 user: "해시계가 마을 중앙에 오고, 친구들이 그 뒤로 서있도록"); the signpost
+## steps to the square's left then (SIGNPOST_DIAL), out of the row's way and beside the dial, not in front of it.
 const VALLEY_HEIGHT := 1.2
 const RIVER_WIDTH := 0.55
 const RIVER_MOUTH := 0.95
@@ -56,7 +58,11 @@ const RIVER_MOUTH := 0.95
 ## (PATH_LIFT), so it neither fights the grass nor covers a path's end (LabWorld lifts its own more:
 ## its ground's faces stray further from the smooth surface, LabWorld.RIVER_LIFT).
 const RIVER_LIFT := 0.04
-const SUNDIAL_AT := Vector2(0.0, -0.85)
+const TRIO_BACK := 1.0
+const SIGNPOST := Vector2(-1.05, -0.75)
+const SIGNPOST_DIAL := Vector2(-1.2, 0.3)
+## The sundial's footprint for the three's ways (its widest step and a body): they walk round it.
+const SUNDIAL_CLEAR := 0.8
 ## The volcano's foot ring sits this far under the lowest ground round it (no gap on a slope).
 const VOLCANO_SINK := 0.25
 ## The coast zone's sand edge wavers: [order, share of the radius, phase] round its middle.
@@ -641,7 +647,7 @@ func _add_plaza(b: ArtMeshBuilder) -> void:
 		outer.append(home + d * (PLAZA_RADIUS + 0.18))
 	_add_flat(b, home, inner, PLAZA_LIFT, ArtPalette.PLAZA)
 	_add_flat_ring(b, inner, outer, PLAZA_LIFT, ArtPalette.ROCK)
-	var post := home + Vector2(-1.05, -0.75)
+	var post := home + (SIGNPOST_DIAL if island.has_sundial() else SIGNPOST)
 	var y := height_at(post.x, post.y) + PLAZA_LIFT
 	b.ao_min = 0.8
 	b.ao_height = 0.4
@@ -1039,14 +1045,20 @@ static func add_ribbon(b: ArtMeshBuilder, rows: Array) -> void:
 
 
 ## Where the story's pieces gather when the island's lookout is the square (Island.HOME), like a
-## spot's {at, top, stand}: the sundial's top (the square's middle without one), its height over the
-## square, and where the cat stands (the square's middle).
+## spot's {at, top, stand}: the sundial's top in the square's middle (the middle without one), its
+## height over the square, and where the cat stands (the middle of the three's row, trio_row).
 func home_lookout() -> Dictionary:
 	var dial := island.has_sundial()
-	var at := home + SUNDIAL_AT if dial else home
 	var top := MapLandmarks.SUNDIAL_HEIGHT if dial else 0.0
-	return {"at": Vector3(at.x, height_at(at.x, at.y) + PLAZA_LIFT + top, at.y), "top": top,
-		"stand": Vector3(home.x, walk_height(home.x, home.y), home.y)}
+	var stand := trio_row()
+	return {"at": Vector3(home.x, height_at(home.x, home.y) + PLAZA_LIFT + top, home.y), "top": top,
+		"stand": Vector3(stand.x, walk_height(stand.x, stand.y), stand.y)}
+
+
+## The middle of the three's row on the square (x, z): the square's middle, or TRIO_BACK behind the
+## sundial standing there.
+func trio_row() -> Vector2:
+	return home + Vector2(0.0, -TRIO_BACK) if island.has_sundial() else home
 
 
 ## The sky for low views: the backdrop cylinder (haze at its foot, the horizon, fading into SKY)

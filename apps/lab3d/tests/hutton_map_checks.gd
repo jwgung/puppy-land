@@ -310,9 +310,17 @@ func check_hutton_map() -> void:
 	var dial: Dictionary = map.home_lookout()
 	if dial.top < 0.5 or Vector2(dial.at.x, dial.at.z).distance_to(map.home) > MapIsland.PLAZA_RADIUS:
 		problems.append("the sundial is not on the square (%s)" % str(dial))
+	if Vector2(dial.at.x, dial.at.z).distance_to(map.home) > 0.01:
+		problems.append("the sundial is not in the square's middle (#114)")
 	for actor: Node3D in screen.trio():
 		if Vector2(actor.position.x, actor.position.z).distance_to(Vector2(dial.at.x, dial.at.z)) < 0.85:
 			problems.append("%s stands in the sundial" % actor.name)
+		# Behind it (away from the default view) and facing it (#114 2026-11-10 user: "친구들이 해시계를 전혀
+		# 바라보고 있지 않아" / "해시계가 마을 중앙에 오고, 친구들이 그 뒤로 서있도록").
+		var facing := Vector3(sin(actor.rotation.y), 0.0, cos(actor.rotation.y))
+		var to_dial := Vector3(dial.at.x - actor.position.x, 0.0, dial.at.z - actor.position.z).normalized()
+		if actor.position.z >= dial.at.z - 0.5 or facing.dot(to_dial) < 0.5:
+			problems.append("%s is not behind the sundial facing it (%s)" % [actor.name, str(actor.position)])
 	# A tap on a spot with no experiment: a shake, no walk, nothing opened. A spot that is an
 	# experiment (#74: day-night) is a lab: the cat walks there.
 	var opened := []
@@ -326,7 +334,7 @@ func check_hutton_map() -> void:
 	var lab: int = screen._spots.map(func(spot: Dictionary) -> String: return spot.id).find(EXPERIMENTS[0])
 	# The walks on the hutton island go by the paths (#114, 2026-11-10 user: straight over the grass): from
 	# the square and spot to spot in the order, never a straight step and never over a stage.
-	var places: Array = [Vector2(map.home.x, map.home.y)]
+	var places: Array = [map.trio_row()]   # (the row behind the sundial in the square's middle, #114)
 	for id in ORDER:
 		var stand: Vector3 = screen._spots[screen._spot_index(id)].stand
 		places.append(Vector2(stand.x, stand.z))

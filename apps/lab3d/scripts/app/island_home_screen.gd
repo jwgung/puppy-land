@@ -30,7 +30,7 @@ var env: WorldEnvironment
 ## flights to the lookout, the finale, the corner emblem. null in measurements and plain tests.
 var story: StoryDirector = null
 ## The hutton island's sundial dial (#106: SundialDial at the sundial's foot; null without a sundial):
-## the wedges leaning on the drum before the finale, the whole dial after it. The story moves it.
+## the found wedges in their sectors before the finale (#114), the whole dial after it. The story moves it.
 var dial: SundialDial = null
 ## The grass on the new land (#106, MapIsland.new_land_grass; null without the new land): shown once the
 ## finale was seen (the finale lets it sprout).
@@ -137,7 +137,8 @@ var island := Island.current()
 ## view like a group photo, the cat in the middle, Puppy on its left, Dugi on its right, TRIO_GAP m
 ## apart, all three facing the same way: the default camera (+z). They stand still when the map
 ## turns ("don't turn their bodies with the camera"). The signpost stands outside the row's reach
-## (MapIsland: 1.3 m from the square's middle > TRIO_GAP + a body).
+## (MapIsland: 1.3 m from the square's middle > TRIO_GAP + a body). With a sundial in the square's
+## middle the row stands behind it (MapIsland.trio_row), facing it and the view (#114).
 const TRIO_GAP := 0.85
 const TRIO_YAW := 0.0   # rad about +y from +z: every actor's model faces +z at 0 (BreadCat, labs' cast)
 
@@ -201,7 +202,7 @@ func _ready() -> void:
 
 
 ## The hutton sundial's dial (#106) at its foot: whole once the island's finale was seen, else the
-## wedges already at the square leaning on the drum (the ones whose flight still waits come later); the
+## wedges already at the square in their sectors (#114; the ones whose flight still waits come later); the
 ## new land's grass with it, shown after the finale.
 func _add_sundial_dial(progress: Dictionary) -> void:
 	dial = SundialDial.new()
@@ -211,7 +212,7 @@ func _add_sundial_dial(progress: Dictionary) -> void:
 	if finale:
 		dial.show_whole()
 	else:
-		dial.show_leaning(placed_wedges(progress))
+		dial.show_filled(placed_wedges(progress))
 	if map.new_land:
 		new_land_grass = map.new_land_grass()
 		new_land_grass.visible = finale
@@ -598,10 +599,9 @@ func trio_home() -> void:
 func trio_spot(actor: Node3D) -> Vector3:
 	if rest_spot >= 0:
 		return group_at(_spots[rest_spot]).get(actor, _spots[rest_spot].stand)
-	var home := island.home
 	var right := Vector2(cos(TRIO_YAW), -sin(TRIO_YAW))
 	var place := {puppy: -1.0, cat: 0.0, dugi: 1.0}
-	var at: Vector2 = home + right * TRIO_GAP * float(place.get(actor, 0.0))
+	var at: Vector2 = map.trio_row() + right * TRIO_GAP * float(place.get(actor, 0.0))
 	return Vector3(at.x, map.walk_height(at.x, at.y), at.y)
 
 
@@ -696,11 +696,9 @@ func route(from: Vector2, to: Vector2) -> PackedVector2Array:
 	# Paths that meet under a stage (the hutton island's paths run from spot to spot, #114): each one's
 	# last point clear of that stage joined to the others' by steps round its edge, so the way goes round
 	# the landmark instead of stopping at it (and then cutting over the grass).
-	for spot in _spots:
-		var r := float(spot.radius)
-		if r <= 0.0:
-			continue
-		var c := Vector2(spot.at.x, spot.at.z)
+	for stage: Array in _stages():
+		var c: Vector2 = stage[0]
+		var r: float = stage[1]
 		var exits: Array[int] = []
 		for row: Array in lines:
 			for ends: Array in [[0, 1], [row.size() - 1, -1]]:
@@ -816,16 +814,14 @@ func route(from: Vector2, to: Vector2) -> PackedVector2Array:
 const ROUTE_RING := 0.35
 const ROUTE_RING_STEP := deg_to_rad(20.0)
 func _round_stage(p: Vector2, clear: Callable) -> PackedVector2Array:
-	var stage: Dictionary = {}
-	for spot in _spots:
-		var c := Vector2(spot.at.x, spot.at.z)
-		if float(spot.radius) > 0.0 and p.distance_to(c) < float(spot.radius) + 1.0 \
-				and (stage.is_empty() or p.distance_to(c) < p.distance_to(Vector2(stage.at.x, stage.at.z))):
-			stage = spot
+	var stage: Array = []
+	for s: Array in _stages():
+		if p.distance_to(s[0]) < float(s[1]) + 1.0 and (stage.is_empty() or p.distance_to(s[0]) < p.distance_to(stage[0])):
+			stage = s
 	if stage.is_empty():
 		return PackedVector2Array()
-	var c := Vector2(stage.at.x, stage.at.z)
-	var r := float(stage.radius) + ROUTE_RING
+	var c: Vector2 = stage[0]
+	var r: float = float(stage[1]) + ROUTE_RING
 	var from := (p - c).angle()
 	var best := PackedVector2Array()
 	for turn: float in [1.0, -1.0]:
@@ -840,16 +836,25 @@ func _round_stage(p: Vector2, clear: Callable) -> PackedVector2Array:
 	return best
 
 
-## The segment a-b comes within `margin` m of a spot's stage (its round plate).
+## The segment a-b comes within `margin` m of a spot's stage (its round plate) or the sundial (_stages).
 func _crosses_stage(a: Vector2, b: Vector2, margin: float) -> bool:
-	for spot in _spots:
-		var r := float(spot.radius)
-		if r <= 0.0:
-			continue
-		var c := Vector2(spot.at.x, spot.at.z)
-		if Geometry2D.get_closest_point_to_segment(c, a, b).distance_to(c) < r + margin:
+	for stage: Array in _stages():
+		var c: Vector2 = stage[0]
+		if Geometry2D.get_closest_point_to_segment(c, a, b).distance_to(c) < float(stage[1]) + margin:
 			return true
 	return false
+
+
+## What the three's ways go round: [middle (x, z), radius] of every spot's round plate and of the
+## square's sundial (MapIsland.SUNDIAL_CLEAR, #114: it stands in the square's middle now).
+func _stages() -> Array:
+	var out := []
+	for spot in _spots:
+		if float(spot.radius) > 0.0:
+			out.append([Vector2(spot.at.x, spot.at.z), float(spot.radius)])
+	if island.has_sundial():
+		out.append([island.home, MapIsland.SUNDIAL_CLEAR])
+	return out
 
 
 ## The share of the way walked `t` s into a walk of `total` s: it speeds up over WALK_RAMP_S, goes

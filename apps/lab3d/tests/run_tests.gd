@@ -104,9 +104,9 @@
 ##    replay, the next island's map and prologue; 시작하기 opens 섬 고르기 only after a voyage, the cards (locked: lock,
 ##    condition, no button), choosing (its button or the card itself), back; phone and tablet layouts.
 ## 23a1b. the hutton finale (tests/hutton_finale_checks.gd, #106, 2026-11-09): its 9 lines (as in
-##    docs/islands/hutton-lines.md; English in content/locale/en), the broken sundial with the found wedges leaning on it,
+##    docs/islands/hutton-lines.md; English in content/locale/en), the broken sundial filling sector by sector with the found wedges (#114),
 ##    the new land once the volcano is found, the gnomon's piece not flying, the finale page by page
-##    (the gnomon on the new land, the grass, the wedges into the dial, the drag that plants the gnomon,
+##    (the gnomon on the new land, the grass, the filled dial's glint, the drag that plants the gnomon,
 ##    a short one putting it back, the day, the shadow, the emblem's gnomon and face, no star), 건너뛰기,
 ##    once only; left half way it plays again, after 3 short drags a short one plants (#108).
 ## 23a2. explanation pictures (tests/explain_picture_checks.gd, #73, 2026-11-06): a line's picture
