@@ -42,10 +42,10 @@
         "miss": "Put the shell in after the gravel!"
       },
       {
-        "text": "Dig the layer just under the grey ash on the cliff and find the piece!",
+        "text": "Pile gravel, sand, grey ash and mud in order, just like the cliff!",
         "say": "The grey layer is ash that flew out when a volcano erupted long ago. It is called **volcanic ash**. Layers under the ash were laid down before the volcano erupted.",
         "win": "The piece! A volcano erupted long ago?",
-        "miss": "Dig just under the grey ash!"
+        "miss": "Look at the cliff's stripes and pour in order!"
       }
     ]
   },

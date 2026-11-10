@@ -9,22 +9,23 @@
 ##   the volcano; English has every line;
 ## - the model (a rule, no formula): every pour lies on what is there, so the first one poured is the
 ##   bottom layer whatever the order; the shell is in the layer poured after it; the statuses of the
-##   tank (stacking, layered, fossil, mixed, shell_off) and the cliff (found under the ash, dug_off); a
-##   done or wrong tank is washed out by the next pour; a reset empties it;
+##   tank (stacking, layered, fossil, mixed, shell_off; copied when the third stage's goal is the cliff's
+##   layers, the piece's layer just under its only ash); a done or wrong tank is washed out by the next
+##   pour; a reset empties it;
 ## - the judging (MissionRound on the real lab): each stage's hit and misses (Puppy's miss line), nothing
 ##   while a pour settles or a bucket is held;
-## - each stage's objects: the buckets in stages 1 and 2, the shell in stage 2, the cliff in stage 3, all
-##   outside a round; the hand guide shows the stage's gesture (a drag, then a tap on the cliff);
+## - each stage's objects: the buckets in every stage, the shell in stage 2 (and outside a round); the
+##   hand guide drags a bucket;
 ## - no number on the screen: the observations are words, the card is the state;
 ## - on the real screen (phone, desktop, tablet): Puppy (with his flag) and Dugi whole inside the view,
-##   the pouring bucket clear of the title, the card, the mission strip (each stage's text) and 자세히;
+##   Puppy clear of the buckets and the shell (#114: he covered them and the taps missed), the pouring bucket clear of the title, the card, the mission strip (each stage's text) and 자세히;
 ## - what matters is big and in view: the buckets, the shell, the tank and every cliff layer inside the
 ##   phone's, the desktop's and the tablet's front view, above the bottom (the dialogue box) and the
 ##   left ones under the top band; a cliff layer and a bucket big enough for a finger;
 ## - the spot: the hutton map's strata spot is this experiment;
 ## - the opening (the fox first on a first visit), the hand (a bucket dragged onto the tank pours, let go
-##   elsewhere it goes back, a tap on a cliff layer digs it) and the piece (hidden in the cliff until the
-##   last stamp, then out of its hole).
+##   elsewhere it goes back) and the piece (hidden in the cliff until the last stamp, then its hole opens
+##   in the layer under the ash and it jumps out).
 extends RefCounted
 
 const ID := "strata"
@@ -285,20 +286,31 @@ func check_model() -> void:
 		problems.append("the shell under the sand is in layer %d" % model.shell_layer())
 	_settle(model)
 	model.reset()
-	if StrataModel.CLIFF[StrataModel.TARGET + 1] != "ash" or StrataModel.CLIFF.count("ash") != 1:
+	if StrataModel.CLIFF[StrataModel.TARGET + 1] != "ash" or StrataModel.CLIFF.count("ash") != 1 or StrataModel.CLIFF.slice(0, 2) != StrataModel.ORDER.slice(0, 2):
 		problems.append("the piece's layer is not just under the only ash: %s" % str(StrataModel.CLIFF))
-	for i in StrataModel.CLIFF.size():
-		model.dig(i)
-		_settle(model)
-		if model.status() != ("found" if i == StrataModel.TARGET else "dug_off"):
-			problems.append("dig %d: %s" % [i, model.status()])
-	model.pour("gravel")
-	if model.status() != "stacking" or model.layers() != ["gravel"]:
-		problems.append("after a dig the tank is %s %s" % [model.status(), str(model.layers())])
+	# The third stage's goal: the cliff's layers (the same first two as the first stages', the ash then the mud).
+	model.goal = StrataModel.CLIFF
+	var cliff_steps := [
+		[["gravel", "sand"], "stacking"], [["ash"], "stacking"], [["mud"], "copied"],
+		[["gravel", "sand", "mud"], "mixed"],                  # the first stages' pile is not the cliff
+		[["gravel", "shell"], "shell_off"],
+		[["gravel", "sand", "ash", "mud"], "copied"],
+	]
+	for step: Array in cliff_steps:
+		for what: String in step[0]:
+			if what == "shell":
+				model.drop_shell()
+			else:
+				model.pour(what)
+			_settle(model)
+		if model.status() != step[1]:
+			problems.append("cliff goal %s: %s (want %s, layers %s)" % [str(step[0]), model.status(), step[1], str(model.layers())])
+	if model.layers() != StrataModel.CLIFF:
+		problems.append("copied %s" % str(model.layers()))
 	model.reset()
-	if model.status() != "ready" or not model.layers().is_empty() or model.has_shell() or not model.dug.is_empty():
+	if model.status() != "ready" or not model.layers().is_empty() or model.has_shell():
 		problems.append("a reset left %s" % model.status())
-	expect.call(problems.is_empty(), "strata model: gravel, sand, mud is layered (with the shell after the gravel a fossil in the middle layer), out of order or ash is mixed, the shell elsewhere is shell_off, a done pile is washed out by the next pour; the cliff's piece layer is just under the ash (found, the others dug_off); a reset empties all",
+	expect.call(problems.is_empty(), "strata model: gravel, sand, mud is layered (with the shell after the gravel a fossil in the middle layer), out of order or ash is mixed, the shell elsewhere is shell_off, a done pile is washed out by the next pour; with the cliff as the goal (stage 3) gravel, sand, ash, mud is copied, the piece's layer just under its only ash; a reset empties all",
 		"; ".join(problems))
 
 
@@ -310,24 +322,23 @@ func check_judging() -> void:
 	tree.root.add_child(lab)
 	await tree.process_frame
 	var problems := []
-	# [stage, actions (a material, "shell" or a cliff index), hit, missed]
+	# [stage, actions (a material or "shell"), hit, missed]
 	var cases := [
 		[0, ["gravel", "sand", "mud"], true, false], [0, ["gravel", "sand"], false, false], [0, ["sand"], false, true],
 		[0, ["gravel", "mud"], false, true], [0, ["gravel", "ash"], false, true], [0, ["mud"], false, true],
 		[1, ["gravel", "shell", "sand", "mud"], true, false], [1, ["gravel", "sand", "mud"], false, true],
 		[1, ["shell"], false, true], [1, ["gravel", "sand", "shell"], false, true], [1, ["gravel", "shell"], false, false],
 		[1, ["gravel", "shell", "mud"], false, true],
-		[2, [StrataModel.TARGET], true, false], [2, [StrataModel.TARGET + 1], false, true], [2, [StrataModel.TARGET - 1], false, true],
-		[2, [0], false, true], [2, [4], false, true], [2, ["gravel", "sand", "mud"], false, false],
-		[0, [2], false, false],
+		[2, ["gravel", "sand", "ash", "mud"], true, false], [2, ["gravel", "sand", "ash"], false, false],
+		[2, ["gravel", "sand", "mud"], false, true], [2, ["sand"], false, true], [2, ["gravel", "shell"], false, true],
+		[0, ["gravel", "sand", "ash", "mud"], false, true],
 	]
 	for case: Array in cases:
 		var stage := int(case[0])
+		lab.set_game_stage(stage, stage, false)
 		lab.reset_run()
 		for what: Variant in case[1]:
-			if what is int:
-				lab.model.dig(int(what))
-			elif str(what) == "shell":
+			if str(what) == "shell":
 				lab.model.drop_shell()
 			else:
 				lab.model.pour(str(what))
@@ -337,10 +348,11 @@ func check_judging() -> void:
 		var missed := MissionRound.missed(definition, stage, status, lab.observations())
 		if (stamps == stage + 1) != bool(case[2]) or missed != bool(case[3]):
 			problems.append("stage %d %s (%s): stamps %d missed %s" % [stage + 1, str(case[1]), status, stamps, missed])
-	var lines := [["자갈부터 차례로 쏟아 봐!"], ["자갈 다음에 조개를 넣어 봐!"], ["회색 재 층 바로 아래를 파 봐!"]]
+	var lines := [["자갈부터 차례로 쏟아 봐!"], ["자갈 다음에 조개를 넣어 봐!"], ["절벽 줄무늬를 보고 차례대로 쏟아 봐!"]]
 	for i in 3:
 		if MissionRound.result_line(definition, i, false)[0] != lines[i][0]:
 			problems.append("stage %d's miss line" % (i + 1))
+	lab.set_game_stage(0, 0, false)
 	lab.reset_run()
 	lab.model.pour("gravel")
 	lab.model.pour("sand")
@@ -352,7 +364,7 @@ func check_judging() -> void:
 	if lab.settled():
 		problems.append("settled while a bucket is held")
 	lab.manipulation_cancelled("gravel")
-	expect.call(problems.is_empty(), "strata judging: stage 1 the pile gravel, sand, mud (out of order or ash: Puppy's miss), stage 2 the shell after the gravel (anywhere else, or none: the miss), stage 3 the layer just under the ash (any other: the miss); the other stages' actions say nothing; not judged while a pour settles or a bucket is held",
+	expect.call(problems.is_empty(), "strata judging: stage 1 the pile gravel, sand, mud (out of order or ash: Puppy's miss), stage 2 the shell after the gravel (anywhere else, or none: the miss), stage 3 the cliff copied: gravel, sand, ash, mud (the first stages' pile or another order: the miss); the other stages' actions say nothing; not judged while a pour settles or a bucket is held",
 		"; ".join(problems))
 	lab.queue_free()
 	await tree.process_frame
@@ -376,12 +388,11 @@ func check_stage_objects() -> void:
 	await tree.process_frame
 	var problems := []
 	var buckets: Array = StrataModel.MATERIALS
-	var cliff: Array = range(StrataModel.CLIFF.size()).map(func(i: int) -> String: return StrataLab.cliff_id(i))
 	# [stage, offered ids, guide kind]
-	var want := [[0, buckets, "drag"], [1, buckets + [StrataLab.SHELL_ID], "drag"], [2, cliff, "tap"], [-1, buckets + [StrataLab.SHELL_ID] + cliff, "drag"]]
+	var want := [[0, buckets, "drag"], [1, buckets + [StrataLab.SHELL_ID], "drag"], [2, buckets, "drag"], [-1, buckets + [StrataLab.SHELL_ID], "drag"]]
 	for w: Array in want:
 		lab.set_game_stage(int(w[0]), maxi(0, int(w[0])), false)
-		var offered := (buckets + [StrataLab.SHELL_ID] + cliff).filter(func(id: String) -> bool: return lab.manipulation_body(id) != null)
+		var offered := (buckets + [StrataLab.SHELL_ID]).filter(func(id: String) -> bool: return lab.manipulation_body(id) != null)
 		var guide := m.guide()
 		if offered != w[1] or guide.get("kind", "") != w[2] or not guide.get("id", "") in w[1]:
 			problems.append("stage %d: %s, guide %s" % [int(w[0]) + 1, str(offered), str(guide)])
@@ -389,7 +400,7 @@ func check_stage_objects() -> void:
 	lab.model.pour("gravel")
 	if lab.manipulation_body("sand") != null:
 		problems.append("a bucket offered while a pour settles")
-	expect.call(problems.is_empty(), "strata stages: the buckets in stages 1 and 2, the shell in stage 2, the cliff's layers in stage 3 (all of them outside a round), none while a pour settles; the hand guide drags a bucket, then taps the cliff",
+	expect.call(problems.is_empty(), "strata stages: the buckets in every stage, the shell in stage 2 (and outside a round), none while a pour settles; the hand guide drags a bucket",
 		"; ".join(problems))
 	host.queue_free()
 	await tree.process_frame
@@ -409,10 +420,8 @@ func check_no_numbers() -> void:
 			problems.append("observation %s has a unit" % o.id)
 	if ExperimentRegistry.shown_cards(definition, -1) != ["state"]:
 		problems.append("cards %s" % str(ExperimentRegistry.shown_cards(definition, -1)))
-	for step: Variant in ["", "gravel", "sand", "mud", 3, 2]:
-		if step is int:
-			lab.model.dig(int(step))
-		elif str(step) != "":
+	for step: Variant in ["", "gravel", "sand", "mud"]:
+		if str(step) != "":
 			lab.model.pour(str(step))
 		_settle(lab.model)
 		var seen := lab.observations()
@@ -423,7 +432,7 @@ func check_no_numbers() -> void:
 	if lab.props.shown_layers != ["gravel", "sand", "mud"] or lab.props.shown_heights.any(func(h: float) -> bool: return absf(h - StrataProps.LAYER_H) > 1e-6):
 		problems.append("the tank draws %s %s" % [str(lab.props.shown_layers), str(lab.props.shown_heights)])
 	var o := lab.observations()
-	if o.bottom != "자갈" or o.top != "진흙" or o.state != "조각이 나왔어요":
+	if o.bottom != "자갈" or o.top != "진흙" or o.state != "줄무늬 층":
 		problems.append("words %s" % str(o))
 	expect.call(problems.is_empty(), "strata: no number on the screen (the observations are words: the state, the bottom and the top layer; the card is the state); the tank draws the poured layers bottom first",
 		"; ".join(problems))
@@ -521,6 +530,16 @@ func check_screen(size: Vector2) -> void:
 		var r: Rect2 = on_screen.call(IslandCast.drawn_bounds(pair[1]))
 		if r.position.x < 0.0 or r.end.x > view_rect.end.x or r.position.y < 0.0:
 			problems.append("%s at %s (view %s)" % [pair[0], str(r), str(view.size)])
+	if cast != null and cast.puppy != null:   # (#114: he stood in front of the buckets and the taps missed)
+		var puppy: Rect2 = on_screen.call(IslandCast.drawn_bounds(cast.puppy))
+		var half := Vector3(StrataProps.BUCKET_RADIUS, StrataProps.BUCKET_HEIGHT * 0.5 + 0.2, StrataProps.BUCKET_RADIUS)
+		var things := {"shell": AABB(StrataProps.shell_home() - Vector3(0.34, 0.3, 0.1), Vector3(0.68, 0.6, 0.2))}
+		for id: String in StrataModel.MATERIALS:
+			things[id] = AABB(StrataProps.bucket_home(id) - half, half * 2.0)
+		for id: String in things:
+			var r: Rect2 = on_screen.call(things[id])
+			if r.intersects(puppy):
+				problems.append("Puppy %s over the %s %s" % [str(puppy), id, str(r)])
 	lab.model.pour("gravel")
 	lab.model.set_input("settle", 0.5)
 	lab._show()
@@ -534,7 +553,7 @@ func check_screen(size: Vector2) -> void:
 			if c != null and c.is_visible_in_tree() and c.get_rect().intersects(bucket):
 				problems.append("stage %d: the pouring bucket %s under %s %s" % [stage + 1, str(bucket), c.name, str(c.get_rect())])
 	var name: String = {PHONE: "phone", DESKTOP: "desktop", TABLET: "tablet"}[size]
-	expect.call(problems.is_empty(), "strata screen (%s): Puppy with his flag and Dugi whole inside the view; the pouring bucket clear of the title, the card, the mission strip (every stage's text) and 자세히" % name,
+	expect.call(problems.is_empty(), "strata screen (%s): Puppy with his flag and Dugi whole inside the view, Puppy clear of the buckets and the shell; the pouring bucket clear of the title, the card, the mission strip (every stage's text) and 자세히" % name,
 		"; ".join(problems.slice(0, 6)))
 	host.queue_free()
 	for i in 3:
@@ -654,21 +673,9 @@ func check_hand() -> void:
 	await tree.process_frame
 	if lab.model.layers() != ["gravel"] or lab.props.buckets["sand"].position.distance_to(StrataProps.bucket_home("sand")) > 1e-3:
 		problems.append("let go off the tank: %s" % str(lab.model.layers()))
-	# A tap on a cliff layer (stage 3) digs it.
-	lab.set_game_stage(2, 2, false)
-	var layer: Vector2 = screen.call(StrataProps.cliff_layer_center(StrataModel.TARGET) + Vector3(-0.6, 0.0, 0.0))
-	m.handle_pointer("press", layer)
-	m.handle_pointer("release", layer)
-	if lab.model.last_dig != StrataModel.TARGET or lab.status() != "found":
-		problems.append("tap on the piece's layer: dug %d (%s)" % [lab.model.last_dig, lab.status()])
-	layer = screen.call(StrataProps.cliff_layer_center(StrataModel.TARGET + 1) + Vector3(0.8, 0.0, 0.0))
-	m.handle_pointer("press", layer)
-	m.handle_pointer("release", layer)
-	if lab.model.last_dig != StrataModel.TARGET + 1 or lab.status() != "dug_off":
-		problems.append("tap on the ash: dug %d (%s)" % [lab.model.last_dig, lab.status()])
 	if not lab.placements().is_empty():
 		problems.append("placements kept %s" % str(lab.placements().keys()))
-	expect.call(problems.is_empty(), "strata hand: a bucket follows the finger onto the tank and pours its layer when let go there (then goes home), let go elsewhere it goes back with nothing poured; a tap on a cliff layer digs that layer; nothing is kept as a placement",
+	expect.call(problems.is_empty(), "strata hand: a bucket follows the finger onto the tank and pours its layer when let go there (then goes home), let go elsewhere it goes back with nothing poured; nothing is kept as a placement",
 		"; ".join(problems))
 	host.queue_free()
 	await tree.process_frame
@@ -692,17 +699,18 @@ func check_piece() -> void:
 		await tree.process_frame
 	if game.piece_state != "held" or game.piece.visible:
 		problems.append("out before the last stamp (%s)" % game.piece_state)
-	lab.model.dig(StrataModel.TARGET)
-	_settle(lab.model)
-	lab._show()
-	await tree.process_frame
-	if not game.piece.visible:
-		problems.append("not seen in its dug hole")
+	if lab.props.hole_open() > 0.0:
+		problems.append("the hole open before the last stamp")
 	game.show_stage(-1, 3, true)
 	var frames := 0
+	var seen_in_hole := false
 	while game.piece_state != "out" and frames < 400:
+		if game.piece_state == "held" and game.piece.visible and lab.props.hole_open() > 0.6:
+			seen_in_hole = true
 		await tree.process_frame
 		frames += 1
+	if not seen_in_hole:
+		problems.append("not seen in its hole")
 	var rest: Vector3 = game.piece.global_position
 	if game.piece_state != "out" or absf(rest.y - StrataProps.TERRACE_TOP - LabGame.PIECE_SIZE) > 0.12 or rest.distance_to(StrataGame.LAND_AT) > 0.8 or lab.props.glint.visible:
 		problems.append("after the last stamp: %s at %s" % [game.piece_state, str(rest)])
@@ -714,7 +722,7 @@ func check_piece() -> void:
 	again.game.show_stage(-1, 3, false)
 	if again.game.take_piece() != null or again.props.glint.visible:
 		problems.append("a finished spot: a piece, or the glint")
-	expect.call(problems.is_empty(), "strata piece: hidden in the cliff (a glint in the crack) until the last stamp, seen in its dug hole, then it jumps out onto the terrace for the cat; a finished spot shows no piece and no glint",
+	expect.call(problems.is_empty(), "strata piece: hidden in the cliff (a glint in the crack) until the last stamp, then a hole opens in the layer under the ash with it in it, then it jumps out onto the terrace for the cat; a finished spot shows no piece and no glint",
 		"; ".join(problems))
 	lab.queue_free()
 	again.queue_free()

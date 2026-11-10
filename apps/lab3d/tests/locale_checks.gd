@@ -112,7 +112,7 @@ func check_keys() -> void:
 		named["river.status." + id] = "t"
 	for word in ["none", "some", "much"]:   # how much was cut, how much sand
 		named["river.amount." + word] = "t"
-	for id in ["ready", "stacking", "layered", "fossil", "mixed", "shell_off", "found", "dug_off"]:   # the strata card's words (StrataLab.observations, #96)
+	for id in ["ready", "stacking", "layered", "fossil", "copied", "mixed", "shell_off"]:   # the strata card's words (StrataLab.observations, #96)
 		named["strata.status." + id] = "t"
 	for id in StrataModel.MATERIALS + ["none"]:   # the strata's bottom and top layer words
 		named["strata.layer." + id] = "t"

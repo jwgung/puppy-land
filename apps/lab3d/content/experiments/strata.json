@@ -36,7 +36,7 @@
     "bridge_face": "happy"
   },
   "missions": {
-    "judge_on": ["layered", "fossil", "found"],
+    "judge_on": ["layered", "fossil", "copied"],
     "stages": [
       {
         "observe": "",
@@ -56,8 +56,8 @@
       },
       {
         "observe": "",
-        "judge_on": ["found"],
-        "miss_on": ["dug_off"],
+        "judge_on": ["copied"],
+        "miss_on": ["mixed", "shell_off", "layered"],
         "say_face": "explain",
         "win_face": "surprised",
         "miss_face": "thinking"
@@ -84,11 +84,11 @@
   "cast": {
     "dugi": {
       "at": [5.4, 2.7],
-      "explain_on": ["layered", "fossil", "found"],
+      "explain_on": ["layered", "fossil", "copied"],
       "delay_s": 0.6
     },
     "puppy": {
-      "at": [-3.9, 3.0]
+      "at": [0.2, 2.8]
     }
   },
   "observations": [
@@ -103,17 +103,12 @@
       { "id": "sand", "surface": "tank", "snap": 0.0, "height": false, "marker": false, "guide_to": "max" },
       { "id": "mud", "surface": "tank", "snap": 0.0, "height": false, "marker": false, "guide_to": "max" },
       { "id": "ash", "surface": "tank", "snap": 0.0, "height": false, "marker": false, "guide_to": "max" },
-      { "id": "shell", "surface": "tank", "snap": 0.0, "height": false, "marker": false, "guide_to": "max" },
-      { "id": "cliff4", "surface": "cliff", "snap": 0.0, "height": false, "marker": false, "guide": "tap" },
-      { "id": "cliff3", "surface": "cliff", "snap": 0.0, "height": false, "marker": false, "guide": "tap" },
-      { "id": "cliff2", "surface": "cliff", "snap": 0.0, "height": false, "marker": false, "guide": "tap" },
-      { "id": "cliff1", "surface": "cliff", "snap": 0.0, "height": false, "marker": false, "guide": "tap" },
-      { "id": "cliff0", "surface": "cliff", "snap": 0.0, "height": false, "marker": false, "guide": "tap" }
+      { "id": "shell", "surface": "tank", "snap": 0.0, "height": false, "marker": false, "guide_to": "max" }
     ]
   },
   "graph": {
-    "x": { "unit": "", "max": 3.0 },
-    "y": { "unit": "", "min_max": 3.0 },
+    "x": { "unit": "", "max": 4.0 },
+    "y": { "unit": "", "min_max": 4.0 },
     "series": [
       { "id": "order", "color": "#ff7a1a", "style": "points" }
     ]
