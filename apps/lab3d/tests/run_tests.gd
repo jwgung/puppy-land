@@ -197,6 +197,9 @@
 ##    and hold), the judging of the three stages (the wrong magma's line), the magma button, the site
 ##    (the big volcano at night on stage 3), no number on the screen, what matters in view, the spot,
 ##    the opening lines (story.more), the hand and the piece (the needle pushed up).
+## 24l. the hutton cast (tests/hutton_cast_checks.gd, #114 2026-11-10): in every Hutton lab on the
+##    tablet and the phone, Puppy's result bubble clear of Dugi's open box and portrait, Puppy at most
+##    half under them.
 ## Times are engine fixed steps (60 Hz), independent of rendering FPS.
 extends SceneTree
 
@@ -470,6 +473,11 @@ func _run() -> void:
 	_expect(volcano != null and volcano.can_instantiate(), "volcano checks compile", "")
 	if volcano != null and volcano.can_instantiate():
 		await volcano.new(self, _expect).run()
+	print("== the hutton cast (#114): Puppy and his bubble clear of Dugi's box in every lab ==")
+	var hutton_cast: GDScript = load("res://tests/hutton_cast_checks.gd")
+	_expect(hutton_cast != null and hutton_cast.can_instantiate(), "hutton cast checks compile", "")
+	if hutton_cast != null and hutton_cast.can_instantiate():
+		await hutton_cast.new(self, _expect).run()
 	print("== the hand guide (2026-10-30: the gesture on the lab's object, once and after a quiet while; the map's tap) ==")
 	var hand: GDScript = load("res://tests/hand_guide_checks.gd")
 	_expect(hand != null and hand.can_instantiate(), "hand guide checks compile", "")
