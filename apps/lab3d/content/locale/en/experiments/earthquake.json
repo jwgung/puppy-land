@@ -33,22 +33,22 @@
   "missions": {
     "stages": [
       {
-        "text": "Pull the table just a little and let go, and keep the house standing!",
+        "text": "Shake the hard rock ground just a little!",
         "say": "A small shake, and the house can stand. Hard rock ground shakes less.",
         "win": "Wobble wobble! It stood!",
         "miss": "Pull just a little!",
         "miss_conditions": "Try rock with no brace!"
       },
       {
-        "text": "Keep the braced house standing on sand ground too!",
-        "say": "Sand ground shakes more. A slanted brace between the posts keeps the house from leaning over. Building like this to stand earthquakes is called **earthquake-proof building**.",
-        "win": "The brace saved it!",
-        "miss": "Pull just right and shake!",
-        "miss_conditions": "Pick sand and the brace!"
+        "text": "Just as little, now shake the soft sand ground!",
+        "say": "The same shake moves soft sand ground more than rock ground. So the house with no brace fell down.",
+        "win": "Crash! It fell on the sand!",
+        "miss": "Pull as little as before!",
+        "miss_conditions": "Try sand with no brace!"
       },
       {
-        "text": "Pull all the way and keep the house standing in the biggest shake!",
-        "say": "A shake spreads out all around from where it starts. See where the ripple stripes on the ground come from, and you know where the shake started.",
+        "text": "Put in the brace and keep the house standing in the biggest shake!",
+        "say": "A slanted brace between the posts holds the house tight so it does not lean over. Building like this to stand earthquakes is called **earthquake-proof building**. See where the ripple stripes on the ground come from, and you know where the shake started.",
         "win": "It came from the volcano!",
         "miss": "Pull all the way!",
         "miss_conditions": "Pick sand and the brace!"

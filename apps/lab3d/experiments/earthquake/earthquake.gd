@@ -43,7 +43,7 @@ var blocks: Array = []
 var slab_body: AnimatableBody3D
 var collapsed := false
 ## The pull's level the next release lets go (the slingshot's control, not a sidebar one).
-var pull := EarthquakeModel.PULL_STEP
+var pull := EarthquakeModel.PULL_MIN
 ## The pull's level while a finger pulls (INF: none).
 var preview := INF
 var _surface: ManipSurface
@@ -269,18 +269,19 @@ func _knob_pose(_id: String) -> Transform3D:
 
 
 ## The pull's level for a finger `pull_x` m along the rod from the press (left: negative): the length
-## to the left over PULL_REACH, on the PULL_STEP levels, at least the first one.
+## to the left over PULL_REACH, on the PULL_STEP levels, at least PULL_MIN.
 static func pull_level(pull_x: float) -> float:
 	return EarthquakeModel.snapped_pull(-pull_x / EarthquakeProps.PULL_REACH)
 
 
-## The pull's word ("살짝" .. "가장 세게"): no number on the screen.
+## The pull's word ("살짝" .. "가장 세게"): no number on the screen. "살짝" is every pull the plain
+## house stands on rock (up to half, stages 1-2 "살짝 흔들어", #114).
 static func shake_word(level: float) -> String:
 	if level >= EarthquakeModel.FULL - 1e-9:
 		return "biggest"
-	if level > 0.65:
+	if level > 0.75:
 		return "big"
-	if level > 0.35:
+	if level > 0.55:
 		return "medium"
 	return "small"
 

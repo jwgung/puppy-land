@@ -49,7 +49,7 @@
     "bridge_face": "happy"
   },
   "missions": {
-    "judge_on": ["stood", "held", "strongest"],
+    "judge_on": ["stood", "fell", "strongest"],
     "stages": [
       {
         "observe": "",
@@ -63,11 +63,11 @@
       },
       {
         "observe": "",
-        "judge_on": ["held", "strongest"],
+        "judge_on": ["fell"],
         "miss_on": ["stood", "held", "strongest", "fell"],
-        "conditions": { "ground": "sand", "brace": "brace" },
+        "conditions": { "ground": "sand", "brace": "none" },
         "say_face": "explain",
-        "win_face": "happy",
+        "win_face": "surprised",
         "miss_face": "thinking",
         "miss_conditions_face": "thinking"
       },

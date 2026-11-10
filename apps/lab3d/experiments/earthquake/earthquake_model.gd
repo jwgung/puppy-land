@@ -2,8 +2,8 @@
 ## ground on it and the block house, as three small oscillators stepped in 64 bit at fixed steps (no
 ## random number, no engine): the same pull on the same ground and house always shakes the same way.
 ##
-## - The table: the child pulls it back by `pull` (0..1 of the full pull, PULL_STEP levels) and lets
-##   go. It swings back and forth like a spring, u'' = -wt² u - 2 zt wt u', from u = -pull x SWING_MAX
+## - The table: the child pulls it back by `pull` (PULL_MIN..1 of the full pull, PULL_STEP levels) and
+##   lets go. It swings back and forth like a spring, u'' = -wt² u - 2 zt wt u', from u = -pull x SWING_MAX
 ##   at rest, dying down over the run (RUN_S).
 ## - The ground: the ground's surface moves AMPLIFY[ground] times the table (rock 1, soft sand 2: the
 ##   textbook's "무른 땅은 더 크게 흔들린다", a soft layer shakes more than the rock under it).
@@ -11,13 +11,14 @@
 ##   d'' = -wh² d - 2 zh wh d' - a_ground. Without a brace it is soft (HOUSE_HZ, close to the table's
 ##   swing: it rocks more and more); a diagonal brace makes it stiff (BRACED_HZ). The house falls the
 ##   first step its drift passes DRIFT_MAX, and stays down.
-## - A plain house (no brace) on the same ground with the same shake is stepped beside it: stage 2's
-##   "같은 흔들림에 버팀대 없는 집은 무너지고, 있는 집은 버팀" is that plain house falling while the braced
-##   one stands.
+## - A plain house (no brace) on the same ground with the same shake is stepped beside it: "held" is
+##   that plain house falling while the braced one stands.
 ## The motion is linear in the pull, so a house falls exactly when pull x AMPLIFY x SWING_MAX x its
 ## response passes DRIFT_MAX: on rock the plain house stands up to half the full pull (falls from 0.6),
-## on sand up to 0.2 (falls from 0.3); the braced house stands on either ground at the full pull
-## (tests/earthquake_checks.gd).
+## on sand it would stand up to 0.2 and falls from 0.3; the braced house stands on either ground at the
+## full pull (tests/earthquake_checks.gd). The lightest pull is PULL_MIN = 0.3 (#114, one condition per
+## stage): every light shake that rock stands (0.3-0.5, stage 1) brings the plain house down on sand
+## (stage 2), and the brace holds it there even at the full pull (stage 3).
 ##
 ## Status ("ready" until a pull is let go, "shaking" for RUN_S, then the result): "fell" (the house
 ## fell), "strongest" (it stood the full pull), "held" (it stood a shake the plain house on that
@@ -42,8 +43,10 @@ const BRACED_HZ := 2.5
 const HOUSE_DAMPING := 0.05
 const DRIFT_MAX := 0.38
 const HOUSE_HEIGHT := 1.8
-## The pull: levels of PULL_STEP from PULL_STEP (a real pull is never nothing) to 1 (the full pull).
+## The pull: levels of PULL_STEP from PULL_MIN (a real pull is never nothing, and the lightest already
+## brings the plain house down on sand) to 1 (the full pull).
 const PULL_STEP := 0.1
+const PULL_MIN := 0.3
 const FULL := 1.0
 ## One run of the shake (s) and the substeps per fixed step (the oscillators' accuracy).
 const RUN_S := 4.0
@@ -88,9 +91,9 @@ func release(level: float) -> void:
 	ground_x = table * amplify()
 
 
-## `level` on the pull's levels (PULL_STEP .. FULL).
+## `level` on the pull's levels (PULL_MIN .. FULL).
 static func snapped_pull(level: float) -> float:
-	return clampf(roundf(level / PULL_STEP) * PULL_STEP, PULL_STEP, FULL)
+	return clampf(roundf(level / PULL_STEP) * PULL_STEP, PULL_MIN, FULL)
 
 
 func amplify() -> float:
