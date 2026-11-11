@@ -11,8 +11,10 @@ extends Control
 signal back_requested
 
 const UI_REFRESH_HZ := 10.0
-const SIDEBAR_WIDTH := 470.0
-const SIDEBAR_MAX_FRACTION := 0.42      # of the screen width (tablet 1152 units -> 470, phone 1560 -> 470)
+## The note's width (2026-11-11 user: "자세히 화면이 좀 좁은거같기도해" → about half the screen; 470
+## and 0.42 before): tablet 1152 units -> 600, phone 1560 -> 600.
+const SIDEBAR_WIDTH := 600.0
+const SIDEBAR_MAX_FRACTION := 0.53
 const SIDEBAR_SLIDE_S := 0.22
 const OVERLAY_MARGIN := 12.0
 const KEY_CARD_WIDTH := 200.0
@@ -2279,9 +2281,14 @@ func _build_law(note: Dictionary) -> Control:
 ## format_observation text); two ids read "before → after".
 func _build_numbers(note: Dictionary) -> Control:
 	var parts := _section(Locale.t("screen.section_numbers"))
-	var body: VBoxContainer = parts[1]
+	var body := GridContainer.new()   # two columns in the wider note (2026-11-11)
+	body.columns = 2
+	body.add_theme_constant_override("h_separation", 10)
+	body.add_theme_constant_override("v_separation", 10)
+	(parts[1] as VBoxContainer).add_child(body)
 	for row in note.get("numbers", []):
 		var tile := Ui.panel("NoteTile")
+		tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var stack := Ui.vbox(2)
 		tile.add_child(stack)
 		stack.add_child(Ui.label(str(row.get("label", "")), "MutedLabel", true))

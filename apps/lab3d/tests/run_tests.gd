@@ -1573,7 +1573,7 @@ func _check_layout(definition: Dictionary) -> void:
 		var game_lab := not MissionRound.missions(definition).is_empty()
 		var actions_ok: bool = definition.actions.all(func(a: Dictionary) -> bool: return (game_lab and a.id != "reset" and not screen._action_buttons.has(a.id)) \
 			or (screen._action_buttons.has(a.id) and (screen._action_buttons[a.id].get_parent() == screen._action_row or screen._extra_actions.has(screen._action_buttons[a.id]))))
-		var compact: bool = screen._key_row.size.y <= 160.0 and screen._key_row.size.x <= size.x - 470.0 - 24.0
+		var compact: bool = screen._key_row.size.y <= 160.0 and screen._key_row.size.x <= size.x - screen.sidebar_width() - 24.0
 		var cards := ExperimentRegistry.shown_cards(definition)
 		# A game lab (2026-10-27): one card, reset as a small "다시" and (2026-10-29) no other button.
 		var lean := true
