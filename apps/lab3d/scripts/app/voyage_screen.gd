@@ -21,7 +21,7 @@ signal finished(island: String)
 const TO_AT := Vector3(0.0, 0.0, -110.0)
 ## The boat's way: from the shore of `from` to the beach of `to`, bending out a little (BEND m).
 const START := Vector3(3.0, 0.0, -15.5)
-const END_FROM_TO := Vector3(4.0, 0.0, 14.2)
+const END_FROM_TO := Vector3(5.2, 0.0, 18.5)   # (the hutton island, 1.3 times wider on 2026-11-10)
 const BEND := 6.0
 ## The trip's boat: the map's boat (BoatArt) this much bigger, the trio aboard about the map's size
 ## (BOAT_SCALE x ACTOR_ON_BOAT = 0.714, about IslandHomeScreen.ACTOR_SCALE 0.7).
@@ -44,14 +44,14 @@ const SHOTS := {
 	"depart": {"way": [0.0, 0.05], "eye": ["start", Vector3(5.5, 2.4, -8.5)], "target": ["start", Vector3(-0.8, 1.6, 4.0)], "face": "camera"},
 	"sea": {"way": [0.42, 0.5], "eye": ["boat", Vector3(4.5, 3.4, 7.0)], "target": ["boat", Vector3(-0.5, 0.2, -25.0)], "face": [-30.0, 20.0, -20.0]},
 	"flicker": {"way": [0.5, 0.58], "eye": ["boat", Vector3(3.0, 3.0, 6.0)], "target": ["to", Vector3(0.0, 1.5, 0.0)], "face": [-30.0, 20.0, -20.0]},
-	"arrive": {"way": [0.92, 1.0], "eye": ["to", Vector3(12.0, 3.0, 17.5)], "target": ["to", Vector3(3.2, 0.8, 13.0)], "face": "keeper"},
+	"arrive": {"way": [0.92, 1.0], "eye": ["to", Vector3(15.6, 3.0, 22.8)], "target": ["to", Vector3(4.2, 0.8, 16.9)], "face": "keeper"},
 }
 const GLIDE_S := 4.0
 ## The next island going dark and bright again (the flicker shot): its own tint, one dark beat per FLICKER_S.
 const DARK_TINT := Vector3(0.24, 0.28, 0.58)
 const FLICKER_S := 1.6
 ## The keeper on the beach of `to` (from its centre), facing the boat.
-const KEEPER_AT := Vector2(4.0, 10.9)
+const KEEPER_AT := Vector2(5.2, 14.2)
 const KEEPER_INLAND := 0.86          # of the coast radius that way: the dry sand (MapIsland.SHORE_F 0.955 is the water's edge)
 const KEEPER_SCALE := 0.7
 ## The guiding star over `from` while they leave.

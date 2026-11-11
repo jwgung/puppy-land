@@ -236,11 +236,16 @@ static func _lab_pin_problems(lab: String, got: Dictionary, pin: Dictionary) -> 
 	return out
 
 
-## The map (--island=hutton): one static island mesh and the sky within the mechanics map's vertices,
+## The map (--island=hutton): one static island mesh and the sky within the mechanics map's vertices (VERTS_OVER_MECHANICS),
 ## 11 spots apart on the grass and out of the water, paths on land and dry, decoration clear of the
 ## features and off the coast's sand, the volcano behind the island, the river from its foot downhill
 ## into the sea, the lighthouse on the beach, the sundial behind the three on the square; the spot
 ## names are the ids (a lab's spot: its place name) and a tap opens nothing (a lab's spot: the cat walks there).
+## The hutton map may have this share over the mechanics map's vertices: its paths are longer since
+## the island is 1.3 times wider (2026-11-10 user: "실험 사이사이 길이 짧아서"; 42606 against 42426).
+const VERTS_OVER_MECHANICS := 1.02
+
+
 func check_hutton_map() -> void:
 	var mechanics_verts := await _map_vertices("mechanics")
 	Island.use_for_run("hutton")
@@ -253,7 +258,7 @@ func check_hutton_map() -> void:
 	if statics != ["Island", "MapSky"]:
 		problems.append("static map meshes %s" % str(statics))
 	var verts := _vertices(world.find_child("Island", true, false))
-	if verts > mechanics_verts:
+	if verts > mechanics_verts * VERTS_OVER_MECHANICS:
 		problems.append("%d vertices (the mechanics map has %d)" % [verts, mechanics_verts])
 	if screen._spots.size() != 11:
 		problems.append("%d spots" % screen._spots.size())
@@ -349,7 +354,7 @@ func check_hutton_map() -> void:
 	screen._walk_to_spot(lab)
 	if not (screen._walking or not opened.is_empty()):
 		problems.append("a tap on %s neither walks nor opens it" % EXPERIMENTS[0])
-	expect.call(problems.is_empty(), "hutton map: 1 island mesh + sky (no more vertices than the mechanics map), 11 spots clear, coast sand, valley, volcano, river to the sea, lighthouse, sundial; a tap on a spot in the making opens nothing, the lab's spot (day-night) is a lab",
+	expect.call(problems.is_empty(), "hutton map: 1 island mesh + sky (within 2% of the mechanics map's vertices), 11 spots clear, coast sand, valley, volcano, river to the sea, lighthouse, sundial; a tap on a spot in the making opens nothing, the lab's spot (day-night) is a lab",
 		"; ".join(problems.slice(0, 8)) if not problems.is_empty() else "%d vertices (mechanics %d), %d trees, %d decorations" % [verts, mechanics_verts, trees, map.decorations.size()])
 	await _free(screen)
 	Island.forget_current()

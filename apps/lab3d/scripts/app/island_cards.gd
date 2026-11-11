@@ -424,23 +424,12 @@ func _tag(entry: Dictionary) -> PanelContainer:
 		col.add_child(story_buttons[entry.id])
 		if not IslandStore.owns(entry.id):
 			tag.add_child(_guardian_button(entry.id))
-		var id: String = entry.id
-		tag.gui_input.connect(func(event: InputEvent) -> void:
-			if _tapped(event):
-				choose(id))
 	return tag
 
 
-## A finger or the left button let go on a tag (a press that was not a drag).
-static func _tapped(event: InputEvent) -> bool:
-	if event is InputEventScreenTouch:
-		return not event.pressed and not event.canceled
-	return event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed \
-		and event.device != InputEvent.DEVICE_ID_EMULATION
-
-
-## A tap on the map: on an open island, as its button; during a sail, it ends the sail. A drag (more
-## than TAP_SLOP between press and release) chooses nothing.
+## A tap on the map during a sail ends it (the boat lands at once). Only an island's button sails
+## (2026-11-10 user: "섬 근처 터치만 돼도 바로 이동해버리네"): a tap on the island or its tag does
+## nothing. A drag (more than TAP_SLOP between press and release) does nothing either.
 func _on_pointer(event_type: String, at: Vector2) -> void:
 	if event_type == "press":
 		_pressed_at = at
@@ -456,11 +445,6 @@ func _on_pointer(event_type: String, at: Vector2) -> void:
 	_pressed_at = Vector2.INF
 	if not sail.is_empty():
 		_end_sail()
-		return
-	for entry in _entries:
-		if entry.open and _island_rect(str(entry.id)).has_point(at):
-			choose(str(entry.id))
-			return
 
 
 ## The small 보호자 at the tag's top right of an open island not bought (#77): the guardian's check,
