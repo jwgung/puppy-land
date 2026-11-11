@@ -57,13 +57,16 @@ const BACK_HEIGHT := 56.0
 ## the origin); the camera looks down at the row from PITCH_DEG and backs off until VIEW_SLOTS slots
 ## round the island in focus and the tags under them fit (see the carousel below); a tag hangs under
 ## its island's front coast.
-const SLOT := 34.0   # (23 before; 2026-11-11 user: "섬이 너무 가까워서 배가 움직이는게 너무 짧아")
+const SLOT := 42.0   # (23, then 34 for "섬이 너무 가까워서 배가 움직이는게 너무 짧아"; 42 with MODEL_SCALE, the same sea between)
 ## Every other island a little back (z), the sea's radius and its wave strokes; the little islands'
 ## radius, their trees and how big their landmarks are against the map's.
 const ROW_STAGGER := 3.0
 const SEA_RADIUS := 220.0
 const WAVES := 40
 const MINI_RADIUS := 8.0
+## The little models are built at MINI_RADIUS and FAR_RADIUS and drawn this many times bigger
+## (2026-11-11 user, 섬 고르기: "지도에서는 작아보이는데").
+const MODEL_SCALE := 1.5
 const MINI_TREES := 5
 const MINI_SCALE := 2.0
 const COAST_SIDES := 40
@@ -110,7 +113,7 @@ const FAR_HILL := Color("b9c0cc")
 ## at the shore of the island in use, which sails the way in SAIL_S.
 const DOT_STEP := 2.4
 const DOT := Color("f4fbff")
-const BOAT_SCALE := 1.6
+const BOAT_SCALE := 2.0
 const SAIL_S := 3.2
 ## An island's picture for the island's offer (IslandOffer, thumbnail): its render size (px) and camera
 ## (the title's 3/4 view of the island).
@@ -137,7 +140,7 @@ var guardians: Dictionary = {}
 var sail := {}
 var _entries: Array = []
 var _middles: Dictionary = {}      # id -> its island's middle (world)
-var _reach: Dictionary = {}        # id -> its model's radius (m: MINI_RADIUS, FAR_RADIUS)
+var _reach: Dictionary = {}        # id -> its model's radius (m: MINI_RADIUS, FAR_RADIUS, x MODEL_SCALE)
 var _pressed_at := Vector2.INF     # where the finger came down on the map (INF: none)
 ## The carousel: the camera's x over the row, the island it settles on.
 var focus_x := 0.0
@@ -245,10 +248,11 @@ func _build_world() -> void:
 		var entry: Dictionary = _entries[k]
 		var middle := Vector3((k - (n - 1) * 0.5) * SLOT, 0.0, ROW_STAGGER * (1.0 if k % 2 == 0 else -1.0))
 		_middles[entry.id] = middle
-		_reach[entry.id] = FAR_RADIUS if entry.id == "" else MINI_RADIUS
+		_reach[entry.id] = (FAR_RADIUS if entry.id == "" else MINI_RADIUS) * MODEL_SCALE
 		var holder := Node3D.new()
 		holder.name = "Island_%s" % (entry.id if entry.id != "" else "next")
 		holder.position = middle
+		holder.scale = Vector3.ONE * MODEL_SCALE
 		world.add_child(holder)
 		var mesh := _far_island_mesh() if entry.id == "" else _mini_island_mesh(str(entry.id))
 		var material := MapIsland.material()
@@ -662,7 +666,7 @@ func _layout() -> void:
 		_aim(0.0)
 		var left := _screen(Vector3(-half, 0.0, 0.0)).x
 		var right := _screen(Vector3(half, 0.0, 0.0)).x
-		var front := _screen(Vector3(0.0, 0.0, ROW_STAGGER + MINI_RADIUS)).y
+		var front := _screen(Vector3(0.0, 0.0, ROW_STAGGER + MINI_RADIUS * MODEL_SCALE)).y
 		var want := size.x * (1.0 - 2.0 * VIEW_MARGIN)
 		var grow := maxf((right - left) / want, (front + TAG_GAP + _tag_h) / (size.y - EDGE - inset.bottom))
 		_distance *= maxf(grow, FIT_MIN)
