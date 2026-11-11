@@ -356,9 +356,6 @@ func check_hutton_map() -> void:
 	Island.forget_current()
 
 
-## A lab on the coast and one in the valley: their world is one mesh within the labs' vertices, flat
-## at y = 0 round the lab, on the coast's sand / the valley's grass, and the valley's far ground rises
-## to the volcano standing beyond the clearing.
 ## The fox keeper walks the hutton map with the trio (#120, 2026-11-11 user: "실험 간 이동할때도
 ## 여우친구가 있어야지. 길잡이니까"): it stands in their row on the square; walking to every spot in
 ## turn it leads, ahead of the cat along the way most of the walk, on land; at each spot it stands in
@@ -376,8 +373,8 @@ func check_keeper_walk() -> void:
 		problems.append("no fox")
 	else:
 		var row_at: Vector3 = screen.trio_spot(screen.fox)
-		if screen.fox.position.distance_to(row_at) > 0.01:
-			problems.append("the fox not in the row %s" % str(screen.fox.position))
+		if screen.fox.position.distance_to(row_at) > 0.01 or not screen._clear_ground(Vector2(row_at.x, row_at.z)):
+			problems.append("the fox not in the row on clear ground %s" % str(screen.fox.position))
 		for i in screen._spots.size():
 			screen._walk_to_spot(i)
 			var ahead := 0
@@ -413,6 +410,9 @@ func check_keeper_walk() -> void:
 		"; ".join(problems.slice(0, 8)))
 
 
+## A lab on the coast and one in the valley: their world is one mesh within the labs' vertices, flat
+## at y = 0 round the lab, on the coast's sand / the valley's grass, and the valley's far ground rises
+## to the volcano standing beyond the clearing.
 func check_hutton_labs() -> void:
 	Island.use_for_run("hutton")
 	for setup in [["sea-breeze", "coast", ArtPalette.SAND], ["strata", "valley", ArtPalette.VALLEY], ["volcano", "valley", ArtPalette.VALLEY]]:

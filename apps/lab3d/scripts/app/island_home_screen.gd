@@ -590,13 +590,11 @@ func _fade_labels() -> void:
 			label.modulate.a = a
 
 
-## The screen rect the three take (their feet to their heads), Rect2() when off screen.
+## The screen rect the three (and the keeper) take (their feet to their heads), Rect2() when off screen.
 func trio_rect() -> Rect2:
 	var out := Rect2()
 	var first := true
-	for actor: Node3D in [cat, puppy, dugi]:
-		if actor == null:
-			continue
+	for actor: Node3D in walkers():
 		for lift in [0.0, 1.1 * ACTOR_SCALE * 1.4]:   # the cat's lab height is 1.4 m (Dugi's head a little above)
 			var p := _world_to_screen(actor.position + Vector3.UP * lift)
 			if p == Vector2.INF:
