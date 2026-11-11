@@ -234,7 +234,7 @@ func _open_page(i: int) -> void:
 	var who := str(entry.get("who", "dugi"))
 	var face := Story.face_or_default(entry.get("face"))
 	if who == "puppy" and face == "happy":
-		puppy.celebrate()
+		puppy.celebrate(false)   # (the flag only: a hop on the small boat looks afloat)
 	dialogue.set_speaker(who, face)
 	dialogue.open(str(entry.get("text", "")))
 	_layout()

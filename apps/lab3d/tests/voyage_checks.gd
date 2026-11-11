@@ -193,6 +193,10 @@ func check_voyage_flow(_quality_script: GDScript) -> void:
 			for k in 10:
 				voyage.advance(0.25)
 				max_flicker = maxf(max_flicker, voyage.flicker)
+				# Puppy stays on the deck when he is happy (2026-11-11 user: "왜 공중에 떠있어 퍼피").
+				var lift: float = voyage.puppy.position.y - (VoyageScreen.ABOARD[0] as Vector3).y
+				if absf(lift) > 0.001:
+					problems.append("Puppy floats %.2f over the deck on %s" % [lift, voyage.shot])
 			if voyage.shot == "sea" and voyage.way <= way_before:
 				problems.append("the boat does not sail")
 			if voyage.shot != "flicker" and voyage.flicker > 0.0:
