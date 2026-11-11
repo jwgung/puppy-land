@@ -2647,12 +2647,12 @@ func _update_readouts(force_graph: bool) -> void:
 	var values := experiment.observations()
 	var hidden := _hidden_answers(values)
 	for observation in definition.observations():
-		var value: Variant = values.get(observation.id)
-		var text := note_value(observation, value, hidden.has(observation.id))
+		var now: Variant = values.get(observation.id)
+		var text := note_value(observation, now, hidden.has(observation.id))
 		var label: Label = _observation_labels[observation.id]
 		if label.text != text:
 			label.text = text
-			label.theme_type_variation = "NotePendingLabel" if hidden.has(observation.id) or format_observation(observation, value) == "—" else "ValueLabel"
+			label.theme_type_variation = "NotePendingLabel" if hidden.has(observation.id) or format_observation(observation, now) == "—" else "ValueLabel"
 		var key: Label = _key_labels.get(observation.id)
 		if key == null:
 			continue
