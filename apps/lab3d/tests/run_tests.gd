@@ -1398,7 +1398,8 @@ func _check_close_view(definition: Dictionary) -> void:
 	rig.keep_out_boxes = [around]
 	rig.zoom(0.0001)
 	rig.snap()
-	var out_of_it := not around.grow(CameraRig.KEEP_OUT_MARGIN - 1e-3).has_point(rig.global_position)
+	var out_of_it := not around.grow(CameraRig.KEEP_OUT_MARGIN - 1e-3).has_point(rig.global_position) \
+		and is_equal_approx(rig.goal_distance, rig.distance_range.x)   # (the wanted distance is kept)
 	rig.set_mode("front", true)
 	var eye := rig.global_position
 	var behind := AABB(eye - Vector3.ONE, Vector3.ONE * 2.0)
@@ -1406,8 +1407,9 @@ func _check_close_view(definition: Dictionary) -> void:
 	rig.snap()
 	var in_front := not behind.grow(CameraRig.KEEP_OUT_MARGIN - 1e-3).has_point(rig.global_position) \
 		and rig.global_position.distance_to(rig._view_goal_target()) < eye.distance_to(rig._view_goal_target())
-	_expect(out_of_it and in_front and is_equal_approx(rig.goal_distance, rig.distance_range.x),
-		"close view: the camera stays out of a box it looks into (just outside) or would stand in (in front of it)", "")
+	_expect(out_of_it and in_front,
+		"close view: the camera stays out of a box it looks into (just outside) or would stand in (in front of it)",
+		"looking in %s, standing in %s" % [out_of_it, in_front])
 	rig.keep_out_boxes = []
 	rig.set_mode("front", true)
 	for i in 20:
