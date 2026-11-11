@@ -369,6 +369,7 @@ func nudge_back(on: bool) -> void:
 	_back_nudge.tween_property(back, "scale", Vector2.ONE, BACK_NUDGE_S * 0.5).set_trans(Tween.TRANS_SINE)
 
 
+## ← 돌아가기 nudges now (nudge_back).
 func back_nudged() -> bool:
 	return _back_nudge != null
 

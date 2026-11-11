@@ -37,9 +37,7 @@ const HEADING_OUTLINE := 8
 const TAG_RADIUS := 20
 const TAG_PAD := 10.0
 const TAG_LINE := 4
-const TAG_LIP := 8
 const CURRENT_LINE := 6
-const CURRENT_LIP := 12
 const LOCKED_PAPER := Color("efe7da")
 const TAG_SEPARATION := 4
 const TAG_WIDTH := 250.0
@@ -451,7 +449,7 @@ func _tag(entry: Dictionary) -> PanelContainer:
 	tag.name = "Card_%s" % (entry.id if entry.id != "" else "next")
 	var line := UiTheme.SELECT_LINE if entry.current else UiTheme.DIALOGUE_LINE
 	tag.add_theme_stylebox_override("panel", UiTheme.outlined_box(LOCKED_PAPER if locked else UiTheme.DIALOGUE_PAPER, line,
-		TAG_RADIUS, Vector2(TAG_PAD, TAG_PAD), CURRENT_LINE if entry.current else TAG_LINE, CURRENT_LIP if entry.current else TAG_LIP))
+		TAG_RADIUS, Vector2(TAG_PAD, TAG_PAD), CURRENT_LINE if entry.current else TAG_LINE, 0))   # (the same edge all round, no lip: 2026-11-11 user "섬 설명 카드 border를 상하좌우 동일하게")
 	tag.custom_minimum_size.x = TAG_WIDTH
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", TAG_SEPARATION)

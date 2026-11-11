@@ -113,9 +113,10 @@ static func mark_voyage_seen(island: String) -> void:
 
 ## The island whose voyage is still to come ("" for none): the island after the one in use, once it is
 ## open (Island.is_open) and the finale of the one in use was seen, while its voyage was never played
-## (#118: 섬 고르기 then shows, its first 출발! plays the voyage).
-static func voyage_due(progress: Dictionary) -> String:
-	if not enabled or not finale_seen():
+## (#118: 섬 고르기 then shows, its first 출발! plays the voyage). `finale_done`: the finale counts as
+## seen (its words after the sky, before it is marked at its end).
+static func voyage_due(progress: Dictionary, finale_done := false) -> String:
+	if not enabled or not (finale_seen() or finale_done):
 		return ""
 	var from := Island.current_id()
 	for id in Island.ids():
@@ -306,7 +307,6 @@ static func wrong_face() -> String:
 	return face_or_default(_load().get("map_wrong_face"))
 
 
-## Dugi's line when the finale's star came back down (2026-11-01: pull harder).
 ## The words after the star's finale reached the sky (#118: the trio on the square, after the
 ## fireworks and the island's ribbon): pages like the finale's, [] when the island has none.
 static func finale_after() -> Array:
@@ -323,6 +323,7 @@ static func finale_next_face() -> String:
 	return face_or_default(_load().get("finale_next_face"))
 
 
+## Dugi's line when the finale's star came back down (2026-11-01: pull harder).
 static func finale_retry_line() -> String:
 	return str(_load().get("finale_retry", ""))
 

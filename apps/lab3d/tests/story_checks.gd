@@ -427,7 +427,10 @@ func check_finale() -> void:
 		and story.ribbon != null and (story.ribbon.get_child(0) as Label).text == Locale.t("story.island_done") % IslandCards.island_name(home.island.id)
 	var want_after: Array = story._after_lines().map(func(e: Dictionary) -> String: return str(e.text))
 	var after := await _words_after(story)
-	expect.call(celebrated and after == want_after and want_after.size() >= 2 and want_after[0] == Story.finale_after()[0].text,
+	# (The next island opens with the first one complete: Puppy's 'a new island opened' is the last line.)
+	var next_open := Story.voyage_due(ProgressStore.load(), true) != ""
+	expect.call(celebrated and after == want_after and next_open and want_after.size() == Story.finale_after().size() + 1
+		and want_after[0] == Story.finale_after()[0].text and want_after[-1] == Story.finale_next_line(),
 		"finale: the island's mission complete: fireworks, confetti, the '<island> 완성!' ribbon, then the words after the sky on the square (#118)", "celebrated %s, words %s (want %s)" % [celebrated, str(after), str(want_after)])
 	for i in 40:
 		story.advance(0.05)

@@ -1,8 +1,8 @@
 ## App root: theme, screen navigation (the title on launch -> island map -> experiment, settings from
 ## the title or the map; back returns to the map, or to the title from settings opened there and from
-## the map; back on the title quits) and the fps overlay. The voyage to the next island (#75,
-## VoyageScreen) plays between the first island's finale and the next island's map; 섬 고르기 on the
-## title picks the island in use (TitleScreen, IslandCards).
+## the map; back on the title quits) and the fps overlay. 섬 고르기 on the title picks the island in use
+## (TitleScreen, IslandCards); the first trip to the next island is its voyage (#75, VoyageScreen),
+## from 섬 고르기's first 출발! after the first island's finale (#118).
 ## Landscape only (Task 2d): project.godot locks the screen to sensor landscape on Android and iOS.
 ## Launch args (command line or Android `opargs`, see Quality.all_args):
 ##   --experiment=<id>   open that experiment directly (measurements, screenshots)
@@ -96,6 +96,8 @@ func _ready() -> void:
 		show_settings()
 	elif not requested.is_empty():
 		show_experiment(requested, {}, true)  # the launch args (--ctl-*, --camera) apply to this screen
+	elif str(demo.get("voyage", "")) != "":
+		show_voyage(str(demo.voyage))
 	elif demo.has("islands"):
 		show_title()
 		(_screen as TitleScreen).show_islands()
@@ -299,7 +301,8 @@ func _slide_in(screen: Control) -> void:
 ##   map[:<n>]     the night map with the first n pieces of the order found (5 by default) and at the
 ##                 lookout, nothing but Puppy's riddle playing: fps measurements, screenshots
 ##   voyage        the first island all found and its finale seen, the next island open (not in the
-##                 Play build): the voyage plays, then the next island's map and prologue (#75)
+##                 Play build): the voyage plays (as 섬 고르기's first 출발!, #118), then the next
+##                 island's map and prologue (#75)
 ##   islands       as voyage, the voyage already seen: the title with 섬 고르기's map open (#75, #116)
 ## Every spot done (--progress=complete): full stamps, the story seen, the pieces at the lookout.
 static func complete_progress() -> void:
@@ -338,6 +341,8 @@ func _demo_story(value: String) -> Dictionary:
 			store[spot] = full.call(spot)
 		ProgressStore.save(store)
 		Story.mark_seen("finale")
+		if kind == "voyage":
+			return {"voyage": Story.voyage_due(ProgressStore.load())}   # (#118: as 섬 고르기's first 출발!)
 		if kind == "islands":
 			for island in Island.ids():
 				if island != ProgressStore.FIRST_ISLAND:

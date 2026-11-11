@@ -15,7 +15,7 @@ apps/lab3d/
   scripts/core/                       autoload Quality(품질 단계)·Bench(OPBENCH/OPPERF)·Sound(SoundBoard: 효과음·배경 음악), Story(이야기 글·저장), Island(섬 배치 데이터), Locale(언어별 글), PhysicsLaws(TS 공식 포트, 10개 실험),
                                       MissionRound(미션 라운드: missions·predict 규칙과 검사, 단서·질문·도장·결과 줄·이유의 흐름, ProgressStore 연결), ProgressStore(진행 저장)
   scripts/formula/                    공식 보정 계층: FormulaCorrector(공통)·FormulaBody·FormulaDriver, 방식별 보정기
-  scripts/app/                        App(화면 전환·fps 표시), 섬 지도 홈(IslandHomeScreen)·목록·설정 화면, 이야기(StoryDirector·StarEmblem), UiTheme(섬 스타일 2D), Ui(위젯 헬퍼),
+  scripts/app/                        App(화면 전환·fps 표시), 섬 지도 홈(IslandHomeScreen)·목록·설정 화면, 이야기(StoryDirector·StarEmblem·섬 완성 폭죽 Fireworks), UiTheme(섬 스타일 2D), Ui(위젯 헬퍼),
                                       DragScroll(버튼·체크박스·슬라이더 위에서 끌어도 스크롤), IslandBanner(목록 머리 그림)
   scripts/art/                        셸 공용 아트: ArtPalette, PadProps(받침판 뒤집기·소품 공통), ArtMeshBuilder(로우폴리 메시), art_lit 셰이더(구운 조명),
                                       ArtKit(재질·환경·떠 있는 섬), ArtJuice(연출·블롭 그림자), VelocityArrow(화살표·손잡이 메시),

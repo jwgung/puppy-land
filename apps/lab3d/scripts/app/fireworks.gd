@@ -41,7 +41,7 @@ func advance(delta: float) -> void:
 	var before := t
 	t += delta
 	for burst in _bursts:
-		if before < float(burst[2]) and t >= float(burst[2]) and burst[2] > 0.0:
+		if before < float(burst[2]) and t >= float(burst[2]):   # (the first, at 0: _ready)
 			SoundBoard.play(&"glint")
 	if t >= life():
 		queue_free()
