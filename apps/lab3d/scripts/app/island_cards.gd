@@ -148,6 +148,7 @@ var _drag_from := 0.0              # focus_x when the finger came down
 var _dragging := false
 var _distance := FIRST_DISTANCE
 var _m_per_px := 0.1               # m along the row per UI unit on screen
+var _tag_h := 0.0                  # the tallest tag (_layout)
 
 
 ## The islands, in order: per island {id, name, about, open, complete, pieces, total, piece (its kind,
@@ -466,7 +467,7 @@ func _tag(entry: Dictionary) -> PanelContainer:
 
 ## A tap on the map during a sail ends it (the boat lands at once). Only an island's button sails
 ## (2026-11-10 user: "섬 근처 터치만 돼도 바로 이동해버리네"): a tap on the island or its tag does
-## nothing. A drag (more than TAP_SLOP between press and release) does nothing either.
+## nothing. A drag (more than TAP_SLOP from the press) slides the row and on release settles (_snap).
 func _on_pointer(event_type: String, at: Vector2) -> void:
 	if event_type == "press":
 		_pressed_at = at
@@ -628,7 +629,7 @@ func _process(delta: float) -> void:
 	var e := k * k * (3.0 - 2.0 * k)
 	var p := _way(sail.from, sail.to_at, e)
 	boat.position = Vector3(p.x, MapIsland.SEA_Y + 0.08 * sin(float(sail.t) * 6.0), p.z)
-	focus_x = p.x   # the camera follows the boat
+	focus_x = lerpf(focus_x, p.x, 1.0 - exp(-SNAP_RATE * delta))   # the camera follows the boat (eased from where the row was)
 	_place()
 	if k >= 1.0:
 		_end_sail()
@@ -659,8 +660,9 @@ func _screen(p: Vector3) -> Vector2:
 	return view.rig.unproject_position(p) / (Vector2(view.viewport.size) / view.size)
 
 
-## The camera over the row (backed off until the islands fit the width, VIEW_MARGIN each side, and
-## their tags fit under them), the tags under their islands, the heading and ← 돌아가기 at the top.
+## The heading and ← 돌아가기 at the top; the camera's distance (backed off until VIEW_SLOTS slots, fewer
+## on a narrow screen, fit the width with VIEW_MARGIN each side and the tags fit under the row), then
+## _place (the camera at focus_x, the tag and ‹ ›).
 func _layout() -> void:
 	if view == null or size.x < 1.0:
 		return
@@ -671,11 +673,10 @@ func _layout() -> void:
 	heading.position = Vector2((size.x - heading.size.x) * 0.5, TOP + inset.top)
 	var slots := clampf(size.x / (TAG_WIDTH + 2.0 * (ARROW_SIZE + ARROW_GAP)), 1.0, VIEW_SLOTS)
 	var half := slots * SLOT * 0.5
-	var pitch := deg_to_rad(PITCH_DEG)
-	var tag_h := 0.0
+	_tag_h = 0.0
 	for tag: Control in cards.values():
 		tag.size = tag.get_combined_minimum_size()
-		tag_h = maxf(tag_h, tag.size.y)
+		_tag_h = maxf(_tag_h, tag.size.y)
 	_distance = FIRST_DISTANCE
 	for _pass in FIT_PASSES:   # back off until the slots fit the width and the tags fit under them
 		_aim(0.0)
@@ -683,7 +684,7 @@ func _layout() -> void:
 		var right := _screen(Vector3(half, 0.0, 0.0)).x
 		var front := _screen(Vector3(0.0, 0.0, ROW_STAGGER + MINI_RADIUS)).y
 		var want := size.x * (1.0 - 2.0 * VIEW_MARGIN)
-		var grow := maxf((right - left) / want, (front + TAG_GAP + tag_h) / (size.y - EDGE - inset.bottom))
+		var grow := maxf((right - left) / want, (front + TAG_GAP + _tag_h) / (size.y - EDGE - inset.bottom))
 		_distance *= maxf(grow, FIT_MIN)
 	_aim(0.0)
 	_m_per_px = SLOT / maxf(_screen(Vector3(SLOT, 0.0, 0.0)).x - _screen(Vector3.ZERO).x, 1.0)
@@ -695,7 +696,8 @@ func _layout() -> void:
 ## The camera over the row at `x` (PITCH_DEG, _distance back from AIM).
 func _aim(x: float) -> void:
 	var target := AIM + Vector3(x, 0.0, 0.0)
-	view.rig.look_at_from_position(target + Vector3(0.0, -sin(deg_to_rad(PITCH_DEG)), cos(deg_to_rad(PITCH_DEG))) * _distance, target)
+	var pitch := deg_to_rad(PITCH_DEG)
+	view.rig.look_at_from_position(target + Vector3(0.0, -sin(pitch), cos(pitch)) * _distance, target)
 
 
 ## The camera at focus_x, the tags under their islands, ‹ › at the sides of the row.
@@ -704,16 +706,13 @@ func _place() -> void:
 		return
 	_aim(focus_x)
 	var inset := Ui.safe_insets(self)
-	var tag_h := 0.0
-	for tag: Control in cards.values():
-		tag_h = maxf(tag_h, tag.size.y)
 	# The tag of the island nearest the middle under it (its top level for every island, under the
 	# lowest of the staggered row, 2026-11-11 user: "뉴턴섬이랑 허턴섬 딱지가 높이가 다른게 별로임"); the
 	# others hidden; none during a sail.
 	var top := 0.0
 	for entry in _entries:
 		top = maxf(top, _screen(_middles[entry.id] + Vector3(0.0, 0.0, float(_reach[entry.id]) * TAG_UNDER)).y + TAG_GAP)
-	var y := minf(top, size.y - tag_h - EDGE - inset.bottom)
+	var y := minf(top, size.y - _tag_h - EDGE - inset.bottom)
 	var near := nearest()
 	for k in _entries.size():
 		var entry: Dictionary = _entries[k]
