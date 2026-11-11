@@ -102,6 +102,10 @@ var _more_button: Button
 var ask_handler: Callable = func(packages: Array, text: String) -> String: return ScienceNote.send_to_ai(packages, text)
 ## The web link's tap (tests record it): copy the question and open the web AI (2026-10-29).
 var web_handler: Callable = func(text: String) -> void: ScienceNote.open_web_ai(text)
+## 질문 복사하기's copy (tests put a recorder here).
+var copy_handler: Callable = func(text: String) -> void: DisplayServer.clipboard_set(text)
+var _copy_button: Button = null
+var _copy_status: Label = null
 var _web_button: Button = null
 ## A measurement or a device check (Story.measurement_run): the note has no ask button, unless the
 ## device check of the button itself asks for it (--ask=show, with --progress=bench,--sound=0).
@@ -2203,6 +2207,13 @@ func _build_sidebar() -> void:
 		_sections["ask"] = _build_ask()
 		_sections.ask.name = "Note_ask"
 		column.add_child(_sections.ask)
+	elif not measurement:
+		# The ask button stays off (no app or web opens from a children's app, 2026-11-11 user: "그럼 넣지마
+		# 됐어. 대신에 뭐 프롬프트 복사같은거 하게 해줘"): the same question, copied for the guardian to
+		# paste into an AI app themselves.
+		_sections["copy"] = _build_copy()
+		_sections.copy.name = "Note_copy"
+		column.add_child(_sections.copy)
 
 
 ## The note's last card: one button that opens the system chooser of the AI apps, and a line when
@@ -2225,6 +2236,30 @@ func _build_ask() -> Control:
 	_ask_status.visible = false
 	box.add_child(_ask_status)
 	return box
+
+
+## 질문 복사하기: a card with one button that puts this run's question (ScienceNote.question, the hidden
+## answers left out) on the clipboard through copy_handler, and a line once it did. Nothing opens.
+func _build_copy() -> Control:
+	var parts := _section(Locale.t("screen.copy_title"))
+	var body: VBoxContainer = parts[1]
+	body.add_child(Ui.label(Locale.t("screen.copy_caption"), "", true))
+	_copy_button = Ui.button(Locale.t("screen.copy_question"), "TitleButton", 56)
+	_copy_button.name = "CopyQuestion"
+	_copy_button.pressed.connect(copy_question)
+	body.add_child(_copy_button)
+	_copy_status = Ui.label(Locale.t("note.copied"), "ObserveLabel", true)
+	_copy_status.name = "CopyStatus"
+	_copy_status.visible = false
+	body.add_child(_copy_status)
+	return parts[0]
+
+
+func copy_question() -> void:
+	if measurement or experiment == null or _copy_button == null:
+		return
+	copy_handler.call(ScienceNote.question(definition, experiment, _hidden_answers(experiment.observations())))
+	_copy_status.visible = true
 
 
 ## The ask button's tap: this run's question (the hidden answers left out, as at that tap) and the AI

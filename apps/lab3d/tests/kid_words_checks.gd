@@ -407,7 +407,7 @@ func check_note(definition: Dictionary) -> void:
 				order.append(id)
 	var parsed := ExperimentDefinition.new(definition)
 	var want := (["conditions"] if not parsed.controls().is_empty() else []) + ["numbers"] + (["graph"] if note.graph else []) \
-		+ ["law", "guide"] + (["terms"] if not parsed.terms().is_empty() else []) + ["more"] + (["ask"] if ScienceNote.enabled else [])
+		+ ["law", "guide"] + (["terms"] if not parsed.terms().is_empty() else []) + ["more"] + (["ask"] if ScienceNote.enabled else ["copy"])
 	if order != want:
 		problems.append("order %s (want %s)" % [str(order), str(want)])
 	var law_texts: Array = screen._sections.law.find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text)
