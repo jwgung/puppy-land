@@ -49,6 +49,7 @@ const DARK_TINT := Vector3(0.24, 0.28, 0.58)
 const FLICKER_S := 1.6
 ## The keeper on the beach of `to` (from its centre), facing the boat.
 const KEEPER_AT := Vector2(4.0, 10.9)
+const KEEPER_INLAND := 0.86          # of the coast radius that way: the dry sand (MapIsland.SHORE_F 0.955 is the water's edge)
 const KEEPER_SCALE := 0.7
 ## The guiding star over `from` while they leave.
 const STAR_AT := Vector3(-2.0, 10.0, 2.0)
@@ -166,13 +167,20 @@ func _build_world() -> void:
 	keeper = keeper_model()
 	keeper.scale = Vector3.ONE * KEEPER_SCALE
 	world.add_child(keeper)
-	var ground := to_map.height_at(KEEPER_AT.x, KEEPER_AT.y)
-	keeper.position = TO_AT + Vector3(KEEPER_AT.x, ground, KEEPER_AT.y)
+	var spot := keeper_spot(to_map)
+	keeper.position = TO_AT + Vector3(spot.x, to_map.height_at(spot.x, spot.y), spot.y)
 	keeper.visible = false
 	star = StarArt.make(false, STAR_SIZE)
 	star.position = STAR_AT
 	world.add_child(star)
 	_place_boat(0.0)
+
+
+## Where the keeper waits on `map` (its middle's frame): towards KEEPER_AT, KEEPER_INLAND of the coast
+## there, on the dry beach (2026-11-10 user: "여우친구가 나와있을때, 물 위에 서있네.. 땅에 있게해야지").
+static func keeper_spot(map: MapIsland) -> Vector2:
+	var a := KEEPER_AT.angle()
+	return Vector2.from_angle(a) * map.coast_radius(a) * KEEPER_INLAND
 
 
 ## The island keeper (the fox, #71) in the storybook look of the cast (ArtKit.toon_material).

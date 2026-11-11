@@ -56,16 +56,23 @@ const BACK_HEIGHT := 56.0
 ## island at full size; the camera looks down at the row from PITCH_DEG and backs off until the row
 ## and the tags under it fit (VIEW_MARGIN of the width each side); a tag hangs under its island's
 ## front coast.
-const SLOT := 46.0
-## Each island's own sea sinks this much under the one before (no fight between the seas).
-const SEA_SINK := 0.02
+const SLOT := 23.0
+## Every other island a little back (z), the sea's radius and its wave strokes; the little islands'
+## radius, their trees and how big their landmarks are against the map's.
+const ROW_STAGGER := 3.0
+const SEA_RADIUS := 220.0
+const WAVES := 40
+const MINI_RADIUS := 8.0
+const MINI_TREES := 5
+const MINI_SCALE := 2.0
+const COAST_SIDES := 40
 ## An island's coast radius when it is not known (m), where the sea way leaves its coast (m out and
 ## m towards the camera), how far the way bends towards the camera (m) and its dots' size and lift.
 const DEFAULT_REACH := 12.0
 const SHORE_OUT := 1.5
 const SHORE_FRONT := 4.0
 const WAY_BEND := 5.0
-const DOT_RADIUS := 0.32
+const DOT_RADIUS := 0.4
 const DOT_LIFT := 0.05
 ## The camera's aim (a little in front of the row), its first distance and how much a fitting pass
 ## may bring it nearer at most; a tag hangs at this share of its island's coast radius in front.
@@ -82,7 +89,7 @@ const TAG_GAP := 6.0
 ## A locked island's tint (the map's own_tint), and the island still to come: a plain grey island
 ## (FAR_RADIUS m, its sand, land and hill in greys) under a cloud.
 const LOCKED_TINT := Vector3(0.6, 0.66, 0.78)
-const FAR_RADIUS := 10.0
+const FAR_RADIUS := 7.0
 const FAR_SAND := Color("c4c9d2")
 const FAR_LAND := Color("a9b2bf")
 const FAR_HILL := Color("b9c0cc")
@@ -90,7 +97,7 @@ const FAR_HILL := Color("b9c0cc")
 ## at the shore of the island in use, which sails the way in SAIL_S.
 const DOT_STEP := 2.4
 const DOT := Color("f4fbff")
-const BOAT_SCALE := 2.6
+const BOAT_SCALE := 1.6
 const SAIL_S := 2.6
 ## An island's picture for the island's offer (IslandOffer, thumbnail): its render size (px) and camera
 ## (the title's 3/4 view of the island).
@@ -190,39 +197,41 @@ func _exit_tree() -> void:
 	MapIsland.light_no_spots()
 
 
-## The islands in a row on one sea (the first island's sea and sky; the others' own seas sink a little
-## under it), the one to come grey under a cloud, the dotted way between them, the boat.
+## 퍼피랜드 (#116, 2026-11-10 user: "퍼피랜드 지도를 하나 만들어 둘까" → 3D): one sea with a little
+## model of every island (MINI_RADIUS; its own landmarks only, not its whole map) set in a loose row,
+## every other one a little back (ROW_STAGGER), the one to come grey under a cloud, the far islets and
+## boats of the map's sea round them, the dotted way between them and the boat.
 func _build_world() -> void:
 	MapIsland.light_no_spots()
+	var sea := ArtKit.builder()
+	sea.ao_min = 1.0
+	ArtKit.flat_disc(sea, Vector3(0.0, MapIsland.SEA_Y, 0.0), SEA_RADIUS, MapIsland.sea_color(), 48)
+	for w in WAVES:   # little white wave strokes on the sea
+		var a := w * 2.399963
+		var r := 8.0 + SEA_RADIUS * 0.35 * sqrt((w + 0.5) / WAVES)
+		sea.add_rounded_box(Transform3D(Basis(Vector3.UP, 0.25 * sin(w * 1.7)), Vector3(cos(a) * r, MapIsland.SEA_Y + 0.02, sin(a) * r * 0.6)), Vector3(2.2, 0.02, 0.16), 0.0, 1, ArtPalette.FOAM)
+	var sea_node := ArtKit.instance(sea.commit(), MapIsland.material())
+	sea_node.name = "Sea"
+	world.add_child(sea_node)
+	var far := MapSea.new()
+	far.build(world)
+	far.set_lanterns(false)
 	var n := _entries.size()
 	for k in n:
 		var entry: Dictionary = _entries[k]
-		var middle := Vector3((k - (n - 1) * 0.5) * SLOT, -SEA_SINK * k, 0.0)
-		_middles[entry.id] = Vector3(middle.x, 0.0, middle.z)
+		var middle := Vector3((k - (n - 1) * 0.5) * SLOT, 0.0, ROW_STAGGER * (1.0 if k % 2 == 0 else -1.0))
+		_middles[entry.id] = middle
+		_reach[entry.id] = FAR_RADIUS if entry.id == "" else MINI_RADIUS
 		var holder := Node3D.new()
 		holder.name = "Island_%s" % (entry.id if entry.id != "" else "next")
 		holder.position = middle
 		world.add_child(holder)
-		if entry.id == "":   # the island still to come: a plain grey island, no map of its own yet
-			holder.add_child(ArtKit.instance(_far_island_mesh(), MapIsland.material()))
-			_reach[entry.id] = FAR_RADIUS
-			continue
-		var island := Island.by_id(str(entry.id))
-		var map := MapIsland.new(island)
-		map.build(holder, island.map_spots())
-		var reach := 0.0
-		for i in 16:
-			reach = maxf(reach, map.coast_radius(TAU * i / 16.0))
-		_reach[entry.id] = reach
-		for child in holder.get_children():
-			if child.name == "MapSky" and k > 0:
-				child.free()   # one sky: the first island's
-		if not entry.open:   # grey: every mesh of it in the map's material (its land, landmarks, sea)
-			var grey := MapIsland.material().duplicate() as ShaderMaterial
-			grey.set_shader_parameter("own_tint", LOCKED_TINT)
-			for mi: MeshInstance3D in holder.find_children("*", "MeshInstance3D", true, false):
-				if mi.material_override is ShaderMaterial and (mi.material_override as ShaderMaterial).shader == grey.shader:
-					mi.material_override = grey
+		var mesh := _far_island_mesh() if entry.id == "" else mini_island_mesh(str(entry.id))
+		var material := MapIsland.material()
+		if not entry.open and entry.id != "":
+			material = MapIsland.material().duplicate() as ShaderMaterial
+			material.set_shader_parameter("own_tint", LOCKED_TINT)
+		holder.add_child(ArtKit.instance(mesh, material))
 	var b := ArtKit.builder()
 	b.ao_min = 1.0
 	for k in n - 1:
@@ -241,6 +250,68 @@ func _build_world() -> void:
 	boat.add_child(ArtKit.instance(BoatArt.mesh(ArtPalette.RED), MapIsland.material()))
 	world.add_child(boat)
 	_moor(Island.current_id())
+
+
+## Island `id`'s little model on the 퍼피랜드 map (#116): its own coastline (the map's, shrunk: the same
+## island as when the child is on it) with its beach and grass, a few trees and only its own landmarks (MapLandmarks: the hutton island's volcano, lighthouse and sundial; the
+## first island's star, spring and pulley; any other island its first spots), MINI_SCALE of their map size.
+static func mini_island_mesh(id: String) -> Mesh:
+	var b := ArtKit.builder()
+	b.ao_min = 0.9
+	b.ao_height = 1.0
+	var sea := MapIsland.SEA_Y
+	var r := MINI_RADIUS
+	# The island's own coastline (MapIsland.coast_radius, the map you walk on) shrunk to MINI_RADIUS:
+	# the shallows round it, the beach, the grass inside (the map's grass edge).
+	var map := MapIsland.new(Island.by_id(id))
+	var widest := 0.0
+	for i in COAST_SIDES:
+		widest = maxf(widest, map.coast_radius(TAU * i / COAST_SIDES))
+	var shrink := r / maxf(widest, 0.001)
+	var coast := func(a: float) -> float: return map.coast_radius(a) * shrink
+	_add_shape(b, coast, 1.12, sea - 0.05, sea + 0.01, MapIsland.sea_color().lightened(0.35), MapIsland.sea_color().lightened(0.35))
+	_add_shape(b, coast, 1.0, sea - 0.3, sea + 0.2, ArtPalette.SAND.darkened(0.08), ArtPalette.SAND)
+	_add_shape(b, coast, MapIsland.grass_edge(), sea + 0.2, sea + 0.5, ArtPalette.GRASS, ArtPalette.GRASS_TOP)
+	var top := sea + 0.5
+	for t in MINI_TREES:   # trees round the edge of the grass
+		var a := TAU * (float(t) + 0.35) / MINI_TREES
+		var at := Vector3(cos(a), 0.0, sin(a)) * float(coast.call(a)) * MapIsland.grass_edge() * 0.78 + Vector3.UP * top
+		b.add_cylinder(Transform3D(Basis(), at), 0.16, 0.12, 0.5, 6, ArtPalette.TRUNK)
+		b.add_cylinder(Transform3D(Basis(), at + Vector3.UP * 0.4), 0.85, 0.0, 1.6, 7, ArtPalette.LEAF)
+	var k := MINI_SCALE
+	var place := func(x: float, z: float) -> Transform3D:
+		return Transform3D(Basis().scaled(Vector3.ONE * k), Vector3(x, top, z))
+	match id:
+		"hutton":
+			MapLandmarks.volcano(b, Transform3D(Basis(), Vector3(-1.6, top - 0.2, -2.0)), 3.4, 4.0, 0.2)
+			MapLandmarks.lighthouse(b, place.call(4.0, 1.4))
+			MapLandmarks.sundial(b, place.call(-0.6, 2.6))
+		"mechanics":
+			MapLandmarks.add(b, "orbit", place.call(-2.2, -1.6))
+			MapLandmarks.add(b, "spring", place.call(2.4, -0.8))
+			MapLandmarks.add(b, "pulley", place.call(0.2, 2.4))
+		_:
+			var spots: Array = Island.by_id(id).spots()
+			for i in mini(3, spots.size()):
+				var a := TAU * i / 3.0
+				MapLandmarks.add(b, str(spots[i]), place.call(cos(a) * 2.0, sin(a) * 1.6))
+	return b.commit()
+
+
+## A flat shape round the origin, `share` of the radius `radius(theta)` at every angle (COAST_SIDES of
+## them), from `y0` to its top at `y1`: its side in `side`, its top in `top_color`.
+static func _add_shape(b: ArtMeshBuilder, radius: Callable, share: float, y0: float, y1: float, side: Color, top_color: Color) -> void:
+	var ring: Array[Vector3] = []
+	for i in COAST_SIDES:
+		var a := TAU * i / COAST_SIDES
+		ring.append(Vector3(cos(a), 0.0, sin(a)) * float(radius.call(a)) * share)
+	for i in COAST_SIDES:
+		var p0 := ring[i]
+		var p1 := ring[(i + 1) % COAST_SIDES]
+		b.add_triangle([Vector3(0.0, y1, 0.0), p1 + Vector3.UP * y1, p0 + Vector3.UP * y1], [top_color, top_color, top_color])
+		var out := ((p0 + p1) * 0.5).normalized()
+		b.add_triangle([p0 + Vector3.UP * y1, p1 + Vector3.UP * y1, p1 + Vector3.UP * y0], [side, side, side], out)
+		b.add_triangle([p0 + Vector3.UP * y1, p1 + Vector3.UP * y0, p0 + Vector3.UP * y0], [side, side, side], out)
 
 
 ## The island still to come (#116): a grey sand ring, a grey land and a hill under a cloud.

@@ -93,6 +93,10 @@ const DIALOGUE_MARGIN := 12.0
 const DIALOGUE_SHARE := 0.8        # of the view width the box may take (the scene stays in view)
 ## Another island's prologue (#75): its square seen from these [yaw deg, pitch deg, distance m] in turn.
 const SQUARE_SHOTS := [[15.0, -20.0, 9.0], [-25.0, -24.0, 8.0], [40.0, -30.0, 11.0], [-5.0, -16.0, 7.5]]
+## Another island's prologue starts on the beach (BEACH_YAW: looking in from the sea, the voyage's
+## landing view) and the three walk up to the square over STROLL_S (IslandHomeScreen.stroll_home).
+const BEACH_YAW := 20.0
+const STROLL_S := 7.0
 ## The night map's hint: the next spot glints this long after the riddle, a twinkle every period.
 const HINT_DELAY_S := 20.0
 const HINT_PERIOD_S := 2.4
@@ -476,13 +480,25 @@ func play_prologue() -> void:
 		return
 	_begin("prologue")
 	home.trio_home()   # the story starts on the square (its last page shows the cat there)
-	_set_camera(FIRST_SHOT if _first_island() else _square_shot(0, 2.0))
+	if _first_island():
+		_set_camera(FIRST_SHOT)
+	else:
+		# Another island: on the beach where the voyage's boat landed (the keeper waited there), then
+		# the three walk up to the square while they talk (2026-11-10 user: no jump to the middle).
+		var beach := VoyageScreen.keeper_spot(home.map)
+		home.stroll_home(beach, STROLL_S)
+		_set_camera(_beach_shot(beach))
 	_open_page(0)
 
 
 ## The story is the first island's (its prologue's star and boats); another island's is words over its square.
 func _first_island() -> bool:
 	return home.island.id == "" or home.island.id == ProgressStore.FIRST_ISLAND
+
+
+## Another island's first prologue view: the beach where the boat landed, from the sea's side.
+func _beach_shot(beach: Vector2) -> Dictionary:
+	return {"yaw": BEACH_YAW, "pitch": -18.0, "dist": 9.0, "target": Vector3(beach.x, 0.6, beach.y)}
 
 
 ## Another island's prologue view `i` of its square (SQUARE_SHOTS), `far` times the distance.
@@ -512,7 +528,10 @@ func _open_page(i: int) -> void:
 
 func _prologue_page(i: int) -> void:
 	if not _first_island():
-		_move(_square_shot(i), 2.2)
+		if i == 0:   # the camera follows the three up from the beach to the square over STROLL_S
+			_move(_square_shot(0), STROLL_S)
+		elif i > 1 or not home.strolling():
+			_move(_square_shot(i), 2.2)
 		if i == Story.pages("prologue").size() - 1:
 			_beat(1.2, func() -> void: _night(map_night(), 2.0))
 		return

@@ -8,7 +8,7 @@ class_name BoatArt
 extends RefCounted
 
 ## Where the night lantern sits on the mast (MapSea).
-const LANTERN_Y := 2.05
+const LANTERN_Y := 2.65
 const MAST_Z := 0.15
 ## The hull's stations from the stern to the bow [z, half width, rim y, keel y].
 const HULL := [[-1.2, 0.47, 0.66, 0.12], [-0.85, 0.59, 0.59, 0.03], [-0.2, 0.63, 0.555, 0.0],
@@ -50,19 +50,20 @@ const MAST_FOOT := 0.5
 const MAST_TOP := LANTERN_Y + 0.1
 const MAST_RADIUS := [0.055, 0.045]
 const KNOB_RADIUS := 0.07
-const BOOM_AT := Vector3(0.0, 0.86, -0.83)
+const BOOM_AT := Vector3(0.0, 1.46, -0.83)
 const BOOM_RADIUS := 0.035
 const BOOM_LENGTH := 0.98
 
-## The main sail: a triangle (tack at the mast foot, head up the mast, clew aft) in SAIL_ROWS rows,
+## The main sail: a triangle (tack on the mast, head up the mast, clew aft) in SAIL_ROWS rows, its
+## foot high over the deck so the voyage's trio stand under it (2026-11-10 user: "돛을 더 높여서 달아"),
 ## billowed SAIL_BILLOW m to one side in its middle.
-const SAIL_TACK := Vector3(0.0, 0.9, 0.08)
-const SAIL_HEAD := Vector3(0.0, 1.92, 0.1)
-const SAIL_CLEW := Vector3(0.0, 0.9, -0.78)
+const SAIL_TACK := Vector3(0.0, 1.5, 0.08)
+const SAIL_HEAD := Vector3(0.0, 2.52, 0.1)
+const SAIL_CLEW := Vector3(0.0, 1.5, -0.78)
 const SAIL_ROWS := 4
 const SAIL_BILLOW := 0.16
 ## The fore sail from the mast to the bow, its middle pushed out a little.
-const JIB := [Vector3(0.0, 1.75, 0.2), Vector3(0.0, 0.82, 0.28), Vector3(0.0, 0.82, 1.15)]
+const JIB := [Vector3(0.0, 2.35, 0.2), Vector3(0.0, 1.48, 0.28), Vector3(0.0, 1.48, 1.15)]
 const JIB_BELLY := Vector3(-0.08, -0.05, 0.0)
 ## The pennant at the mast head, streaming aft.
 const PENNANT := [Vector3(0.0, LANTERN_Y + 0.05, 0.13), Vector3(0.0, LANTERN_Y - 0.13, 0.13), Vector3(0.04, LANTERN_Y - 0.05, -0.32)]

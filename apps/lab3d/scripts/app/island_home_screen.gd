@@ -508,6 +508,7 @@ func _exit_tree() -> void:
 func _process(delta: float) -> void:
 	if _walking:
 		_step_walk(delta)
+	_step_stroll(delta)
 	_step_raise(delta)
 	_step_shake(delta)
 	if _cinematic:
@@ -967,6 +968,62 @@ func _step_walk(delta: float) -> void:
 				actor.position = group[actor]
 				actor.rotation.y = group.facing
 		experiment_chosen.emit(spot.definition)
+
+
+## The stroll (another island's prologue after the voyage, 2026-11-10 user: "대화중에 갑자기 섬 중앙으로
+## 이동해버리는것도 어색하다"): the three walk in `seconds` from where the boat landed (`from`, x/z) along
+## the paths to their row on the square, the cat first and Puppy and Dugi STROLL_LAG m behind, hopping;
+## over the last STROLL_SETTLE they step into their row places and turn to the view.
+const STROLL_LAG := 0.9
+const STROLL_SETTLE := 0.15
+var _stroll := {}                  # {route, at (lengths along it), t, total} (empty: none)
+
+
+func stroll_home(from: Vector2, seconds: float) -> void:
+	var way := route(from, map.trio_row())
+	var at := PackedFloat32Array([0.0])
+	for k in range(1, way.size()):
+		at.append(at[k - 1] + way[k].distance_to(way[k - 1]))
+	_stroll = {"route": way, "at": at, "t": 0.0, "total": maxf(seconds, 0.1)}
+	_walk_last.clear()
+	_walk_heading.clear()
+	for actor: Node3D in [cat, puppy, dugi]:
+		if actor != null:
+			actor.position = Vector3(from.x, map.walk_height(from.x, from.y), from.y)
+
+
+## The three are strolling to the square now (tests).
+func strolling() -> bool:
+	return not _stroll.is_empty()
+
+
+func _step_stroll(delta: float) -> void:
+	if _stroll.is_empty():
+		return
+	_stroll.t += delta
+	var k := clampf(float(_stroll.t) / float(_stroll.total), 0.0, 1.0)
+	var at: PackedFloat32Array = _stroll.at
+	var way: PackedVector2Array = _stroll.route
+	var length := at[at.size() - 1] + 2.0 * STROLL_LAG
+	var settle := smoothstep(1.0 - STROLL_SETTLE, 1.0, k)
+	for entry in [[cat, 0.0], [puppy, 1.0], [dugi, 2.0]]:
+		var actor: Node3D = entry[0]
+		if actor == null:
+			continue
+		var s := clampf(length * walk_share(float(_stroll.t), float(_stroll.total)) - STROLL_LAG * float(entry[1]), 0.0, at[at.size() - 1])
+		var i := 1
+		while i < way.size() - 1 and at[i] < s:
+			i += 1
+		var span := at[i] - at[i - 1] if way.size() > 1 else 0.0
+		var p := way[0] if way.size() < 2 else way[i - 1].lerp(way[i], (s - at[i - 1]) / span if span > 1e-6 else 0.0)
+		var place := trio_spot(actor)
+		p = p.lerp(Vector2(place.x, place.z), settle)
+		_set_walker(actor, p, HOP_HEIGHT * absf(sin(float(_stroll.t) * PI * HOP_HZ + float(entry[1]))) * (1.0 - settle), delta)
+		if settle > 0.0:
+			actor.rotation.y = lerp_angle(actor.rotation.y, TRIO_YAW, settle)
+	if k >= 1.0:
+		_stroll = {}
+		_place_trio(TRIO_YAW)
 
 
 ## An actor on the way at `at` (x, z) `lift` m above the ground (up the hills), turning towards where

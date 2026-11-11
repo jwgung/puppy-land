@@ -177,6 +177,16 @@ func check_voyage_flow(_quality_script: GDScript) -> void:
 				problems.append("page %d shot %s" % [voyage.page, voyage.shot])
 			if voyage.keeper.visible != (voyage.shot == "arrive"):
 				problems.append("keeper on %s" % voyage.shot)
+			if voyage.shot == "arrive":   # on the dry beach, not in the water (2026-11-10 user)
+				var local := voyage.keeper.position - VoyageScreen.TO_AT
+				if voyage.to_map.coast_fraction(local.x, local.z) > MapIsland.SHORE_F - 0.03:
+					problems.append("the keeper stands in the water (%.2f of the coast)" % voyage.to_map.coast_fraction(local.x, local.z))
+				# The trio stand under the sail (its foot over their heads, 2026-11-10 user: "돛을 더 높여서 달아").
+				for actor: Node3D in voyage.aboard:
+					var top: float = IslandCast.drawn_bounds(actor).end.y
+					var sail_foot: float = (voyage.boat.global_transform * Vector3(0.0, minf(BoatArt.SAIL_CLEW.y, (BoatArt.JIB[1] as Vector3).y), 0.0)).y
+					if top > sail_foot:
+						problems.append("%s reaches into the sail (%.2f > %.2f)" % [actor.name, top, sail_foot])
 			if voyage.star.visible != (voyage.shot == "depart"):
 				problems.append("star on %s" % voyage.shot)
 			var way_before := voyage.way
@@ -198,6 +208,17 @@ func check_voyage_flow(_quality_script: GDScript) -> void:
 	var home: IslandHomeScreen = app._screen as IslandHomeScreen
 	var landed := home != null and home.island.id == NEXT and Island.current_id() == NEXT and ProgressStore.current_island() == NEXT \
 		and Story.voyage_seen(NEXT) and home.play_prologue_on_open and home.story != null and home.story.part == "prologue"
+	# The prologue starts on the beach where the boat landed and the three walk up to their row on the
+	# square while they talk (2026-11-10 user: "대화중에 갑자기 섬 중앙으로 이동해버리는것도 어색하다").
+	if landed:
+		var beach := VoyageScreen.keeper_spot(home.map)
+		var cat_at := Vector2(home.cat.position.x, home.cat.position.z)
+		if not home.strolling() or cat_at.distance_to(beach) > 2.0:
+			problems.append("the prologue does not start on the beach (cat at %s, beach %s)" % [str(cat_at), str(beach)])
+		for i in roundi(StoryDirector.STROLL_S * 60.0) + 30:
+			await tree.process_frame
+		if home.strolling() or Vector2(home.cat.position.x, home.cat.position.z).distance_to(home.map.trio_row()) > 0.3:
+			problems.append("the three did not reach the square (cat at %s)" % str(home.cat.position))
 	# Its prologue: the keeper's words over the square, every page, then the map.
 	var pages_seen := 0
 	if landed:
