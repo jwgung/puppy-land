@@ -56,7 +56,7 @@ const BACK_HEIGHT := 56.0
 ## The world: the islands' little models (_mini_island_mesh) SLOT m apart along x (the row centred on
 ## the origin); the camera looks down at the row from PITCH_DEG and backs off until the row and the
 ## tags under it fit (VIEW_MARGIN of the width each side); a tag hangs under its island's front coast.
-const SLOT := 23.0
+const SLOT := 34.0   # (23 before; 2026-11-11 user: "섬이 너무 가까워서 배가 움직이는게 너무 짧아")
 ## Every other island a little back (z), the sea's radius and its wave strokes; the little islands'
 ## radius, their trees and how big their landmarks are against the map's.
 const ROW_STAGGER := 3.0
@@ -98,7 +98,7 @@ const FAR_HILL := Color("b9c0cc")
 const DOT_STEP := 2.4
 const DOT := Color("f4fbff")
 const BOAT_SCALE := 1.6
-const SAIL_S := 2.6
+const SAIL_S := 3.2
 ## An island's picture for the island's offer (IslandOffer, thumbnail): its render size (px) and camera
 ## (the title's 3/4 view of the island).
 const THUMB_PIXELS := Vector2i(400, 288)
