@@ -2082,7 +2082,7 @@ func _fit_tip() -> void:
 
 
 ## --scroll-to's older names: the numbers were "observations", the texts "explanation" (now in 더 보기).
-const SECTION_ALIASES := {"observations": "numbers", "explanation": "more"}
+const SECTION_ALIASES := {"observations": "numbers", "explanation": "guide"}
 ## The sections inside the collapsed 더 보기 (scrolling to one opens it first).
 const MORE_SECTIONS := ["more", "more_observations", "more_graph", "more_explanation"]
 
@@ -2099,16 +2099,18 @@ func _scroll_to(section: String) -> void:
 	_scroll.scroll_vertical = int(_sections[section].global_position.y - content.global_position.y)
 
 
-## The science note (2026-10-28 "세부쪽도 좀 정리가 필요해", for older children and adults): a few
-## cards with clear headings in this order —
-##   법칙 (the law in one plain sentence and its formula), 이번 실험 숫자 (3-4 numbers of this run in
-##   their units, a "before → after" pair on one row), 조건 바꾸기 (the sliders and choices), 그래프
-##   (only where it shows the law: note.graph), and 더 보기 (collapsed): every other observation, the
-##   graph when it is not kept above, the steps, the observe card, the shared law and its terms.
+## The note for a guardian or teacher (2026-10-28 "세부쪽도 좀 정리가 필요해"; 2026-11-11 #122 plan A
+## and the storybook look): cards with clear headings in this order —
+##   조건 바꾸기 (the sliders and choices; none when the lab has no conditions), 이번 실험 숫자 (3-4
+##   numbers of this run in their units, a "before → after" pair on one row, note_value), 그래프 (only
+##   where it shows the law: note.graph), 법칙 (the law in one plain sentence and its formula), 실험하는
+##   방법 (how to play, the steps, what to watch), 낱말 풀이 (the terms), and 더 보기 (collapsed): every
+##   other observation, the graph when it is not kept above, the shared law (더 알아보기).
 ## Last comes "AI에게 더 물어보기" (ScienceNote: this run as a question for the AI app the child picks
 ## in the system chooser of the AI apps; not in a measurement).
-## Every observation has one label (_observation_labels) wherever it sits, with format_observation's
-## text, so nothing the panel showed before is lost (ExperimentRegistry.note).
+## Every observation has one label (_observation_labels) wherever it sits, with note_value's text
+## (format_observation's, or the pending / hidden words), so nothing the panel showed before is lost
+## (ExperimentRegistry.note).
 func _build_sidebar() -> void:
 	_sidebar = Ui.panel("SideSheet")
 	_sidebar.visible = false
@@ -2576,15 +2578,6 @@ func _poll() -> void:
 	_judge()   # a run can end between state_changed events (the engine's settled report)
 	if mission_round != null:
 		mission_round.check_miss(manipulator != null and manipulator.mode != "")   # Puppy's hint after a miss
-
-
-## The displayed text of an observation value (panel tiles and key cards show the same text).
-## A mission's answer before the throw has ended (missions.hidden_until_end): "?" and the unit.
-static func hidden_observation(observation: Dictionary) -> String:
-	var unit: String = observation.get("unit", "")
-	if unit == "":
-		return "?"
-	return "?" + unit if unit == "°" else "? " + unit
 
 
 ## The observation ids a mission round hides now (MissionRound.hidden_observations: its
