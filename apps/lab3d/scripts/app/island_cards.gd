@@ -70,10 +70,12 @@ const MODEL_SCALE := 1.5
 const MINI_TREES := 5
 const MINI_SCALE := 2.0
 const COAST_SIDES := 40
-## An island's coast radius when it is not known (m), where the sea way leaves its coast (m out and
-## m towards the camera), how far the way bends towards the camera (m) and its dots' size and lift.
+## An island's coast radius when it is not known (m), where the sea way leaves its coast (m out past
+## the boat's own reach, BoatArt's hull end x BOAT_SCALE, so its bow and stern stay in the water:
+## 2026-11-11 user "배가 육지로 올라간다"; m towards the camera), how far the way bends towards the
+## camera (m) and its dots' size and lift.
 const DEFAULT_REACH := 12.0
-const SHORE_OUT := 1.5
+const SHORE_OUT := 1.0
 const SHORE_FRONT := 4.0
 const WAY_BEND := 5.0
 const DOT_RADIUS := 0.4
@@ -362,7 +364,13 @@ static func _far_island_mesh() -> Mesh:
 ## The island `id`'s shore on the sea way: its east (`side` +1) or west (-1) coast.
 func _shore(id: String, side: float) -> Vector3:
 	var middle: Vector3 = _middles.get(id, Vector3.ZERO)
-	return Vector3(middle.x + side * (float(_reach.get(id, DEFAULT_REACH)) + SHORE_OUT), MapIsland.SEA_Y, middle.z + SHORE_FRONT)
+	return Vector3(middle.x + side * (float(_reach.get(id, DEFAULT_REACH)) + boat_reach() + SHORE_OUT), MapIsland.SEA_Y, middle.z + SHORE_FRONT)
+
+
+## How far the map's boat reaches from its middle (m): its hull's far end, bow or stern, at BOAT_SCALE.
+static func boat_reach() -> float:
+	var hull: Array = BoatArt.HULL
+	return maxf(absf(float(hull[0][0])), absf(float(hull[-1][0]))) * BOAT_SCALE
 
 
 ## The sea way at `k` (0..1) from `a` to `b`: bent a little towards the camera (+z).

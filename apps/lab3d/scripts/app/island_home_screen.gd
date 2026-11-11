@@ -9,12 +9,11 @@
 ## (CatActor) who hops between spots. Spot names are 2D labels projected onto the map
 ## (the key-card / dialogue pattern: the 3D view under, UI on top). It never touches an
 ## experiment's physics: the map is its own little world. App.gd builds it the way it built the
-## ListScreen (same signals).
+## ListScreen (its signals, but 설정: that is on the title only since 2026-11-11).
 class_name IslandHomeScreen
 extends Control
 
 signal experiment_chosen(definition: Dictionary)
-signal settings_requested
 ## The map's ← 돌아가기 (top left, #114): App goes back as Android back does (the islands' map or the title).
 signal back_requested
 
@@ -299,9 +298,11 @@ func _add_spot(world: Node3D, zone: String, id: String, info: Dictionary) -> voi
 ## The map's own buttons, 단서 and 설정, floating over its top right corner (2026-10-31 user: no top bar,
 ## the app's name need not show; the bar ran edge to edge and a phone's rounded corners cut it), and
 ## its ← 돌아가기 alone in the top left (#114: back to the islands' map; worded as that map's own, #116). They keep MAP_EDGE
-## units, plus the screen's safe-area inset, from the edges; the story's emblem sits right of ←.
+## units, plus the screen's safe-area inset, from the edges; the story's emblem sits under ←
+## (2026-11-11 user: "돌아가기가 생기면서 해시계나 별이 오른쪽으로 밀리거든? 돌아가기 아래로 두자").
+## 설정 is on the title only (2026-11-11 user: "지도에 설정 안보여주기로 했잖아.. 홈에서만 보이게 해줘").
 const MAP_EDGE := 20.0
-const BACK_GAP := 12.0              # between ← and the emblem
+const BACK_GAP := 12.0              # between ← and the emblem under it
 
 
 func _build_map_buttons() -> void:
@@ -316,10 +317,6 @@ func _build_map_buttons() -> void:
 		if story != null:
 			story.say_riddle())
 	row.add_child(clue_button)
-	var settings := Ui.button(Locale.t("common.settings"), "", 60)
-	settings.name = "SettingsButton"
-	settings.pressed.connect(settings_requested.emit)
-	row.add_child(settings)
 	row.minimum_size_changed.connect(_layout)   # its size comes with the theme: placed again then
 	var back := Ui.button(Locale.t("islands.back"), "", 60)   # (as the island map's, 2026-11-10 user: "돌아가기로 맞추자")
 	back.name = "MapBackButton"
@@ -342,11 +339,11 @@ func _layout() -> void:
 		back.position = Vector2(MAP_EDGE + inset.left, MAP_EDGE + inset.top)
 
 
-## Where the story's corner emblem starts (x): right of ← (its place even while ← hides in the story).
-func emblem_left() -> float:
+## Where the story's corner emblem goes (its top left): under ← (its place even while ← hides in the story).
+func emblem_at() -> Vector2:
 	var back: Control = find_child("MapBackButton", true, false)
-	var left: float = MAP_EDGE + Ui.safe_insets(self).left
-	return left + (back.get_combined_minimum_size().x + BACK_GAP if back != null else 0.0)
+	var inset := Ui.safe_insets(self)
+	return Vector2(MAP_EDGE + inset.left, MAP_EDGE + inset.top + (back.get_combined_minimum_size().y + BACK_GAP if back != null else 0.0))
 
 
 ## The stamps of every spot from the store (one file read), and the flags they stand.

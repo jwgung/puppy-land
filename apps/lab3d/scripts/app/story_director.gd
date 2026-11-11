@@ -236,7 +236,7 @@ func _ready() -> void:
 	home.resized.connect(_layout)
 	var back: Control = home.find_child("MapBackButton", true, false)
 	if back != null:
-		back.minimum_size_changed.connect(_layout)   # the emblem keeps right of the map's ← (#114)
+		back.minimum_size_changed.connect(_layout)   # the emblem keeps under the map's ← (#114)
 
 
 func _exit_tree() -> void:
@@ -1446,10 +1446,9 @@ func tap_page() -> void:
 func _layout() -> void:
 	var view_size := home.view.size if home.view != null else home.size
 	if emblem != null:
-		# Top left (2026-10-30 user), right of the map's ← (#114), as far from the top as the map's
-		# buttons (no top bar since 2026-10-31); the finale's 건너뛰기 is top right.
-		var inset := Ui.safe_insets(home)
-		emblem.position = Vector2(home.emblem_left(), IslandHomeScreen.MAP_EDGE + inset.top)
+		# Top left (2026-10-30 user), under the map's ← (#114; 2026-11-11 user: "돌아가기 아래로 두자");
+		# the finale's 건너뛰기 is top right.
+		emblem.position = home.emblem_at()
 	if skip_button != null:
 		skip_button.size = skip_button.get_combined_minimum_size()
 		skip_button.position = Vector2(view_size.x - skip_button.size.x - DIALOGUE_MARGIN, DIALOGUE_MARGIN)

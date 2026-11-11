@@ -216,7 +216,6 @@ func _show_map(replay := false) -> void:
 	screen.definitions = _definitions
 	screen.play_prologue_on_open = Story.should_play_prologue(replay)
 	screen.experiment_chosen.connect(show_experiment)
-	screen.settings_requested.connect(show_settings)
 	screen.back_requested.connect(func() -> void:
 		if TitleScreen.app_may_show:
 			_map_back())

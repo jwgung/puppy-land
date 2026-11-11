@@ -486,14 +486,19 @@ func check_sail() -> void:
 	(map.buttons[NEXT] as Button).pressed.emit()
 	await tree.process_frame
 	var start := map.boat.position
+	var aground := ""
 	for i in 40:
 		await tree.process_frame
+		aground = aground if aground != "" else _boat_aground(map)
 	if map.sail.is_empty() or map.boat.position.distance_to(start) < 1.0 or map.cards[NEXT].visible or not app._screen is TitleScreen:
 		problems.append("no sail on the map (%s)" % str(map.sail))
 	for i in roundi(IslandCards.SAIL_S * 60.0) + 30:
 		if not app._screen is TitleScreen:
 			break
+		aground = aground if aground != "" else _boat_aground(map)
 		await tree.process_frame
+	if aground != "":   # (2026-11-11 user: "허턴섬 가는데, 배가 육지로 올라간다")
+		problems.append(aground)
 	if not (app._screen is IslandHomeScreen and Island.current_id() == NEXT and not (app._screen as IslandHomeScreen).play_prologue_on_open):
 		problems.append("the sail did not land on %s's map (%s)" % [NEXT, app._screen])
 	# A tap or a drag on an island chooses nothing; a locked island or the one still to come never;
@@ -621,8 +626,22 @@ func check_carousel() -> void:
 		"; ".join(problems))
 
 
+## Where the map's boat's bow or stern is over an island's model (its reach round its middle), or "".
+func _boat_aground(map: IslandCards) -> String:
+	if not is_instance_valid(map) or map.boat == null:
+		return ""
+	var ends := IslandCards.boat_reach() / IslandCards.BOAT_SCALE
+	for z in [-ends, ends]:
+		var p: Vector3 = map.boat.global_transform * Vector3(0.0, 0.0, z)
+		for id in map._middles:
+			var middle: Vector3 = map._middles[id]
+			if Vector2(p.x - middle.x, p.z - middle.z).length() < float(map._reach[id]):
+				return "the boat's end %s is on %s (%.2f m from its middle, reach %.2f)" % [str(p), id, Vector2(p.x - middle.x, p.z - middle.z).length(), map._reach[id]]
+	return ""
+
+
 ## The map's ← (top left, #114) and Android back on the map: the islands' map once a voyage was seen,
-## the title before. The story's emblem sits right of ←, both clear of the top left edges.
+## the title before. The story's emblem sits under ← (2026-11-11 user: "돌아가기 아래로 두자"), both clear of the top left edges.
 func check_map_back() -> void:
 	_first_done()
 	var app := await _app([])
@@ -640,8 +659,10 @@ func check_map_back() -> void:
 			problems.append("← not in the top left %s" % str(rect))
 		if back.text != Locale.t("islands.back"):   # (worded as the islands' map's, #116)
 			problems.append("← text %s" % back.text)
-		if home.story != null and home.story.emblem.visible and home.story.emblem.get_global_rect().intersects(rect):
-			problems.append("the emblem over ← %s" % str(home.story.emblem.get_global_rect()))
+		if home.story != null and home.story.emblem.visible:
+			var emblem: Rect2 = home.story.emblem.get_global_rect()
+			if emblem.intersects(rect) or emblem.position.y < rect.end.y or absf(emblem.position.x - rect.position.x) > 1.0:
+				problems.append("the emblem not under ← %s (← %s)" % [str(emblem), str(rect)])
 		back.pressed.emit()
 	await tree.process_frame
 	var title_before: bool = app._screen is TitleScreen and (app._screen as TitleScreen).island_cards == null
@@ -662,7 +683,7 @@ func check_map_back() -> void:
 	await _free(app)
 	_made()
 	expect.call(problems.is_empty() and title_before and cards_button and cards_android,
-		"map ← 돌아가기 (worded as the islands' map's, #116): top left, the emblem beside it; ← and Android back go to the title before a voyage, to the islands' map after one",
+		"map ← 돌아가기 (worded as the islands' map's, #116): top left, the emblem under it; ← and Android back go to the title before a voyage, to the islands' map after one",
 		"; ".join(problems) + " %s %s %s" % [title_before, cards_button, cards_android])
 
 

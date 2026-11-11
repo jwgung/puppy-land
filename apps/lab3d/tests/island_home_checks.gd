@@ -91,8 +91,8 @@ func check_home_builds() -> void:
 			problems.append("the app's name or the bar's line still shows")
 	var buttons: Array = screen.find_children("ListButton", "", true, false)
 	var settings: Array = screen.find_children("SettingsButton", "", true, false)
-	if buttons.size() != 0 or settings.size() != 1:
-		problems.append("list/settings buttons %d/%d (want 0/1)" % [buttons.size(), settings.size()])
+	if buttons.size() != 0 or settings.size() != 0:   # (설정 on the title only, 2026-11-11 user: "지도에 설정 안보여주기로 했잖아")
+		problems.append("list/settings buttons %d/%d (want 0/0)" % [buttons.size(), settings.size()])
 	# The camera looks down at 3/4 and the island is on screen.
 	var cam_mode: String = screen.view.rig.mode
 	if cam_mode != "three_quarter":
@@ -505,17 +505,20 @@ func check_stamp_display() -> void:
 	await _free(screen)
 
 
-## The settings button is on the map and reachable (phone and tablet); there is no list button.
+## The map's top right row (단서; 설정 is on the title only since 2026-11-11) is clear of the edges in the top right corner (phone and tablet); there is no list button.
 func check_buttons_and_layout() -> void:
 	for setup in [[PHONE, "phone"], [TABLET, "tablet"], [UiScale.PHONE_ZOOMED, "phone zoomed"]]:
 		var screen := await _home(setup[0])
 		await tree.process_frame
 		await tree.process_frame
 		var row: Control = screen.find_child("MapButtons", true, false)
-		var settings: Button = screen.find_child("SettingsButton", true, false)
+		var settings: Button = screen.clue_button   # (the row's one button since 설정 left the map: 단서, shown here)
+		settings.visible = true
+		await tree.process_frame
+		await tree.process_frame
 		var problems := []
-		if row == null or settings == null:
-			problems.append("map buttons / settings missing")
+		if row == null or screen.find_child("SettingsButton", true, false) != null:
+			problems.append("map buttons missing or 설정 on the map")
 		else:
 			# Clear of every edge by MAP_EDGE (a phone's rounded corners), in the top right corner.
 			var inner := Rect2(Vector2.ZERO, screen.size).grow(-IslandHomeScreen.MAP_EDGE + 0.5)
@@ -526,7 +529,7 @@ func check_buttons_and_layout() -> void:
 		# The 3D view fills the screen under the bar.
 		if screen.view.size != setup[0]:
 			problems.append("view size %s (want full %s)" % [str(screen.view.size), str(setup[0])])
-		expect.call(problems.is_empty(), "island home (%s): 단서 and 설정 float in the map's top right corner, clear of the edges; the 3D view full" % setup[1], "; ".join(problems))
+		expect.call(problems.is_empty(), "island home (%s): 단서 floats in the map's top right corner, clear of the edges, no 설정 (the title has it); the 3D view full" % setup[1], "; ".join(problems))
 		await _free(screen)
 
 
