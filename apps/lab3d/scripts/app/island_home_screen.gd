@@ -242,9 +242,9 @@ const PITCH_RANGE := [-89.0, -8.0]
 const DISTANCE_RANGE := [6.0, 60.0]
 const PAN_RADIUS := 15.0
 const TARGET_Y := 0.5
-## The default distance and PAN_RADIUS are for an island of BASE_RADIUS_X (the mechanics island); a
-## wider one (the hutton island, 1.3 times, 2026-11-10 user: "실험 사이사이 길이 짧아서") gets them
-## that many times.
+## The default distance and PAN_RADIUS are for an island of BASE_RADIUS_X; a wider one gets them that
+## many times (both islands 1.3 times since 2026-11-10/11, user: "실험 사이사이 길이 짧아서", "뉴턴
+## 섬도 좀 더 크게해줘": the whole island stays in view, the three a little smaller on screen).
 const MAP_DISTANCE := 27.0
 const BASE_RADIUS_X := 12.8
 

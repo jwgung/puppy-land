@@ -21,7 +21,7 @@ const LAB_VERTS_MAX := 30000   # lab_world_checks.VERTS_MAX
 ## hutton island (#72). The hutton features add nothing to an island without them; a change here must
 ## be intentional (update the pin with it). Positions only: a colour change is not seen here.
 ## The map: vertex count and the md5 of the exact position bytes (the same on CI).
-const MECHANICS_MAP_PIN := [42426, "559a1fc33974ff848e90ad9c1883ed6d"]
+const MECHANICS_MAP_PIN := [44172, "de74f737388aa56fa921b1e37c4960da"]   # (the island 1.3 times wider, 2026-11-11)
 ## The lab worlds: their last float bits differ between machines (CI's md5 differed from a desktop's,
 ## 2026-11-06; LabWorld finds its coast by bisection, so a last-bit difference moves it by ~1e-5 m).
 ## So: vertex count exact, and per axis the sum of the coordinates, the sum of their squares and the
@@ -31,9 +31,9 @@ const MECHANICS_MAP_PIN := [42426, "559a1fc33974ff848e90ad9c1883ed6d"]
 ## 50 m2 (about 20x the noise; such a move 30 m out changes it by 2 x 30 x 0.01 x 50 = 30 m2 or more,
 ## a ground height change by far more), LAB_BOX_TOL 1e-3 m.
 const MECHANICS_LAB_PIN := {
-	"orbit": {"n": 27702, "sum": [-610410.9302, -6257.6841, -570453.7574], "sq": [162201220.400, 2391417.034, 137194002.678],
+	"orbit": {"n": 28206, "sum": [-834781.7068, -13876.8639, -711291.8177], "sq": [190655688.2957, 2425638.8279, 152903106.0785],
 		"lo": [-400.0, -65.7, -400.0], "hi": [400.0, 36.908, 400.0]},
-	"buoyancy": {"n": 29406, "sum": [-231850.2907, 127951.7308, -791260.2850], "sq": [140852911.084, 3090117.197, 149193259.448],
+	"buoyancy": {"n": 30270, "sum": [-339337.9750, 128087.8913, -985499.1554], "sq": [155067808.1291, 3082774.5279, 172166593.5703],
 		"lo": [-400.0, -60.6, -400.0], "hi": [400.0, 42.008, 400.0]},
 }
 const LAB_SUM_TOL := 0.5
@@ -236,16 +236,11 @@ static func _lab_pin_problems(lab: String, got: Dictionary, pin: Dictionary) -> 
 	return out
 
 
-## The map (--island=hutton): one static island mesh and the sky within the mechanics map's vertices (VERTS_OVER_MECHANICS),
+## The map (--island=hutton): one static island mesh and the sky within the mechanics map's vertices,
 ## 11 spots apart on the grass and out of the water, paths on land and dry, decoration clear of the
 ## features and off the coast's sand, the volcano behind the island, the river from its foot downhill
 ## into the sea, the lighthouse on the beach, the sundial behind the three on the square; the spot
 ## names are the ids (a lab's spot: its place name) and a tap opens nothing (a lab's spot: the cat walks there).
-## The hutton map may have this share over the mechanics map's vertices: its paths are longer since
-## the island is 1.3 times wider (2026-11-10 user: "실험 사이사이 길이 짧아서"; 42606 against 42426).
-const VERTS_OVER_MECHANICS := 1.02
-
-
 func check_hutton_map() -> void:
 	var mechanics_verts := await _map_vertices("mechanics")
 	Island.use_for_run("hutton")
@@ -258,7 +253,7 @@ func check_hutton_map() -> void:
 	if statics != ["Island", "MapSky"]:
 		problems.append("static map meshes %s" % str(statics))
 	var verts := _vertices(world.find_child("Island", true, false))
-	if verts > mechanics_verts * VERTS_OVER_MECHANICS:
+	if verts > mechanics_verts:
 		problems.append("%d vertices (the mechanics map has %d)" % [verts, mechanics_verts])
 	if screen._spots.size() != 11:
 		problems.append("%d spots" % screen._spots.size())
@@ -354,7 +349,7 @@ func check_hutton_map() -> void:
 	screen._walk_to_spot(lab)
 	if not (screen._walking or not opened.is_empty()):
 		problems.append("a tap on %s neither walks nor opens it" % EXPERIMENTS[0])
-	expect.call(problems.is_empty(), "hutton map: 1 island mesh + sky (within 2% of the mechanics map's vertices), 11 spots clear, coast sand, valley, volcano, river to the sea, lighthouse, sundial; a tap on a spot in the making opens nothing, the lab's spot (day-night) is a lab",
+	expect.call(problems.is_empty(), "hutton map: 1 island mesh + sky (no more vertices than the mechanics map), 11 spots clear, coast sand, valley, volcano, river to the sea, lighthouse, sundial; a tap on a spot in the making opens nothing, the lab's spot (day-night) is a lab",
 		"; ".join(problems.slice(0, 8)) if not problems.is_empty() else "%d vertices (mechanics %d), %d trees, %d decorations" % [verts, mechanics_verts, trees, map.decorations.size()])
 	await _free(screen)
 	Island.forget_current()

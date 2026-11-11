@@ -20,7 +20,7 @@ signal finished(island: String)
 ## Where the next island lies from the one before (m; the default view looks along -z).
 const TO_AT := Vector3(0.0, 0.0, -110.0)
 ## The boat's way: from the shore of `from` to the beach of `to`, bending out a little (BEND m).
-const START := Vector3(3.0, 0.0, -15.5)
+const START := Vector3(3.9, 0.0, -20.2)   # (the mechanics island, 1.3 times wider on 2026-11-11)
 const END_FROM_TO := Vector3(5.2, 0.0, 18.5)   # (the hutton island, 1.3 times wider on 2026-11-10)
 const BEND := 6.0
 ## The trip's boat: the map's boat (BoatArt) this much bigger, the trio aboard about the map's size
