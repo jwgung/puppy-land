@@ -1351,6 +1351,72 @@ func _check_camera(definition: Dictionary) -> void:
 	_expect(dipped < -0.01 and dipped > -0.1 and same_goal and rig.shake == 0.0 and rig.global_position.is_equal_approx(eye),
 		"landing nudge dips the view a few cm and settles without changing the mode or goal", "dip %.3f m" % dipped)
 	holder.queue_free()
+	await _check_close_view(definition)
+
+
+## Closer to the characters (#124, CameraRig.zoom_to_point / reach_points / keep_out_boxes): off (the
+## island map) a zoom at a corner keeps the look-at point; on, the point under the fingers stays
+## under them, the pan reaches a far character only zoomed in, the camera stays out of a box it
+## looks into or would stand in, and a zoom toward the ground keeps the look-at point above it.
+func _check_close_view(definition: Dictionary) -> void:
+	var holder := Node3D.new()
+	root.add_child(holder)
+	var rig := CameraRig.new()
+	holder.add_child(rig)
+	var vp := Vector2(root.get_visible_rect().size)
+	rig.fit_aspect(vp)
+	rig.configure(definition.camera)
+	rig.zoom(0.5, Vector2(0.1, 0.1))
+	_expect(rig.pan == Vector3.ZERO, "close view: off (the island map), a zoom at a corner keeps the look-at point", str(rig.pan))
+	rig.set_mode("front", true)
+	rig.zoom_to_point = true
+	var box := AABB(rig.view_target + Vector3(2.0, -0.5, -3.0), Vector3(0.8, 1.4, 0.8))
+	rig.keep_out_boxes = [box]
+	var at := rig.unproject_position(box.get_center()) / vp
+	var pivot := rig.zoom_pivot(at)
+	var before := rig.unproject_position(pivot)
+	for i in 6:
+		rig.zoom(0.8, at)
+		rig.snap()
+	var after := rig.unproject_position(pivot)
+	_expect(before.distance_to(after) < 1.0 and rig.pan.length() > 0.1 and box.grow(1e-3).has_point(pivot),
+		"close view: a pinch on a model closes in on it, the point under the fingers stays there",
+		"moved %.2f px, pan %.2f m" % [before.distance_to(after), rig.pan.length()])
+	rig.keep_out_boxes = []
+	rig.set_mode("front", true)
+	var far := rig.view_target + Vector3(rig.pan_radius + 6.0, 0.0, 0.0)
+	rig.reach_points = [far]
+	rig.goal_distance = rig.default_distance
+	var reach_far := rig.pan_reach()
+	rig.goal_distance = rig.distance_range.x
+	var reach_close := rig.pan_reach()
+	_expect(is_equal_approx(reach_far, rig.pan_radius) and is_equal_approx(reach_close, rig.pan_radius + 6.0 + CameraRig.CLOSE_REACH_MARGIN),
+		"close view: the pan reaches a character beyond pan_radius only zoomed in", "%.2f / %.2f m" % [reach_far, reach_close])
+	rig.reach_points = []
+	rig.set_mode("front", true)
+	var around := AABB(rig.view_target - Vector3.ONE, Vector3.ONE * 2.0)
+	rig.keep_out_boxes = [around]
+	rig.zoom(0.0001)
+	rig.snap()
+	var out_of_it := not around.grow(CameraRig.KEEP_OUT_MARGIN - 1e-3).has_point(rig.global_position) \
+		and is_equal_approx(rig.goal_distance, rig.distance_range.x)   # (the wanted distance is kept)
+	rig.set_mode("front", true)
+	var eye := rig.global_position
+	var behind := AABB(eye - Vector3.ONE, Vector3.ONE * 2.0)
+	rig.keep_out_boxes = [behind]
+	rig.snap()
+	var in_front := not behind.grow(CameraRig.KEEP_OUT_MARGIN - 1e-3).has_point(rig.global_position) \
+		and rig.global_position.distance_to(rig._view_goal_target()) < eye.distance_to(rig._view_goal_target())
+	_expect(out_of_it and in_front,
+		"close view: the camera stays out of a box it looks into (just outside) or would stand in (in front of it)",
+		"looking in %s, standing in %s" % [out_of_it, in_front])
+	rig.keep_out_boxes = []
+	rig.set_mode("front", true)
+	for i in 20:
+		rig.zoom(0.8, Vector2(0.5, 0.98))
+	_expect(rig._view_goal_target().y >= CameraRig.MIN_TARGET_Y - 1e-4,
+		"close view: a zoom toward the ground keeps the look-at point above it", "%.2f m" % rig._view_goal_target().y)
+	holder.queue_free()
 
 
 func _step(rig: CameraRig, seconds: float) -> void:
