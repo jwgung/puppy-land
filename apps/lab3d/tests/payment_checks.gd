@@ -380,7 +380,7 @@ func check_cards() -> void:
 		var cards := IslandCards.new()
 		host.add_child(cards)
 		await _frames(4)
-		cards.step_focus(1)   # (the carousel: hutton's tag in view)
+		cards.focus = cards._index("hutton")   # (the carousel: hutton's tag in view)
 		await _frames(60)
 		var guardian: Button = cards.guardians.get("hutton")
 		if guardian == null or cards.guardians.has("mechanics"):
