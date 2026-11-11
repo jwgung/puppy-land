@@ -995,8 +995,9 @@ func _dial_page(i: int) -> void:
 			_move(_plant_shot(), 1.2)
 		5:   # Puppy: a shadow!
 			_move(_shot(_dial_top(), -15.0, -42.0, 4.2), 1.6)
-		6:   # the fox: the sun is back, the time flows
+		6:   # the fox: the sun is back, the time flows: the island's mission is complete (#118)
 			_move(_shot(_dial_top(), 25.0, -30.0, 6.5), 2.4)
+			_beat(0.3, _celebrate_island)
 		7:   # the fox: thank you
 			_move(_shot(_dial_top() + Vector3(0.0, 0.0, 0.6), 0.0, -24.0, 7.0), 2.0)
 		8:   # Puppy: we'll come again: the square and the island round it
