@@ -23,6 +23,9 @@ var cat: CatActor
 var dugi: DugiActor
 var _back_nudge: Tween              # ← 돌아가기's nudge (nudge_back), null: none
 var puppy: PuppyActor
+## The island's keeper (the fox on the hutton island, Island.keeper; null on an island without one):
+## the guide walks FOLLOW_LAG ahead of the cat along the way and stands with the trio (#120).
+var fox: Node3D
 var map: MapIsland
 var world: Node3D
 var env: WorldEnvironment
@@ -115,7 +118,7 @@ const STROLL_SETTLE := 0.15
 var _stroll := {}                  # {route, at (lengths along it), t, total}
 ## Two places nearer than this go straight there (a short step on the square); farther, by the paths.
 const ROUTE_STRAIGHT_MAX := 1.2
-const FOLLOW_HOPS := {"Puppy": [0.33, 0.8], "Dugi": [0.66, 0.65]}   # phase (share of a hop), height share
+const FOLLOW_HOPS := {"Puppy": [0.33, 0.8], "Dugi": [0.66, 0.65], "Fox": [0.5, 0.7]}   # phase (share of a hop), height share
 const FOLLOW_SPEED := 4.0            # m/s a follower may go to keep its place
 const KEEP_APART := 0.68             # m: no two of the three nearer than this while walking
 const HEADING_RATE := 12.0           # 1/s: how fast an actor's heading follows its steps
@@ -176,7 +179,10 @@ func _ready() -> void:
 	puppy = PuppyActor.new()
 	world.add_child(dugi)
 	world.add_child(puppy)
-	for actor: Node3D in [cat, dugi, puppy]:
+	if island.keeper == "fox":
+		fox = IslandCast.fox_model()
+		world.add_child(fox)
+	for actor: Node3D in walkers():
 		actor.scale = Vector3.ONE * ACTOR_SCALE
 
 	for zone in island.zones:
@@ -606,8 +612,8 @@ func trio_rect() -> Rect2:
 ## (rest_spot, saved in the store: after a lab they are where they went), in the group's places
 ## (group_at). They face `yaw` (the camera's: yaw 0 looks along -z from +z), towards the default view.
 func _place_trio(yaw: float) -> void:
-	for actor: Node3D in [puppy, cat, dugi]:
-		if actor == null or (actor == cat and _walking):
+	for actor: Node3D in walkers():
+		if actor == cat and _walking:
 			continue
 		actor.position = trio_spot(actor)
 		actor.rotation.y = yaw
@@ -647,7 +653,7 @@ func trio_spot(actor: Node3D) -> Vector3:
 	if rest_spot >= 0:
 		return group_at(_spots[rest_spot]).get(actor, _spots[rest_spot].stand)
 	var right := Vector2(cos(TRIO_YAW), -sin(TRIO_YAW))
-	var place := {puppy: -1.0, cat: 0.0, dugi: 1.0}
+	var place := {puppy: -1.0, cat: 0.0, dugi: 1.0, fox: 2.0} if fox != null else {puppy: -1.0, cat: 0.0, dugi: 1.0}
 	var at: Vector2 = map.trio_row() + right * TRIO_GAP * float(place.get(actor, 0.0))
 	return Vector3(at.x, map.walk_height(at.x, at.y), at.y)
 
@@ -670,12 +676,27 @@ func group_at(spot: Dictionary) -> Dictionary:
 	for i in 2:
 		var p: Vector2 = places[i]
 		out[[puppy, dugi][i]] = Vector3(p.x, map.walk_height(p.x, p.y), p.y)
+	if fox != null:   # the guide: beside the group, out past Puppy or Dugi (the first clear)
+		var guide: Vector2 = stand + left * FOX_SIDE
+		for shape: Vector2 in FOX_SHAPES:
+			var p := stand + back * shape.x + left * shape.y
+			if _clear_ground(p) and places.all(func(q: Vector2) -> bool: return q.distance_to(p) >= KEEP_APART):
+				guide = p
+				break
+		out[fox] = Vector3(guide.x, map.walk_height(guide.x, guide.y), guide.y)
 	return out
 
 
 ## (back, side) m of Puppy's and Dugi's places from the cat's (Dugi mirrored), in the order tried.
 const GROUP_SHAPES := [Vector2(GROUP_BACK, GROUP_SIDE), Vector2(0.35, 0.72), Vector2(0.0, 0.8), Vector2(-0.3, 0.8)]
 const STAGE_CLEAR := 0.3             # m a group place keeps off a stage's edge
+## The keeper's place at a spot (#120): (back, side) m from the cat's, the ones tried in order.
+const FOX_SIDE := 1.25
+## On the walk the guide heads FOX_LEAD x FOLLOW_LAG ahead of the cat along the way, at FOX_PACE times a
+## follower's top speed (it passes the cat at the start).
+const FOX_LEAD := 2.0
+const FOX_PACE := 1.6
+const FOX_SHAPES := [Vector2(0.2, FOX_SIDE), Vector2(0.2, -FOX_SIDE), Vector2(GROUP_BACK + 0.6, 0.0), Vector2(-0.4, 1.0), Vector2(-0.4, -1.0)]
 
 
 ## Grass to stand on: not water, inside the beach, off every stage.
@@ -699,6 +720,15 @@ func _spot_index(id: String) -> int:
 ## Where the trio stands now: [Dugi, cat, Puppy] (tests).
 func trio() -> Array:
 	return [dugi, cat, puppy]
+
+
+## Everyone who walks the map: the trio and the island's keeper (fox) when it has one.
+func walkers() -> Array[Node3D]:
+	var out: Array[Node3D] = []
+	for actor: Node3D in [cat, puppy, dugi, fox]:
+		if actor != null:
+			out.append(actor)
+	return out
 
 
 ## The way from `from` to `to` (x, z), on the dirt paths as they are drawn (2026-11-01 user: "지도에서
@@ -981,13 +1011,13 @@ func _step_walk(delta: float) -> void:
 	var top_speed := maxf(FOLLOW_SPEED, 1.6 * length / maxf(_walk_total, 0.01))
 	var settle := smoothstep(1.0 - SETTLE_SHARE, 1.0, k)
 	var spots := {}
-	for entry in [[puppy, 1.0, 1.0], [dugi, -1.0, 2.0]]:
+	for entry in [[puppy, 1.0, 1.0], [dugi, -1.0, 2.0], [fox, 1.0, -FOX_LEAD]]:   # (the fox leads ahead, #120)
 		var actor: Node3D = entry[0]
 		if actor == null:
 			continue
 		var side: float = entry[1]
 		var lag: float = FOLLOW_LAG * float(entry[2])
-		var behind: Array = _along(maxf(s - lag, 0.0))
+		var behind: Array = _along(clampf(s - lag, 0.0, length))
 		var dir: Vector2 = behind[1] if behind[1] != Vector2.ZERO else cat_dir
 		var goal: Vector2 = behind[0] + Vector2(dir.y, -dir.x) * FOLLOW_SIDE * side   # (dir.y, -dir.x): the walker's left
 		# (behind the way's start: they wait for their turn where they stand, not further back off the way)
@@ -995,16 +1025,16 @@ func _step_walk(delta: float) -> void:
 		goal = goal.lerp(Vector2(place.x, place.z), settle)
 		var now: Vector3 = _walk_last.get(actor, actor.position)
 		var at := Vector2(now.x, now.z)
-		at += (goal - at).limit_length((top_speed + 4.0 * settle) * delta)
+		at += (goal - at).limit_length((top_speed * (FOX_PACE if actor == fox else 1.0) + 4.0 * settle) * delta)
 		# Out of the cat's way: never nearer than KEEP_APART, a follower ahead of it to its own side.
 		var off := at - cat_at
 		if off.length() < KEEP_APART:
 			var away := off.normalized() if off.length() > 0.01 else Vector2(cat_dir.y, -cat_dir.x) * side
-			if off.dot(cat_dir) > 0.0:
-				away = (away + Vector2(cat_dir.y, -cat_dir.x) * side).normalized()
+			if off.dot(cat_dir) > 0.0 or actor == fox:   # (the guide passes the cat to its own side to lead)
+				away = (away + Vector2(cat_dir.y, -cat_dir.x) * side * (2.0 if actor == fox else 1.0)).normalized()
 			at = cat_at + away * KEEP_APART
 		spots[actor] = at
-	if spots.size() == 2:
+	if spots.has(puppy) and spots.has(dugi):
 		var gap: Vector2 = spots[dugi] - spots[puppy]
 		if gap.length() < KEEP_APART:
 			var push := (gap.normalized() if gap.length() > 0.01 else Vector2(cat_dir.y, -cat_dir.x) * -1.0) * (KEEP_APART - gap.length()) * 0.5
@@ -1019,17 +1049,16 @@ func _step_walk(delta: float) -> void:
 		_set_walker(actor, spots[actor], HOP_HEIGHT * float(hop[1]) * absf(sin((_walk_t + float(hop[0]) / HOP_HZ) * PI * HOP_HZ)), delta)
 	# Stepping into the group's places they turn to the landmark (no snap when they get there).
 	if settle > 0.0:
-		for actor: Node3D in trio():
+		for actor: Node3D in walkers():
 			if actor != null:
 				actor.rotation.y = lerp_angle(actor.rotation.y, group.facing, settle * (1.0 - exp(-TURN_RATE * delta)))
 	if k >= 1.0:
 		_walking = false
 		rest_spot = _walk_spot
 		ProgressStore.set_last_spot(island.id, str(spot.id))
-		for actor: Node3D in [cat, puppy, dugi]:
-			if actor != null:
-				actor.position = group[actor]
-				actor.rotation.y = group.facing
+		for actor: Node3D in walkers():
+			actor.position = group[actor]
+			actor.rotation.y = group.facing
 		experiment_chosen.emit(spot.definition)
 
 
@@ -1042,9 +1071,8 @@ func stroll_home(from: Vector2, seconds: float) -> void:
 	_stroll = {"route": way, "at": route_lengths(way), "t": 0.0, "total": maxf(seconds, 0.1)}
 	_walk_last.clear()
 	_walk_heading.clear()
-	for actor: Node3D in [cat, puppy, dugi]:
-		if actor != null:
-			actor.position = Vector3(from.x, map.walk_height(from.x, from.y), from.y)
+	for actor: Node3D in walkers():
+		actor.position = Vector3(from.x, map.walk_height(from.x, from.y), from.y)
 
 
 ## The three are strolling to the square now (tests).
@@ -1061,7 +1089,7 @@ func _step_stroll(delta: float) -> void:
 	var way: PackedVector2Array = _stroll.route
 	var length := at[at.size() - 1] + 2.0 * STROLL_LAG
 	var settle := smoothstep(1.0 - STROLL_SETTLE, 1.0, k)
-	for entry in [[cat, 0.0], [puppy, 1.0], [dugi, 2.0]]:
+	for entry in [[cat, 0.0], [puppy, 1.0], [dugi, 2.0], [fox, -1.0]]:   # (the fox leads, #120)
 		var actor: Node3D = entry[0]
 		if actor == null:
 			continue

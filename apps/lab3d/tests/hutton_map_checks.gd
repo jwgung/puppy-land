@@ -60,6 +60,7 @@ func run() -> void:
 	check_paid_before_playable()
 	await check_mechanics_pinned()
 	await check_hutton_map()
+	await check_keeper_walk()
 	await check_hutton_labs()
 	ProgressStore.reset_all()
 	Island.use_index([])
@@ -358,6 +359,60 @@ func check_hutton_map() -> void:
 ## A lab on the coast and one in the valley: their world is one mesh within the labs' vertices, flat
 ## at y = 0 round the lab, on the coast's sand / the valley's grass, and the valley's far ground rises
 ## to the volcano standing beyond the clearing.
+## The fox keeper walks the hutton map with the trio (#120, 2026-11-11 user: "실험 간 이동할때도
+## 여우친구가 있어야지. 길잡이니까"): it stands in their row on the square; walking to every spot in
+## turn it leads, ahead of the cat along the way most of the walk, on land; at each spot it stands in
+## its place by the group on clear grass, KEEP_APART from the others. The first island has no keeper.
+func check_keeper_walk() -> void:
+	var problems := []
+	Island.use_for_run(ProgressStore.FIRST_ISLAND)
+	var first := await _home(PHONE)
+	if first.fox != null:
+		problems.append("a fox on the first island")
+	await _free(first)
+	Island.use_for_run("hutton")
+	var screen := await _home(PHONE)
+	if screen.fox == null:
+		problems.append("no fox")
+	else:
+		var row_at: Vector3 = screen.trio_spot(screen.fox)
+		if screen.fox.position.distance_to(row_at) > 0.01:
+			problems.append("the fox not in the row %s" % str(screen.fox.position))
+		for i in screen._spots.size():
+			screen._walk_to_spot(i)
+			var ahead := 0
+			var frames := 0
+			for f in 600:
+				if not screen._walking:
+					break
+				await tree.process_frame
+				frames += 1
+				var p := Vector2(screen.fox.position.x, screen.fox.position.z)
+				if screen.map.water_at(p.x, p.y) or screen.map.coast_fraction(p.x, p.y) > MapIsland.SHORE_F:
+					problems.append("the fox in the water walking to %s" % screen._spots[i].id)
+					break
+				var to_goal := Vector2(screen._walk_to.x, screen._walk_to.z)
+				var cat := Vector2(screen.cat.position.x, screen.cat.position.z)
+				if p.distance_to(to_goal) < cat.distance_to(to_goal) - 0.05:
+					ahead += 1
+			if screen._walking:
+				problems.append("the walk to %s never ended" % screen._spots[i].id)
+				break
+			if frames > 20 and ahead < frames * 0.5:
+				problems.append("the fox did not lead to %s (%d of %d frames ahead)" % [screen._spots[i].id, ahead, frames])
+			var place: Vector3 = screen.group_at(screen._spots[i])[screen.fox]
+			var fp := Vector2(place.x, place.z)
+			if screen.fox.position.distance_to(place) > 0.01 or not screen._clear_ground(fp):
+				problems.append("the fox at %s not on its clear place" % screen._spots[i].id)
+			for other: Node3D in screen.trio():
+				if Vector2(other.position.x, other.position.z).distance_to(fp) < IslandHomeScreen.KEEP_APART * 0.95:
+					problems.append("the fox at %s too near %s" % [screen._spots[i].id, other.name])
+	await _free(screen)
+	Island.use_for_run(ProgressStore.FIRST_ISLAND)
+	expect.call(problems.is_empty(), "hutton map: the fox keeper stands in the row on the square, leads the walk to every spot (on land) and stands by the group there, clear; the first island has none (#120)",
+		"; ".join(problems.slice(0, 8)))
+
+
 func check_hutton_labs() -> void:
 	Island.use_for_run("hutton")
 	for setup in [["sea-breeze", "coast", ArtPalette.SAND], ["strata", "valley", ArtPalette.VALLEY], ["volcano", "valley", ArtPalette.VALLEY]]:

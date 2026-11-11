@@ -51,6 +51,9 @@ var lab_facing: Dictionary = {}   # experiment id -> map angle deg of the lab's 
 var lookout := ""
 ## The piece each spot gives (PIECES; "star" when the file has none): PieceArt draws it.
 var piece := PIECE_STAR
+## The island's keeper who walks with the trio on its map and stands in its labs ("" for none; "fox":
+## the hutton island's, 2026-11-11 user: "실험 간 이동할때도 여우친구가 있어야지. 길잡이니까").
+var keeper := ""
 ## The island's own landforms and buildings (#72), each optional: volcano {at [x, z], radius, height}
 ## (a cone, the valley's ground rising to it), river [[x, z], ...] (from its source to past the coast),
 ## lighthouse [x, z], sundial true (on the square). Read by MapIsland and LabWorld; {} on the
@@ -198,6 +201,7 @@ static func from_data(data: Dictionary) -> Island:
 	island.lab_facing = _dict(data.get("lab_facing"))
 	island.lookout = str(data.get("lookout", ""))
 	island.piece = str(data.get("piece", PIECE_STAR))
+	island.keeper = str(data.get("keeper", ""))
 	island.features = _dict(data.get("features"))
 	island.order = _array(data.get("order")).filter(func(id: Variant) -> bool: return id is String)
 	island.problem = island._check()
