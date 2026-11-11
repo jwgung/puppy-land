@@ -141,7 +141,7 @@ func _gui_input(event: InputEvent) -> void:
 	elif event is InputEventMouseMotion and event.device != InputEvent.DEVICE_ID_EMULATION:
 		_on_mouse_motion(event)
 	elif event is InputEventMagnifyGesture:
-		rig.zoom(1.0 / maxf(event.factor, 0.01))
+		rig.zoom(1.0 / maxf(event.factor, 0.01), _view_fraction(event.position))
 		gesture_used.emit()
 	elif event is InputEventPanGesture:
 		rig.pan_by(-event.delta * 8.0)
@@ -241,7 +241,7 @@ func _on_drag(event: InputEventScreenDrag) -> void:
 				rig.orbit(mid_after - mid_before)
 		"pinch":
 			if span_before > 1.0 and span_after > 1.0:
-				rig.zoom(span_before / span_after)
+				rig.zoom(span_before / span_after, _view_fraction(mid_after))
 			rig.pan_by(mid_after - mid_before)
 			var turn := angle_difference((before[1] - before[0]).angle(), (after[1] - after[0]).angle())
 			_twist(turn)
@@ -262,6 +262,11 @@ static func _beyond(value: float, limit: float) -> float:
 	return signf(value) * maxf(0.0, absf(value) - limit)
 
 
+## A position in this view (UI units) as fractions of it from its top left (CameraRig.zoom `at`).
+func _view_fraction(position: Vector2) -> Vector2:
+	return Vector2(position.x / maxf(size.x, 1.0), position.y / maxf(size.y, 1.0))
+
+
 ## The two lowest touch indices (extra fingers are ignored).
 func _pair() -> Array[Vector2]:
 	var keys := _touches.keys()
@@ -277,11 +282,11 @@ func _on_mouse_button(event: InputEventMouseButton) -> void:
 			_mouse_mode = "pan" if event.pressed else ""
 		MOUSE_BUTTON_WHEEL_UP:
 			if event.pressed:   # the wheel sends press and release
-				rig.zoom(0.9)
+				rig.zoom(0.9, _view_fraction(event.position))
 				gesture_used.emit()
 		MOUSE_BUTTON_WHEEL_DOWN:
 			if event.pressed:
-				rig.zoom(1.1)
+				rig.zoom(1.1, _view_fraction(event.position))
 				gesture_used.emit()
 		MOUSE_BUTTON_LEFT:
 			_mouse_drag = event.pressed

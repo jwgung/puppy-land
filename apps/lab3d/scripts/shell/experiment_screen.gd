@@ -290,7 +290,36 @@ func _ready() -> void:
 	_setup_tap_catcher() # before the question: it keeps the overlays' order (the question moves the box)
 	_setup_guide()       # after the slingshot (its pull is the gesture), before the question (overlay order)
 	_setup_game()        # after the state: the stamp count and the question belong to the saved run
+	_setup_close_view()
 	Bench.reset(definition.bench_id())
+
+
+## Closer to the characters (#124): the zoom closes in on what is under the fingers, the pan reaches
+## the cast when zoomed in, and the camera stays out of the lab's models (the globe, a house, the
+## tank) and the cast, as they stand at the start (CameraRig.zoom_to_point, reach_points,
+## keep_out_boxes). The island's ground (LabWorld, one mesh) and anything wider than
+## KEEP_OUT_MAX_SIZE (the sea, the sky) are not boxes.
+const KEEP_OUT_MAX_SIZE := 20.0
+
+func _setup_close_view() -> void:
+	var rig := view.rig
+	rig.zoom_to_point = true
+	rig.reach_points = []
+	var roots: Array = [experiment]
+	if cast != null:
+		roots.append(cast)
+		for actor in [cast.dugi, cast.puppy, cast.fox]:
+			if actor != null:
+				rig.reach_points.append(actor.global_position + Vector3(0.0, 0.7, 0.0))
+	var boxes := []
+	for root_node: Node in roots:
+		for mi: MeshInstance3D in root_node.find_children("*", "MeshInstance3D", true, false):
+			if mi.has_meta("world") or not mi.is_visible_in_tree() or mi.mesh == null:
+				continue
+			var box := mi.global_transform * mi.get_aabb()
+			if box.size[box.get_longest_axis_index()] <= KEEP_OUT_MAX_SIZE:
+				boxes.append(box)
+	rig.keep_out_boxes = boxes
 
 
 func _restore_state() -> void:

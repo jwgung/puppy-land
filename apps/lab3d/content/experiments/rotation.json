@@ -8,7 +8,7 @@
   "camera": {
     "target": [0.0, 1.5, 0.0],
     "distance": 9.5,
-    "distance_range": [3.5, 24.0],
+    "distance_range": [1.5, 24.0],
     "yaw_range_deg": [-100.0, 100.0],
     "pitch_range_deg": [-89.0, -2.0],
     "pan_radius": 6.0,

@@ -41,6 +41,18 @@ var pan_radius := 5.0
 ## over the island, never up into the sky, whatever the pitch). Camera definition "pan_ground".
 var pan_ground := false
 var views: Dictionary = {}
+## Close in on the characters (#124, 2026-11-12 user: "캐릭터들 더 가까이서 보고 싶어서"; a lab sets
+## these, the island map does not): zoom closes in on what is under the fingers (zoom `at`), the pan
+## reaches reach_points when close (pan_reach) and the camera stays out of keep_out_boxes
+## (fitted_distance).
+var zoom_to_point := false
+var reach_points: Array = []       # world points (the cast) the pan may reach when zoomed in
+var keep_out_boxes: Array = []     # world AABBs (the lab's models) the camera stays out of
+const CLOSE_REACH_MARGIN := 1.0    # m past the farthest reach point
+const KEEP_OUT_MARGIN := 0.3       # m around a keep-out box (the near plane and a little air)
+const MIN_FITTED_DISTANCE := 0.6   # m: in front of a box, never closer than this
+const MIN_TARGET_Y := 0.4          # m: the lowest look-at point a zoom or pan leaves
+const PIVOT_MAX_M := 60.0          # m: farther ground under the fingers is not a zoom pivot
 
 # goal_* is where the camera is heading; cur_* is what is drawn.
 var goal_yaw := 0.0
@@ -164,15 +176,44 @@ func twist(radians: float) -> void:
 	orbit(Vector2(radians / ORBIT_RAD_PER_UNIT, 0.0))
 
 
-## factor < 1 zooms in.
-func zoom(factor: float) -> void:
+## factor < 1 zooms in. `at` (fractions of the view from its top left, default the middle): with
+## zoom_to_point the camera closes in on what is under the fingers there (zoom_pivot: it scales the
+## view about that point, so the point stays under the fingers), else on the look-at point.
+func zoom(factor: float, at := Vector2(0.5, 0.5)) -> void:
 	end_focus()
 	var distance := clampf(goal_distance * factor, distance_range.x, distance_range.y)
+	var shift := Vector3.ZERO
+	if zoom_to_point and goal_distance > 0.0:
+		var target := _view_goal_target()
+		shift = (zoom_pivot(at) - target) * (1.0 - distance / goal_distance)
 	cur_distance += distance - goal_distance
 	goal_distance = distance
+	_move_pan(shift)
 
 
-## Moves the look-at point in the screen plane (UI units), keeping it within pan_radius.
+## The point under `at` (fractions of the view from its top left) in the goal view: where the ray
+## there first meets a keep_out box (a model, a character), else the ground (y = 0) within
+## PIVOT_MAX_M, else the look-at point's depth plane.
+func zoom_pivot(at: Vector2) -> Vector3:
+	var target := _view_goal_target()
+	var forward := view_direction(goal_yaw, goal_pitch)
+	var eye := target - forward * fitted_distance(goal_distance)
+	var dir := (forward + _screen_offset(at)).normalized()
+	var best := INF
+	for box: AABB in keep_out_boxes:
+		var span := ray_span(eye, dir, box)
+		if span.x <= span.y and span.x > 0.0:   # (a box around the camera itself does not count)
+			best = minf(best, span.x)
+	if best == INF and dir.y < -1e-4:
+		var ground := -eye.y / dir.y
+		if ground < PIVOT_MAX_M:
+			best = ground
+	if best == INF:
+		return target + _screen_offset(at) * fitted_distance(goal_distance)
+	return eye + dir * best
+
+
+## Moves the look-at point in the screen plane (UI units), keeping it within pan_reach().
 func pan_by(relative: Vector2) -> void:
 	end_focus()
 	var basis_now := global_transform.basis
@@ -182,11 +223,94 @@ func pan_by(relative: Vector2) -> void:
 		right = Vector3(right.x, 0.0, right.z).normalized()
 		up = Vector3(up.x, 0.0, up.z).normalized()
 	var step := PAN_PER_UNIT * cur_distance
+	_move_pan((-right * relative.x + up * relative.y) * step)
+
+
+## Adds `delta` to the pan, kept within pan_reach() and the look-at point no lower than
+## MIN_TARGET_Y (a lab: close to the ground the camera would dip under it); the drawn look-at point
+## moves by the same delta (no jump, like orbit()).
+func _move_pan(delta: Vector3) -> void:
 	var before := pan
-	pan += (-right * relative.x + up * relative.y) * step
-	if pan.length() > pan_radius:
-		pan = pan.normalized() * pan_radius
-	cur_target += pan - before  # same delta as the goal, like orbit()
+	pan += delta
+	var reach := pan_reach()
+	if pan.length() > reach:
+		pan = pan.normalized() * reach
+	if zoom_to_point and view_target.y + pan.y < MIN_TARGET_Y:
+		pan.y = MIN_TARGET_Y - view_target.y
+	cur_target += pan - before
+
+
+## The world offset, per metre of distance, from the look-at point to the point of its depth plane
+## under `at` (fractions of the view from its top left) in the goal view.
+func _screen_offset(at: Vector2) -> Vector3:
+	var tan_v := tan(deg_to_rad(fov) * 0.5)
+	if keep_aspect == Camera3D.KEEP_WIDTH:
+		tan_v /= _view_aspect
+	var tan_h := tan_v * _view_aspect
+	var basis := Basis.looking_at(view_direction(goal_yaw, goal_pitch), Vector3.UP)
+	return basis.x * (at.x * 2.0 - 1.0) * tan_h + basis.y * (1.0 - at.y * 2.0) * tan_v
+
+
+## How far the pan may take the look-at point: pan_radius, growing as the camera closes in (from
+## default_distance down to the closest zoom) to reach the farthest of reach_points (the cast
+## standing around the lab, CLOSE_REACH_MARGIN beyond). Zoomed out it is pan_radius again, so the
+## far views keep the island's rim out of sight (tests/lab_world_checks.gd).
+func pan_reach() -> float:
+	var far := pan_radius
+	for p: Vector3 in reach_points:
+		far = maxf(far, Vector2(p.x - view_target.x, p.z - view_target.z).length() + CLOSE_REACH_MARGIN)
+	if far <= pan_radius:
+		return pan_radius
+	var span := maxf(default_distance - distance_range.x, 0.001)
+	return lerpf(pan_radius, far, clampf((default_distance - goal_distance) / span, 0.0, 1.0))
+
+
+## The distance the camera draws for the wanted `distance`: kept out of keep_out_boxes (each grown by
+## KEEP_OUT_MARGIN). Looking at a point inside a box (the day-night globe) the camera stays just
+## outside it; with a box around where the camera would be (a house behind it) it comes in front
+## of the box. Only for the user's view (a close-up keeps its framing).
+func fitted_distance(distance: float) -> float:
+	if keep_out_boxes.is_empty():
+		return distance
+	var target := _view_goal_target()
+	var back := -view_direction(goal_yaw, goal_pitch)
+	var fitted := distance
+	for pass_i in 3:
+		var moved := false
+		for box: AABB in keep_out_boxes:
+			var grown := box.grow(KEEP_OUT_MARGIN)
+			var span := ray_span(target, back, grown)
+			if span.x > span.y or span.y <= 0.0:
+				continue   # the line from the target back to the camera misses it
+			if span.x <= 0.0:                      # the target inside: out past the far side
+				if fitted < span.y:
+					fitted = minf(span.y, distance_range.y)
+					moved = true
+			elif fitted > span.x and fitted < span.y:   # the camera inside: in front of it
+				fitted = maxf(span.x, MIN_FITTED_DISTANCE)
+				moved = true
+		if not moved:
+			break
+	return fitted
+
+
+## Where the ray from `origin` along `dir` (unit) is inside `box`: (enter, exit) distances along it;
+## enter > exit when it misses.
+static func ray_span(origin: Vector3, dir: Vector3, box: AABB) -> Vector2:
+	var t0 := -INF
+	var t1 := INF
+	for i in 3:
+		var lo := box.position[i]
+		var hi := box.end[i]
+		if absf(dir[i]) < 1e-9:
+			if origin[i] < lo or origin[i] > hi:
+				return Vector2(1.0, 0.0)
+			continue
+		var a := (lo - origin[i]) / dir[i]
+		var b := (hi - origin[i]) / dir[i]
+		t0 = maxf(t0, minf(a, b))
+		t1 = minf(t1, maxf(a, b))
+	return Vector2(t0, t1)
 
 
 ## Small camera dip when something lands (strength 0..1). Visual only.
@@ -383,7 +507,7 @@ func _view_goal_target() -> Vector3:
 
 
 func _goal_distance() -> float:
-	return _focus.distance if not _focus.is_empty() else goal_distance
+	return _focus.distance if not _focus.is_empty() else fitted_distance(goal_distance)
 
 
 # --- close-up ---------------------------------------------------------------------------------
@@ -517,7 +641,7 @@ func _process(delta: float) -> void:
 		var t := 1.0 - exp(-EASE_RATE * delta)
 		cur_yaw = lerp_angle(cur_yaw, goal_yaw, t)
 		cur_pitch = lerpf(cur_pitch, goal_pitch, t)
-		cur_distance = lerpf(goal_distance, _focus.distance, w)
+		cur_distance = lerpf(fitted_distance(goal_distance), _focus.distance, w)
 		cur_target = _view_goal_target().lerp(_focus.target, w)
 		_apply()
 		return
