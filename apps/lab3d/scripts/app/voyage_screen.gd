@@ -188,13 +188,8 @@ static func keeper_spot(map: MapIsland) -> Vector2:
 
 ## The island keeper (the fox, #71) in the storybook look of the cast (ArtKit.toon_material).
 static func keeper_model() -> Node3D:
-	var model: Node3D = (load("res://assets/characters/fox.glb") as PackedScene).instantiate()
+	var model := IslandCast.fox_model()
 	model.name = "Keeper"
-	for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
-		var mat := mi.mesh.surface_get_material(0) as BaseMaterial3D
-		if mat != null and mat.albedo_texture != null:
-			mi.material_override = ArtKit.toon_material(mat.albedo_texture)
-		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return model
 
 

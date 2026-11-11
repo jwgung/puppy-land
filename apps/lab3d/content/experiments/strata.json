@@ -89,7 +89,8 @@
     },
     "puppy": {
       "at": [0.2, 2.8]
-    }
+    },
+    "fox": { "at": [1.4, 2.8] }
   },
   "observations": [
     { "id": "state" },

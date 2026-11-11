@@ -20,7 +20,7 @@ apps/lab3d/
   scripts/art/                        셸 공용 아트: ArtPalette, PadProps(받침판 뒤집기·소품 공통), ArtMeshBuilder(로우폴리 메시), art_lit 셰이더(구운 조명),
                                       ArtKit(재질·환경·떠 있는 섬), ArtJuice(연출·블롭 그림자), VelocityArrow(화살표·손잡이 메시),
                                       CatActor(빵고양이 연기·모델 동기화), CatLook·BreadCat(빵고양이 겉모습 = glb), art_lit_tex 셰이더, art_toon_tex·art_outline 셰이더(캐릭터 동화책 스타일),
-                                      IslandCast·DugiActor·PuppyActor(설명하는 두기두기, 깃발 든 퍼피),
+                                      IslandCast·DugiActor·PuppyActor(설명하는 두기두기, 깃발 든 퍼피, 허턴섬 실험의 섬지기 여우 `IslandCast.fox_model`),
                                       MassLook·PlanetSign·SurfaceSkin(조건이 보이는 3D: 무게 = 크기, 중력 팻말, 표면 재질),
                                       ForceGauge(꾹 누르는 힘 막대)·PullDots(새총 당김 점선)
   scripts/shell/                      Experiment(실험 기반 클래스), ExperimentDefinition(정의 질의), ExperimentRegistry, ExperimentScreen,
@@ -1010,7 +1010,7 @@ python3 -I apps/lab3d/tools/device_gesture.py orbit  # orbit | pinch | pinch-fix
    - `observations`: `id`·`label`·`unit`·`digits`(문자열 값이면 단위 없음)
    - `key_observations`: 3D 위 카드로 늘 보일 관찰값 id 2~3개(실험 질문에 답하는 값). 레지스트리가 개수·중복·id를 검사한다
    - `graph`: `title`, `x`(`label`·`unit`·`max`), `y`(`label`·`unit`·`min_max`), `series`(`id`·`label`·`color`·`style: line|points`)
-   - `cast`(선택, Task 4h): 두기두기·퍼피 자리 `at: [x, z]`, 두기두기가 설명할 상태 `explain_on`과 지연 `delay_s`. 장치 오른쪽(가리킬 것이 그의 오른쪽)·뒤쪽에 두고 `tests/island_cast_checks.gd`의 자리·화면 시험을 통과시킨다([아트 디렉션 12절](docs/art-direction.md#12-두기두기와-퍼피-task-4h)). 가리킬 점이 따라가기 대상과 다르면 `explain_point()`를 재정의한다
+   - `cast`(선택, Task 4h): 두기두기·퍼피 자리 `at: [x, z]`, 허턴섬 실험은 섬지기 여우 자리 `fox.at`도(2026-11-11 사용자 "여우친구가 실험내내 안따라다니네? 따라다니게 해줘": 실험 내내 퍼피 곁에 서서 카메라를 봄, `tests/hutton_cast_checks.gd`가 화면 안·퍼피·두기두기·대화창·덮개와 겹치지 않음을 확인), 두기두기가 설명할 상태 `explain_on`과 지연 `delay_s`. 장치 오른쪽(가리킬 것이 그의 오른쪽)·뒤쪽에 두고 `tests/island_cast_checks.gd`의 자리·화면 시험을 통과시킨다([아트 디렉션 12절](docs/art-direction.md#12-두기두기와-퍼피-task-4h)). 가리킬 점이 따라가기 대상과 다르면 `explain_point()`를 재정의한다
 2. `content/experiments/index.json`의 `experiments`에 파일 이름을 더한다. 목록 화면은 이 순서와 `category`로 묶어 보여준다. 둘째 섬부터의 실험은 `islands`의 그 섬 목록에 더한다(#74: `"islands": {"hutton": ["day-night.json"]}`, `ExperimentRegistry.island_labs`). 첫 섬 목록(`load_all`)과 섞이지 않고, `find`는 모두 찾는다. 섬 지도의 장소는 그 id의 실험이 생기면 열린다(`Island.playable`은 섬의 모든 장소가 실험일 때).
 3. `experiments/<이름>/<이름>.gd`에 `extends Experiment` 스크립트를 만든다(공식 모델을 `BodyModelDriver`로 구동하는 안내형 실험은 `extends ModelDrivenLab`: `_ready()`·run 상태·그래프 장부·`release()`를 베이스가 맡고 `_build_world()`·`_load_model()`·`_graph_point()` 등을 채운다. 조건이 바뀌어 run을 다시 시작할 때는 `_restart()`와 `reset_run()`). `_ready()`에서 3D 월드를 만들고 `definition.controls()`의 기본값으로 `set_control()`을 부른다. 조건·선택지·범위·격자는 `definition.control()`·`option()`·`clamp_value()`·`grid_step()`으로 읽는다. 보이는 소품·환경·연출은 `<이름>_props.gd`로 나눠 [아트 디렉션 9절](docs/art-direction.md#9-새-실험-소품-만드는-법)을 따른다. 바닥·마찰 없는 재질·보정 바디 설정과 상태 변화 알림은 `Experiment` 베이스의 `_add_floor()`·`_frictionless_material()`·`_setup_free_body()`·`_update_status()`(반응은 `_status_changed()`를 재정의)를 쓰고, 공식의 중력은 베이스의 `engine_g`에서 읽는다. 화면 숫자는 공식(`PhysicsLaws`)에서 내고, 엔진 측정값은 따로 표시한다(공식 보정 원칙, [CONTEXT](../../CONTEXT.md)).
 4. 움직임은 [공식 보정](docs/formula-correction.md) 4절 표의 방식으로 보정한다(보정기를 붙이고 화면 숫자는 `formula_values()`에서). 새 법칙은 `tools/formula-vectors.test.ts`의 실험 그룹에 TS 사례를 더하고 `PhysicsLaws`에 포트한다(parity는 자동). 문구를 바꿨으면 글꼴 서브셋을 다시 만든다.

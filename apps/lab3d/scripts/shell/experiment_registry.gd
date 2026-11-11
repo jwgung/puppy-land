@@ -440,7 +440,7 @@ static func note(definition: Dictionary) -> Dictionary:
 
 
 ## `cast` (Task 4h, optional): {"dugi": {"at": [x, z], "explain_on": [status...], "delay_s"?},
-## "puppy": {"at": [x, z]}} (IslandCast).
+## "puppy": {"at": [x, z]}, "fox": {"at": [x, z]}} (IslandCast; the fox: the hutton island's keeper).
 static func _validate_cast(cast: Variant) -> PackedStringArray:
 	var problems := PackedStringArray()
 	if cast == null:
@@ -450,7 +450,7 @@ static func _validate_cast(cast: Variant) -> PackedStringArray:
 		return problems
 	for who in cast:
 		var spec: Variant = cast[who]
-		if who not in ["dugi", "puppy"] or not spec is Dictionary:
+		if who not in ["dugi", "puppy", "fox"] or not spec is Dictionary:
 			problems.append("cast.%s unknown" % who)
 			continue
 		var at: Variant = spec.get("at")
