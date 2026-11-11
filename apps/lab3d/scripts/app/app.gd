@@ -140,7 +140,12 @@ func show_title(islands := false) -> void:
 	screen.start_requested.connect(func() -> void: show_list())
 	screen.story_requested.connect(func() -> void: show_list(true))
 	screen.settings_requested.connect(func() -> void: show_settings(true))
-	screen.island_chosen.connect(func(island: String) -> void:   # (the islands' map sailed there first, #116)
+	screen.island_chosen.connect(func(island: String) -> void:
+		# The first trip to an island with a voyage: the voyage (it makes that island the one in use,
+		# #118); after it the islands' map sailed there first (#116).
+		if island == Story.voyage_due(ProgressStore.load()):
+			show_voyage(island)
+			return
 		Island.set_current(island)
 		show_list())
 	screen.island_story_chosen.connect(func(island: String) -> void:   # its story again (2026-11-09)
@@ -197,16 +202,12 @@ func _map_back() -> void:
 
 ## The home is the 3D island (Plan G2): tap a spot, the cat hops over, the experiment opens. The
 ## story's prologue plays over it the first time (or again from the settings: `replay`). Before it,
-## the voyage to the next island when it is due (Story.voyage_due: that island opened after this
-## one's finale), or on a replay of an island that has a voyage to it (#75).
+## on a replay of an island that has a voyage to it, the voyage (#75). The first voyage plays from
+## 섬 고르기 (#118, show_title's island_chosen), never on its own after the finale.
 func show_list(replay := false) -> void:
 	var island := Island.current_id()
 	if replay and Story.enabled and island != ProgressStore.FIRST_ISLAND and Story.has_voyage(island):
 		show_voyage(island, true)
-		return
-	var due := Story.voyage_due(ProgressStore.load()) if not replay else ""
-	if due != "":
-		show_voyage(due)
 		return
 	_show_map(replay)
 
@@ -220,11 +221,6 @@ func _show_map(replay := false) -> void:
 		if TitleScreen.app_may_show:
 			_map_back())
 	_swap(screen, "home")
-	if screen.story != null:
-		# The finale just played and the next island is open: the voyage there.
-		screen.story.ended.connect(func(part: String) -> void:
-			if part == "finale" and _screen == screen and Story.voyage_due(ProgressStore.load()) != "":
-				show_list())
 
 
 ## The voyage to `island` (VoyageScreen); then that island's map, its prologue the first time (or

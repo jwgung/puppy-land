@@ -15,5 +15,10 @@
     { "text": "Put the pieces back together and the star can shine again. Let's send it back to the sky." },
     { "text": "Pull the star down like a slingshot and let go! The harder you pull, the faster and higher it flies." }
   ],
+  "finale_after": [
+    { "text": "The star is shining again! The sea is bright!" },
+    { "text": "Now the boats can find their way at night." }
+  ],
+  "finale_next": "A new island opened across the sea! Tap Back and let's go!",
   "finale_retry": "Gravity pulled the star back down. Pull harder!"
 }

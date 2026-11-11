@@ -1,15 +1,15 @@
 {
   "map_today": "That's all the new places for today. Let's look again together tomorrow!",
   "voyage": [
-    { "text": "The guiding star is shining in the sky again." },
-    { "text": "Now the boats won't get lost!" },
+    { "text": "Thanks to the starlight, the sea is calm." },
+    { "text": "Let's go to that island!" },
     { "text": "Today let's sail to the island across the sea. It's Hutton Island." },
     { "text": "Huh? Look at that island!" },
     { "text": "It was bright, then dark… Now it's bright again!" },
     { "text": "…W-who are you?" }
   ],
   "prologue": [
-    { "text": "Don't be scared. We're from Puppy Land. Who are you?" },
+    { "text": "Don't be scared. We came from Newton Island, across the sea. Who are you?" },
     { "text": "I'm… the keeper of this island." },
     { "text": "The island is acting strange. The sun comes up and goes right back down. The rain suddenly turns to snow." },
     { "text": "Look over there. The big sundial in the middle of the island is broken." },

@@ -25,6 +25,9 @@ const SPEAKERS := {
 	# The second island's keeper (#71, 2026-11-06 look chosen by the user), named 여우친구 / "Fox Friend"
 	# by the user on 2026-11-06 (its tag: ui.json speaker.fox).
 	"fox": ["speaker.fox", "res://assets/characters/portraits/fox_%s.webp"],
+	# The same fox before it says who it is (the voyage's landing, #118: its tag 여우친구 there, 섬지기
+	# once it told the trio it keeps the island).
+	"fox_stranger": ["speaker.fox_stranger", "res://assets/characters/portraits/fox_%s.webp"],
 }
 ## The island keeper who speaks a spot's first line on Hutton Island (#74: story.keeper, before Puppy's
 ## clue). Its name tag is the speaker's (ui.json speaker.fox), never written here.
@@ -84,9 +87,12 @@ static func pages_of(island: String, part: String) -> Array:
 
 # --- the voyage to the next island (#75, 2026-11-06 user-approved: a short 3D scene on a boat) -----
 # An island's story file may hold a "voyage": the trip by boat from the island before it, played once
-# (VoyageScreen) when that island's finale was seen and this one opened, before this island's own
-# prologue on its map; 이야기 다시 보기 on this island plays it again (then the prologue). The island
-# picker (섬 고르기, TitleScreen) shows once a voyage was seen.
+# (VoyageScreen) before this island's own prologue on its map; 이야기 다시 보기 on this island plays it
+# again (then the prologue). Since #118 (2026-11-11 user: "다음 배로 넘어가는건 지도에서 다음 허턴섬이
+# 해금되고, 이동할때 가는걸로"): after the island before's finale the trio stay there (Puppy says a new
+# island opened, ← 돌아가기 nudges), 섬 고르기 shows the new island's unlock once (unlock_shown) and its
+# first 출발! plays the voyage instead of the map's sail. The picker (TitleScreen.picks_island) shows
+# once a voyage is due or was seen.
 
 ## A voyage page's camera and the boat's place on the way (VoyageScreen).
 const VOYAGE_SHOTS := ["depart", "sea", "flicker", "arrive"]
@@ -105,8 +111,9 @@ static func mark_voyage_seen(island: String) -> void:
 	ProgressStore.set_mark(ProgressStore.STORY, ProgressStore.island_key(island, "voyage"), true)
 
 
-## The island the trio sails to now ("" for none): the island after the one in use, once it is open
-## (Island.is_open) and the finale of the one in use was seen, while its voyage was never played.
+## The island whose voyage is still to come ("" for none): the island after the one in use, once it is
+## open (Island.is_open) and the finale of the one in use was seen, while its voyage was never played
+## (#118: 섬 고르기 then shows, its first 출발! plays the voyage).
 static func voyage_due(progress: Dictionary) -> String:
 	if not enabled or not finale_seen():
 		return ""
@@ -117,8 +124,16 @@ static func voyage_due(progress: Dictionary) -> String:
 	return ""
 
 
-## Some voyage was played: the title's 시작하기 opens 섬 고르기 (#75: the picker comes after the first
-## voyage; TitleScreen.picks_island).
+## The unlock of `island` on 섬 고르기 played (#118: once; ProgressStore STORY island_key(island, "unlock")).
+static func unlock_shown(island: String) -> bool:
+	return ProgressStore.mark(ProgressStore.STORY, ProgressStore.island_key(island, "unlock"))
+
+
+static func mark_unlock_shown(island: String) -> void:
+	ProgressStore.set_mark(ProgressStore.STORY, ProgressStore.island_key(island, "unlock"), true)
+
+
+## Some voyage was played: the title's 시작하기 opens 섬 고르기 (#75; TitleScreen.picks_island).
 static func any_voyage_seen() -> bool:
 	return Island.ids().any(func(id: String) -> bool: return voyage_seen(id))
 
@@ -134,7 +149,7 @@ static func page_picture(entry: Dictionary) -> String:
 ## Dugi's pages (Puppy and the island keepers never explain science). Empty = valid.
 static func validate(content: Dictionary) -> PackedStringArray:
 	var problems := PackedStringArray()
-	for part in ["prologue", "finale", "voyage"]:
+	for part in ["prologue", "finale", "finale_after", "voyage"]:
 		var entries: Variant = content.get(part, [])
 		if not entries is Array:
 			problems.append("%s must list pages" % part)
@@ -292,6 +307,22 @@ static func wrong_face() -> String:
 
 
 ## Dugi's line when the finale's star came back down (2026-11-01: pull harder).
+## The words after the star's finale reached the sky (#118: the trio on the square, after the
+## fireworks and the island's ribbon): pages like the finale's, [] when the island has none.
+static func finale_after() -> Array:
+	return pages("finale_after")
+
+
+## Puppy's line after them when the next island opened (#118: go back to 섬 고르기; the voyage plays
+## when the child picks it there), "" when there is none.
+static func finale_next_line() -> String:
+	return str(_load().get("finale_next", ""))
+
+
+static func finale_next_face() -> String:
+	return face_or_default(_load().get("finale_next_face"))
+
+
 static func finale_retry_line() -> String:
 	return str(_load().get("finale_retry", ""))
 

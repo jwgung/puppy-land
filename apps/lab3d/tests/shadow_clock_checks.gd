@@ -429,8 +429,8 @@ func check_opening() -> void:
 		again.clue_read()
 	Story.enabled = was
 	var tag := Locale.t("speaker." + Story.KEEPER)
-	expect.call(first_ok and later == ["dugi", "dugi"] and tag == "여우친구",
-		"shadow-clock opening: first visit the fox (worried), Puppy's clue, the fox's answer (her name tag 여우친구 from ui.json), Dugi's two lines, then the question; later visits Dugi's two lines",
+	expect.call(first_ok and later == ["dugi", "dugi"] and tag == "섬지기",
+		"shadow-clock opening: first visit the fox (worried), Puppy's clue, the fox's answer (her name tag 섬지기 from ui.json, #118), Dugi's two lines, then the question; later visits Dugi's two lines",
 		"%s / %s / %s" % [str(told), str(later), tag])
 
 

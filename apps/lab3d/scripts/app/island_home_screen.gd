@@ -21,6 +21,7 @@ var definitions: Array[Dictionary] = []
 var view: View3D
 var cat: CatActor
 var dugi: DugiActor
+var _back_nudge: Tween              # ← 돌아가기's nudge (nudge_back), null: none
 var puppy: PuppyActor
 var map: MapIsland
 var world: Node3D
@@ -201,6 +202,8 @@ func _ready() -> void:
 		story.refresh()
 		if play_prologue_on_open:
 			story.play_prologue()
+		elif next_island_waits() and not story.cinematic():
+			nudge_back.call_deferred(true)   # (#118: the map opened again while the new island waits)
 	if Quality.cmdline_value("demo-story").begins_with("map"):
 		get_tree().create_timer(1.5).timeout.connect(_print_spot_points)
 
@@ -303,6 +306,9 @@ func _add_spot(world: Node3D, zone: String, id: String, info: Dictionary) -> voi
 ## 설정 is on the title only (2026-11-11 user: "지도에 설정 안보여주기로 했잖아.. 홈에서만 보이게 해줘").
 const MAP_EDGE := 20.0
 const BACK_GAP := 12.0              # between ← and the emblem under it
+## ← 돌아가기's nudge while a new island waits (#118): its swell and its beat (s).
+const BACK_NUDGE := 1.1
+const BACK_NUDGE_S := 1.2
 
 
 func _build_map_buttons() -> void:
@@ -337,6 +343,34 @@ func _layout() -> void:
 	if back != null:
 		back.size = back.get_combined_minimum_size()
 		back.position = Vector2(MAP_EDGE + inset.left, MAP_EDGE + inset.top)
+
+
+## A new island opened and its voyage waits (#118: the first island's finale seen, Story.voyage_due):
+## ← 돌아가기 leads to it.
+func next_island_waits() -> bool:
+	return story != null and Story.voyage_due(ProgressStore.load()) != ""
+
+
+## ← 돌아가기 swells and shrinks a little (BACK_NUDGE, BACK_NUDGE_S a beat) while `on` (#118: a new
+## island waits on 섬 고르기); off: at rest.
+func nudge_back(on: bool) -> void:
+	var back: Control = find_child("MapBackButton", true, false)
+	if back == null:
+		return
+	if _back_nudge != null:
+		_back_nudge.kill()
+		_back_nudge = null
+	back.scale = Vector2.ONE
+	if not on:
+		return
+	back.pivot_offset = back.get_combined_minimum_size() * 0.5
+	_back_nudge = back.create_tween().set_loops()
+	_back_nudge.tween_property(back, "scale", Vector2.ONE * BACK_NUDGE, BACK_NUDGE_S * 0.5).set_trans(Tween.TRANS_SINE)
+	_back_nudge.tween_property(back, "scale", Vector2.ONE, BACK_NUDGE_S * 0.5).set_trans(Tween.TRANS_SINE)
+
+
+func back_nudged() -> bool:
+	return _back_nudge != null
 
 
 ## Where the story's corner emblem goes (its top left): under ← (its place even while ← hides in the story).

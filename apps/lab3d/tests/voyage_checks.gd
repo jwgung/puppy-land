@@ -35,7 +35,7 @@ func run() -> void:
 	TitleScreen.app_may_show = true
 	Story.app_may_enable = true
 	await check_voyage_flow(quality_script)
-	await check_finale_leads_on(quality_script)
+	await check_finale_stays(quality_script)
 	await check_skip_and_replay(quality_script)
 	await check_title_islands(quality_script)
 	await check_map_back()
@@ -98,7 +98,7 @@ func check_content() -> void:
 		problems.append("shots %s" % str(order))
 	if VoyageScreen.SHOTS.keys() != Story.VOYAGE_SHOTS:
 		problems.append("VoyageScreen.SHOTS %s" % str(VoyageScreen.SHOTS.keys()))
-	if voyage.is_empty() or str(voyage[-1].get("who")) != "fox":
+	if voyage.is_empty() or str(voyage[-1].get("who")) != "fox_stranger":   # (여우친구 before it says who it is, #118)
 		problems.append("the keeper does not speak last")
 	var prologue := Story.pages_of(NEXT, "prologue")
 	if prologue.size() != 12:
@@ -158,13 +158,18 @@ func _free(app: Control) -> void:
 	Island.set_dev_open(false)
 
 
-## 시작하기 after the first island's finale: the voyage, page by page, then the next island's map with
-## its prologue; the voyage's mark and the island in use are saved.
+## 시작하기 after the first island's finale: 섬 고르기, and the next island's first 출발! is the voyage
+## (no sail on the map first, #118), page by page, then the next island's map with its prologue; the
+## voyage's mark and the island in use are saved.
 func check_voyage_flow(_quality_script: GDScript) -> void:
 	_first_done()
 	var app := await _app(["--islands=open"])
-	var title_first: bool = app._screen is TitleScreen and not TitleScreen.picks_island()
-	(app._screen as TitleScreen).start_button.pressed.emit()
+	var title := app._screen as TitleScreen
+	var title_first: bool = title != null and TitleScreen.picks_island()
+	title.start_button.pressed.emit()
+	await tree.process_frame
+	if title.island_cards != null and title.island_cards.buttons.get(NEXT) != null:
+		(title.island_cards.buttons[NEXT] as Button).pressed.emit()
 	await tree.process_frame
 	var voyage: VoyageScreen = app._screen as VoyageScreen
 	var problems := []
@@ -245,58 +250,81 @@ func check_voyage_flow(_quality_script: GDScript) -> void:
 	await tree.process_frame
 	var once: bool = app._screen is IslandHomeScreen
 	await _free(app)
-	expect.call(title_first and problems.is_empty(), "voyage: 시작하기 after the finale sails: each page's shot (the star as they leave, the keeper only at the landing), the boat moves, the next island flickers dark",
+	expect.call(title_first and problems.is_empty(), "voyage: after the finale 시작하기 opens 섬 고르기 and the next island's first 출발! is the voyage (no map sail, #118): each page's shot (the star as they leave, the keeper only at the landing), the boat moves, the next island flickers dark",
 		"%s %s" % [title_first, "; ".join(problems)])
 	expect.call(landed and prologue_ok and once, "voyage: it ends on the next island's map (saved as the island in use) with its prologue over the square; once only",
 		"landed %s prologue %s (%d pages) once %s" % [landed, prologue_ok, pages_seen, once])
 
 
-## The finale's end on the first island's map leads to the voyage when the next island is open.
-func check_finale_leads_on(_quality_script: GDScript) -> void:
+## The finale's end on the first island's map stays there (#118, 2026-11-11 user: "뉴턴섬에 남아"): no
+## voyage by itself; while the next island waits ← 돌아가기 nudges (also when the map opens again) and
+## leads to 섬 고르기, where the new island's unlock plays once (its colours back, the row on it, the
+## lock gone) and its first 출발! is the voyage. While it is in the making: no nudge, ← to the title.
+func check_finale_stays(_quality_script: GDScript) -> void:
 	_first_done()
-	var app := await _app(["--islands=open"])
+	var app := await _app([])   # (#98: hutton whole, open without the switch)
 	app._show_map()
-	await tree.process_frame
+	for i in 2:
+		await tree.process_frame
 	var home: IslandHomeScreen = app._screen as IslandHomeScreen
-	var on_map := home != null and home.story != null
-	if on_map:
+	var problems := []
+	if home == null or home.story == null:
+		problems.append("no map")
+	else:
 		home.story.ended.emit("finale")
+		await tree.process_frame
+		if not app._screen is IslandHomeScreen:
+			problems.append("the finale's end left the map (%s)" % app._screen)
+		if not home.back_nudged():
+			problems.append("← does not nudge")
+		(home.find_child("MapBackButton", true, false) as Button).pressed.emit()
 	await tree.process_frame
-	var sails: bool = app._screen is VoyageScreen
+	var title := app._screen as TitleScreen
+	var cards: IslandCards = title.island_cards if title != null else null
+	if cards == null:
+		problems.append("← did not open 섬 고르기 (%s)" % app._screen)
+	else:
+		var unlocking: bool = not cards.unlock.is_empty() and cards.unlock.id == NEXT and Story.unlock_shown(NEXT)
+		var tint0: Vector3 = (cards.unlock.material as ShaderMaterial).get_shader_parameter("own_tint") if unlocking else Vector3.ONE
+		for i in roundi((IslandCards.UNLOCK_WAIT_S + IslandCards.UNLOCK_SLIDE_S + IslandCards.UNLOCK_S) * 60.0) + 40:
+			await tree.process_frame
+		if not unlocking or tint0 != IslandCards.LOCKED_TINT or not cards.unlock.is_empty() or cards.focus != cards._index(NEXT) \
+				or cards.find_child("UnlockLock", true, false) != null or not (cards.cards[NEXT] as Control).visible:
+			problems.append("the unlock: %s, tint %s, left %s, focus %d" % [unlocking, str(tint0), str(cards.unlock), cards.focus])
+		(cards.buttons[NEXT] as Button).pressed.emit()
+		await tree.process_frame
+		if not app._screen is VoyageScreen:
+			problems.append("the first 출발! is not the voyage (%s)" % app._screen)
 	await _free(app)
-	# Without the next island open (in the making): the map stays.
+	# Once: 섬 고르기 again plays no unlock.
+	app = await _app([])
+	title = app._screen as TitleScreen
+	title.show_islands()
+	await tree.process_frame
+	if title.island_cards == null or not title.island_cards.unlock.is_empty():
+		problems.append("the unlock plays again (%s)" % (str(title.island_cards.unlock) if title.island_cards else "no cards"))
+	await _free(app)
+	# In the making: no nudge, ← to the title.
 	_first_done()
 	_in_making()
 	app = await _app([])
 	app._show_map()
-	await tree.process_frame
+	for i in 2:
+		await tree.process_frame
 	home = app._screen as IslandHomeScreen
-	if home != null and home.story != null:
-		home.story.ended.emit("finale")
-	await tree.process_frame
-	var stays: bool = app._screen is IslandHomeScreen
+	if home == null or home.back_nudged():
+		problems.append("← nudges while the next island is in the making")
 	await _free(app)
 	_made()
-	# The real islands with no switch (#98: every hutton spot a lab): the finale's end sails on.
-	_first_done()
-	app = await _app([])
-	app._show_map()
-	await tree.process_frame
-	home = app._screen as IslandHomeScreen
-	if home != null and home.story != null:
-		home.story.ended.emit("finale")
-	await tree.process_frame
-	var sails_real: bool = app._screen is VoyageScreen
-	await _free(app)
-	expect.call(on_map and sails and stays and sails_real, "voyage: the finale's end leads to it when the next island is open (with --islands=open and, hutton being whole, without), not while it is in the making",
-		"%s %s %s %s" % [on_map, sails, stays, sails_real])
+	expect.call(problems.is_empty(), "voyage: the finale's end stays on the first island (no voyage by itself); ← nudges and opens 섬 고르기, the new island's unlock once, its first 출발! the voyage; none of it while it is in the making (#118)",
+		"; ".join(problems))
 
 
 ## 건너뛰기 and Android back skip to the next island's map; 이야기 다시 보기 there plays it again.
 func check_skip_and_replay(_quality_script: GDScript) -> void:
 	_first_done()
 	var app := await _app(["--islands=open"])
-	app.show_list()
+	app.show_voyage(NEXT)   # (as 섬 고르기's first 출발!, #118)
 	await tree.process_frame
 	var voyage := app._screen as VoyageScreen
 	var shown := voyage != null and voyage.skip_button.visible
@@ -307,7 +335,7 @@ func check_skip_and_replay(_quality_script: GDScript) -> void:
 	# Android back skips it too.
 	Island.set_current(ProgressStore.FIRST_ISLAND)
 	ProgressStore.set_mark(ProgressStore.STORY, ProgressStore.island_key(NEXT, "voyage"), false)
-	app.show_list()
+	app.show_voyage(NEXT)
 	await tree.process_frame
 	var again: bool = app._screen is VoyageScreen
 	app.notification(Node.NOTIFICATION_WM_GO_BACK_REQUEST)
@@ -338,11 +366,13 @@ func check_skip_and_replay(_quality_script: GDScript) -> void:
 ## opens the cards after one; the cards; a tap on a card or its button chooses; back closes them.
 func check_title_islands(_quality_script: GDScript) -> void:
 	_first_done()
+	ProgressStore.set_mark(ProgressStore.STORY, "finale", false)   # (before the finale no island waits: straight on)
 	var app := await _app([])
 	(app._screen as TitleScreen).start_button.pressed.emit()
 	await tree.process_frame
 	var hidden: bool = not (app._screen is TitleScreen) and not TitleScreen.picks_island()   # (straight on: the map or the voyage)
 	await _free(app)
+	ProgressStore.set_mark(ProgressStore.STORY, "finale", true)
 	Story.mark_voyage_seen(NEXT)
 	# The next island in the making: its card locked, with the first island's name in the condition.
 	_in_making()
@@ -640,10 +670,11 @@ func _boat_aground(map: IslandCards) -> String:
 	return ""
 
 
-## The map's ← (top left, #114) and Android back on the map: the islands' map once a voyage was seen,
-## the title before. The story's emblem sits under ← (2026-11-11 user: "돌아가기 아래로 두자"), both clear of the top left edges.
+## The map's ← (top left, #114) and Android back on the map: the islands' map once a voyage was seen
+## (or one is due, check_finale_stays), the title before. The story's emblem sits under ← (2026-11-11 user: "돌아가기 아래로 두자"), both clear of the top left edges.
 func check_map_back() -> void:
 	_first_done()
+	_in_making()   # (no new island waits: the title, #118)
 	var app := await _app([])
 	app._show_map()   # (the map itself, not the voyage due)
 	await tree.process_frame
@@ -667,6 +698,7 @@ func check_map_back() -> void:
 	await tree.process_frame
 	var title_before: bool = app._screen is TitleScreen and (app._screen as TitleScreen).island_cards == null
 	await _free(app)
+	_made()
 	Story.mark_voyage_seen(NEXT)
 	_in_making()
 	app = await _app([])
