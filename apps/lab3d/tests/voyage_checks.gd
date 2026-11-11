@@ -542,8 +542,8 @@ func check_sail() -> void:
 ## The islands' map as a carousel (2026-11-11 user: "섬 여러개 늘어나면 왓다갓다 할 수 잇어야댈거같아.
 ## CAROUSEL 쓰는거처럼"; no arrows: "좌우 화살표는 없어도될듯"): it opens with the island in use in the
 ## middle and only its tag shown; a drag past SNAP_SHARE of a slot settles on the next island (in the
-## middle, its tag alone), a short one back where it was, none past the row's ends; a drag that starts
-## on a tag slides the row too.
+## middle, its tag alone), a short one back where it was, none past the row's ends; a tap on the island
+## beside brings it to the middle (one in the middle: nothing); a drag that starts on a tag slides it too.
 func check_carousel() -> void:
 	_first_done()
 	Story.mark_voyage_seen(NEXT)
@@ -581,6 +581,24 @@ func check_carousel() -> void:
 		await tree.process_frame
 	if map.focus != map._index(NEXT) or absf(map.focus_x - map._focus_at(map.focus)) > 0.05:
 		problems.append("a short drag moved it (%d, %.2f)" % [map.focus, map.focus_x])
+	# A tap on the island beside it brings that one to the middle (2026-11-11 user: "그 섬 눌러도 포커스
+	# 이동 되게 해줘"); a tap on the one in the middle does nothing (only its button sails).
+	map._on_pointer("press", map._island_rect(NEXT).get_center())
+	map._on_pointer("release", map._island_rect(NEXT).get_center())
+	await tree.process_frame
+	if map.focus != map._index(NEXT) or not map.sail.is_empty():
+		problems.append("a tap on the island in the middle moved or sailed (%d)" % map.focus)
+	var beside: Vector2 = map._island_rect(ProgressStore.FIRST_ISLAND).get_center()
+	map._on_pointer("press", beside)
+	map._on_pointer("release", beside)
+	for i in 90:
+		await tree.process_frame
+	if map.focus != map._index(ProgressStore.FIRST_ISLAND) or not map.sail.is_empty() or not app._screen is TitleScreen:
+		problems.append("a tap on the island beside did not bring it to the middle (%d)" % map.focus)
+	map._on_pointer("press", map._island_rect(NEXT).get_center())   # and back, for the tag's drag below
+	map._on_pointer("release", map._island_rect(NEXT).get_center())
+	for i in 90:
+		await tree.process_frame
 	# A drag starting on the tag in view (its events come up to the map, MOUSE_FILTER_PASS).
 	var tag: Control = map.cards[NEXT]
 	var on_tag := tag.get_global_rect().get_center() - Vector2(0.0, tag.size.y * 0.3)
@@ -599,7 +617,7 @@ func check_carousel() -> void:
 	if map.focus != map._index(ProgressStore.FIRST_ISLAND):
 		problems.append("a drag on the tag did not slide the row back (%d)" % map.focus)
 	await _free(app)
-	expect.call(problems.is_empty(), "섬 고르기 carousel: the island in use in the middle with its tag alone; a drag past SNAP_SHARE moves on one island, a short one settles back, none past the ends; a drag on a tag slides it too (no arrows)",
+	expect.call(problems.is_empty(), "섬 고르기 carousel: the island in use in the middle with its tag alone; a drag past SNAP_SHARE moves on one island, a short one settles back, none past the ends; a tap on the island beside brings it to the middle; a drag on a tag slides it too (no arrows)",
 		"; ".join(problems))
 
 

@@ -251,7 +251,7 @@ func _build_world() -> void:
 		_reach[entry.id] = (FAR_RADIUS if entry.id == "" else MINI_RADIUS) * MODEL_SCALE
 		var holder := Node3D.new()
 		holder.name = "Island_%s" % (entry.id if entry.id != "" else "next")
-		holder.position = middle
+		holder.position = middle + Vector3.UP * MapIsland.SEA_Y * (1.0 - MODEL_SCALE)   # (sea level stays at SEA_Y)
 		holder.scale = Vector3.ONE * MODEL_SCALE
 		world.add_child(holder)
 		var mesh := _far_island_mesh() if entry.id == "" else _mini_island_mesh(str(entry.id))
@@ -457,8 +457,10 @@ func _tag(entry: Dictionary) -> PanelContainer:
 
 
 ## A tap on the map during a sail ends it (the boat lands at once). Only an island's button sails
-## (2026-11-10 user: "섬 근처 터치만 돼도 바로 이동해버리네"): a tap on the island or its tag does
-## nothing. A drag (more than TAP_SLOP from the press) slides the row and on release settles (_snap).
+## (2026-11-10 user: "섬 근처 터치만 돼도 바로 이동해버리네"): a tap on the island in the middle or its
+## tag does nothing; a tap on one beside it brings that one to the middle (2026-11-11 user: "그 섬
+## 눌러도 포커스 이동 되게 해줘"). A drag (more than TAP_SLOP from the press) slides the row and on
+## release settles (_snap).
 func _on_pointer(event_type: String, at: Vector2) -> void:
 	if event_type == "press":
 		_pressed_at = at
@@ -491,6 +493,12 @@ func _on_pointer(event_type: String, at: Vector2) -> void:
 		return
 	if not sail.is_empty():
 		_end_sail()
+		return
+	var near := nearest()
+	for k in _entries.size():
+		if k != near and _island_rect(str(_entries[k].id)).has_point(at):
+			focus = k
+			return
 
 
 ## A drag or a click on a tag (MOUSE_FILTER_PASS) comes up here: the view takes it as its own, so the
@@ -629,8 +637,8 @@ func _end_sail() -> void:
 	chosen.emit(id)
 
 
-## The screen rect of island `id` (its coast round its middle, at sea level; the tests check the tags
-## and taps against it).
+## The screen rect of island `id` (its coast round its middle, at sea level): a tap on it brings it to
+## the middle; the tests check the tags against it.
 func _island_rect(id: String) -> Rect2:
 	var middle: Vector3 = _middles.get(id, Vector3.ZERO)
 	var r := float(_reach.get(id, DEFAULT_REACH))
