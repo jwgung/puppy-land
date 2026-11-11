@@ -7,7 +7,8 @@
 ## found), 이야기 다시 보기 under it; the island in use has the gold edge and the boat at its shore. An
 ## island not open yet (Island.is_open) is grey with a lock and the condition ("뉴턴섬 조각을 다 모으면
 ## 열려요"); the island still to come says 곧 만나요 (no island opens after the last yet).
-## A tag's button or a tap on its island (or the tag) chooses: the island in use emits `chosen` at once;
+## Only a tag's button chooses (a tap on an island or its tag does nothing, 2026-11-10 user: "섬 근처
+## 터치만 돼도 바로 이동해버리네"): the island in use emits `chosen` at once;
 ## another one first sails the boat along the sea way to it (SAIL_S, a tap ends it) and then emits
 ## `chosen` (App makes it the island in use and opens its map). ← 돌아가기 emits `back_requested`
 ## (TitleScreen closes the map); Android back closes it too, through App (TitleScreen.hide_islands, no
@@ -553,7 +554,8 @@ func _end_sail() -> void:
 	chosen.emit(id)
 
 
-## The screen rect of island `id` (its coast round its middle, at sea level).
+## The screen rect of island `id` (its coast round its middle, at sea level; the tests check the tags
+## and taps against it).
 func _island_rect(id: String) -> Rect2:
 	var middle: Vector3 = _middles.get(id, Vector3.ZERO)
 	var r := float(_reach.get(id, DEFAULT_REACH))

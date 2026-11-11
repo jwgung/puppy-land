@@ -5,8 +5,8 @@
 ## its prologue; the finale's end leads to it. The title's 시작하기 opens 섬 고르기 only after a voyage
 ## (before, it goes straight on); the islands' map (#116) shows every island on one sea with its tag
 ## and 다음 섬 (곧 만나요), a locked one with its lock and condition and no button, an open one's button
-## (출발! · 이어서 하기 · 다시 가기), its tag or the island itself makes it the island in use (another one
-## after the boat's sail on the map); ← 돌아가기 and Android back close the map. The developer switch --islands=open is ignored in the Play build. Phone and tablet layouts.
+## (출발! · 이어서 하기 · 다시 가기) makes it the island in use (another one after the boat's sail on the
+## map; a tap on its tag or the island itself does nothing); ← 돌아가기 and Android back close the map. The developer switch --islands=open is ignored in the Play build. Phone and tablet layouts.
 extends RefCounted
 
 var tree: SceneTree
