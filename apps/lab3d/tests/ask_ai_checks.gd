@@ -250,6 +250,16 @@ func check_off_screen() -> void:
 	var none: bool = not screen._sections.has("ask") and screen._ask_button == null and screen._web_button == null \
 		and calls.is_empty() and screen.find_children("AskAi", "", true, false).is_empty()
 	expect.call(none, "ask AI: off, a lab's note has no button or web link and nothing is handed over", "calls %d" % calls.size())
+	# In its place the note's last card copies this run's question (2026-11-11 user: copy the prompt).
+	var copied: Array = []
+	screen.copy_handler = func(text: String) -> void: copied.append(text)
+	var card: bool = screen._sections.has("copy") and screen._copy_button != null and not screen._copy_status.visible
+	screen._copy_button.pressed.emit()
+	var want: String = ScienceNote.question(screen.definition, screen.experiment,
+		screen._hidden_answers(screen.experiment.observations()))
+	expect.call(card and copied == [want] and screen._copy_status.visible and not want.is_empty(),
+		"ask AI: off, the note's last card copies this run's question once and says so, nothing opens",
+		"copies %d" % copied.size())
 	await _close(screen)
 
 
