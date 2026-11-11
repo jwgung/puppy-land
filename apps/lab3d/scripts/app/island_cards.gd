@@ -1,15 +1,21 @@
-## 섬 고르기 (#75, 2026-11-06 user-approved mock B1; since 2026-11-09 the title's 시작하기 opens it once
-## there is a second island): one card per island of the list (Island) and a last card for the island
-## still to come. A card shows the island (its map rendered once, from the title's 3/4 view), its name
-## and field, the pieces found on it and the same big red button on every open island: 가 보기 (nothing
-## found yet), 이어서 하기 (pieces left) or 다시 가기 (all found); the island in use has the gold edge.
-## An island not open yet (Island.is_open) is grey with a lock and the condition ("뉴턴섬 조각을 다
-## 모으면 열려요"); the last card, 다음 섬, has no picture of its own (a grey island and a lock) and says
-## 곧 만나요 (no island opens after the last yet). A card's button or a tap on the open card itself
-## emits `chosen` (App makes it the island in use and opens its map); ← 돌아가기 emits `back_requested`
-## (TitleScreen closes the cards). Android back closes them too, through App (TitleScreen.hide_islands,
-## no signal). The payment (#77): an open island not bought has a small 보호자 in its picture's corner
-## (ADR 0005: IslandOffer; its button takes its own taps, never the card's).
+## 섬 고르기 (#75; since 2026-11-09 the title's 시작하기 opens it once there is a second island; since
+## #116, 2026-11-10 user: "이 과학섬들 전체 지도를 보여주고 거기서 넘어오게 하는게 낫지 않아?"): the whole
+## world's map, every island of the list (Island) out on one sea in a row with a dotted sea way between
+## them, and at the row's end the island still to come under a cloud. Under each island its tag: its
+## name and field, the pieces found on it and the same big red button on every open island: 출발! (nothing
+## found yet; 2026-11-10 user: "가 보기라는 단어가 좀 어색해"), 이어서 하기 (pieces left) or 다시 가기 (all
+## found), 이야기 다시 보기 under it; the island in use has the gold edge and the boat at its shore. An
+## island not open yet (Island.is_open) is grey with a lock and the condition ("뉴턴섬 조각을 다 모으면
+## 열려요"); the island still to come says 곧 만나요 (no island opens after the last yet).
+## Only a tag's button chooses (a tap on an island or its tag does nothing, 2026-11-10 user: "섬 근처
+## 터치만 돼도 바로 이동해버리네"): the island in use emits `chosen` at once;
+## another one first sails the boat along the sea way to it (SAIL_S, a tap ends it) and then emits
+## `chosen` (App makes it the island in use and opens its map). ← 돌아가기 emits `back_requested`
+## (TitleScreen closes the map); Android back closes it too, through App (TitleScreen.hide_islands, no
+## signal). The payment (#77): an open island not bought has a small 보호자 in its tag's top right corner
+## (ADR 0005: IslandOffer; its button takes its own taps, never the tag's).
+## The name stays IslandCards (the title, the offer and the tests know it by it); its `cards` are the
+## islands' tags.
 class_name IslandCards
 extends Control
 
@@ -18,12 +24,8 @@ signal chosen(island: String)
 signal story_chosen(island: String)
 signal back_requested
 
-const CARD_MAX := 340.0
-const GAP := 24.0
 const EDGE := 16.0
 const TOP := 18.0                  # the heading and ← 돌아가기 from the top
-const ROW_GAP := 18.0              # the cards under the heading
-const ROW_LIFT := 6.0              # the row a little above the middle of the room left
 ## The heading: a red ribbon with white words outlined in the storybook brown.
 const HEADING_RADIUS := 18
 const HEADING_PAD := Vector2(34.0, 6.0)
@@ -31,54 +33,128 @@ const HEADING_LINE := 4
 const HEADING_LIP := 9
 const HEADING_SIZE := 36
 const HEADING_OUTLINE := 8
-## A card: cream paper (a locked one greyer), the brown outline (the island in use: gold, thicker).
-const CARD_RADIUS := 22
-const CARD_PAD := 12.0
-const CARD_LINE := 4
-const CARD_LIP := 9
+## A tag: cream paper (a locked one greyer), the brown outline (the island in use: gold, thicker).
+const TAG_RADIUS := 20
+const TAG_PAD := 10.0
+const TAG_LINE := 4
+const TAG_LIP := 8
 const CURRENT_LINE := 6
-const CURRENT_LIP := 13
+const CURRENT_LIP := 12
 const LOCKED_PAPER := Color("efe7da")
-const CARD_SEPARATION := 6
-const PICTURE_RADIUS := 14
-const THUMB_ASPECT := 0.72
-const NAME_SIZE := 30
-## 보호자 (#77): small, in the picture's top right corner (the star pieces are top left).
-const GUARDIAN_INSET := 8
-## The star pieces found, small in the picture's corner.
-const EMBLEM_SCALE := 0.8
-const EMBLEM_AT := Vector2(8.0, 8.0)
-## The card's button (the same red one on every open island); a locked card keeps its room.
-const GO_WIDTH := 200.0
-const GO_HEIGHT := 62.0
-const GO_FONT := 26
-const STORY_HEIGHT := 44.0         # 이야기 다시 보기 under it, small
-const STORY_FONT := 18
+const TAG_SEPARATION := 4
+const TAG_WIDTH := 250.0
+const NAME_SIZE := 28
+const LOCK_SIZE := 54.0
+const EMBLEM_SCALE := 0.62
+## The tag's button (the same red one on every open island); a locked tag keeps its room.
+const GO_WIDTH := 190.0
+const GO_HEIGHT := 58.0
+const GO_FONT := 24
+const STORY_HEIGHT := 40.0         # 이야기 다시 보기 under it, small
+const STORY_FONT := 17
 const BACK_HEIGHT := 56.0
-## The thumbnails' render size (px) and camera (the title's 3/4 view of the island).
+## The world: the islands' little models (_mini_island_mesh) SLOT m apart along x (the row centred on
+## the origin); the camera looks down at the row from PITCH_DEG and backs off until VIEW_SLOTS slots
+## round the island in focus and the tags under them fit (see the carousel below); a tag hangs under
+## its island's front coast.
+const SLOT := 42.0   # (23, then 34 for "섬이 너무 가까워서 배가 움직이는게 너무 짧아"; 42 with MODEL_SCALE, the same sea between)
+## Every other island a little back (z), the sea's radius and its wave strokes; the little islands'
+## radius, their trees and how big their landmarks are against the map's.
+const ROW_STAGGER := 3.0
+const SEA_RADIUS := 220.0
+const WAVES := 40
+const MINI_RADIUS := 8.0
+## The little models are built at MINI_RADIUS and FAR_RADIUS and drawn this many times bigger
+## (2026-11-11 user, 섬 고르기: "지도에서는 작아보이는데").
+const MODEL_SCALE := 1.5
+const MINI_TREES := 5
+const MINI_SCALE := 2.0
+const COAST_SIDES := 40
+## An island's coast radius when it is not known (m), where the sea way leaves its coast (m out past
+## the boat's own reach, BoatArt's hull end x BOAT_SCALE, so its bow and stern stay in the water:
+## 2026-11-11 user "배가 육지로 올라간다"; m towards the camera), how far the way bends towards the
+## camera (m) and its dots' size and lift.
+const DEFAULT_REACH := 12.0
+const SHORE_OUT := 1.0
+const SHORE_FRONT := 4.0
+const WAY_BEND := 5.0
+const DOT_RADIUS := 0.4
+const DOT_LIFT := 0.05
+## The camera's aim (a little in front of the row), its first distance and how much a fitting pass
+## may bring it nearer at most; a tag hangs at this share of its island's coast radius in front.
+const AIM := Vector3(0.0, 0.0, 6.0)
+const FIRST_DISTANCE := 60.0
+const FIT_PASSES := 4
+const FIT_MIN := 0.6
+const TAG_UNDER := 0.85
+## A tap on the map moves less than this (UI units) between press and release (a drag chooses nothing).
+const TAP_SLOP := 18.0
+const PITCH_DEG := -52.0
+const VIEW_MARGIN := 0.04
+const TAG_GAP := 6.0
+## The carousel (2026-11-11 user: "섬 여러개 늘어나면 왓다갓다 할 수 잇어야댈거같아. CAROUSEL 쓰는거처럼"):
+## the camera centres one island (at first the island in use) and shows VIEW_SLOTS slots (its
+## neighbours peek in at the sides), fewer on a narrow screen so a slot is never narrower than a tag
+## (TAG_WIDTH + TAG_SPACE); only the tag of the island nearest the middle shows; a drag slides the row
+## (no arrows, 2026-11-11 user: "좌우 화살표는 없어도될듯"; ROW_OVERSCROLL slots past its ends) and on
+## release it settles on the nearest island, the next one once it moved SNAP_SHARE of a slot
+## (SNAP_RATE per second); during a sail the camera follows the boat.
+const VIEW_SLOTS := 2.0
+const TAG_SPACE := 24.0
+const ROW_OVERSCROLL := 0.3
+const SNAP_SHARE := 0.2
+const SNAP_RATE := 9.0
+## A locked island's tint (the map's own_tint), and the island still to come: a plain grey island
+## (FAR_RADIUS m, its sand, land and hill in greys) under a cloud.
+const LOCKED_TINT := Vector3(0.6, 0.66, 0.78)
+const FAR_RADIUS := 7.0
+const FAR_SAND := Color("c4c9d2")
+const FAR_LAND := Color("a9b2bf")
+const FAR_HILL := Color("b9c0cc")
+## The sea way between the islands: dots DOT_STEP m apart over the water, and the boat (BoatArt, bigger)
+## at the shore of the island in use, which sails the way in SAIL_S.
+const DOT_STEP := 2.4
+const DOT := Color("f4fbff")
+const BOAT_SCALE := 2.0
+const SAIL_S := 3.2
+## An island's picture for the island's offer (IslandOffer, thumbnail): its render size (px) and camera
+## (the title's 3/4 view of the island).
 const THUMB_PIXELS := Vector2i(400, 288)
 const THUMB_PITCH_DEG := -34.0
 const THUMB_YAW_DEG := 20.0
 const THUMB_DISTANCE := 40.0
 const THUMB_FOV := 40.0
-## A locked island's picture: grey with a little cool blue-grey (locked_grey.gdshader).
-const LOCKED_TINT := Color("8fa6c8")
-const GREY_SHADER := preload("res://scripts/app/locked_grey.gdshader")
 
 var heading: PanelContainer
 var back_button: Button
-var row: HBoxContainer
-## Island id ("" for 다음 섬) -> its card's button (null when locked) (tests).
+var view: View3D
+var world: Node3D
+var boat: Node3D
+## Island id ("" for the island still to come) -> its tag's button (null when locked) (tests).
 var buttons: Dictionary = {}
+## Island id -> its tag (tests).
 var cards: Dictionary = {}
 ## Island id -> its 이야기 다시 보기 (open islands; tests).
 var story_buttons: Dictionary = {}
 ## Island id -> its 보호자 button (an open island not bought, #77; tests).
 var guardians: Dictionary = {}
+## The sail now: {to: id, from: Vector3, to_at: Vector3, t} (empty: none).
+var sail := {}
 var _entries: Array = []
+var _middles: Dictionary = {}      # id -> its island's middle (world)
+var _reach: Dictionary = {}        # id -> its model's radius (m: MINI_RADIUS, FAR_RADIUS, x MODEL_SCALE)
+var _pressed_at := Vector2.INF     # where the finger came down on the map (INF: none)
+## The carousel: the camera's x over the row, the island it settles on.
+var focus_x := 0.0
+var focus := 0
+var _drag_from := 0.0              # focus_x when the finger came down
+var _dragging := false
+var _distance := FIRST_DISTANCE
+var _m_per_px := 0.1               # m along the row per UI unit on screen
+var _tag_h := 0.0                  # the tallest tag (_layout)
 
 
-## The cards, in order: per island {id, name, about, open, complete, pieces, total, piece (its kind,
+## The islands, in order: per island {id, name, about, open, complete, pieces, total, piece (its kind,
 ## PieceArt), current, after}
 ## (`after`: the name of the island it waits for), then 다음 섬 {id "", open false, after: the last
 ## island's name}.
@@ -102,7 +178,7 @@ static func island_name(id: String) -> String:
 	return Locale.t("island.%s.name" % id)
 
 
-## The line under a locked card's name: what opens it; 다음 섬 promises nothing yet (2026-11-09: no
+## The line under a locked island's name: what opens it; 다음 섬 promises nothing yet (2026-11-09: no
 ## island opens after the last one, so not "collect them all and it opens").
 static func locked_line(entry: Dictionary) -> String:
 	if str(entry.id) == "":
@@ -115,20 +191,30 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP   # the title's buttons under it take nothing
 	_entries = entries(ProgressStore.load())
+	view = View3D.new()
+	view.name = "WorldView"
+	view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(view)
+	view.rig.set_process(false)   # the map frames the camera itself
+	view.single_pointer.connect(_on_pointer)
+	focus = _index(Island.current_id())
+	world = Node3D.new()
+	world.name = "World"
+	view.set_world(world)
+	view.viewport.add_child(MapIsland.make_environment())
+	_build_world()
+	focus_x = _focus_at(focus)
+	for entry in _entries:
+		var tag := _tag(entry)
+		tag.mouse_filter = Control.MOUSE_FILTER_PASS   # a drag on a tag slides the row too (_gui_input)
+		cards[entry.id] = tag
+		add_child(tag)
 	heading = _heading()
 	add_child(heading)
 	back_button = Ui.button(Locale.t("islands.back"), "TitleButton", BACK_HEIGHT)
 	back_button.name = "IslandsBack"
 	back_button.pressed.connect(back_requested.emit)
 	add_child(back_button)
-	row = HBoxContainer.new()
-	row.name = "IslandRow"
-	row.add_theme_constant_override("separation", int(GAP))
-	add_child(row)
-	for entry in _entries:
-		var card := _card(entry)
-		cards[entry.id] = card
-		row.add_child(card)
 	_layout()
 	resized.connect(_layout)
 	if IslandStore.instance != null:
@@ -136,11 +222,183 @@ func _ready() -> void:
 	_settle()
 
 
+func _exit_tree() -> void:
+	MapIsland.light_no_spots()
+
+
+## 퍼피랜드 (#116, 2026-11-10 user: "퍼피랜드 지도를 하나 만들어 둘까" → 3D): one sea with a little
+## model of every island (MINI_RADIUS; its own landmarks only, not its whole map) set in a loose row,
+## every other one a little back (ROW_STAGGER), the one to come grey under a cloud, the far islets and
+## boats of the map's sea round them, the dotted way between them and the boat.
+func _build_world() -> void:
+	MapIsland.light_no_spots()
+	var sea := ArtKit.builder()
+	sea.ao_min = 1.0
+	ArtKit.flat_disc(sea, Vector3(0.0, MapIsland.SEA_Y, 0.0), SEA_RADIUS, MapIsland.sea_color(), 48)
+	for w in WAVES:   # little white wave strokes on the sea
+		var a := w * 2.399963
+		var r := 8.0 + SEA_RADIUS * 0.35 * sqrt((w + 0.5) / WAVES)
+		sea.add_rounded_box(Transform3D(Basis(Vector3.UP, 0.25 * sin(w * 1.7)), Vector3(cos(a) * r, MapIsland.SEA_Y + 0.02, sin(a) * r * 0.6)), Vector3(2.2, 0.02, 0.16), 0.0, 1, ArtPalette.FOAM)
+	var sea_node := ArtKit.instance(sea.commit(), MapIsland.material())
+	sea_node.name = "Sea"
+	world.add_child(sea_node)
+	var far := MapSea.new()
+	far.build(world)
+	far.set_lanterns(false)
+	var n := _entries.size()
+	for k in n:
+		var entry: Dictionary = _entries[k]
+		var middle := Vector3((k - (n - 1) * 0.5) * SLOT, 0.0, ROW_STAGGER * (1.0 if k % 2 == 0 else -1.0))
+		_middles[entry.id] = middle
+		_reach[entry.id] = (FAR_RADIUS if entry.id == "" else MINI_RADIUS) * MODEL_SCALE
+		var holder := Node3D.new()
+		holder.name = "Island_%s" % (entry.id if entry.id != "" else "next")
+		holder.position = middle + Vector3.UP * MapIsland.SEA_Y * (1.0 - MODEL_SCALE)   # (sea level stays at SEA_Y)
+		holder.scale = Vector3.ONE * MODEL_SCALE
+		world.add_child(holder)
+		var mesh := _far_island_mesh() if entry.id == "" else _mini_island_mesh(str(entry.id))
+		var material := MapIsland.material()
+		if not entry.open and entry.id != "":
+			material = MapIsland.material().duplicate() as ShaderMaterial
+			material.set_shader_parameter("own_tint", LOCKED_TINT)
+		holder.add_child(ArtKit.instance(mesh, material))
+	var b := ArtKit.builder()
+	b.ao_min = 1.0
+	for k in n - 1:
+		var a: Vector3 = _shore(_entries[k].id, 1.0)
+		var c: Vector3 = _shore(_entries[k + 1].id, -1.0)
+		var steps := maxi(1, int(a.distance_to(c) / DOT_STEP))
+		for i in steps + 1:
+			var p := _way(a, c, float(i) / steps)
+			ArtKit.flat_disc(b, p + Vector3.UP * DOT_LIFT, DOT_RADIUS, DOT, 10)
+	var dots := ArtKit.instance(b.commit(), MapIsland.material())
+	dots.name = "SeaWay"
+	world.add_child(dots)
+	boat = Node3D.new()
+	boat.name = "Boat"
+	boat.scale = Vector3.ONE * BOAT_SCALE
+	boat.add_child(ArtKit.instance(BoatArt.mesh(ArtPalette.RED), MapIsland.material()))
+	world.add_child(boat)
+	_moor(Island.current_id())
+
+
+## Island `id`'s little model on the 퍼피랜드 map (#116): its own coastline (the map's, shrunk: the same
+## island as when the child is on it) with its beach and grass, a few trees and only its own landmarks (MapLandmarks: the hutton island's volcano, lighthouse and sundial; the
+## first island's star, spring and pulley; any other island its first spots), MINI_SCALE of their map size.
+static func _mini_island_mesh(id: String) -> Mesh:
+	var b := ArtKit.builder()
+	b.ao_min = 0.9
+	b.ao_height = 1.0
+	var sea := MapIsland.SEA_Y
+	var r := MINI_RADIUS
+	# The island's own coastline (MapIsland.coast_radius, the map you walk on) shrunk to MINI_RADIUS:
+	# the shallows round it, the beach, the grass inside (the map's grass edge).
+	var island := Island.by_id(id)
+	var map := MapIsland.new(island)
+	var widest := 0.0
+	for i in COAST_SIDES:
+		widest = maxf(widest, map.coast_radius(TAU * i / COAST_SIDES))
+	var shrink := r / maxf(widest, 0.001)
+	var coast := func(a: float) -> float: return map.coast_radius(a) * shrink
+	_add_shape(b, coast, 1.12, sea - 0.05, sea + 0.01, MapIsland.sea_color().lightened(0.35), MapIsland.sea_color().lightened(0.35))
+	_add_shape(b, coast, 1.0, sea - 0.3, sea + 0.2, ArtPalette.SAND.darkened(0.08), ArtPalette.SAND)
+	_add_shape(b, coast, MapIsland.grass_edge(), sea + 0.2, sea + 0.5, ArtPalette.GRASS, ArtPalette.GRASS_TOP)
+	var top := sea + 0.5
+	for t in MINI_TREES:   # trees round the edge of the grass
+		var a := TAU * (float(t) + 0.35) / MINI_TREES
+		var at := Vector3(cos(a), 0.0, sin(a)) * float(coast.call(a)) * MapIsland.grass_edge() * 0.78 + Vector3.UP * top
+		b.add_cylinder(Transform3D(Basis(), at), 0.16, 0.12, 0.5, 6, ArtPalette.TRUNK)
+		b.add_cylinder(Transform3D(Basis(), at + Vector3.UP * 0.4), 0.85, 0.0, 1.6, 7, ArtPalette.LEAF)
+	var k := MINI_SCALE
+	var place := func(x: float, z: float) -> Transform3D:
+		return Transform3D(Basis().scaled(Vector3.ONE * k), Vector3(x, top, z))
+	match id:
+		"hutton":
+			MapLandmarks.volcano(b, Transform3D(Basis(), Vector3(-1.6, top - 0.2, -2.0)), 3.4, 4.0, 0.2)
+			MapLandmarks.lighthouse(b, place.call(4.0, 1.4))
+			MapLandmarks.sundial(b, place.call(-0.6, 2.6))
+		"mechanics":
+			MapLandmarks.add(b, "orbit", place.call(-2.2, -1.6))
+			MapLandmarks.add(b, "spring", place.call(2.4, -0.8))
+			MapLandmarks.add(b, "pulley", place.call(0.2, 2.4))
+		_:
+			var spots: Array = island.spots()
+			for i in mini(3, spots.size()):
+				var a := TAU * i / 3.0
+				MapLandmarks.add(b, str(spots[i]), place.call(cos(a) * 2.0, sin(a) * 1.6))
+	return b.commit()
+
+
+## A flat shape round the origin, `share` of the radius `radius(theta)` at every angle (COAST_SIDES of
+## them), from `y0` to its top at `y1`: its side in `side`, its top in `top_color`.
+static func _add_shape(b: ArtMeshBuilder, radius: Callable, share: float, y0: float, y1: float, side: Color, top_color: Color) -> void:
+	var ring: Array[Vector3] = []
+	for i in COAST_SIDES:
+		var a := TAU * i / COAST_SIDES
+		ring.append(Vector3(cos(a), 0.0, sin(a)) * float(radius.call(a)) * share)
+	for i in COAST_SIDES:
+		var p0 := ring[i]
+		var p1 := ring[(i + 1) % COAST_SIDES]
+		b.add_triangle([Vector3(0.0, y1, 0.0), p1 + Vector3.UP * y1, p0 + Vector3.UP * y1], [top_color, top_color, top_color])
+		var out := ((p0 + p1) * 0.5).normalized()
+		b.add_triangle([p0 + Vector3.UP * y1, p1 + Vector3.UP * y1, p1 + Vector3.UP * y0], [side, side, side], out)
+		b.add_triangle([p0 + Vector3.UP * y1, p1 + Vector3.UP * y0, p0 + Vector3.UP * y0], [side, side, side], out)
+
+
+## The island still to come (#116): a grey sand ring, a grey land and a hill under a cloud.
+static func _far_island_mesh() -> Mesh:
+	var b := ArtKit.builder()
+	b.ao_min = 0.9
+	b.ao_height = 2.0
+	var sea := MapIsland.SEA_Y
+	b.add_cylinder(Transform3D(Basis.from_scale(Vector3(1.0, 1.0, 0.75)), Vector3(0.0, sea - 0.3, 0.0)), FAR_RADIUS, FAR_RADIUS * 1.04, 0.45, 28, FAR_SAND, true, FAR_SAND.lightened(0.1))
+	b.add_cylinder(Transform3D(Basis.from_scale(Vector3(1.0, 1.0, 0.75)), Vector3(0.0, sea + 0.1, 0.0)), FAR_RADIUS * 0.8, FAR_RADIUS * 0.84, 0.5, 24, FAR_LAND, true, FAR_LAND.lightened(0.08))
+	b.add_cylinder(Transform3D(Basis(), Vector3(1.5, sea + 0.55, -1.5)), FAR_RADIUS * 0.4, 0.6, 3.6, 12, FAR_HILL, true, FAR_HILL.lightened(0.1))
+	b.ao_min = 1.0
+	for c in 3:   # the cloud
+		var r := 2.4 + 0.5 * c
+		b.add_sphere(Transform3D(Basis.from_scale(Vector3(1.4, 0.8, 1.0)), Vector3(-3.0 + 3.2 * c, sea + 5.2 + 0.7 * (c % 2), 0.5 - 1.0 * c)), r, 4, 10, ArtPalette.CLOUD)
+	return b.commit()
+
+
+## The island `id`'s shore on the sea way: its east (`side` +1) or west (-1) coast.
+func _shore(id: String, side: float) -> Vector3:
+	var middle: Vector3 = _middles.get(id, Vector3.ZERO)
+	return Vector3(middle.x + side * (float(_reach.get(id, DEFAULT_REACH)) + boat_reach() + SHORE_OUT), MapIsland.SEA_Y, middle.z + SHORE_FRONT)
+
+
+## How far the map's boat reaches from its middle (m): its hull's far end, bow or stern, at BOAT_SCALE.
+static func boat_reach() -> float:
+	var hull: Array = BoatArt.HULL
+	return maxf(absf(float(hull[0][0])), absf(float(hull[-1][0]))) * BOAT_SCALE
+
+
+## The sea way at `k` (0..1) from `a` to `b`: bent a little towards the camera (+z).
+static func _way(a: Vector3, b: Vector3, k: float) -> Vector3:
+	return a.lerp(b, k) + Vector3(0.0, 0.0, sin(PI * k) * WAY_BEND)
+
+
+## The boat at the shore of island `id` (the one in use), bow towards the next island.
+func _moor(id: String) -> void:
+	var i := _index(id)
+	var side := 1.0 if i < _entries.size() - 2 else -1.0
+	boat.position = _shore(id, side)
+	boat.rotation.y = PI * 0.5 * side
+
+
+func _index(id: String) -> int:
+	for k in _entries.size():
+		if _entries[k].id == id:
+			return k
+	return 0
+
+
 ## 섬 고르기 on the red ribbon.
 func _heading() -> PanelContainer:
 	var ribbon := PanelContainer.new()
 	ribbon.name = "IslandsHeading"
 	ribbon.add_theme_stylebox_override("panel", UiTheme.outlined_box(UiTheme.TITLE_RED, UiTheme.DIALOGUE_LINE, HEADING_RADIUS, HEADING_PAD, HEADING_LINE, HEADING_LIP))
+	ribbon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var title := Label.new()
 	title.text = Locale.t("title.islands")
 	title.add_theme_font_override("font", UiTheme.bold_font())
@@ -152,7 +410,7 @@ func _heading() -> PanelContainer:
 	return ribbon
 
 
-## A wrapped line's height follows its width only after the row sorted once: the layout again then.
+## A wrapped line's height follows its width only after the tags sorted once: the layout again then.
 func _settle() -> void:
 	for i in 2:
 		await get_tree().process_frame
@@ -160,104 +418,125 @@ func _settle() -> void:
 		_layout()
 
 
-func card_width() -> float:
-	var n := maxi(_entries.size(), 1)
-	return minf(CARD_MAX, (size.x - 2.0 * EDGE - GAP * (n - 1)) / n)
-
-
-func _card(entry: Dictionary) -> PanelContainer:
+## An island's tag: the pieces found, its name, its field (or what opens it), its red button and
+## 이야기 다시 보기 (a lock and no button when it is not open).
+func _tag(entry: Dictionary) -> PanelContainer:
 	var locked: bool = not entry.open
-	var card := PanelContainer.new()
-	card.name = "Card_%s" % (entry.id if entry.id != "" else "next")
+	var tag := PanelContainer.new()
+	tag.name = "Card_%s" % (entry.id if entry.id != "" else "next")
 	var line := UiTheme.SELECT_LINE if entry.current else UiTheme.DIALOGUE_LINE
-	card.add_theme_stylebox_override("panel", UiTheme.outlined_box(LOCKED_PAPER if locked else UiTheme.DIALOGUE_PAPER, line,
-		CARD_RADIUS, Vector2(CARD_PAD, CARD_PAD), CURRENT_LINE if entry.current else CARD_LINE, CURRENT_LIP if entry.current else CARD_LIP))
+	tag.add_theme_stylebox_override("panel", UiTheme.outlined_box(LOCKED_PAPER if locked else UiTheme.DIALOGUE_PAPER, line,
+		TAG_RADIUS, Vector2(TAG_PAD, TAG_PAD), CURRENT_LINE if entry.current else TAG_LINE, CURRENT_LIP if entry.current else TAG_LIP))
+	tag.custom_minimum_size.x = TAG_WIDTH
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", CARD_SEPARATION)
-	card.add_child(col)
-	col.add_child(_picture(entry))
-	_add_words(col, entry)
-	if locked:
-		buttons[entry.id] = null
-		var room := Control.new()
-		room.custom_minimum_size.y = GO_HEIGHT + STORY_HEIGHT + CARD_SEPARATION
-		col.add_child(room)
-	else:
-		buttons[entry.id] = _go_button(entry)
-		col.add_child(buttons[entry.id])
-		story_buttons[entry.id] = _story_button(entry)
-		col.add_child(story_buttons[entry.id])
-		# The whole card goes there too (a tap on the island's picture or name, 2026-11-09).
-		var id: String = entry.id
-		card.gui_input.connect(func(event: InputEvent) -> void:
-			if _tapped(event):
-				chosen.emit(id))
-	return card
-
-
-## A finger or the left button let go on the card (a press that was not a drag of the row).
-static func _tapped(event: InputEvent) -> bool:
-	if event is InputEventScreenTouch:
-		return not event.pressed and not event.canceled
-	return event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed \
-		and event.device != InputEvent.DEVICE_ID_EMULATION
-
-
-## The card's picture: the island (grey when locked) or, for 다음 섬, a far grey island; the lock on a
-## locked one, the star pieces found on an open one.
-func _picture(entry: Dictionary) -> Panel:
-	var locked: bool = not entry.open
-	var frame := Panel.new()
-	frame.name = "Picture"
-	var frame_style := StyleBoxFlat.new()
-	frame_style.bg_color = MapIsland.sea_color()
-	frame_style.set_corner_radius_all(PICTURE_RADIUS)
-	frame.add_theme_stylebox_override("panel", frame_style)
-	frame.clip_children = CanvasItem.CLIP_CHILDREN_AND_DRAW
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if entry.id != "":
-		var picture := TextureRect.new()
-		picture.name = "Island"
-		picture.texture = _thumbnail(entry.id)
-		picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		picture.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		if locked:
-			var grey := ShaderMaterial.new()
-			grey.shader = GREY_SHADER
-			grey.set_shader_parameter("tint", LOCKED_TINT)
-			picture.material = grey
-		frame.add_child(picture)
-	else:
-		var far := FarIsland.new()
-		far.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		frame.add_child(far)
+	col.add_theme_constant_override("separation", TAG_SEPARATION)
+	tag.add_child(col)
 	if locked:
 		var lock := Lock.new()
 		lock.name = "Lock"
-		lock.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		frame.add_child(lock)
-	if not locked and entry.id != "" and not IslandStore.owns(entry.id):
-		frame.add_child(_guardian_button(entry.id))
-	if not locked and int(entry.total) > 0:
+		lock.custom_minimum_size = Vector2(LOCK_SIZE, LOCK_SIZE)
+		lock.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		col.add_child(lock)
+	elif int(entry.total) > 0:
+		var holder := Control.new()   # the pieces found (the emblem, scaled into a small square)
+		holder.name = "Pieces"
 		var emblem := PieceArt.emblem(str(entry.piece), int(entry.total))
 		emblem.set_filled(int(entry.pieces))
 		if emblem is SundialEmblem and entry.get("finale", false):
 			(emblem as SundialEmblem).set_whole(true)   # #106: the sundial is whole after its finale
 		emblem.pivot_offset = Vector2.ZERO
 		emblem.scale = Vector2.ONE * EMBLEM_SCALE
-		emblem.position = EMBLEM_AT
-		frame.add_child(emblem)
-	return frame
+		holder.custom_minimum_size = emblem.get_combined_minimum_size() * EMBLEM_SCALE
+		holder.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		holder.add_child(emblem)
+		col.add_child(holder)
+	_add_words(col, entry)
+	if locked:
+		buttons[entry.id] = null
+	else:
+		buttons[entry.id] = _go_button(entry)
+		col.add_child(buttons[entry.id])
+		story_buttons[entry.id] = _story_button(entry)
+		col.add_child(story_buttons[entry.id])
+		if not IslandStore.owns(entry.id):
+			tag.add_child(_guardian_button(entry.id))
+	return tag
 
 
-## The small 보호자 at the picture's top right of an open island not bought (#77): the guardian's check,
+## A tap on the map during a sail ends it (the boat lands at once). Only an island's button sails
+## (2026-11-10 user: "섬 근처 터치만 돼도 바로 이동해버리네"): a tap on the island in the middle or its
+## tag does nothing; a tap on one beside it brings that one to the middle (2026-11-11 user: "그 섬
+## 눌러도 포커스 이동 되게 해줘"). A drag (more than TAP_SLOP from the press) slides the row and on
+## release settles (_snap).
+func _on_pointer(event_type: String, at: Vector2) -> void:
+	if event_type == "press":
+		_pressed_at = at
+		_drag_from = focus_x
+		_dragging = false
+		return
+	if event_type == "move":
+		if not sail.is_empty() or not is_finite(_pressed_at.x):
+			return
+		_dragging = _dragging or _pressed_at.distance_to(at) > TAP_SLOP
+		if _dragging:   # the row follows the finger
+			var ends := Vector2(_focus_at(0), _focus_at(_entries.size() - 1)) + Vector2(-1.0, 1.0) * ROW_OVERSCROLL * SLOT
+			focus_x = clampf(_drag_from - (at.x - _pressed_at.x) * _m_per_px, ends.x, ends.y)
+			_place()
+		return
+	if event_type == "cancel":
+		_pressed_at = Vector2.INF
+		if _dragging:
+			_snap()
+		_dragging = false
+		return
+	if event_type != "release":
+		return
+	var dragged := _dragging or (is_finite(_pressed_at.x) and _pressed_at.distance_to(at) > TAP_SLOP)
+	_pressed_at = Vector2.INF
+	_dragging = false
+	if dragged:
+		if sail.is_empty():
+			_snap()
+		return
+	if not sail.is_empty():
+		_end_sail()
+		return
+	var near := nearest()
+	for k in _entries.size():
+		if k != near and _island_rect(str(_entries[k].id)).has_point(at):
+			focus = k
+			return
+
+
+## A drag or a click on a tag (MOUSE_FILTER_PASS) comes up here: the view takes it as its own, so the
+## row slides under a finger on a tag too. (Its buttons take their own taps.)
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch or event is InputEventScreenDrag or event is InputEventMouseButton or event is InputEventMouseMotion:
+		view._gui_input(event)
+
+
+## After a drag: the island the row settles on (the next one once it moved SNAP_SHARE of a slot).
+func _snap() -> void:
+	var moved := (focus_x - _focus_at(focus)) / SLOT
+	var step := roundi(moved)
+	if step == 0 and absf(moved) > SNAP_SHARE:
+		step = 1 if moved > 0.0 else -1
+	focus = clampi(focus + step, 0, _entries.size() - 1)
+
+
+## The camera's x when island `k` of the row is in focus.
+func _focus_at(k: int) -> float:
+	return (_middles[_entries[k].id] as Vector3).x if not _middles.is_empty() else 0.0
+
+
+## The small 보호자 at the tag's top right of an open island not bought (#77): the guardian's check,
 ## then the island's offer. Gone once the island is bought.
 func _guardian_button(id: String) -> Button:
 	var guardian := GuardianModal.guardian_button()
 	guardian.name = "Guardian"
-	guardian.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT, Control.PRESET_MODE_MINSIZE, GUARDIAN_INSET)
-	guardian.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	guardian.size_flags_horizontal = Control.SIZE_SHRINK_END
+	guardian.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	guardian.pressed.connect(func() -> void: IslandOffer.open_for_guardian(self, id))
 	guardians[id] = guardian
 	return guardian
@@ -286,6 +565,7 @@ func _add_words(col: VBoxContainer, entry: Dictionary) -> void:
 	sub.text = locked_line(entry) if locked else str(entry.about)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	sub.custom_minimum_size.x = TAG_WIDTH - 2.0 * TAG_PAD
 	sub.add_theme_font_size_override("font_size", UiTheme.SIZE_SMALL)
 	sub.add_theme_color_override("font_color", UiTheme.SUBTLE if locked else UiTheme.MUTED)
 	col.add_child(sub)
@@ -304,8 +584,7 @@ func _story_button(entry: Dictionary) -> Button:
 
 
 ## The way in, the same big red button on every open island (2026-11-09: one look; the island in use
-## is the gold edge): 가 보기 (nothing found yet), 이어서 하기 (pieces left) or 다시 가기 (all found).
-## `chosen` with the island.
+## is the gold edge): 출발! (nothing found yet), 이어서 하기 (pieces left) or 다시 가기 (all found).
 func _go_button(entry: Dictionary) -> Button:
 	var words := Locale.t("islands.again") if entry.complete else (Locale.t("islands.go") if int(entry.pieces) == 0 else Locale.t("islands.continue"))
 	var go := Ui.button(words, "TitleStartButton", GO_HEIGHT)
@@ -314,41 +593,139 @@ func _go_button(entry: Dictionary) -> Button:
 	go.custom_minimum_size.x = GO_WIDTH
 	go.add_theme_font_size_override("font_size", GO_FONT)
 	var id: String = entry.id
-	go.pressed.connect(func() -> void: chosen.emit(id))
+	go.pressed.connect(func() -> void: choose(id))
 	return go
 
 
+## The child chose island `id`: the island in use at once, another after the boat has sailed there.
+func choose(id: String) -> void:
+	if not sail.is_empty() or not bool(_entries[_index(id)].open) or _entries[_index(id)].id != id:
+		return   # (sailing already, or not an open island of the map)
+	if id == Island.current_id():
+		chosen.emit(id)
+		return
+	var from := boat.position
+	var i := _index(Island.current_id())
+	var j := _index(id)
+	var to_at := _shore(id, -1.0 if j > i else 1.0)
+	sail = {"to": id, "from": from, "to_at": to_at, "t": 0.0}
+	focus = j
+	for tag: Control in cards.values():
+		tag.visible = false
+	boat.rotation.y = PI * 0.5 * (1.0 if j > i else -1.0)
+	_place()
+
+
+func _process(delta: float) -> void:
+	if sail.is_empty():
+		if not _dragging and not is_equal_approx(focus_x, _focus_at(focus)):   # settling on `focus`
+			focus_x = lerpf(focus_x, _focus_at(focus), 1.0 - exp(-SNAP_RATE * delta))
+			if absf(focus_x - _focus_at(focus)) < 0.01:
+				focus_x = _focus_at(focus)
+			_place()
+		return
+	sail.t += delta
+	var k := clampf(float(sail.t) / SAIL_S, 0.0, 1.0)
+	var e := k * k * (3.0 - 2.0 * k)
+	var p := _way(sail.from, sail.to_at, e)
+	boat.position = Vector3(p.x, MapIsland.SEA_Y + 0.08 * sin(float(sail.t) * 6.0), p.z)
+	focus_x = lerpf(focus_x, p.x, 1.0 - exp(-SNAP_RATE * delta))   # the camera follows the boat (eased from where the row was)
+	_place()
+	if k >= 1.0:
+		_end_sail()
+
+
+## The sail ends (at the far shore, or a tap): `chosen` with its island.
+func _end_sail() -> void:
+	if sail.is_empty():
+		return
+	var id: String = sail.to
+	boat.position = sail.to_at
+	sail = {}
+	chosen.emit(id)
+
+
+## The screen rect of island `id` (its coast round its middle, at sea level): a tap on it brings it to
+## the middle; the tests check the tags against it.
+func _island_rect(id: String) -> Rect2:
+	var middle: Vector3 = _middles.get(id, Vector3.ZERO)
+	var r := float(_reach.get(id, DEFAULT_REACH))
+	var out := Rect2(_screen(middle), Vector2.ZERO)
+	for corner in [Vector3(-r, 0.0, -r), Vector3(r, 0.0, -r), Vector3(-r, 0.0, r), Vector3(r, 0.0, r)]:
+		out = out.expand(_screen(middle + corner))
+	return out
+
+
+func _screen(p: Vector3) -> Vector2:
+	return view.rig.unproject_position(p) / (Vector2(view.viewport.size) / view.size)
+
+
+## The heading and ← 돌아가기 at the top; the camera's distance (backed off until VIEW_SLOTS slots, fewer
+## on a narrow screen, fit the width with VIEW_MARGIN each side and the tags fit under the row), then
+## _place (the camera at focus_x and the tag).
 func _layout() -> void:
-	if row == null or size.x < 1.0:
+	if view == null or size.x < 1.0:
 		return
 	var inset := Ui.safe_insets(self)
 	heading.size = heading.get_combined_minimum_size()
 	back_button.size = back_button.get_combined_minimum_size()
 	back_button.position = Vector2(EDGE + inset.left, TOP + inset.top)
-	var w := card_width()
-	for card: PanelContainer in row.get_children():
-		card.custom_minimum_size.x = w
-		var frame := card.find_child("Picture", true, false) as Control
-		var inner := w - 2.0 * CARD_PAD
-		frame.custom_minimum_size = Vector2(inner, inner * THUMB_ASPECT)
-		(card.find_child("About", true, false) as Label).custom_minimum_size.x = inner
-	row.reset_size()
-	row.size = row.get_combined_minimum_size()
-	# The heading sits just over the cards, the two as one block in the middle (2026-11-09 user: the
-	# heading alone at the top looked too high); never over ← 돌아가기's line.
-	var block := heading.size.y + ROW_GAP + row.size.y
-	var lowest: float = TOP + inset.top
-	var top := maxf(lowest, (size.y - block) * 0.5 - ROW_LIFT)
-	heading.position = Vector2((size.x - heading.size.x) * 0.5, top)
-	row.position = Vector2((size.x - row.size.x) * 0.5, top + heading.size.y + ROW_GAP)
+	heading.position = Vector2((size.x - heading.size.x) * 0.5, TOP + inset.top)
+	var slots := clampf(size.x / (TAG_WIDTH + TAG_SPACE), 1.0, VIEW_SLOTS)   # a slot never narrower than a tag
+	var half := slots * SLOT * 0.5
+	_tag_h = 0.0
+	for tag: Control in cards.values():
+		tag.size = tag.get_combined_minimum_size()
+		_tag_h = maxf(_tag_h, tag.size.y)
+	_distance = FIRST_DISTANCE
+	for _pass in FIT_PASSES:   # back off until the slots fit the width and the tags fit under them
+		_aim(0.0)
+		var left := _screen(Vector3(-half, 0.0, 0.0)).x
+		var right := _screen(Vector3(half, 0.0, 0.0)).x
+		var front := _screen(Vector3(0.0, 0.0, ROW_STAGGER + MINI_RADIUS * MODEL_SCALE)).y
+		var want := size.x * (1.0 - 2.0 * VIEW_MARGIN)
+		var grow := maxf((right - left) / want, (front + TAG_GAP + _tag_h) / (size.y - EDGE - inset.bottom))
+		_distance *= maxf(grow, FIT_MIN)
+	_aim(0.0)
+	_m_per_px = SLOT / maxf(_screen(Vector3(SLOT, 0.0, 0.0)).x - _screen(Vector3.ZERO).x, 1.0)
+	_place()
 
 
-## The island's picture: its map rendered once in its own small world from the title's 3/4 view.
-func _thumbnail(id: String) -> Texture2D:
-	return thumbnail(self, id)
+## The camera over the row at `x` (PITCH_DEG, _distance back from AIM).
+func _aim(x: float) -> void:
+	var target := AIM + Vector3(x, 0.0, 0.0)
+	var pitch := deg_to_rad(PITCH_DEG)
+	view.rig.look_at_from_position(target + Vector3(0.0, -sin(pitch), cos(pitch)) * _distance, target)
 
 
-## The picture of `id`, its small world under `host` (the cards, the island's offer: IslandOffer).
+## The camera at focus_x, the tag of the island nearest the middle under it.
+func _place() -> void:
+	if view == null or size.x < 1.0:
+		return
+	_aim(focus_x)
+	var inset := Ui.safe_insets(self)
+	# The tag of the island nearest the middle under it (its top level for every island, under the
+	# lowest of the staggered row, 2026-11-11 user: "뉴턴섬이랑 허턴섬 딱지가 높이가 다른게 별로임"); the
+	# others hidden; none during a sail.
+	var top := 0.0
+	for entry in _entries:
+		top = maxf(top, _screen(_middles[entry.id] + Vector3(0.0, 0.0, float(_reach[entry.id]) * TAG_UNDER)).y + TAG_GAP)
+	var y := minf(top, size.y - _tag_h - EDGE - inset.bottom)
+	var near := nearest()
+	for k in _entries.size():
+		var entry: Dictionary = _entries[k]
+		var tag: Control = cards[entry.id]
+		var x := _screen(_middles[entry.id]).x - tag.size.x * 0.5
+		tag.position = Vector2(clampf(x, EDGE + inset.left, size.x - tag.size.x - EDGE - inset.right), y)
+		tag.visible = sail.is_empty() and k == near
+
+
+## The island of the row nearest the middle of the view now (its tag shows).
+func nearest() -> int:
+	return clampi(roundi((focus_x - _focus_at(0)) / SLOT), 0, _entries.size() - 1)
+
+
+## The picture of `id`, its small world under `host` (the island's offer: IslandOffer).
 static func thumbnail(host: Node, id: String) -> Texture2D:
 	var sub := SubViewport.new()
 	sub.name = "Thumb_%s" % id
@@ -373,11 +750,12 @@ static func thumbnail(host: Node, id: String) -> Texture2D:
 	return sub.get_texture()
 
 
-## The rects of the cards, the heading and ← 돌아가기 (tests: on screen, no overlap).
+## The rects of the tags, the heading and ← 돌아가기 (tests: on screen, no overlap).
 func rects() -> Array[Rect2]:
 	var out: Array[Rect2] = [heading.get_global_rect(), back_button.get_global_rect()]
-	for card: Control in row.get_children():
-		out.append(card.get_global_rect())
+	for tag: Control in cards.values():
+		if tag.visible:
+			out.append(tag.get_global_rect())
 	return out
 
 
@@ -411,27 +789,3 @@ class Lock extends Control:
 		draw_rect(Rect2(c + Vector2(-21, 3) * s, Vector2(42, 7) * s), ArtPalette.YELLOW_TOP)
 		draw_circle(c + Vector2(0, 14) * s, 5.5 * s, line, true, -1.0, true)
 		draw_line(c + Vector2(0, 16) * s, c + Vector2(0, 26) * s, line, 5.0 * s, true)
-
-
-## The island still to come: a grey island far on a grey sea (no name, no picture of its own).
-class FarIsland extends Control:
-	const SEA := Color("9aa6b8")
-	const SAND := Color("c4c9d2")
-	const LAND := Color("aab3c0")
-	const HILL := Color("b8bfcb")
-
-	func _init() -> void:
-		mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	func _draw() -> void:
-		draw_rect(Rect2(Vector2.ZERO, size), SEA)
-		var c := Vector2(size.x * 0.5, size.y * 0.62)
-		var sand := PackedVector2Array()
-		var land := PackedVector2Array()
-		for i in 24:
-			var a := TAU * i / 24.0
-			sand.append(c + Vector2(cos(a) * size.x * 0.34, sin(a) * size.y * 0.16))
-			land.append(c + Vector2(cos(a) * size.x * 0.28, sin(a) * size.y * 0.12 - 4.0))
-		draw_colored_polygon(sand, SAND)
-		draw_colored_polygon(land, LAND)
-		draw_colored_polygon(PackedVector2Array([c + Vector2(-size.x * 0.16, -6.0), c + Vector2(0.0, -size.y * 0.3), c + Vector2(size.x * 0.14, -6.0)]), HILL)

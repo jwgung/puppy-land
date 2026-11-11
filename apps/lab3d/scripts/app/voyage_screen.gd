@@ -8,12 +8,6 @@
 ## voyage counts as seen (Story.mark_voyage_seen), the next island becomes the island in use and
 ## `finished` asks App for its map (which then plays that island's prologue).
 ##
-## The sail (#114 2026-11-10, the user's A: "다음 섬 가는거 너무 이야기가 바로 시작되는데? 배타고 가는거
-## 어디갔어"): the same boat and sea from the island in use to another one chosen on the island cards,
-## no words and no keeper: the boat glides the whole way in SAIL_S with the camera beside it, and at
-## its end (or at a tap anywhere, 건너뛰기, Android back) the chosen island is the one in use; the
-## voyage's mark is left as it was.
-##
 ## Its own small world, only while it plays: both maps' islands (MapIsland: the next one far out on
 ## the sea, its sky left out), the sea's far islands and boats (MapSea), the trip's boat (MapSea's boat,
 ## bigger) with the map-size trio aboard, and the keeper. Pictures and words only: nothing is saved
@@ -26,15 +20,18 @@ signal finished(island: String)
 ## Where the next island lies from the one before (m; the default view looks along -z).
 const TO_AT := Vector3(0.0, 0.0, -110.0)
 ## The boat's way: from the shore of `from` to the beach of `to`, bending out a little (BEND m).
-const START := Vector3(3.0, 0.0, -15.5)
-const END_FROM_TO := Vector3(4.0, 0.0, 14.2)
+const START := Vector3(3.9, 0.0, -20.2)   # (the mechanics island, 1.3 times wider on 2026-11-11)
+const END_FROM_TO := Vector3(5.2, 0.0, 18.5)   # (the hutton island, 1.3 times wider on 2026-11-10)
 const BEND := 6.0
 ## The trip's boat: the map's boat (BoatArt) this much bigger, the trio aboard about the map's size
 ## (BOAT_SCALE x ACTOR_ON_BOAT = 0.714, about IslandHomeScreen.ACTOR_SCALE 0.7).
 const BOAT_SCALE := 1.7
 const ACTOR_ON_BOAT := 0.42
 ## Where the trio stand on the deck (boat local, bow +z), in the order of `aboard`: puppy, dugi, cat.
-const ABOARD := [Vector3(0.0, 0.56, 0.62), Vector3(-0.22, 0.52, -0.1), Vector3(0.2, 0.55, -0.72)]
+## The small cat stands at the bow, a little bigger (ABOARD_SCALE), so the sail and the others don't
+## hide it (2026-11-10 user: "빵고양이도 배에 안보이고").
+const ABOARD := [Vector3(-0.26, 0.55, 0.12), Vector3(0.2, 0.52, -0.5), Vector3(0.0, 0.57, 0.72)]
+const ABOARD_SCALE := [1.0, 1.0, 1.2]
 ## Each shot of the voyage (the keys are Story.VOYAGE_SHOTS, in order; tests check it):
 ## - way: its stretch of the boat's way (0 = the shore of `from`, 1 = the beach of `to`); the pages
 ##   of a shot share it, each gliding its part in GLIDE_S;
@@ -47,18 +44,15 @@ const SHOTS := {
 	"depart": {"way": [0.0, 0.05], "eye": ["start", Vector3(5.5, 2.4, -8.5)], "target": ["start", Vector3(-0.8, 1.6, 4.0)], "face": "camera"},
 	"sea": {"way": [0.42, 0.5], "eye": ["boat", Vector3(4.5, 3.4, 7.0)], "target": ["boat", Vector3(-0.5, 0.2, -25.0)], "face": [-30.0, 20.0, -20.0]},
 	"flicker": {"way": [0.5, 0.58], "eye": ["boat", Vector3(3.0, 3.0, 6.0)], "target": ["to", Vector3(0.0, 1.5, 0.0)], "face": [-30.0, 20.0, -20.0]},
-	"arrive": {"way": [0.92, 1.0], "eye": ["to", Vector3(12.0, 3.0, 17.5)], "target": ["to", Vector3(3.2, 0.8, 13.0)], "face": "keeper"},
+	"arrive": {"way": [0.92, 1.0], "eye": ["to", Vector3(15.6, 3.0, 22.8)], "target": ["to", Vector3(4.2, 0.8, 16.9)], "face": "keeper"},
 }
 const GLIDE_S := 4.0
-## The sail's one shot (a SHOTS entry of its own: not one of the story's VOYAGE_SHOTS) and how long it
-## takes from shore to beach.
-const SAIL_SHOT := {"way": [0.0, 1.0], "eye": ["boat", Vector3(5.0, 3.4, 7.5)], "target": ["boat", Vector3(-0.5, 0.4, -22.0)], "face": [-30.0, 20.0, -20.0]}
-const SAIL_S := 3.6
 ## The next island going dark and bright again (the flicker shot): its own tint, one dark beat per FLICKER_S.
 const DARK_TINT := Vector3(0.24, 0.28, 0.58)
 const FLICKER_S := 1.6
 ## The keeper on the beach of `to` (from its centre), facing the boat.
-const KEEPER_AT := Vector2(4.0, 10.9)
+const KEEPER_AT := Vector2(5.2, 14.2)
+const KEEPER_INLAND := 0.86          # of the coast radius that way: the dry sand (MapIsland.SHORE_F 0.955 is the water's edge)
 const KEEPER_SCALE := 0.7
 ## The guiding star over `from` while they leave.
 const STAR_AT := Vector3(-2.0, 10.0, 2.0)
@@ -88,7 +82,6 @@ var shot := ""
 var way := 0.0                     # where the boat is on its way (0..1)
 var flicker := 0.0                 # the next island's darkness now (0 bright, 1 dark; tests)
 var done := false
-var sail := false                  # the island cards' sail: no words, no keeper (#114)
 var _pages: Array = []
 var _glide_from := 0.0
 var _glide_to := 0.0
@@ -98,18 +91,16 @@ var _clock := 0.0
 var _tint_material: ShaderMaterial
 
 
-## `island`: the island the voyage goes to (its story has the voyage pages); `sail_from`: the sail
-## from that island (the island cards, #114) instead of the story's voyage.
-func _init(island: String, sail_from := "") -> void:
+## `island`: the island the voyage goes to (its story has the voyage pages).
+func _init(island: String) -> void:
 	name = "VoyageScreen"
 	to = island
-	sail = sail_from != ""
-	from = sail_from if sail else Island.opens_after(island)
+	from = Island.opens_after(island)
 
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_pages = [] if sail else Story.pages_of(to, "voyage")
+	_pages = Story.pages_of(to, "voyage")
 	view = View3D.new()
 	view.name = "VoyageView"
 	view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -137,10 +128,7 @@ func _ready() -> void:
 	skip_button.pressed.connect(skip)
 	add_child(skip_button)
 	resized.connect(_layout)
-	if sail:
-		_start_sail()
-	else:
-		_open_page(0)
+	_open_page(0)
 
 
 func _exit_tree() -> void:
@@ -177,18 +165,25 @@ func _build_world() -> void:
 	aboard = [puppy, dugi, cat]
 	for i in aboard.size():
 		boat.add_child(aboard[i])
-		aboard[i].scale = Vector3.ONE * ACTOR_ON_BOAT
+		aboard[i].scale = Vector3.ONE * ACTOR_ON_BOAT * float(ABOARD_SCALE[i])
 		aboard[i].position = ABOARD[i]
 	keeper = keeper_model()
 	keeper.scale = Vector3.ONE * KEEPER_SCALE
 	world.add_child(keeper)
-	var ground := to_map.height_at(KEEPER_AT.x, KEEPER_AT.y)
-	keeper.position = TO_AT + Vector3(KEEPER_AT.x, ground, KEEPER_AT.y)
+	var spot := keeper_spot(to_map)
+	keeper.position = TO_AT + Vector3(spot.x, to_map.height_at(spot.x, spot.y), spot.y)
 	keeper.visible = false
 	star = StarArt.make(false, STAR_SIZE)
 	star.position = STAR_AT
 	world.add_child(star)
 	_place_boat(0.0)
+
+
+## Where the keeper waits on `map` (its middle's frame): towards KEEPER_AT, KEEPER_INLAND of the coast
+## there, on the dry beach (2026-11-10 user: "여우친구가 나와있을때, 물 위에 서있네.. 땅에 있게해야지").
+static func keeper_spot(map: MapIsland) -> Vector2:
+	var a := KEEPER_AT.angle()
+	return Vector2.from_angle(a) * map.coast_radius(a) * KEEPER_INLAND
 
 
 ## The island keeper (the fox, #71) in the storybook look of the cast (ArtKit.toon_material).
@@ -219,17 +214,6 @@ func _place_boat(k: float) -> void:
 
 # --- pages ---------------------------------------------------------------------------------------
 
-## The sail: its one shot, the whole way in one glide, no words.
-func _start_sail() -> void:
-	shot = "sail"
-	_glide_from = 0.0
-	_glide_to = 1.0
-	_glide_t = 0.0
-	_place_boat(0.0)
-	_pose_cast()
-	_layout()
-
-
 func _open_page(i: int) -> void:
 	if i >= _pages.size():
 		finish()
@@ -250,7 +234,7 @@ func _open_page(i: int) -> void:
 	var who := str(entry.get("who", "dugi"))
 	var face := Story.face_or_default(entry.get("face"))
 	if who == "puppy" and face == "happy":
-		puppy.celebrate()
+		puppy.celebrate(false)   # (the flag only: a hop on the small boat looks afloat)
 	dialogue.set_speaker(who, face)
 	dialogue.open(str(entry.get("text", "")))
 	_layout()
@@ -307,16 +291,13 @@ func finish() -> void:
 	done = true
 	if dialogue.active:
 		dialogue.close(true)
-	if not sail:
-		Story.mark_voyage_seen(to)
+	Story.mark_voyage_seen(to)
 	Island.set_current(to)
 	finished.emit(to)
 
 
 func tap_page() -> void:
-	if sail:
-		finish()   # (a tap skips the sail)
-	elif dialogue.active:
+	if dialogue.active:
 		dialogue.advance()
 
 
@@ -339,13 +320,9 @@ func advance(delta: float) -> void:
 	if done:
 		return
 	_clock += delta
-	var glide := SAIL_S if sail else GLIDE_S
-	_glide_t = minf(_glide_t + delta, glide)
-	var k := _glide_t / glide
+	_glide_t = minf(_glide_t + delta, GLIDE_S)
+	var k := _glide_t / GLIDE_S
 	_place_boat(lerpf(_glide_from, _glide_to, k * k * (3.0 - 2.0 * k)))
-	if sail and k >= 1.0:
-		finish()
-		return
 	if shot == "flicker":
 		_flicker_t += delta
 		flicker = 0.5 - 0.5 * cos(TAU * _flicker_t / FLICKER_S)
@@ -367,9 +344,9 @@ func view_target() -> Vector3:
 	return _at(_spec().target)
 
 
-## The shot now's entry (SHOTS, or SAIL_SHOT on the sail).
+## The shot now's entry (SHOTS).
 func _spec() -> Dictionary:
-	return SAIL_SHOT if sail else SHOTS[shot if shot != "" else "depart"]
+	return SHOTS[shot if shot != "" else "depart"]
 
 
 ## A point [anchor, offset] of SHOTS: from START, the boat now or the next island.

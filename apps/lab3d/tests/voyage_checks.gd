@@ -3,9 +3,10 @@
 ## (again with 이야기 다시 보기 there), its pages set the shots (the keeper only at the landing, the
 ## next island flickering), 건너뛰기 and Android back skip it, and it ends on the next island's map with
 ## its prologue; the finale's end leads to it. The title's 시작하기 opens 섬 고르기 only after a voyage
-## (before, it goes straight on); the cards show every island and 다음 섬 (곧 만나요), a locked one with
-## its lock and condition and no button, an open one's button (가 보기 · 이어서 하기 · 다시 가기) or the
-## card itself makes it the island in use; ← and Android back close the cards. The developer switch --islands=open is ignored in the Play build. Phone and tablet layouts.
+## (before, it goes straight on); the islands' map (#116) shows every island on one sea with its tag
+## and 다음 섬 (곧 만나요), a locked one with its lock and condition and no button, an open one's button
+## (출발! · 이어서 하기 · 다시 가기) makes it the island in use (another one after the boat's sail on the
+## map; a tap on its tag or the island itself does nothing); ← 돌아가기 and Android back close the map. The developer switch --islands=open is ignored in the Play build. Phone and tablet layouts.
 extends RefCounted
 
 var tree: SceneTree
@@ -39,6 +40,7 @@ func run() -> void:
 	await check_title_islands(quality_script)
 	await check_map_back()
 	await check_sail()
+	await check_carousel()
 	await check_layout()
 	TitleScreen.app_may_show = false
 	Story.app_may_enable = false
@@ -176,12 +178,26 @@ func check_voyage_flow(_quality_script: GDScript) -> void:
 				problems.append("page %d shot %s" % [voyage.page, voyage.shot])
 			if voyage.keeper.visible != (voyage.shot == "arrive"):
 				problems.append("keeper on %s" % voyage.shot)
+			if voyage.shot == "arrive":   # on the dry beach, not in the water (2026-11-10 user)
+				var local := voyage.keeper.position - VoyageScreen.TO_AT
+				if voyage.to_map.coast_fraction(local.x, local.z) > MapIsland.SHORE_F - 0.03:
+					problems.append("the keeper stands in the water (%.2f of the coast)" % voyage.to_map.coast_fraction(local.x, local.z))
+				# The trio stand under the sail (its foot over their heads, 2026-11-10 user: "돛을 더 높여서 달아").
+				for actor: Node3D in voyage.aboard:
+					var top: float = IslandCast.drawn_bounds(actor).end.y
+					var sail_foot: float = (voyage.boat.global_transform * Vector3(0.0, minf(minf(BoatArt.SAIL_CLEW.y, (BoatArt.JIB[1] as Vector3).y), BoatArt.BOOM_AT.y - BoatArt.BOOM_RADIUS), 0.0)).y
+					if top > sail_foot:
+						problems.append("%s reaches into the sail (%.2f > %.2f)" % [actor.name, top, sail_foot])
 			if voyage.star.visible != (voyage.shot == "depart"):
 				problems.append("star on %s" % voyage.shot)
 			var way_before := voyage.way
 			for k in 10:
 				voyage.advance(0.25)
 				max_flicker = maxf(max_flicker, voyage.flicker)
+				# Puppy stays on the deck when he is happy (2026-11-11 user: "왜 공중에 떠있어 퍼피").
+				var lift: float = voyage.puppy.position.y - (VoyageScreen.ABOARD[0] as Vector3).y
+				if absf(lift) > 0.001:
+					problems.append("Puppy floats %.2f over the deck on %s" % [lift, voyage.shot])
 			if voyage.shot == "sea" and voyage.way <= way_before:
 				problems.append("the boat does not sail")
 			if voyage.shot != "flicker" and voyage.flicker > 0.0:
@@ -197,6 +213,17 @@ func check_voyage_flow(_quality_script: GDScript) -> void:
 	var home: IslandHomeScreen = app._screen as IslandHomeScreen
 	var landed := home != null and home.island.id == NEXT and Island.current_id() == NEXT and ProgressStore.current_island() == NEXT \
 		and Story.voyage_seen(NEXT) and home.play_prologue_on_open and home.story != null and home.story.part == "prologue"
+	# The prologue starts on the beach where the boat landed and the three walk up to their row on the
+	# square while they talk (2026-11-10 user: "대화중에 갑자기 섬 중앙으로 이동해버리는것도 어색하다").
+	if landed:
+		var beach := VoyageScreen.keeper_spot(home.map)
+		var cat_at := Vector2(home.cat.position.x, home.cat.position.z)
+		if not home.strolling() or cat_at.distance_to(beach) > 2.0:
+			problems.append("the prologue does not start on the beach (cat at %s, beach %s)" % [str(cat_at), str(beach)])
+		for i in roundi(StoryDirector.STROLL_S * 60.0) + 30:
+			await tree.process_frame
+		if home.strolling() or Vector2(home.cat.position.x, home.cat.position.z).distance_to(home.map.trio_row()) > 0.3:
+			problems.append("the three did not reach the square (cat at %s)" % str(home.cat.position))
 	# Its prologue: the keeper's words over the square, every page, then the map.
 	var pages_seen := 0
 	if landed:
@@ -363,9 +390,9 @@ func check_title_islands(_quality_script: GDScript) -> void:
 	if go != null:
 		go.pressed.emit()
 	await tree.process_frame
-	var sailed: bool = await _sail_through(app)   # another island: the sail first (#114)
+	var sailed: bool = await _sail_through(app)   # another island: the boat's sail first (#116)
 	var chosen: bool = sailed and app._screen is IslandHomeScreen and (app._screen as IslandHomeScreen).island.id == NEXT and ProgressStore.current_island() == NEXT
-	# A tap on the first island's card itself (not its button) chooses it too.
+	# A tap on the first island's tag itself (not its button) chooses nothing (only the button sails).
 	app.show_title()
 	await tree.process_frame
 	title = app._screen as TitleScreen
@@ -375,8 +402,7 @@ func check_title_islands(_quality_script: GDScript) -> void:
 	release.pressed = false
 	(title.island_cards.cards[ProgressStore.FIRST_ISLAND] as Control).gui_input.emit(release)
 	await tree.process_frame
-	await _sail_through(app)
-	var tap_chose_first: bool = app._screen is IslandHomeScreen and (app._screen as IslandHomeScreen).island.id == ProgressStore.FIRST_ISLAND
+	var tag_tap_stays: bool = app._screen is TitleScreen and title.island_cards.sail.is_empty()
 	# 이야기 다시 보기: not on the title any more (two islands), on each open card: the next island's
 	# plays its voyage again, the first island's its prologue on its map.
 	app.show_title()
@@ -403,23 +429,27 @@ func check_title_islands(_quality_script: GDScript) -> void:
 	expect.call(hidden and shown, "섬 고르기: 시작하기 goes straight on before a voyage, opens the cards after one (no separate 섬 고르기 button)", "%s %s" % [hidden, shown])
 	expect.call(problems.is_empty() and back_closes, "섬 고르기: a card per island and 다음 섬; a locked one grey with a lock, its condition (다음 섬: 곧 만나요), no button; 다시 가기 on a finished island; back closes the cards",
 		"; ".join(problems) + " back %s" % back_closes)
-	expect.call(open_card and chosen and tap_chose_first, "섬 고르기: an open island's 가 보기 makes it the island in use and opens its map; a tap on a card itself does the same",
-		"%s %s %s" % [open_card, chosen, tap_chose_first])
+	expect.call(open_card and chosen and tag_tap_stays, "섬 고르기: an open island's 출발! makes it the island in use and opens its map (after the boat's sail); a tap on its tag does nothing",
+		"%s %s %s" % [open_card, chosen, tag_tap_stays])
 
 
-## A sail on the screen now (VoyageScreen.sail): skipped by a tap; true when there was one.
+## A sail on the islands' map now (IslandCards.sail): ended by a tap; true when there was one.
 func _sail_through(app: Control) -> bool:
-	if not app._screen is VoyageScreen or not (app._screen as VoyageScreen).sail:
+	var title := app._screen as TitleScreen
+	if title == null or title.island_cards == null or title.island_cards.sail.is_empty():
 		return false
-	(app._screen as VoyageScreen).tap_page()
+	title.island_cards._on_pointer("release", Vector2.ZERO)
 	await tree.process_frame
 	return true
 
 
-## The island cards' sail (#114 2026-11-10, the user's A): choosing another island than the one in use
-## plays a short boat scene with no words and no keeper; it ends by itself (SAIL_S) on that island's
-## map, the voyage's mark untouched; a tap or Android back ends it at once; choosing the island in use
-## opens its map straight away. --demo-story=islands counts every island's prologue as seen too.
+## The islands' map (#116 2026-11-10 user: "이 과학섬들 전체 지도를 보여주고 거기서 넘어오게 하는게 낫지
+## 않아?"): every island on one sea with its tag, the boat at the island in use; choosing the island in
+## use opens its map at once; another one sails the boat along the sea way (no words, no other screen)
+## and opens that island's map when it lands (SAIL_S), a tap lands it at once; a tap on an island
+## itself or near it chooses nothing (2026-11-10 user: "섬 근처 터치만 돼도 바로 이동해버리네");
+## Android back during the sail closes the map. --demo-story=islands counts every
+## island's prologue as seen too.
 func check_sail() -> void:
 	_first_done()
 	Story.mark_voyage_seen(NEXT)
@@ -428,46 +458,81 @@ func check_sail() -> void:
 	var title := app._screen as TitleScreen
 	title.show_islands()
 	await tree.process_frame
+	await tree.process_frame
 	var problems := []
+	var map := title.island_cards
+	if map.view == null or map.boat == null or title.view.visible:
+		problems.append("no world view and boat, or the title's view still drawn")
+	elif map.boat.position.distance_to(map._shore(ProgressStore.FIRST_ISLAND, 1.0)) > 0.5:
+		problems.append("the boat is not at the island in use (%s)" % str(map.boat.position))
+	var tops := []
+	for entry in IslandCards.entries(ProgressStore.load()):
+		var tag: Control = map.cards[entry.id]
+		tops.append(tag.position.y)
+		var island := map._island_rect(str(entry.id))
+		if tag.visible and (tag.get_global_rect().get_center().y < island.get_center().y or absf(tag.get_global_rect().get_center().x - island.get_center().x) > island.size.x * 0.6 + 20.0):
+			problems.append("the tag of %s is not under its island" % entry.id)
+	if tops.max() - tops.min() > 0.5:   # (one line, 2026-11-11 user: "딱지가 높이가 다른게 별로임")
+		problems.append("the tags' tops are not level %s" % str(tops))
 	# The island in use: its map at once.
-	(title.island_cards.buttons[ProgressStore.FIRST_ISLAND] as Button).pressed.emit()
+	(map.buttons[ProgressStore.FIRST_ISLAND] as Button).pressed.emit()
 	await tree.process_frame
 	if not app._screen is IslandHomeScreen:
 		problems.append("the island in use did not open at once (%s)" % app._screen)
-	# Another: the sail, no words, no keeper; it ends by itself on its map.
+	# Another: the boat sails the sea way (the same screen, the tags hidden) and lands by itself.
+	app.show_title(true)
+	await tree.process_frame
+	map = (app._screen as TitleScreen).island_cards
+	(map.buttons[NEXT] as Button).pressed.emit()
+	await tree.process_frame
+	var start := map.boat.position
+	var aground := ""
+	for i in 40:
+		await tree.process_frame
+		aground = aground if aground != "" else _boat_aground(map)
+	if map.sail.is_empty() or map.boat.position.distance_to(start) < 1.0 or map.cards[NEXT].visible or not app._screen is TitleScreen:
+		problems.append("no sail on the map (%s)" % str(map.sail))
+	for i in roundi(IslandCards.SAIL_S * 60.0) + 30:
+		if not app._screen is TitleScreen:
+			break
+		aground = aground if aground != "" else _boat_aground(map)
+		await tree.process_frame
+	if aground != "":   # (2026-11-11 user: "허턴섬 가는데, 배가 육지로 올라간다")
+		problems.append(aground)
+	if not (app._screen is IslandHomeScreen and Island.current_id() == NEXT and not (app._screen as IslandHomeScreen).play_prologue_on_open):
+		problems.append("the sail did not land on %s's map (%s)" % [NEXT, app._screen])
+	# A tap or a drag on an island chooses nothing; a locked island or the one still to come never;
+	# a tap during the sail lands it at once.
+	app.show_title(true)
+	await tree.process_frame
+	await tree.process_frame
+	map = (app._screen as TitleScreen).island_cards
+	var island_at := map._island_rect(NEXT).get_center()
+	map._on_pointer("press", island_at)
+	map._on_pointer("release", island_at)
+	map._on_pointer("press", island_at + Vector2(IslandCards.TAP_SLOP * 3.0, 0.0))
+	map._on_pointer("release", island_at)
+	map.choose("")
+	map.choose("nowhere")
+	await tree.process_frame
+	if not map.sail.is_empty() or not app._screen is TitleScreen:
+		problems.append("a tap or drag on an island, or a locked / unknown island started a sail")
+	(map.buttons[ProgressStore.FIRST_ISLAND] as Button).pressed.emit()   # (NEXT is in use now)
+	await tree.process_frame
+	var button_sails := not map.sail.is_empty()
+	map._on_pointer("release", Vector2(5.0, 5.0))
+	await tree.process_frame
+	if not (button_sails and app._screen is IslandHomeScreen and Island.current_id() == ProgressStore.FIRST_ISLAND):
+		problems.append("출발! %s, then a tap: %s" % [button_sails, app._screen])
+	# Android back during a sail closes the map (the title again).
 	app.show_title(true)
 	await tree.process_frame
 	((app._screen as TitleScreen).island_cards.buttons[NEXT] as Button).pressed.emit()
 	await tree.process_frame
-	var voyage := app._screen as VoyageScreen
-	if voyage == null or not voyage.sail or voyage.from != ProgressStore.FIRST_ISLAND or voyage.to != NEXT:
-		problems.append("no sail from the island in use (%s)" % app._screen)
-	else:
-		var start: float = voyage.way
-		for i in 60:
-			await tree.process_frame
-		if voyage.dialogue.active or voyage.keeper.visible or voyage.way <= start:
-			problems.append("the sail: words %s, keeper %s, way %.2f" % [voyage.dialogue.active, voyage.keeper.visible, voyage.way])
-		for i in roundi(VoyageScreen.SAIL_S * 60.0) + 30:
-			if not app._screen is VoyageScreen:
-				break
-			await tree.process_frame
-	if not (app._screen is IslandHomeScreen and Island.current_id() == NEXT and not (app._screen as IslandHomeScreen).play_prologue_on_open):
-		problems.append("the sail did not end on %s's map (%s)" % [NEXT, app._screen])
-	# Back: a tap and Android back end it at once.
-	for how: String in ["tap", "back"]:
-		app.show_title(true)
-		await tree.process_frame
-		var other := ProgressStore.FIRST_ISLAND if Island.current_id() == NEXT else NEXT
-		((app._screen as TitleScreen).island_cards.buttons[other] as Button).pressed.emit()
-		await tree.process_frame
-		if how == "tap":
-			(app._screen as VoyageScreen).tap_page()
-		else:
-			app._go_back()
-		await tree.process_frame
-		if not (app._screen is IslandHomeScreen and Island.current_id() == other):
-			problems.append("%s did not end the sail on %s" % [how, other])
+	app._go_back()
+	await tree.process_frame
+	if not (app._screen is TitleScreen and (app._screen as TitleScreen).island_cards == null and Island.current_id() == ProgressStore.FIRST_ISLAND):
+		problems.append("back during the sail: %s" % app._screen)
 	await _free(app)
 	# --demo-story=islands: the next island's prologue counts as seen (the sail lands on its map).
 	ProgressStore.reset_all()
@@ -475,12 +540,108 @@ func check_sail() -> void:
 	if not ProgressStore.mark(ProgressStore.STORY, ProgressStore.island_key(NEXT, "prologue")):
 		problems.append("--demo-story=islands left %s's prologue unseen" % NEXT)
 	await _free(app)
-	expect.call(problems.is_empty(), "섬 고르기 sail: another island plays the boat with no words (it ends by itself on its map; a tap or back at once), the island in use opens at once; --demo-story=islands sees every prologue",
+	expect.call(problems.is_empty(), "섬 고르기 map: the islands on one sea, tags under them, the boat at the island in use; the island in use opens at once, another after the boat sails there (a tap lands it, a tap on an island chooses nothing, back closes the map); --demo-story=islands sees every prologue",
 		"; ".join(problems))
 
 
-## The map's ← (top left, #114) and Android back on the map: the island cards once a voyage was seen,
-## the title before. The story's emblem sits right of ←, both clear of the top left edges.
+## The islands' map as a carousel (2026-11-11 user: "섬 여러개 늘어나면 왓다갓다 할 수 잇어야댈거같아.
+## CAROUSEL 쓰는거처럼"; no arrows: "좌우 화살표는 없어도될듯"): it opens with the island in use in the
+## middle and only its tag shown; a drag past SNAP_SHARE of a slot settles on the next island (in the
+## middle, its tag alone), a short one back where it was, none past the row's ends; a tap on the island
+## beside brings it to the middle (one in the middle: nothing); a drag that starts on a tag slides it too.
+func check_carousel() -> void:
+	_first_done()
+	Story.mark_voyage_seen(NEXT)
+	var app := await _app(["--islands=open"])
+	var title := app._screen as TitleScreen
+	title.show_islands()
+	for i in 3:
+		await tree.process_frame
+	var map := title.island_cards
+	var problems := []
+	var middle := map.size.x * 0.5
+	var centred := func(id: String) -> bool: return absf(map._screen(map._middles[id]).x - middle) < 2.0
+	var shown := func() -> Array: return map.cards.keys().filter(func(id: String) -> bool: return (map.cards[id] as Control).visible)
+	if map.focus != map._index(ProgressStore.FIRST_ISLAND) or not centred.call(ProgressStore.FIRST_ISLAND) or shown.call() != [ProgressStore.FIRST_ISLAND]:
+		problems.append("opens on %d, tags %s, not the island in use in the middle" % [map.focus, str(shown.call())])
+	var slot_px := map._screen(Vector3(IslandCards.SLOT, 0.0, 0.0)).x - map._screen(Vector3.ZERO).x
+	var at := Vector2(middle, map.size.y * 0.3)
+	var drag := func(px: float) -> void:
+		map._on_pointer("press", at)
+		map._on_pointer("move", at + Vector2(px * 0.5, 0.0))
+		map._on_pointer("move", at + Vector2(px, 0.0))
+		map._on_pointer("release", at + Vector2(px, 0.0))
+	drag.call(slot_px * (IslandCards.SNAP_SHARE + 0.1))   # rightwards at the row's start: stays
+	for i in 90:
+		await tree.process_frame
+	if map.focus != 0:
+		problems.append("a drag past the row's start moved to %d" % map.focus)
+	drag.call(-slot_px * (IslandCards.SNAP_SHARE + 0.1))   # leftwards: the next one
+	for i in 90:
+		await tree.process_frame
+	if map.focus != map._index(NEXT) or not centred.call(NEXT) or shown.call() != [NEXT]:
+		problems.append("a drag past SNAP_SHARE did not settle on %s (focus %d, tags %s)" % [NEXT, map.focus, str(shown.call())])
+	drag.call(-slot_px * (IslandCards.SNAP_SHARE * 0.5))   # a short one: back
+	for i in 90:
+		await tree.process_frame
+	if map.focus != map._index(NEXT) or absf(map.focus_x - map._focus_at(map.focus)) > 0.05:
+		problems.append("a short drag moved it (%d, %.2f)" % [map.focus, map.focus_x])
+	# A tap on the island beside it brings that one to the middle (2026-11-11 user: "그 섬 눌러도 포커스
+	# 이동 되게 해줘"); a tap on the one in the middle does nothing (only its button sails).
+	map._on_pointer("press", map._island_rect(NEXT).get_center())
+	map._on_pointer("release", map._island_rect(NEXT).get_center())
+	await tree.process_frame
+	if map.focus != map._index(NEXT) or not map.sail.is_empty():
+		problems.append("a tap on the island in the middle moved or sailed (%d)" % map.focus)
+	var beside: Vector2 = map._island_rect(ProgressStore.FIRST_ISLAND).get_center()
+	map._on_pointer("press", beside)
+	map._on_pointer("release", beside)
+	for i in 90:
+		await tree.process_frame
+	if map.focus != map._index(ProgressStore.FIRST_ISLAND) or not map.sail.is_empty() or not app._screen is TitleScreen:
+		problems.append("a tap on the island beside did not bring it to the middle (%d)" % map.focus)
+	map._on_pointer("press", map._island_rect(NEXT).get_center())   # and back, for the tag's drag below
+	map._on_pointer("release", map._island_rect(NEXT).get_center())
+	for i in 90:
+		await tree.process_frame
+	# A drag starting on the tag in view (its events come up to the map, MOUSE_FILTER_PASS).
+	var tag: Control = map.cards[NEXT]
+	var on_tag := tag.get_global_rect().get_center() - Vector2(0.0, tag.size.y * 0.3)
+	for e in [[true, on_tag], [false, on_tag + Vector2(slot_px * 0.6, 0.0)]]:
+		var touch := InputEventScreenTouch.new()
+		touch.pressed = e[0]
+		touch.position = e[1]
+		if not e[0]:
+			var move := InputEventScreenDrag.new()
+			move.position = e[1]
+			move.relative = e[1] - on_tag
+			map._gui_input(move)
+		map._gui_input(touch)
+	for i in 90:
+		await tree.process_frame
+	if map.focus != map._index(ProgressStore.FIRST_ISLAND):
+		problems.append("a drag on the tag did not slide the row back (%d)" % map.focus)
+	await _free(app)
+	expect.call(problems.is_empty(), "섬 고르기 carousel: the island in use in the middle with its tag alone; a drag past SNAP_SHARE moves on one island, a short one settles back, none past the ends; a tap on the island beside brings it to the middle; a drag on a tag slides it too (no arrows)",
+		"; ".join(problems))
+
+
+## Where the map's boat's bow or stern is over an island's model (its reach round its middle), or "".
+func _boat_aground(map: IslandCards) -> String:
+	if not is_instance_valid(map) or map.boat == null:
+		return ""
+	var ends := IslandCards.boat_reach() / IslandCards.BOAT_SCALE
+	for z in [-ends, ends]:
+		var p: Vector3 = map.boat.global_transform * Vector3(0.0, 0.0, z)
+		for id in map._middles:
+			var middle: Vector3 = map._middles[id]
+			if Vector2(p.x - middle.x, p.z - middle.z).length() < float(map._reach[id]):
+				return "the boat's end %s is on %s (%.2f m from its middle, reach %.2f)" % [str(p), id, Vector2(p.x - middle.x, p.z - middle.z).length(), map._reach[id]]
+	return ""
+
+
+## The map's ← (top left, #114) and Android back on the map: the islands' map once a voyage was seen,
+## the title before. The story's emblem sits under ← (2026-11-11 user: "돌아가기 아래로 두자"), both clear of the top left edges.
 func check_map_back() -> void:
 	_first_done()
 	var app := await _app([])
@@ -496,10 +657,12 @@ func check_map_back() -> void:
 		var rect := back.get_global_rect()
 		if rect.position.x < IslandHomeScreen.MAP_EDGE - 0.5 or rect.position.y < IslandHomeScreen.MAP_EDGE - 0.5 or rect.get_center().x > home.size.x * 0.25:
 			problems.append("← not in the top left %s" % str(rect))
-		if back.text != "←":
+		if back.text != Locale.t("islands.back"):   # (worded as the islands' map's, #116)
 			problems.append("← text %s" % back.text)
-		if home.story != null and home.story.emblem.visible and home.story.emblem.get_global_rect().intersects(rect):
-			problems.append("the emblem over ← %s" % str(home.story.emblem.get_global_rect()))
+		if home.story != null and home.story.emblem.visible:
+			var emblem: Rect2 = home.story.emblem.get_global_rect()
+			if emblem.intersects(rect) or emblem.position.y < rect.end.y or absf(emblem.position.x - rect.position.x) > 1.0:
+				problems.append("the emblem not under ← %s (← %s)" % [str(emblem), str(rect)])
 		back.pressed.emit()
 	await tree.process_frame
 	var title_before: bool = app._screen is TitleScreen and (app._screen as TitleScreen).island_cards == null
@@ -520,11 +683,11 @@ func check_map_back() -> void:
 	await _free(app)
 	_made()
 	expect.call(problems.is_empty() and title_before and cards_button and cards_android,
-		"map ←: top left, the emblem beside it; ← and Android back go to the title before a voyage, to the island cards after one",
+		"map ← 돌아가기 (worded as the islands' map's, #116): top left, the emblem under it; ← and Android back go to the title before a voyage, to the islands' map after one",
 		"; ".join(problems) + " %s %s %s" % [title_before, cards_button, cards_android])
 
 
-## Phone, tablet, phone zoomed: the title's buttons with 섬 고르기, the cards and the voyage's box and
+## Phone, tablet, phone zoomed: the title's buttons, 섬 고르기's map (its tags) and the voyage's box and
 ## 건너뛰기 all on screen, nothing overlapping.
 func check_layout() -> void:
 	_first_done()
@@ -543,7 +706,7 @@ func check_layout() -> void:
 		var screen := Rect2(Vector2.ZERO, size)
 		var problems := []
 		var rects := title.rects()
-		if rects.size() != 3:   # (a voyage seen: 이야기 다시 보기 is on the island cards, not the title)
+		if rects.size() != 3:   # (a voyage seen: 이야기 다시 보기 is on the islands' map's tags, not the title)
 			problems.append("title rects %d" % rects.size())
 		for r in rects:
 			if not screen.encloses(r):
@@ -563,8 +726,6 @@ func check_layout() -> void:
 			for b in range(a + 1, card_rects.size()):
 				if card_rects[a].intersects(card_rects[b]):
 					problems.append("cards %d %d overlap" % [a, b])
-		if title.island_cards.card_width() < 220.0:
-			problems.append("cards too narrow %.0f" % title.island_cards.card_width())
 		host.queue_free()
 		for i in 3:
 			await tree.process_frame

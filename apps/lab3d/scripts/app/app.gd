@@ -13,6 +13,7 @@
 ##                       never the child's progress
 ##   --demo-story=<part> screenshots of the story in the bench store only (never the child's progress):
 ##                       prologue | clue:<id> | found:<id> | flight:<id> | finale | finale:<island> | map[:<n>]
+##                       | voyage | islands
 ##                       (Story, _demo_story; finale:hutton: the sundial finale, #106)
 ##   --progress=complete  writes the child's progress as all done, once (2026-11-02 user: "apk 다 깬걸로
 ##                       해줘. 보기 어렵다"): every stamp, the story's prologue, clues and finale seen, every
@@ -22,7 +23,7 @@
 ##                       need not be experiments yet): nothing saved, no story, the bench store; not in
 ##                       the Play build
 ##   --islands=open     every island of the list open for this run (an island in the making too, #75):
-##                       its voyage, its card in 섬 고르기, its map, no day limit (#77); not in the Play build
+##                       its voyage, its tag on 섬 고르기's map, its map, no day limit (#77); not in the Play build
 ##   --store=owned|none|pending|fail  the stand-in store (#77, IslandStore.FakeStore); not in the Play build
 ## The Play build reads only --quality=, --q-*, --fps= and --ui-size= (Quality.PLAY_ARGS, #77).
 ## plus the experiment screen's --camera / --ctl-<id> / --sidebar / --scroll-to / --auto-release / --auto-drag.
@@ -133,18 +134,15 @@ static func demo_title(args: PackedStringArray) -> bool:
 
 ## The title (on launch): 시작하기 = the prologue the first time (the map plays it), else the map;
 ## 이야기 다시 보기 = the prologue again (as the settings' entry); 설정 = the settings, back to the title.
-## `islands`: with its island cards open (the map's back, #114).
+## `islands`: with its islands' map open (the map's back, #114).
 func show_title(islands := false) -> void:
 	var screen := TitleScreen.new()
 	screen.start_requested.connect(func() -> void: show_list())
 	screen.story_requested.connect(func() -> void: show_list(true))
 	screen.settings_requested.connect(func() -> void: show_settings(true))
-	screen.island_chosen.connect(func(island: String) -> void:
-		if island != Island.current_id() and Story.enabled:
-			show_sail(island)   # another island: the boat there first (#114)
-		else:
-			Island.set_current(island)
-			show_list())
+	screen.island_chosen.connect(func(island: String) -> void:   # (the islands' map sailed there first, #116)
+		Island.set_current(island)
+		show_list())
 	screen.island_story_chosen.connect(func(island: String) -> void:   # its story again (2026-11-09)
 		Island.set_current(island)
 		show_list(true))
@@ -177,7 +175,7 @@ func _go_back() -> void:
 	elif _screen is VoyageScreen:
 		(_screen as VoyageScreen).skip()   # back skips the voyage (to the next island's map)
 	elif _screen is TitleScreen and (_screen as TitleScreen).hide_islands():
-		pass   # 섬 고르기's cards close first
+		pass   # 섬 고르기's map closes first
 	elif _screen is SettingsScreen:
 		if _settings_from_title:
 			show_title()
@@ -191,7 +189,7 @@ func _go_back() -> void:
 		quit.call()   # the title quits (and the map when the title may not show: tests)
 
 
-## The map's back (its ← and Android back): the island cards when there are islands to choose (#114),
+## The map's back (its ← 돌아가기 and Android back): the islands' map when there are islands to choose (#114),
 ## else the title (2026-10-29 decision).
 func _map_back() -> void:
 	show_title(TitleScreen.picks_island())
@@ -218,7 +216,6 @@ func _show_map(replay := false) -> void:
 	screen.definitions = _definitions
 	screen.play_prologue_on_open = Story.should_play_prologue(replay)
 	screen.experiment_chosen.connect(show_experiment)
-	screen.settings_requested.connect(show_settings)
 	screen.back_requested.connect(func() -> void:
 		if TitleScreen.app_may_show:
 			_map_back())
@@ -235,14 +232,6 @@ func _show_map(replay := false) -> void:
 func show_voyage(island: String, replay := false) -> void:
 	var screen := VoyageScreen.new(island)
 	screen.finished.connect(func(_to: String) -> void: _show_map(replay))
-	_swap(screen, "voyage")
-
-
-## The sail from the island in use to `island` (the island cards, #114): the boat with no words, then
-## that island's map (its prologue if not seen yet).
-func show_sail(island: String) -> void:
-	var screen := VoyageScreen.new(island, Island.current_id())
-	screen.finished.connect(func(_to: String) -> void: show_list())
 	_swap(screen, "voyage")
 
 
@@ -315,7 +304,7 @@ func _slide_in(screen: Control) -> void:
 ##                 lookout, nothing but Puppy's riddle playing: fps measurements, screenshots
 ##   voyage        the first island all found and its finale seen, the next island open (not in the
 ##                 Play build): the voyage plays, then the next island's map and prologue (#75)
-##   islands       as voyage, the voyage already seen: the title with 섬 고르기's cards open (#75)
+##   islands       as voyage, the voyage already seen: the title with 섬 고르기's map open (#75, #116)
 ## Every spot done (--progress=complete): full stamps, the story seen, the pieces at the lookout.
 static func complete_progress() -> void:
 	var store := {}
@@ -357,7 +346,7 @@ func _demo_story(value: String) -> Dictionary:
 			for island in Island.ids():
 				if island != ProgressStore.FIRST_ISLAND:
 					Story.mark_voyage_seen(island)
-					# (and its prologue: the cards' sail lands on its map, not its story, #114)
+					# (and its prologue: the islands' map lands on its map, not its story, #114)
 					ProgressStore.set_mark(ProgressStore.STORY, ProgressStore.island_key(island, "prologue"), true)
 			return {"islands": true}
 		return {}

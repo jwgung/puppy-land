@@ -10,7 +10,7 @@
 ## an experiment. Its cost is the map's (one island mesh + the sky, no labels, no characters).
 ##
 ## 섬 고르기 (#75; one way in since 2026-11-09, user "게임 시작이랑 섬 선택이 어색해" → A): once a
-## voyage to another island was seen (Story.any_voyage_seen) 시작하기 opens the island cards
+## voyage to another island was seen (Story.any_voyage_seen) 시작하기 opens the islands' map
 ## (IslandCards) over the turning island, the logo and the buttons hidden meanwhile; a card emits
 ## `island_chosen` (App: that island in use, its map). Before, with one island, 시작하기 goes straight
 ## to it. There is no separate 섬 고르기 button any more, and 이야기 다시 보기 moves onto each island's
@@ -156,7 +156,7 @@ func _process(delta: float) -> void:
 	logo.position.y = _logo_top - BOB_UNITS * sin(TAU * BOB_HZ * _clock)
 
 
-## 시작하기: the island cards once there is more than one island to go to, else the island itself.
+## 시작하기: the islands' map once there is more than one island to go to, else the island itself.
 func _on_start() -> void:
 	if picks_island():
 		show_islands()
@@ -164,7 +164,7 @@ func _on_start() -> void:
 		start_requested.emit()
 
 
-## 시작하기 opens the island cards (a voyage was seen: a second island is there to choose).
+## 시작하기 opens the islands' map (a voyage was seen: a second island is there to choose).
 static func picks_island() -> bool:
 	return Story.any_voyage_seen()
 
@@ -177,7 +177,8 @@ func rects() -> Array[Rect2]:
 	return out
 
 
-## 섬 고르기: the island cards over the turning island (the logo and the buttons hide meanwhile).
+## 섬 고르기: the islands' map (IslandCards, #116) over the title; the title's own island view, logo
+## and buttons hide meanwhile (one 3D view drawn at a time).
 func show_islands() -> void:
 	if island_cards != null:
 		return
@@ -186,16 +187,18 @@ func show_islands() -> void:
 	island_cards.story_chosen.connect(island_story_chosen.emit)
 	island_cards.back_requested.connect(hide_islands)
 	add_child(island_cards)
+	view.visible = false
 	logo.visible = false
 	_buttons.visible = false
 
 
-## Back from the cards to the title (← 돌아가기, Android back). True when the cards were open.
+## Back from the islands' map to the title (← 돌아가기, Android back). True when it was open.
 func hide_islands() -> bool:
 	if island_cards == null:
 		return false
 	island_cards.queue_free()
 	island_cards = null
+	view.visible = true
 	logo.visible = true
 	_buttons.visible = true
 	return true

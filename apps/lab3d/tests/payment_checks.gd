@@ -1,7 +1,7 @@
 ## The payment (#77, ADR 0005, 2026-11-08 decisions): the Play build's launch args, the islands bought
 ## (IslandStore: PURCHASED only, pending, refunds, acknowledge, the cache), one new spot a day on an
 ## island not bought (DailyLimit, Story.enterable), Puppy's "today" line with 보호자 on the map, the
-## guardian's check (ParentalGate), the island's offer (IslandOffer) and 보호자 on 섬 고르기's card.
+## guardian's check (ParentalGate), the island's offer (IslandOffer) and 보호자 on 섬 고르기's island tags (#116).
 extends RefCounted
 
 const UI_THEME := "res://scripts/app/ui_theme.gd"
@@ -362,7 +362,7 @@ func check_offer() -> void:
 	expect.call(problems.is_empty(), "payment: the island's offer (store price, 구매, waiting for approval, closes when bought, no store: 구매 off) inside the view on phone, tablet and desktop", "; ".join(problems))
 
 
-## 섬 고르기: an open island not bought has 보호자 in its picture's top right, inside the card; it opens
+## 섬 고르기: an open island not bought has 보호자 in its tag's top right (the islands' map, #116); it opens
 ## the guardian's check; a bought (or free) island has none, and buying takes it away.
 func check_cards() -> void:
 	Island.use_index(_paid_index())
@@ -380,15 +380,16 @@ func check_cards() -> void:
 		var cards := IslandCards.new()
 		host.add_child(cards)
 		await _frames(4)
+		cards.focus = cards._index("hutton")   # (the carousel: hutton's tag in view)
+		await _frames(60)
 		var guardian: Button = cards.guardians.get("hutton")
 		if guardian == null or cards.guardians.has("mechanics"):
 			problems.append("%s: guardians %s" % [size_name, cards.guardians.keys()])
 		else:
-			var picture := (cards.cards["hutton"] as Control).find_child("Picture", true, false) as Control
+			var tag := (cards.cards["hutton"] as Control).get_global_rect()   # (its tag on the islands' map, #116)
 			var r := guardian.get_global_rect()
-			if not picture.get_global_rect().encloses(r) or r.get_center().x < picture.get_global_rect().get_center().x \
-					or r.get_center().y > picture.get_global_rect().get_center().y:
-				problems.append("%s: 보호자 %s not in the picture's top right %s" % [size_name, r, picture.get_global_rect()])
+			if not tag.encloses(r) or r.get_center().x < tag.get_center().x or r.get_center().y > tag.get_center().y:
+				problems.append("%s: 보호자 %s not in the tag's top right %s" % [size_name, r, tag])
 			if size_name == "desktop":   # the last size: buying takes 보호자 away
 				guardian.pressed.emit()
 				await _frames(1)
@@ -403,7 +404,7 @@ func check_cards() -> void:
 	_drop(store)
 	ProgressStore.reset_all()
 	Island.use_index([])
-	expect.call(problems.is_empty(), "payment: 보호자 on an open island card not bought (picture's top right), opens the check, gone when bought", "; ".join(problems))
+	expect.call(problems.is_empty(), "payment: 보호자 on an open island card not bought (its tag's top right), opens the check, gone when bought", "; ".join(problems))
 
 
 ## Puppy's box with 보호자 at its right end: inside the box, clear of the words, on every size; the box's

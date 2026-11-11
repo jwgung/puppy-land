@@ -30,6 +30,7 @@ var _clock := 0.0
 ## hops of HOP_HEIGHT) and the banner waves CELEBRATE_RATE times as fast and a little wider.
 var _celebrate_left := 0.0
 var _rest_y := 0.0
+var _hops := true
 const CELEBRATE_S := 2.0
 const CELEBRATE_HOPS := 4
 const HOP_HEIGHT := 0.35
@@ -37,11 +38,13 @@ const CELEBRATE_RATE := 4.0
 const CELEBRATE_SWING := 1.6
 
 
-## He hops and waves the flag fast for a moment (the puppy celebrates a cleared round).
-func celebrate() -> void:
+## He hops and waves the flag fast for a moment (the puppy celebrates a cleared round). `hop` false:
+## only the flag (on the voyage's boat he stays on the deck, 2026-11-11 user: "왜 공중에 떠있어 퍼피").
+func celebrate(hop := true) -> void:
 	if _celebrate_left <= 0.0:
 		_rest_y = position.y
 	_celebrate_left = CELEBRATE_S
+	_hops = hop
 
 
 func celebrating() -> bool:
@@ -114,5 +117,6 @@ func advance(delta: float) -> void:
 	if celebrating():
 		_celebrate_left = maxf(0.0, _celebrate_left - delta)
 		var k := 1.0 - _celebrate_left / CELEBRATE_S   # 0..1 over the celebration: whole hops, back down at the end
-		position.y = _rest_y + HOP_HEIGHT * absf(sin(k * PI * CELEBRATE_HOPS))
+		if _hops:
+			position.y = _rest_y + HOP_HEIGHT * absf(sin(k * PI * CELEBRATE_HOPS))
 	cloth.transform = Transform3D(Basis(pole_axis, wave_angle()) * _cloth_rest.basis, _cloth_rest.origin)

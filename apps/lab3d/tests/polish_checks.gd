@@ -583,7 +583,8 @@ func check_scale() -> void:
 		var head: Vector2 = screen._world_to_screen(cat.position + Vector3(cat.size.x * 0.5, cat.size.y, cat.size.z * 0.5))
 		heights[setup[1]] = foot.distance_to(head)
 		await _free(screen)
-	if heights.phone < 14.0 or absf(heights.phone - heights.tablet) > 0.05 * heights.tablet:
+	# (14 before the islands grew 1.3 times on 2026-11-11; the camera backs off with them: about 11.8)
+	if heights.phone < 11.0 or absf(heights.phone - heights.tablet) > 0.05 * heights.tablet:
 		problems.append("on screen: phone %.1f, tablet %.1f units" % [heights.phone, heights.tablet])
 	expect.call(problems.is_empty(), "map: the three at map size (cat %.0f units high on screen on phone and tablet, about a landmark's height)" % heights.get("tablet", 0.0),
 		"; ".join(problems))

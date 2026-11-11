@@ -21,7 +21,9 @@ const EXPERIMENT_SCREEN := "res://scripts/shell/experiment_screen.gd"
 const UI_THEME := "res://scripts/app/ui_theme.gd"
 const TABLET := Vector2(1152, 720)
 const PHONE := Vector2(1560, 720)
-const VERTS_MAX := 30000
+## (30000 until the islands grew 1.3 times on 2026-11-10/11: the buoyancy lab's world has 30270, its
+## longer coast and paths.)
+const VERTS_MAX := 31000
 ## Each lab's zone theme (the island's zones), written out here.
 const THEMES := {
 	"projectile": "meadow", "collision": "meadow", "free-fall": "meadow",

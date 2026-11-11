@@ -102,7 +102,7 @@
   "islands.back": "← 돌아가기",
   "islands.continue": "이어서 하기",
   "islands.locked": "%s 조각을 다 모으면 열려요",
-  "islands.go": "가 보기",
+  "islands.go": "출발!",
   "islands.soon": "곧 만나요!",
   "islands.next": "다음 섬",
   "kid.units": {
@@ -121,7 +121,6 @@
   "list.lead": "질문을 고르고, 조건을 바꾸며 무슨 일이 일어나는지 관찰해요.",
   "list.start": "실험 시작",
   "list.title": "실험 선택",
-  "map.back": "←",
   "map.clue": "단서",
   "mission.line": "%s 미션: %s",
   "mission.ordinal_n": "%d번째",

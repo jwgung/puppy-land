@@ -1,21 +1,20 @@
 ## The island home (Plan G2): the 3D island seen from above, with the 5 zones and their 11 spots.
 ## A tap on a spot (its landmark or its name label) makes the bread cat hop over, then the experiment
 ## opens; when all its stamps (3) are collected a flag stands there. One finger dragged on the map
-## turns it like the 3D labs (two fingers turn and zoom, View3D). The settings button sits on the
-## map. The stamps are read once when the map opens (refresh_progress), never per frame.
+## turns it like the 3D labs (two fingers turn and zoom, View3D). 설정 is not on the map (the
+## title has it). The stamps are read once when the map opens (refresh_progress), never per frame.
 ##
 ## The home is a Control that owns a View3D (top camera, the map's own island: MapIsland, with
 ## sea, zone ground, paths and one landmark per spot, MapLandmarks) and the bread cat
 ## (CatActor) who hops between spots. Spot names are 2D labels projected onto the map
 ## (the key-card / dialogue pattern: the 3D view under, UI on top). It never touches an
 ## experiment's physics: the map is its own little world. App.gd builds it the way it built the
-## ListScreen (same signals).
+## ListScreen (its signals, but 설정: that is on the title only since 2026-11-11).
 class_name IslandHomeScreen
 extends Control
 
 signal experiment_chosen(definition: Dictionary)
-signal settings_requested
-## The map's ← (top left, #114): App goes back as Android back does (the island cards or the title).
+## The map's ← 돌아가기 (top left, #114): App goes back as Android back does (the islands' map or the title).
 signal back_requested
 
 var definitions: Array[Dictionary] = []
@@ -108,6 +107,11 @@ const HOP_HZ := 2.2                  # hops per second while walking
 ## way each (Dugi twice), FOLLOW_SIDE m off its middle (Puppy left, Dugi right: a little life, still on it).
 const FOLLOW_LAG := 0.8              # m behind the one ahead along the way
 const FOLLOW_SIDE := 0.1             # m off the way's middle (0.34 before #114: off the path)
+## The prologue's stroll up from the beach (stroll_home): the followers this far behind the cat (m),
+## the share of it over which they step into their row; its state (empty: none).
+const STROLL_LAG := 0.9
+const STROLL_SETTLE := 0.15
+var _stroll := {}                  # {route, at (lengths along it), t, total}
 ## Two places nearer than this go straight there (a short step on the square); farther, by the paths.
 const ROUTE_STRAIGHT_MAX := 1.2
 const FOLLOW_HOPS := {"Puppy": [0.33, 0.8], "Dugi": [0.66, 0.65]}   # phase (share of a hop), height share
@@ -237,16 +241,26 @@ const PITCH_RANGE := [-89.0, -8.0]
 const DISTANCE_RANGE := [6.0, 60.0]
 const PAN_RADIUS := 15.0
 const TARGET_Y := 0.5
+## The default distance and PAN_RADIUS are for an island of BASE_RADIUS_X; a wider one gets them that
+## many times (both islands 1.3 times since 2026-11-10/11, user: "실험 사이사이 길이 짧아서", "뉴턴
+## 섬도 좀 더 크게해줘": the whole island stays in view, the three a little smaller on screen).
+const MAP_DISTANCE := 27.0
+const BASE_RADIUS_X := 12.8
+
+
+## How much wider this island is than BASE_RADIUS_X (1 or more).
+func island_scale() -> float:
+	return maxf(1.0, island.radius_x / BASE_RADIUS_X)
 
 
 func _map_camera() -> Dictionary:
 	return {
 		"target": [0.0, TARGET_Y, 0.0],
-		"distance": 27.0,
+		"distance": MAP_DISTANCE * island_scale(),
 		"distance_range": DISTANCE_RANGE,
 		"yaw_range_deg": [-180.0, 180.0],
 		"pitch_range_deg": PITCH_RANGE,
-		"pan_radius": PAN_RADIUS,
+		"pan_radius": PAN_RADIUS * island_scale(),
 		"pan_ground": true,
 		"default_mode": "three_quarter",
 		"views": {
@@ -281,12 +295,14 @@ func _add_spot(world: Node3D, zone: String, id: String, info: Dictionary) -> voi
 		"stand": info.stand, "zone": zone, "marker": root, "tag": int(info.get("tag", 0))})
 
 
-## The map's own buttons, 단서 and 설정, floating over its top right corner (2026-10-31 user: no top bar,
+## The map's own button, 단서 (설정 left it, see below), floating over its top right corner (2026-10-31 user: no top bar,
 ## the app's name need not show; the bar ran edge to edge and a phone's rounded corners cut it), and
-## its ← alone in the top left (#114: back to the island cards; an arrow, no word). They keep MAP_EDGE
-## units, plus the screen's safe-area inset, from the edges; the story's emblem sits right of ←.
+## its ← 돌아가기 alone in the top left (#114: back to the islands' map; worded as that map's own, #116). They keep MAP_EDGE
+## units, plus the screen's safe-area inset, from the edges; the story's emblem sits under ←
+## (2026-11-11 user: "돌아가기가 생기면서 해시계나 별이 오른쪽으로 밀리거든? 돌아가기 아래로 두자").
+## 설정 is on the title only (2026-11-11 user: "지도에 설정 안보여주기로 했잖아.. 홈에서만 보이게 해줘").
 const MAP_EDGE := 20.0
-const BACK_GAP := 12.0              # between ← and the emblem
+const BACK_GAP := 12.0              # between ← and the emblem under it
 
 
 func _build_map_buttons() -> void:
@@ -301,14 +317,9 @@ func _build_map_buttons() -> void:
 		if story != null:
 			story.say_riddle())
 	row.add_child(clue_button)
-	var settings := Ui.button(Locale.t("common.settings"), "", 60)
-	settings.name = "SettingsButton"
-	settings.pressed.connect(settings_requested.emit)
-	row.add_child(settings)
 	row.minimum_size_changed.connect(_layout)   # its size comes with the theme: placed again then
-	var back := Ui.button(Locale.t("map.back"), "", 60)
+	var back := Ui.button(Locale.t("islands.back"), "", 60)   # (as the island map's, 2026-11-10 user: "돌아가기로 맞추자")
 	back.name = "MapBackButton"
-	back.custom_minimum_size.x = 60.0
 	back.pressed.connect(back_requested.emit)
 	add_child(back)
 	back.minimum_size_changed.connect(_layout)
@@ -328,11 +339,11 @@ func _layout() -> void:
 		back.position = Vector2(MAP_EDGE + inset.left, MAP_EDGE + inset.top)
 
 
-## Where the story's corner emblem starts (x): right of ← (its place even while ← hides in the story).
-func emblem_left() -> float:
+## Where the story's corner emblem goes (its top left): under ← (its place even while ← hides in the story).
+func emblem_at() -> Vector2:
 	var back: Control = find_child("MapBackButton", true, false)
-	var left: float = MAP_EDGE + Ui.safe_insets(self).left
-	return left + (back.get_combined_minimum_size().x + BACK_GAP if back != null else 0.0)
+	var inset := Ui.safe_insets(self)
+	return Vector2(MAP_EDGE + inset.left, MAP_EDGE + inset.top + (back.get_combined_minimum_size().y + BACK_GAP if back != null else 0.0))
 
 
 ## The stamps of every spot from the store (one file read), and the flags they stand.
@@ -509,6 +520,7 @@ func _exit_tree() -> void:
 func _process(delta: float) -> void:
 	if _walking:
 		_step_walk(delta)
+	_step_stroll(delta)
 	_step_raise(delta)
 	_step_shake(delta)
 	if _cinematic:
@@ -582,11 +594,13 @@ func set_cinematic(on: bool) -> void:
 
 ## The three back where they rest (after the story moved the cat).
 func reset_trio() -> void:
+	_stroll = {}   # (a skipped prologue: the stroll ends where they rest)
 	_place_trio(TRIO_YAW)
 
 
 ## The three on the square again, and the store forgets the last spot (the prologue starts there).
 func trio_home() -> void:
+	_stroll = {}
 	rest_spot = -1
 	if ProgressStore.last_spot(island.id) != "":
 		ProgressStore.set_last_spot(island.id, "")
@@ -882,20 +896,34 @@ static func walk_seconds(length: float) -> float:
 	return clampf(length / WALK_SPEED, WALK_MIN_S, WALK_MAX_S)
 
 
-## The point `s` m along the way (clamped to its ends) and the way's direction there.
+## The point `s` m along the walk's way (clamped to its ends) and the way's direction there.
 func _along(s: float) -> Array:
-	var n := _route.size()
+	return along(_route, _route_at, s)
+
+
+## The point `s` m along `way` (its lengths `at` from its start, route_lengths; clamped to its ends) and
+## its direction there.
+static func along(way: PackedVector2Array, at: PackedFloat32Array, s: float) -> Array:
+	var n := way.size()
 	if n == 1:
-		return [_route[0], Vector2.ZERO]
-	s = clampf(s, 0.0, _route_at[n - 1])
+		return [way[0], Vector2.ZERO]
+	s = clampf(s, 0.0, at[n - 1])
 	var k := 1
-	while k < n - 1 and _route_at[k] < s:
+	while k < n - 1 and at[k] < s:
 		k += 1
-	var a := _route[k - 1]
-	var b := _route[k]
-	var span := _route_at[k] - _route_at[k - 1]
-	var t := (s - _route_at[k - 1]) / span if span > 1e-6 else 0.0
+	var a := way[k - 1]
+	var b := way[k]
+	var span := at[k] - at[k - 1]
+	var t := (s - at[k - 1]) / span if span > 1e-6 else 0.0
 	return [a.lerp(b, t), (b - a).normalized()]
+
+
+## The lengths along `way` from its start to each of its points.
+static func route_lengths(way: PackedVector2Array) -> PackedFloat32Array:
+	var at := PackedFloat32Array([0.0])
+	for k in range(1, way.size()):
+		at.append(at[k - 1] + way[k].distance_to(way[k - 1]))
+	return at
 
 
 func _step_walk(delta: float) -> void:
@@ -968,6 +996,50 @@ func _step_walk(delta: float) -> void:
 				actor.position = group[actor]
 				actor.rotation.y = group.facing
 		experiment_chosen.emit(spot.definition)
+
+
+## The stroll (another island's prologue after the voyage, 2026-11-10 user: "대화중에 갑자기 섬 중앙으로
+## 이동해버리는것도 어색하다"): the three walk in `seconds` from where the boat landed (`from`, x/z) along
+## the paths to their row on the square, the cat first and Puppy and Dugi STROLL_LAG m behind, hopping;
+## over the last STROLL_SETTLE they step into their row places and turn to the view.
+func stroll_home(from: Vector2, seconds: float) -> void:
+	var way := route(from, map.trio_row())
+	_stroll = {"route": way, "at": route_lengths(way), "t": 0.0, "total": maxf(seconds, 0.1)}
+	_walk_last.clear()
+	_walk_heading.clear()
+	for actor: Node3D in [cat, puppy, dugi]:
+		if actor != null:
+			actor.position = Vector3(from.x, map.walk_height(from.x, from.y), from.y)
+
+
+## The three are strolling to the square now (tests).
+func strolling() -> bool:
+	return not _stroll.is_empty()
+
+
+func _step_stroll(delta: float) -> void:
+	if _stroll.is_empty():
+		return
+	_stroll.t += delta
+	var k := clampf(float(_stroll.t) / float(_stroll.total), 0.0, 1.0)
+	var at: PackedFloat32Array = _stroll.at
+	var way: PackedVector2Array = _stroll.route
+	var length := at[at.size() - 1] + 2.0 * STROLL_LAG
+	var settle := smoothstep(1.0 - STROLL_SETTLE, 1.0, k)
+	for entry in [[cat, 0.0], [puppy, 1.0], [dugi, 2.0]]:
+		var actor: Node3D = entry[0]
+		if actor == null:
+			continue
+		var s := length * walk_share(float(_stroll.t), float(_stroll.total)) - STROLL_LAG * float(entry[1])
+		var p: Vector2 = along(way, at, s)[0]
+		var place := trio_spot(actor)
+		p = p.lerp(Vector2(place.x, place.z), settle)
+		_set_walker(actor, p, HOP_HEIGHT * absf(sin(float(_stroll.t) * PI * HOP_HZ + float(entry[1]))) * (1.0 - settle), delta)
+		if settle > 0.0:
+			actor.rotation.y = lerp_angle(actor.rotation.y, TRIO_YAW, settle)
+	if k >= 1.0:
+		_stroll = {}
+		_place_trio(TRIO_YAW)
 
 
 ## An actor on the way at `at` (x, z) `lift` m above the ground (up the hills), turning towards where
