@@ -108,6 +108,11 @@ const HOP_HZ := 2.2                  # hops per second while walking
 ## way each (Dugi twice), FOLLOW_SIDE m off its middle (Puppy left, Dugi right: a little life, still on it).
 const FOLLOW_LAG := 0.8              # m behind the one ahead along the way
 const FOLLOW_SIDE := 0.1             # m off the way's middle (0.34 before #114: off the path)
+## The prologue's stroll up from the beach (stroll_home): the followers this far behind the cat (m),
+## the share of it over which they step into their row; its state (empty: none).
+const STROLL_LAG := 0.9
+const STROLL_SETTLE := 0.15
+var _stroll := {}                  # {route, at (lengths along it), t, total}
 ## Two places nearer than this go straight there (a short step on the square); farther, by the paths.
 const ROUTE_STRAIGHT_MAX := 1.2
 const FOLLOW_HOPS := {"Puppy": [0.33, 0.8], "Dugi": [0.66, 0.65]}   # phase (share of a hop), height share
@@ -582,11 +587,13 @@ func set_cinematic(on: bool) -> void:
 
 ## The three back where they rest (after the story moved the cat).
 func reset_trio() -> void:
+	_stroll = {}   # (a skipped prologue: the stroll ends where they rest)
 	_place_trio(TRIO_YAW)
 
 
 ## The three on the square again, and the store forgets the last spot (the prologue starts there).
 func trio_home() -> void:
+	_stroll = {}
 	rest_spot = -1
 	if ProgressStore.last_spot(island.id) != "":
 		ProgressStore.set_last_spot(island.id, "")
@@ -882,20 +889,34 @@ static func walk_seconds(length: float) -> float:
 	return clampf(length / WALK_SPEED, WALK_MIN_S, WALK_MAX_S)
 
 
-## The point `s` m along the way (clamped to its ends) and the way's direction there.
+## The point `s` m along the walk's way (clamped to its ends) and the way's direction there.
 func _along(s: float) -> Array:
-	var n := _route.size()
+	return along(_route, _route_at, s)
+
+
+## The point `s` m along `way` (its lengths `at` from its start, route_lengths; clamped to its ends) and
+## its direction there.
+static func along(way: PackedVector2Array, at: PackedFloat32Array, s: float) -> Array:
+	var n := way.size()
 	if n == 1:
-		return [_route[0], Vector2.ZERO]
-	s = clampf(s, 0.0, _route_at[n - 1])
+		return [way[0], Vector2.ZERO]
+	s = clampf(s, 0.0, at[n - 1])
 	var k := 1
-	while k < n - 1 and _route_at[k] < s:
+	while k < n - 1 and at[k] < s:
 		k += 1
-	var a := _route[k - 1]
-	var b := _route[k]
-	var span := _route_at[k] - _route_at[k - 1]
-	var t := (s - _route_at[k - 1]) / span if span > 1e-6 else 0.0
+	var a := way[k - 1]
+	var b := way[k]
+	var span := at[k] - at[k - 1]
+	var t := (s - at[k - 1]) / span if span > 1e-6 else 0.0
 	return [a.lerp(b, t), (b - a).normalized()]
+
+
+## The lengths along `way` from its start to each of its points.
+static func route_lengths(way: PackedVector2Array) -> PackedFloat32Array:
+	var at := PackedFloat32Array([0.0])
+	for k in range(1, way.size()):
+		at.append(at[k - 1] + way[k].distance_to(way[k - 1]))
+	return at
 
 
 func _step_walk(delta: float) -> void:
@@ -974,17 +995,9 @@ func _step_walk(delta: float) -> void:
 ## 이동해버리는것도 어색하다"): the three walk in `seconds` from where the boat landed (`from`, x/z) along
 ## the paths to their row on the square, the cat first and Puppy and Dugi STROLL_LAG m behind, hopping;
 ## over the last STROLL_SETTLE they step into their row places and turn to the view.
-const STROLL_LAG := 0.9
-const STROLL_SETTLE := 0.15
-var _stroll := {}                  # {route, at (lengths along it), t, total} (empty: none)
-
-
 func stroll_home(from: Vector2, seconds: float) -> void:
 	var way := route(from, map.trio_row())
-	var at := PackedFloat32Array([0.0])
-	for k in range(1, way.size()):
-		at.append(at[k - 1] + way[k].distance_to(way[k - 1]))
-	_stroll = {"route": way, "at": at, "t": 0.0, "total": maxf(seconds, 0.1)}
+	_stroll = {"route": way, "at": route_lengths(way), "t": 0.0, "total": maxf(seconds, 0.1)}
 	_walk_last.clear()
 	_walk_heading.clear()
 	for actor: Node3D in [cat, puppy, dugi]:
@@ -1010,12 +1023,8 @@ func _step_stroll(delta: float) -> void:
 		var actor: Node3D = entry[0]
 		if actor == null:
 			continue
-		var s := clampf(length * walk_share(float(_stroll.t), float(_stroll.total)) - STROLL_LAG * float(entry[1]), 0.0, at[at.size() - 1])
-		var i := 1
-		while i < way.size() - 1 and at[i] < s:
-			i += 1
-		var span := at[i] - at[i - 1] if way.size() > 1 else 0.0
-		var p := way[0] if way.size() < 2 else way[i - 1].lerp(way[i], (s - at[i - 1]) / span if span > 1e-6 else 0.0)
+		var s := length * walk_share(float(_stroll.t), float(_stroll.total)) - STROLL_LAG * float(entry[1])
+		var p: Vector2 = along(way, at, s)[0]
 		var place := trio_spot(actor)
 		p = p.lerp(Vector2(place.x, place.z), settle)
 		_set_walker(actor, p, HOP_HEIGHT * absf(sin(float(_stroll.t) * PI * HOP_HZ + float(entry[1]))) * (1.0 - settle), delta)

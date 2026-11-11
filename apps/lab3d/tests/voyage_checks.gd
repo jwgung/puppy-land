@@ -184,7 +184,7 @@ func check_voyage_flow(_quality_script: GDScript) -> void:
 				# The trio stand under the sail (its foot over their heads, 2026-11-10 user: "돛을 더 높여서 달아").
 				for actor: Node3D in voyage.aboard:
 					var top: float = IslandCast.drawn_bounds(actor).end.y
-					var sail_foot: float = (voyage.boat.global_transform * Vector3(0.0, minf(BoatArt.SAIL_CLEW.y, (BoatArt.JIB[1] as Vector3).y), 0.0)).y
+					var sail_foot: float = (voyage.boat.global_transform * Vector3(0.0, minf(minf(BoatArt.SAIL_CLEW.y, (BoatArt.JIB[1] as Vector3).y), BoatArt.BOOM_AT.y - BoatArt.BOOM_RADIUS), 0.0)).y
 					if top > sail_foot:
 						problems.append("%s reaches into the sail (%.2f > %.2f)" % [actor.name, top, sail_foot])
 			if voyage.star.visible != (voyage.shot == "depart"):

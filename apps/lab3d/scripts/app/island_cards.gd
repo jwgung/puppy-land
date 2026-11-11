@@ -52,10 +52,9 @@ const GO_FONT := 24
 const STORY_HEIGHT := 40.0         # 이야기 다시 보기 under it, small
 const STORY_FONT := 17
 const BACK_HEIGHT := 56.0
-## The world: the islands' middles SLOT m apart along x (the row centred on the origin), each map
-## island at full size; the camera looks down at the row from PITCH_DEG and backs off until the row
-## and the tags under it fit (VIEW_MARGIN of the width each side); a tag hangs under its island's
-## front coast.
+## The world: the islands' little models (_mini_island_mesh) SLOT m apart along x (the row centred on
+## the origin); the camera looks down at the row from PITCH_DEG and backs off until the row and the
+## tags under it fit (VIEW_MARGIN of the width each side); a tag hangs under its island's front coast.
 const SLOT := 23.0
 ## Every other island a little back (z), the sea's radius and its wave strokes; the little islands'
 ## radius, their trees and how big their landmarks are against the map's.
@@ -124,7 +123,7 @@ var guardians: Dictionary = {}
 var sail := {}
 var _entries: Array = []
 var _middles: Dictionary = {}      # id -> its island's middle (world)
-var _reach: Dictionary = {}        # id -> its island's coast radius (m, the widest)
+var _reach: Dictionary = {}        # id -> its model's radius (m: MINI_RADIUS, FAR_RADIUS)
 var _pressed_at := Vector2.INF     # where the finger came down on the map (INF: none)
 
 
@@ -226,7 +225,7 @@ func _build_world() -> void:
 		holder.name = "Island_%s" % (entry.id if entry.id != "" else "next")
 		holder.position = middle
 		world.add_child(holder)
-		var mesh := _far_island_mesh() if entry.id == "" else mini_island_mesh(str(entry.id))
+		var mesh := _far_island_mesh() if entry.id == "" else _mini_island_mesh(str(entry.id))
 		var material := MapIsland.material()
 		if not entry.open and entry.id != "":
 			material = MapIsland.material().duplicate() as ShaderMaterial
@@ -255,7 +254,7 @@ func _build_world() -> void:
 ## Island `id`'s little model on the 퍼피랜드 map (#116): its own coastline (the map's, shrunk: the same
 ## island as when the child is on it) with its beach and grass, a few trees and only its own landmarks (MapLandmarks: the hutton island's volcano, lighthouse and sundial; the
 ## first island's star, spring and pulley; any other island its first spots), MINI_SCALE of their map size.
-static func mini_island_mesh(id: String) -> Mesh:
+static func _mini_island_mesh(id: String) -> Mesh:
 	var b := ArtKit.builder()
 	b.ao_min = 0.9
 	b.ao_height = 1.0
@@ -263,7 +262,8 @@ static func mini_island_mesh(id: String) -> Mesh:
 	var r := MINI_RADIUS
 	# The island's own coastline (MapIsland.coast_radius, the map you walk on) shrunk to MINI_RADIUS:
 	# the shallows round it, the beach, the grass inside (the map's grass edge).
-	var map := MapIsland.new(Island.by_id(id))
+	var island := Island.by_id(id)
+	var map := MapIsland.new(island)
 	var widest := 0.0
 	for i in COAST_SIDES:
 		widest = maxf(widest, map.coast_radius(TAU * i / COAST_SIDES))
@@ -291,7 +291,7 @@ static func mini_island_mesh(id: String) -> Mesh:
 			MapLandmarks.add(b, "spring", place.call(2.4, -0.8))
 			MapLandmarks.add(b, "pulley", place.call(0.2, 2.4))
 		_:
-			var spots: Array = Island.by_id(id).spots()
+			var spots: Array = island.spots()
 			for i in mini(3, spots.size()):
 				var a := TAU * i / 3.0
 				MapLandmarks.add(b, str(spots[i]), place.call(cos(a) * 2.0, sin(a) * 1.6))

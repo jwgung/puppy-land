@@ -28,7 +28,10 @@ const BEND := 6.0
 const BOAT_SCALE := 1.7
 const ACTOR_ON_BOAT := 0.42
 ## Where the trio stand on the deck (boat local, bow +z), in the order of `aboard`: puppy, dugi, cat.
-const ABOARD := [Vector3(0.0, 0.56, 0.62), Vector3(-0.22, 0.52, -0.1), Vector3(0.2, 0.55, -0.72)]
+## The small cat stands at the bow, a little bigger (ABOARD_SCALE), so the sail and the others don't
+## hide it (2026-11-10 user: "빵고양이도 배에 안보이고").
+const ABOARD := [Vector3(-0.26, 0.55, 0.12), Vector3(0.2, 0.52, -0.5), Vector3(0.0, 0.57, 0.72)]
+const ABOARD_SCALE := [1.0, 1.0, 1.2]
 ## Each shot of the voyage (the keys are Story.VOYAGE_SHOTS, in order; tests check it):
 ## - way: its stretch of the boat's way (0 = the shore of `from`, 1 = the beach of `to`); the pages
 ##   of a shot share it, each gliding its part in GLIDE_S;
@@ -162,7 +165,7 @@ func _build_world() -> void:
 	aboard = [puppy, dugi, cat]
 	for i in aboard.size():
 		boat.add_child(aboard[i])
-		aboard[i].scale = Vector3.ONE * ACTOR_ON_BOAT
+		aboard[i].scale = Vector3.ONE * ACTOR_ON_BOAT * float(ABOARD_SCALE[i])
 		aboard[i].position = ABOARD[i]
 	keeper = keeper_model()
 	keeper.scale = Vector3.ONE * KEEPER_SCALE
