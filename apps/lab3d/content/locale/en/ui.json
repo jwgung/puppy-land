@@ -250,7 +250,8 @@
   "shadow_clock.status.noon": "Very short",
   "shadow_clock.status.stone": "On the stone",
   "speaker.dugi": "Dugidugi",
-  "speaker.fox": "Fox Friend",
+  "speaker.fox": "Island Keeper",
+  "speaker.fox_stranger": "Fox Friend",
   "speaker.puppy": "Puppy",
   "spring.reach_wait": "Shows when it swings",
   "spring.status.held": "Pulling the ball",
@@ -272,6 +273,7 @@
     "speed",
     "weigh"
   ],
+  "story.island_done": "%s complete!",
   "story.skip": "Skip",
   "strata.layer.ash": "Grey ash",
   "strata.layer.gravel": "Gravel",

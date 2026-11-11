@@ -586,8 +586,8 @@ func check_opening() -> void:
 		again.clue_opened()
 		again.clue_read()
 	Story.enabled = was
-	expect.call(first_ok and later == ["dugi", "dugi"] and Story.KEEPER == "fox" and Locale.t("speaker.fox") == "여우친구",
-		"seasons opening: first visit the fox (여우친구, worried), Puppy's clue, Dugi's two lines, then the question; later visits Dugi's two lines",
+	expect.call(first_ok and later == ["dugi", "dugi"] and Story.KEEPER == "fox" and Locale.t("speaker.fox") == "섬지기",
+		"seasons opening: first visit the fox (섬지기, worried), Puppy's clue, Dugi's two lines, then the question; later visits Dugi's two lines",
 		"%s / %s" % [str(told), str(later)])
 
 

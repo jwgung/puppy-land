@@ -37,9 +37,7 @@ const HEADING_OUTLINE := 8
 const TAG_RADIUS := 20
 const TAG_PAD := 10.0
 const TAG_LINE := 4
-const TAG_LIP := 8
 const CURRENT_LINE := 6
-const CURRENT_LIP := 12
 const LOCKED_PAPER := Color("efe7da")
 const TAG_SEPARATION := 4
 const TAG_WIDTH := 250.0
@@ -107,6 +105,13 @@ const SNAP_RATE := 9.0
 ## A locked island's tint (the map's own_tint), and the island still to come: a plain grey island
 ## (FAR_RADIUS m, its sand, land and hill in greys) under a cloud.
 const LOCKED_TINT := Vector3(0.6, 0.66, 0.78)
+## The new island's unlock (#118): the wait before the row slides to it, the slide, its colours' fade,
+## the lock's pop, the lock's size against LOCK_SIZE.
+const UNLOCK_WAIT_S := 0.8
+const UNLOCK_SLIDE_S := 0.6
+const UNLOCK_S := 1.2
+const UNLOCK_POP_S := 0.6
+const UNLOCK_LOCK_SCALE := 1.6
 const FAR_RADIUS := 7.0
 const FAR_SAND := Color("c4c9d2")
 const FAR_LAND := Color("a9b2bf")
@@ -152,6 +157,10 @@ var _dragging := false
 var _distance := FIRST_DISTANCE
 var _m_per_px := 0.1               # m along the row per UI unit on screen
 var _tag_h := 0.0                  # the tallest tag (_layout)
+## The unlock of the island whose voyage is due (#118, once: Story.unlock_shown): {id, t, material,
+## lock}; {} when none plays.
+var unlock := {}
+var _unlocking := ""               # the id whose unlock plays (set before the world is built)
 
 
 ## The islands, in order: per island {id, name, about, open, complete, pieces, total, piece (its kind,
@@ -198,6 +207,8 @@ func _ready() -> void:
 	view.rig.set_process(false)   # the map frames the camera itself
 	view.single_pointer.connect(_on_pointer)
 	focus = _index(Island.current_id())
+	var due := Story.voyage_due(ProgressStore.load())
+	_unlocking = due if due != "" and not Story.unlock_shown(due) else ""
 	world = Node3D.new()
 	world.name = "World"
 	view.set_world(world)
@@ -209,6 +220,8 @@ func _ready() -> void:
 		tag.mouse_filter = Control.MOUSE_FILTER_PASS   # a drag on a tag slides the row too (_gui_input)
 		cards[entry.id] = tag
 		add_child(tag)
+	if not unlock.is_empty():
+		_start_unlock()
 	heading = _heading()
 	add_child(heading)
 	back_button = Ui.button(Locale.t("islands.back"), "TitleButton", BACK_HEIGHT)
@@ -258,9 +271,12 @@ func _build_world() -> void:
 		world.add_child(holder)
 		var mesh := _far_island_mesh() if entry.id == "" else _mini_island_mesh(str(entry.id))
 		var material := MapIsland.material()
-		if not entry.open and entry.id != "":
+		var unlocks: bool = _unlocking != "" and entry.id == _unlocking
+		if (not entry.open and entry.id != "") or unlocks:
 			material = MapIsland.material().duplicate() as ShaderMaterial
-			material.set_shader_parameter("own_tint", LOCKED_TINT)
+			material.set_shader_parameter("own_tint", LOCKED_TINT)   # (the unlock brings its colours back)
+		if unlocks:
+			unlock = {"id": entry.id, "t": 0.0, "material": material}
 		holder.add_child(ArtKit.instance(mesh, material))
 	var b := ArtKit.builder()
 	b.ao_min = 1.0
@@ -395,19 +411,26 @@ func _index(id: String) -> int:
 
 ## 섬 고르기 on the red ribbon.
 func _heading() -> PanelContainer:
-	var ribbon := PanelContainer.new()
-	ribbon.name = "IslandsHeading"
-	ribbon.add_theme_stylebox_override("panel", UiTheme.outlined_box(UiTheme.TITLE_RED, UiTheme.DIALOGUE_LINE, HEADING_RADIUS, HEADING_PAD, HEADING_LINE, HEADING_LIP))
-	ribbon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var heading := ribbon(Locale.t("title.islands"), HEADING_SIZE)
+	heading.name = "IslandsHeading"
+	return heading
+
+
+## `text` on the red ribbon in white bold letters of `font_size` (섬 고르기's heading; the island's
+## "<island> 완성!" at its finale, #118). It takes no touch.
+static func ribbon(text: String, font_size: int) -> PanelContainer:
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", UiTheme.outlined_box(UiTheme.TITLE_RED, UiTheme.DIALOGUE_LINE, HEADING_RADIUS, HEADING_PAD, HEADING_LINE, HEADING_LIP))
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var title := Label.new()
-	title.text = Locale.t("title.islands")
+	title.text = text
 	title.add_theme_font_override("font", UiTheme.bold_font())
-	title.add_theme_font_size_override("font_size", HEADING_SIZE)
+	title.add_theme_font_size_override("font_size", font_size)
 	title.add_theme_color_override("font_color", UiTheme.WHITE)
 	title.add_theme_color_override("font_outline_color", UiTheme.DIALOGUE_LINE)
 	title.add_theme_constant_override("outline_size", HEADING_OUTLINE)
-	ribbon.add_child(title)
-	return ribbon
+	panel.add_child(title)
+	return panel
 
 
 ## A wrapped line's height follows its width only after the tags sorted once: the layout again then.
@@ -426,7 +449,7 @@ func _tag(entry: Dictionary) -> PanelContainer:
 	tag.name = "Card_%s" % (entry.id if entry.id != "" else "next")
 	var line := UiTheme.SELECT_LINE if entry.current else UiTheme.DIALOGUE_LINE
 	tag.add_theme_stylebox_override("panel", UiTheme.outlined_box(LOCKED_PAPER if locked else UiTheme.DIALOGUE_PAPER, line,
-		TAG_RADIUS, Vector2(TAG_PAD, TAG_PAD), CURRENT_LINE if entry.current else TAG_LINE, CURRENT_LIP if entry.current else TAG_LIP))
+		TAG_RADIUS, Vector2(TAG_PAD, TAG_PAD), CURRENT_LINE if entry.current else TAG_LINE, 0))   # (the same edge all round, no lip: 2026-11-11 user "섬 설명 카드 border를 상하좌우 동일하게")
 	tag.custom_minimum_size.x = TAG_WIDTH
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", TAG_SEPARATION)
@@ -601,8 +624,8 @@ func _go_button(entry: Dictionary) -> Button:
 func choose(id: String) -> void:
 	if not sail.is_empty() or not bool(_entries[_index(id)].open) or _entries[_index(id)].id != id:
 		return   # (sailing already, or not an open island of the map)
-	if id == Island.current_id():
-		chosen.emit(id)
+	if id == Island.current_id() or id == Story.voyage_due(ProgressStore.load()):
+		chosen.emit(id)   # (the island in use opens; the first trip is the voyage itself, #118)
 		return
 	var from := boat.position
 	var i := _index(Island.current_id())
@@ -617,6 +640,7 @@ func choose(id: String) -> void:
 
 
 func _process(delta: float) -> void:
+	_step_unlock(delta)
 	if sail.is_empty():
 		if not _dragging and not is_equal_approx(focus_x, _focus_at(focus)):   # settling on `focus`
 			focus_x = lerpf(focus_x, _focus_at(focus), 1.0 - exp(-SNAP_RATE * delta))
@@ -643,6 +667,49 @@ func _end_sail() -> void:
 	boat.position = sail.to_at
 	sail = {}
 	chosen.emit(id)
+
+
+## The unlock (#118, 2026-11-11 user: "지도에서 다음 허턴섬이 해금되고"): the new island's tag wears a
+## lock; after UNLOCK_WAIT_S the row slides to it (UNLOCK_SLIDE_S), then its grey (LOCKED_TINT) fades
+## to its own colours over UNLOCK_S while the lock swells and fades (UNLOCK_POP_S), confetti falls and
+## the fanfare plays.
+## Marked seen at its start (a map closed half way does not play it again).
+func _start_unlock() -> void:
+	Story.mark_unlock_shown(str(unlock.id))
+	var lock := Lock.new()
+	lock.name = "UnlockLock"
+	lock.custom_minimum_size = Vector2(LOCK_SIZE, LOCK_SIZE) * UNLOCK_LOCK_SCALE
+	lock.size = lock.custom_minimum_size
+	add_child(lock)   # (over its tag, not in it: the tag is a container)
+	unlock["lock"] = lock
+
+
+func _step_unlock(delta: float) -> void:
+	if unlock.is_empty():
+		return
+	unlock.t += delta
+	var t: float = unlock.t
+	var tag: Control = cards[unlock.id]
+	var lock: Control = unlock.lock
+	lock.position = tag.position + (tag.size - lock.size) * 0.5
+	lock.pivot_offset = lock.size * 0.5
+	lock.visible = tag.visible
+	if t >= UNLOCK_WAIT_S and not unlock.has("going"):
+		unlock["going"] = true
+		focus = _index(str(unlock.id))   # the row slides to it (_process settles)
+	if t >= UNLOCK_WAIT_S + UNLOCK_SLIDE_S and not unlock.has("opened"):
+		unlock["opened"] = true
+		SoundBoard.play(&"fanfare")
+		add_child(Confetti.new())
+	var opened := t - UNLOCK_WAIT_S - UNLOCK_SLIDE_S   # once the row is there
+	var k := clampf(opened / UNLOCK_S, 0.0, 1.0)
+	(unlock.material as ShaderMaterial).set_shader_parameter("own_tint", LOCKED_TINT.lerp(Vector3.ONE, k * k * (3.0 - 2.0 * k)))
+	var p := clampf(opened / UNLOCK_POP_S, 0.0, 1.0)
+	lock.scale = Vector2.ONE * (1.0 + 0.8 * p)
+	lock.modulate.a = 1.0 - p
+	if k >= 1.0 and p >= 1.0:
+		lock.queue_free()
+		unlock = {}
 
 
 ## The screen rect of island `id` (its coast round its middle, at sea level): a tap on it brings it to

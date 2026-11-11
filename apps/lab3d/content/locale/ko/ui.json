@@ -245,7 +245,8 @@
   "shadow_clock.status.noon": "아주 짧아요",
   "shadow_clock.status.stone": "돌에 닿았어요",
   "speaker.dugi": "두기두기",
-  "speaker.fox": "여우친구",
+  "speaker.fox": "섬지기",
+  "speaker.fox_stranger": "여우친구",
   "speaker.puppy": "퍼피",
   "spring.reach_wait": "흔들면 보여요",
   "spring.status.held": "공을 당기는 중",
@@ -275,6 +276,7 @@
     "무게가",
     "떨어진대"
   ],
+  "story.island_done": "%s 완성!",
   "story.skip": "건너뛰기",
   "strata.layer.ash": "회색 재",
   "strata.layer.gravel": "자갈",

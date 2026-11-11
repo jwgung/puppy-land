@@ -14,8 +14,11 @@
 ##   (2026-11-01 user: "여기서 배운 물리 실험을 이용해서 올려보내면 좋겟다"): pull the star down and let
 ##   go; it flies straight up at the pull's speed under gravity (y = y0 + v t - g t^2 / 2). A weak pull
 ##   rises and comes back down (Dugi: gravity pulled it back, pull harder); one that reaches the sky
-##   (its top y0 + v^2 / 2g reaches SKY_HIGH.y) stays there: the sea sparkles, the boats light their lanterns and sail.
-##   The star then stays in the map's sky.
+##   (its top y0 + v^2 / 2g reaches SKY_HIGH.y) stays there: the sea sparkles, the boats light their lanterns and sail,
+##   and the island's mission is complete (#118): fireworks, confetti, the "<island> 완성!" ribbon, the trio
+##   cheer; then the words after the sky on the square (Story.finale_after, and Puppy's finale_next once
+##   the next island opened). The star then stays in the map's sky and the trio stay on the island
+##   (← 돌아가기 nudges while the next island waits on 섬 고르기).
 ##
 ## The finale is saved as seen only at its end or 건너뛰기 (#108, 2026-11-09 user): left half way (back,
 ## the app closed) it plays again the next time the map opens. After HELP_AFTER_MISSES misses in it the
@@ -84,6 +87,17 @@ const LAUNCH_DIP_M := 1.2          # m the star comes down under the paws at a f
 const LAUNCH_GUIDE_SHARE := 0.8    # of a full pull the paw shows
 const AIM_DOT_SCALE := 3.0         # the aim dots: three times the pull dots' size and spacing
 const PIECE_SIZE := 0.42
+## The star finale's end (#118): when the celebration starts after the star reached the sky (s), the
+## ribbon's pop in (from RIBBON_FROM of its size over RIBBON_IN_S), stay and fade (s), font and height
+## (share of the view from the top), and when the words after the sky start once the cat hopped home (s).
+const CELEBRATE_AT_S := 0.5
+const RIBBON_FROM := 0.3
+const RIBBON_IN_S := 0.35
+const RIBBON_S := 2.4
+const RIBBON_OUT_S := 0.5
+const RIBBON_FONT := 46
+const RIBBON_Y := 0.18
+const AFTER_WORDS_S := 1.2
 const FLIGHT_IN_S := 0.6
 const FLIGHT_S := 1.3
 const FLIGHT_OUT_S := 0.6
@@ -179,6 +193,8 @@ var _aim_dots: PullDots = null     # how high this pull sends it (larger dots, u
 var launch_guide: HandGuide = null  # the paw showing the pull on the star (its own: the map's guide stops in a story)
 var _finale_due := false           # all pieces found, the finale not played: after the flights
 var _finale_done := false          # the star is back in the sky: the map is day
+var _after := -1                   # the line of the star finale's words after the sky (_after_lines), -1: none
+var ribbon: Control                # the island's "<island> 완성!" ribbon (#118), while it shows
 ## The sundial's finale (#106, the hutton island: home.dial): the gnomon (해시계 바늘) node while it
 ## stands on the new land, rides over the cat's paws and is planted; the wedges flying to their places.
 var needle: Node3D = null
@@ -581,7 +597,9 @@ func _on_dialogue_closed() -> void:
 		else:
 			_end_cinematic()
 	elif part == "finale":
-		if _sundial():
+		if _after >= 0:
+			_open_after(_after + 1)
+		elif _sundial():
 			_dial_page_closed()
 		elif _retry_open:
 			_retry_open = false
@@ -791,8 +809,11 @@ func _step_launch(delta: float) -> void:
 		_layout()
 
 
-## The star got to the sky: the day comes back, the sea sparkles, the boats sail; then it settles in
-## the map's sky and the cat hops home.
+## The star got to the sky: the day comes back, the sea sparkles, the boats sail, and the island's
+## mission is complete (#118, 2026-11-11 user: "섬 미션 완성을 알리는 좀 더 이펙트도 추가해주고"):
+## fireworks, confetti and the "<island> 완성!" ribbon (RIBBON_S), the trio cheer; then the star settles
+## in the map's sky, the cat hops home and the three say the words after the sky (_after_lines) on
+## the square.
 func _reach_sky() -> void:
 	SoundBoard.play(&"finale")
 	_night(0.0, 2.6)
@@ -801,10 +822,61 @@ func _reach_sky() -> void:
 	_boats_sail = 0.0
 	_move_star(Vector3(_star.position.x, SKY_HIGH.y, _star.position.z), 0.4)
 	_move({"yaw": 15.0, "pitch": -14.0, "dist": 62.0, "target": Vector3(0.0, 4.0, -4.0)}, 2.6)
+	_beat(CELEBRATE_AT_S, _celebrate_island)
 	_beat(3.7, func() -> void:
 		_move_star(SKY_STAR_AT, RETURN_S)
-		_hop_cat(home.cat.position, home.trio_spot(home.cat), 1.0, 1.0)
-		_end_cinematic())
+		_hop_cat(home.cat.position, home.trio_spot(home.cat), 1.0, 1.0))
+	_beat(3.7 + AFTER_WORDS_S, func() -> void: _open_after(0))
+
+
+## Fireworks and confetti over the view, the island's ribbon, the trio cheering (#118).
+func _celebrate_island() -> void:
+	SoundBoard.play(&"fanfare")
+	home.add_child(Fireworks.new())
+	home.add_child(Confetti.new())
+	if ribbon != null:
+		ribbon.queue_free()
+	ribbon = IslandCards.ribbon(Locale.t("story.island_done") % IslandCards.island_name(home.island.id), RIBBON_FONT)
+	ribbon.name = "IslandDone"
+	home.add_child(ribbon)
+	ribbon.size = ribbon.get_combined_minimum_size()
+	ribbon.position = Vector2((home.size.x - ribbon.size.x) * 0.5, home.size.y * RIBBON_Y)
+	ribbon.pivot_offset = ribbon.size * 0.5
+	ribbon.scale = Vector2.ONE * RIBBON_FROM
+	var tween := ribbon.create_tween()
+	tween.tween_property(ribbon, "scale", Vector2.ONE, RIBBON_IN_S).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_interval(RIBBON_S)
+	tween.tween_property(ribbon, "modulate:a", 0.0, RIBBON_OUT_S)
+	tween.tween_callback(ribbon.queue_free)
+	home.cat.cheer(true, 3)
+	home.puppy.celebrate()
+	home.dugi.celebrate()
+
+
+## The words after the sky: the island's finale_after pages, then (when the next island opened)
+## Puppy's finale_next (#118: back to 섬 고르기, the voyage plays there).
+func _after_lines() -> Array:
+	var lines: Array = Story.finale_after().duplicate()
+	if Story.voyage_due(ProgressStore.load(), true) != "" and Story.finale_next_line() != "":   # (marked seen only at its end)
+		lines.append({"who": "puppy", "face": Story.finale_next_face(), "text": Story.finale_next_line()})
+	return lines
+
+
+## The line `i` of the words after the sky on the square (the three there); past the last, the end.
+func _open_after(i: int) -> void:
+	var lines := _after_lines()
+	if i >= lines.size():
+		_after = -1
+		_end_cinematic()
+		return
+	_after = i
+	if i == 0:
+		var home_at := Vector3(home.island.home.x, 0.5, home.island.home.y)
+		_move({"yaw": 0.0, "pitch": -22.0, "dist": 8.0, "target": home_at}, 1.6)
+	var entry: Dictionary = lines[i]
+	dialogue.set_speaker(str(entry.get("who", "dugi")), Story.face_or_default(entry.get("face")))
+	dialogue.open(str(entry.get("text", "")))
+	_layout()
 
 
 func _paws_top() -> Vector3:
@@ -923,8 +995,9 @@ func _dial_page(i: int) -> void:
 			_move(_plant_shot(), 1.2)
 		5:   # Puppy: a shadow!
 			_move(_shot(_dial_top(), -15.0, -42.0, 4.2), 1.6)
-		6:   # the fox: the sun is back, the time flows
+		6:   # the fox: the sun is back, the time flows: the island's mission is complete (#118)
 			_move(_shot(_dial_top(), 25.0, -30.0, 6.5), 2.4)
+			_beat(0.3, _celebrate_island)
 		7:   # the fox: thank you
 			_move(_shot(_dial_top() + Vector3(0.0, 0.0, 0.6), 0.0, -24.0, 7.0), 2.0)
 		8:   # Puppy: we'll come again: the square and the island round it
@@ -1357,6 +1430,10 @@ func _finish() -> void:
 	if which == "finale":
 		Story.mark_seen("finale")   # at its end or 건너뛰기 (#108: left half way, it plays again)
 		_finale_done = true
+	_after = -1
+	if ribbon != null:
+		ribbon.queue_free()
+		ribbon = null
 	_night_s = 0.0
 	_set_night(map_night())   # prologue: the map's night; finale: day
 	_riddle_due = next_id != ""   # then Puppy's riddle for the next spot
@@ -1402,6 +1479,7 @@ func _finish() -> void:
 	emblem.visible = true
 	home.set_cinematic(false)
 	_layout()   # the map buttons are back: the emblem goes under ←
+	home.nudge_back(home.next_island_waits())   # (#118: a new island opened, ← leads to it)
 	ended.emit(which)
 
 

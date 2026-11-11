@@ -18,7 +18,7 @@ const ISLAND := "hutton"
 ## docs/islands/hutton-lines.md "끝 이야기 (화산 뒤) — 확정 2026-11-06": [who, face, words].
 const FINALE := [
 	["fox", "surprised", "바늘이 올라왔어… 이제 조각이 다 모였어!"],
-	["puppy", "happy", "해시계한테 가자!"],
+	["puppy", "happy", "해시계로 가자!"],
 	["dugi", "explain", "용암이 바다에서 식어 새 땅이 생겼어요. 땅은 부서지기만 하는 게 아니라, 이렇게 새로 생기기도 해요."],
 	["fox", "thinking", "화산이 무섭기만 한 줄 알았는데… 섬을 자라게도 하는구나."],
 	["dugi", "explain", "이제 바늘을 꽂아 봐요."],
@@ -212,6 +212,7 @@ func check_finale() -> void:
 	var short_kept := false
 	var planted := false
 	var shadow_grew := false
+	var celebrated := false   # (#118: "허턴섬 완성!" with the fireworks and confetti, as the first island's)
 	var day_after_plant := false
 	var emblem_whole := false
 	for p in FINALE.size():
@@ -221,6 +222,8 @@ func check_finale() -> void:
 			story.advance(0.05)
 		words.append([story.dialogue.speaker, story.dialogue.face, story.dialogue.text])
 		_advance(story, 1.0)
+		celebrated = celebrated or (home.find_child("Fireworks", true, false) != null and story.ribbon != null
+			and (story.ribbon.get_child(0) as Label).text == Locale.t("story.island_done") % IslandCards.island_name("hutton"))
 		if p == 3:
 			grass_grew = home.new_land_grass != null and home.new_land_grass.visible
 		_tap_through(story.dialogue)
@@ -261,6 +264,8 @@ func check_finale() -> void:
 		problems.append("the filled dial did not glint before the plant")
 	if guide != "drag" or not short_kept:
 		problems.append("the plant: guide %s, short drag kept %s" % [guide, short_kept])
+	if not celebrated:
+		problems.append("no '허턴섬 완성!' celebration")
 	if not (planted and shadow_grew and day_after_plant and emblem_whole):
 		problems.append("planted %s, shadow %s, day %s, emblem %s" % [planted, shadow_grew, day_after_plant, emblem_whole])
 	if story.busy() or story.sky_star != null or not home.dial.whole or not home.dial.shadow.visible or story.night != 0.0 \

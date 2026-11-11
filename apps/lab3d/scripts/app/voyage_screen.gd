@@ -1,8 +1,8 @@
-## The voyage to the next island (#75, 2026-11-06 user-approved mock A1): a short 3D scene after the
-## first island's finale. The trio sail on a little boat from the island before (`from`) to the next
+## The voyage to the next island (#75, 2026-11-06 user-approved mock A1): a short 3D scene on the first
+## trip there, from 섬 고르기's first 출발! after the first island's finale (#118). The trio sail on a little boat from the island before (`from`) to the next
 ## one (`to`): they leave its shore by day with the guiding star back in the sky, cross the sea, the
 ## next island goes dark and bright again while they look at it, and they land on its beach where its
-## keeper (the fox, speaker `fox`) waits. The words are the next island's story `voyage` pages (Story:
+## keeper (the fox, speaker `fox_stranger` 여우친구 until it says who it is, then `fox` 섬지기, #118) waits. The words are the next island's story `voyage` pages (Story:
 ## who, face, shot); each page's `shot` (Story.VOYAGE_SHOTS) sets the camera and how far the boat has
 ## come. A tap turns the page (anywhere), 건너뛰기 or Android back skips to the end. At the end the
 ## voyage counts as seen (Story.mark_voyage_seen), the next island becomes the island in use and

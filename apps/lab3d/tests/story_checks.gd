@@ -421,6 +421,17 @@ func check_finale() -> void:
 		"finale: the cat lifts the star and it waits for the child's pull (the paw shows it; a tap or an upward pull throws nothing); a weak pull rises to y0 + v^2 / 2g and comes back down, Dugi says pull harder",
 		"lifted %s, waits %s, no throw %s, back %s (top %.2f, want %.2f), launches %d" % [lifted, waits, no_throw, came_back, weak_top, want_top, story.launches])
 	expect.call(rose >= StoryDirector.SKY_HIGH.y - 1e-3 and sparkled, "finale: a strong pull sends the star up to the sky, the sea sparkles", "rose %.1f" % rose)
+	# The island's mission complete (#118): fireworks, confetti and the "뉴턴섬 완성!" ribbon came; then
+	# on the square the words after the sky (and Puppy's 'a new island opened' once the next is open).
+	var celebrated: bool = home.find_child("Fireworks", true, false) != null and home.find_child("Confetti", true, false) != null \
+		and story.ribbon != null and (story.ribbon.get_child(0) as Label).text == Locale.t("story.island_done") % IslandCards.island_name(home.island.id)
+	var want_after: Array = story._after_lines().map(func(e: Dictionary) -> String: return str(e.text))
+	var after := await _words_after(story)
+	# (The next island opens with the first one complete: Puppy's 'a new island opened' is the last line.)
+	var next_open := Story.voyage_due(ProgressStore.load(), true) != ""
+	expect.call(celebrated and after == want_after and next_open and want_after.size() == Story.finale_after().size() + 1
+		and want_after[0] == Story.finale_after()[0].text and want_after[-1] == Story.finale_next_line(),
+		"finale: the island's mission complete: fireworks, confetti, the '<island> 완성!' ribbon, then the words after the sky on the square (#118)", "celebrated %s, words %s (want %s)" % [celebrated, str(after), str(want_after)])
 	for i in 40:
 		story.advance(0.05)
 	await tree.process_frame
@@ -482,6 +493,7 @@ func check_finale_leave_and_help() -> void:
 		story.advance(0.05)
 		if story._star != null:
 			rose = maxf(rose, story._star.position.y)
+	await _words_after(story)
 	for i in 60:
 		story.advance(0.05)
 	var end_seen := Story.finale_seen()
@@ -549,6 +561,20 @@ func _pull(story: StoryDirector, at: Vector2, down: float) -> void:
 
 
 ## Taps until this page is gone (the next page may open at once: it is not tapped).
+## The star finale's words after the sky (#118), tapped through one by one: their texts.
+func _words_after(story: StoryDirector) -> Array:
+	var said := []
+	for i in 400:
+		if not story.cinematic():
+			break
+		story.advance(0.05)
+		if story._after >= 0 and story.dialogue.active and (said.is_empty() or said[-1] != story.dialogue.text):
+			said.append(story.dialogue.text)
+			_tap_through(story.dialogue)
+	await tree.process_frame
+	return said
+
+
 func _tap_through(box: DialogueBox) -> void:
 	var words := box.text
 	for i in 6:
