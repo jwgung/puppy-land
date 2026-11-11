@@ -205,7 +205,7 @@ func check_round(id: String) -> void:
 	var hidden_ok := true
 	for observation in lab.definition.observations():
 		if observation.id in missions.get("hidden_until_end", []):
-			hidden_ok = hidden_ok and screen._observation_labels[observation.id].text == ExperimentScreen.hidden_observation(observation)
+			hidden_ok = hidden_ok and screen._observation_labels[observation.id].text == Locale.t("screen.value_hidden")
 	screen._update_readouts(true)
 	for series_id in missions.get("hidden_series_until_end", []):
 		hidden_ok = hidden_ok and (screen._graph.series.get(series_id, PackedVector2Array()) as PackedVector2Array).is_empty()
@@ -237,7 +237,7 @@ func check_round(id: String) -> void:
 				screen._update_readouts(false)
 				for observation in lab.definition.observations():
 					if observation.id in missions.get("hidden_until_end", []) \
-							and screen._observation_labels[observation.id].text == ExperimentScreen.hidden_observation(observation):
+							and screen._observation_labels[observation.id].text == Locale.t("screen.value_hidden"):
 						problems.append("%s: %s still hidden after the stamp" % [attempt[0], observation.id])
 				var lines: Dictionary = lab.graph_series()
 				for series_id in missions.get("hidden_series_until_end", []):

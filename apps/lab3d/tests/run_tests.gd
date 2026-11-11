@@ -1639,7 +1639,7 @@ func _check_layout(definition: Dictionary) -> void:
 		var game_lab := not MissionRound.missions(definition).is_empty()
 		var actions_ok: bool = definition.actions.all(func(a: Dictionary) -> bool: return (game_lab and a.id != "reset" and not screen._action_buttons.has(a.id)) \
 			or (screen._action_buttons.has(a.id) and (screen._action_buttons[a.id].get_parent() == screen._action_row or screen._extra_actions.has(screen._action_buttons[a.id]))))
-		var compact: bool = screen._key_row.size.y <= 160.0 and screen._key_row.size.x <= size.x - 470.0 - 24.0
+		var compact: bool = screen._key_row.size.y <= 160.0 and screen._key_row.size.x <= size.x - screen.sidebar_width() - 24.0
 		var cards := ExperimentRegistry.shown_cards(definition)
 		# A game lab (2026-10-27): one card, reset as a small "다시" and (2026-10-29) no other button.
 		var lean := true
@@ -1711,7 +1711,7 @@ func _check_key_cards() -> void:
 		for id in screen.key_card_ids():
 			var observation: Dictionary = screen._observation(id)
 			var card: String = screen._key_labels[id].text
-			var panel: String = screen.hidden_observation(observation) if hidden.has(id) else screen.format_observation(observation, values.get(id))
+			var panel: String = screen.note_value(observation, values.get(id), hidden.has(id))   # (the note's text, 2026-11-11)
 			# A bar card (kid.bars: the push that started the box) draws a number as its bar, no text.
 			var bar: Control = screen._key_bars.get(id)
 			var number: bool = values.get(id) is float or values.get(id) is int
