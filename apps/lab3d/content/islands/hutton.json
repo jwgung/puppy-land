@@ -1,5 +1,5 @@
 {
-  "about": "hutton 섬(지구과학, #72 시안 A)의 배치. mechanics.json과 같은 모양이고 새로 넣은 것: ground coast(모래 해변과 등대)와 valley(volcano 쪽으로 오르는 비탈, height는 오르는 높이), features(volcano: at·radius·height, river: volcano 옆에서 바다로 가는 강 [x, z] 꺾은선, lighthouse: 등대 [x, z], sundial: 광장의 해시계), lookout home(조각이 모이는 곳이 장소가 아니라 해시계 광장), piece sundial(장소마다 찾는 조각이 별 조각이 아니라 금빛 해시계 판 조각, #101; 없으면 star). 서쪽 언덕 1~3, 남동 해변 4~7, 북쪽 골짜기 8~11, 섬 뒤 volcano. 2026-11-10 사용자 '실험 사이사이 길이 짧아서 동선이 어색' → 해안선·장소·길·나무·바위·구름 위치를 모두 1.3배로 넓힘(크기·높이는 그대로). 장소가 모두 실험이 되기 전에는 앱에서 열리지 않고 --island=hutton으로만 본다(Island.playable). 실험이 된 장소: day-night(#74), shadow-clock(#86), seasons(#87), water-cycle(#91), dew-cloud(#92), sea-breeze(#93), typhoon(#94), river(#95), strata(#96), earthquake(#97, lab_facing: 화산이 앞 오른쪽에 보이게), volcano(#98).",
+  "about": "hutton 섬(지구과학, #72 시안 A)의 배치. mechanics.json과 같은 모양이고 새로 넣은 것: ground coast(모래 해변과 등대)와 valley(volcano 쪽으로 오르는 비탈, height는 오르는 높이), features(volcano: at·radius·height, river: volcano 옆에서 바다로 가는 강 [x, z] 꺾은선, lighthouse: 등대 [x, z], sundial: 광장의 해시계), lookout home(조각이 모이는 곳이 장소가 아니라 해시계 광장), keeper fox(섬지기 여우가 지도에서 셋을 앞장서 걷고 실험에도 함께 섬, #120 2026-11-11 사용자 \"길잡이니까\"), piece sundial(장소마다 찾는 조각이 별 조각이 아니라 금빛 해시계 판 조각, #101; 없으면 star). 서쪽 언덕 1~3, 남동 해변 4~7, 북쪽 골짜기 8~11, 섬 뒤 volcano. 2026-11-10 사용자 '실험 사이사이 길이 짧아서 동선이 어색' → 해안선·장소·길·나무·바위·구름 위치를 모두 1.3배로 넓힘(크기·높이는 그대로). 장소가 모두 실험이 되기 전에는 앱에서 열리지 않고 --island=hutton으로만 본다(Island.playable). 실험이 된 장소: day-night(#74), shadow-clock(#86), seasons(#87), water-cycle(#91), dew-cloud(#92), sea-breeze(#93), typhoon(#94), river(#95), strata(#96), earthquake(#97, lab_facing: 화산이 앞 오른쪽에 보이게), volcano(#98).",
   "zones": {
     "hill": {
       "at": [-9.1, 1.3],
@@ -38,6 +38,7 @@
   },
   "home": [0.0, 0.65],
   "piece": "sundial",
+  "keeper": "fox",
   "paths": [
     [[0.0, 0.65], [-2.89, -1.18], [-6.24, -1.82]],
     [[-6.24, -1.82], [-10.4, 0.78]],

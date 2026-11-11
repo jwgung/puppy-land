@@ -2,8 +2,10 @@
 ## (DugiActor) who explains and Puppy (PuppyActor) with the flag, placed per experiment by its
 ## definition's `cast` (content/experiments/<id>.json):
 ##   "cast": {"dugi": {"at": [x, z], "explain_on": [status, ...], "delay_s": s},
-##            "puppy": {"at": [x, z]}}
-## Both face the experiment's front camera. The shell (ExperimentScreen) adds the cast next to the
+##            "puppy": {"at": [x, z]}, "fox": {"at": [x, z]}}
+## The island's keeper, the fox, stands with them in the hutton island's labs (`fox`, 2026-11-11 user:
+## "여우친구가 실험내내 안따라다니네? 따라다니게 해줘"; the same model as at the voyage's landing,
+## fox_model). All face the experiment's front camera. The shell (ExperimentScreen) adds the cast next to the
 ## lab under the 3D view, not inside it: the lab's own tree, bodies and physics are the same with or
 ## without it (tests/island_cast_checks.gd). The cast only reads the lab's status() and
 ## explain_point(); it never touches a body or a displayed value.
@@ -22,6 +24,7 @@ const DEFAULT_DELAY_S := 0.6
 var experiment: Experiment
 var dugi: DugiActor
 var puppy: PuppyActor
+var fox: Node3D                    # the island's keeper (null in a lab without one)
 var explain_on: Array = []
 var delay_s := DEFAULT_DELAY_S
 ## The words of the dialogue: the lab's kid `say` text (ExperimentRegistry.kid_text; the shared
@@ -55,7 +58,25 @@ static func create(definition: Dictionary, lab: Experiment) -> IslandCast:
 		cast.puppy = PuppyActor.new()
 		_stand(cast.puppy, spec.puppy.at, eye)
 		cast.add_child(cast.puppy)
+	if spec.has("fox"):
+		cast.fox = fox_model()
+		_stand(cast.fox, spec.fox.at, eye)
+		cast.add_child(cast.fox)
 	return cast
+
+
+## The fox keeper's model (assets/characters/fox.glb, art-direction.md "섬지기 여우") in the toon
+## look, casting no shadow (the map's and the labs' characters bake theirs): the voyage's landing and
+## the hutton labs.
+static func fox_model() -> Node3D:
+	var model: Node3D = (load("res://assets/characters/fox.glb") as PackedScene).instantiate()
+	model.name = "Fox"
+	for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
+		var mat := mi.mesh.surface_get_material(0) as BaseMaterial3D
+		if mat != null and mat.albedo_texture != null:
+			mi.material_override = ArtKit.toon_material(mat.albedo_texture)
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return model
 
 
 ## On the floor at (x, z), facing the front camera (the model's front is +z).

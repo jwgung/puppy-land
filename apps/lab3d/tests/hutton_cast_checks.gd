@@ -10,6 +10,8 @@ const UI_THEME := "res://scripts/app/ui_theme.gd"
 const SIZES := {"tablet": Vector2(1152, 720), "phone": Vector2(1560, 720)}
 ## The share of Puppy's drawn rect that may be under Dugi's box and portrait (his feet behind the box).
 const HIDDEN_MAX := 0.5
+## The share of the fox's drawn rect any other thing on the screen may cover.
+const FOX_COVER_MAX := 0.05
 
 var tree: SceneTree
 var expect: Callable
@@ -36,7 +38,7 @@ func run() -> void:
 	DirAccess.remove_absolute(ProgressStore.path)
 	ProgressStore.path = saved_path
 	expect.call(problems.is_empty() and seen == ExperimentRegistry.island_labs("hutton").size() * SIZES.size(),
-		"hutton cast: in every lab (tablet, phone), with Dugi's box open, Puppy's result bubble is clear of the box and his portrait, and Puppy is at most %d%% under them (%d screens)" % [int(HIDDEN_MAX * 100.0), seen],
+		"hutton cast: in every lab (tablet, phone), with Dugi's box open, Puppy's result bubble is clear of the box and his portrait, Puppy is at most %d%% under them, and the fox stands with them clear of everything (%d screens)" % [int(HIDDEN_MAX * 100.0), seen],
 		"; ".join(problems))
 
 
@@ -82,6 +84,18 @@ func _check(definition: Dictionary, size: Vector2) -> Variant:
 			problems.append("the bubble %s over Dugi's %s" % [str(bubble.get_rect()), str(r)])
 	if hidden > puppy.get_area() * HIDDEN_MAX:
 		problems.append("Puppy %s %d%% under Dugi's box" % [str(puppy), int(100.0 * hidden / maxf(puppy.get_area(), 1.0))])
+	# The fox keeper stands with them through the lab (2026-11-11 user: "여우친구가 실험내내 안따라다니네?
+	# 따라다니게 해줘"): whole in the view, facing the camera, clear of Puppy, Dugi, his box and the overlays.
+	if cast.fox == null:
+		problems.append("no fox")
+	else:
+		var fox: Rect2 = screen.view_rect_of(IslandCast.drawn_bounds(cast.fox))
+		if fox.size.x < 8.0 or not Rect2(Vector2.ZERO, screen.view.size).grow(-4.0).encloses(fox):
+			problems.append("the fox %s not in the view" % str(fox))
+		var others: Array = [puppy, screen.view_rect_of(cast.dugi.bounds())] + screen.dialogue.rects() + screen.overlay_rects()
+		for r: Rect2 in others:
+			if r.intersects(fox) and r.intersection(fox).get_area() > fox.get_area() * FOX_COVER_MAX:
+				problems.append("the fox %s under %s" % [str(fox), str(r)])
 	host.queue_free()
 	await tree.process_frame
 	return problems
