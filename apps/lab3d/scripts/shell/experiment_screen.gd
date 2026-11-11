@@ -312,8 +312,8 @@ func _restore_state() -> void:
 
 ## Measurement/screenshot hooks from the launch args (Quality.all_args):
 ## --camera=<mode>, --ctl-<control>=<value>, --auto-release=<seconds> (re-release periodically),
-## --sidebar=open (open the sidebar), --scroll-to=<law|numbers|conditions|graph|more|...> (open the
-## sidebar at that section; "observations" = numbers, "explanation" = more, opened).
+## --sidebar=open (open the sidebar), --scroll-to=<conditions|numbers|graph|law|guide|terms|more|ask>
+## (open the sidebar at that section; "observations" = numbers, "explanation" = guide).
 func _apply_launch_args() -> void:
 	for control in definition.controls():
 		var text := Quality.cmdline_value("ctl-" + control.id)
@@ -2081,7 +2081,8 @@ func _fit_tip() -> void:
 	_tip.position = Vector2(m, bottom - _tip.size.y)
 
 
-## --scroll-to's older names: the numbers were "observations", the texts "explanation" (now in 더 보기).
+## --scroll-to's older names: the numbers were "observations", the texts "explanation" (실험하는 방법,
+## the guide, since #122).
 const SECTION_ALIASES := {"observations": "numbers", "explanation": "guide"}
 ## The sections inside the collapsed 더 보기 (scrolling to one opens it first).
 const MORE_SECTIONS := ["more", "more_observations", "more_graph", "more_explanation"]
@@ -2154,11 +2155,8 @@ func _build_sidebar() -> void:
 	# words; 더 보기 keeps the rest of the numbers and the deeper concept card.
 	var note := ExperimentRegistry.note(definition.raw)
 	_sections = {}
-	var conditions := _build_conditions()
-	if definition.controls().is_empty():
-		conditions.free()   # (an empty card: nothing to change, e.g. 낮과 밤)
-	else:
-		_sections["conditions"] = conditions
+	if not definition.controls().is_empty():   # (no empty card: nothing to change, e.g. 낮과 밤)
+		_sections["conditions"] = _build_conditions()
 	_sections["numbers"] = _build_numbers(note)
 	var graph := _build_graph()
 	if note.get("graph", true):
@@ -2649,11 +2647,12 @@ func _update_readouts(force_graph: bool) -> void:
 	var values := experiment.observations()
 	var hidden := _hidden_answers(values)
 	for observation in definition.observations():
-		var text := note_value(observation, values.get(observation.id), hidden.has(observation.id))
+		var value: Variant = values.get(observation.id)
+		var text := note_value(observation, value, hidden.has(observation.id))
 		var label: Label = _observation_labels[observation.id]
 		if label.text != text:
 			label.text = text
-			label.theme_type_variation = "NotePendingLabel" if text in [Locale.t("screen.value_pending"), Locale.t("screen.value_hidden")] else "ValueLabel"
+			label.theme_type_variation = "NotePendingLabel" if hidden.has(observation.id) or format_observation(observation, value) == "—" else "ValueLabel"
 		var key: Label = _key_labels.get(observation.id)
 		if key == null:
 			continue

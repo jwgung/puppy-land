@@ -912,7 +912,7 @@ adb shell am start -n jwgung.puppyland/com.godot.game.GodotAppLauncher \
 | `--camera=<front\|three_quarter\|top\|side\|follow\|orbit>` | 카메라 모드 |
 | `--ctl-<조건 id>=<값>` | 조건 값(예: `--ctl-angle=30`, `--ctl-material=rubber`) |
 | `--sidebar=open` | 사이드바를 연 채 시작 |
-| `--scroll-to=<camera\|conditions\|observations\|graph\|explanation>` | 사이드바를 열고 그 카드로 스크롤 |
+| `--scroll-to=<camera\|conditions\|numbers\|graph\|law\|guide\|terms\|more\|ask>`(예전 `observations`·`explanation`도 됨) | 사이드바를 열고 그 카드로 스크롤 |
 | `--auto-release=<초>` | 그 간격으로 상자를 다시 놓는다(측정용) |
 | `--demo-celebrate=<초>` | (미션 실험, 화면 찍기용) 그 시간 뒤 1.6초마다 도장을 하나씩 받은 것처럼 도장 쾅 → 다 깼을 때 축하 → 카드를 보인다. 판정·저장 없음(진행 파일은 `progress-bench.cfg`) |
 | `--demo-title` | (화면 찍기·fps용) 측정 인자가 있어도 켤 때 타이틀을 보인다. 진행은 `progress-bench.cfg`에만 |

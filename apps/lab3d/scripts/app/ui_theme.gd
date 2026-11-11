@@ -21,8 +21,6 @@ const GREEN_TEXT := ArtPalette.GREEN_TEXT
 const BACKGROUND := ArtPalette.PAPER
 const SURFACE := Color("fbfdff")
 const WHITE := Color("ffffff")
-const CODE_BG := Color("e8f1ff")
-const CODE_TEXT := ArtPalette.BLUE_DARK
 ## Dugi's dialogue box (Task 4h): cream paper with the characters' brown outline; 24 units = 40 px on
 ## the SM-P200 in landscape.
 const DIALOGUE_PAPER := Color("fff6e6")
@@ -88,8 +86,6 @@ static func build() -> Theme:
 	_label_variation(theme, "ValueLabel", bold, 25, INK)
 	_label_variation(theme, "ObserveLabel", regular, SIZE_SMALL, GREEN_TEXT)
 	_label_variation(theme, "ObserveTitleLabel", bold, 17, GREEN_TEXT)
-	_label_variation(theme, "EquationLabel", bold, 20, CODE_TEXT)
-	theme.set_stylebox("normal", "EquationLabel", _box(CODE_BG, Color.TRANSPARENT, 10, 12, 6))
 	_label_variation(theme, "StepNumberLabel", bold, 17, INK)
 	theme.set_stylebox("normal", "StepNumberLabel", _box(SELECT, Color.TRANSPARENT, 10, 10, 2))
 	_label_variation(theme, "HintLabel", bold, 18, SUBTLE)
@@ -131,8 +127,6 @@ static func build() -> Theme:
 	theme.set_stylebox("panel", "PanelContainer", _box(WHITE, LINE, 18, 18, 16, Color.TRANSPARENT, 2, CARD_LIP))
 
 	_panel_variation(theme, "SoftCard", _box(SURFACE, Color("dbe7f3"), 14, 16, 14))
-	_panel_variation(theme, "ObserveCard", _box(GREEN_SOFT, Color.TRANSPARENT, 14, 16, 12))
-	_panel_variation(theme, "Tile", _box(Color("f5faff"), Color("dfeaf5"), 12, 12, 10))
 	_panel_variation(theme, "NoteCard", _box(DIALOGUE_PAPER, DIALOGUE_LINE, 18, 18, 16, Color.TRANSPARENT, 3, 6))
 	_panel_variation(theme, "NoteTile", _box(NOTE_TILE, NOTE_TILE_LINE, 12, 12, 10))
 	_panel_variation(theme, "NoteObserveCard", _box(GREEN_SOFT, Color("b9dfa8"), 14, 16, 12))
