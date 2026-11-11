@@ -1401,7 +1401,7 @@ func _finish() -> void:
 	page = -1
 	emblem.visible = true
 	home.set_cinematic(false)
-	_layout()   # the map buttons are back: the emblem goes beside them
+	_layout()   # the map buttons are back: the emblem goes under ←
 	ended.emit(which)
 
 

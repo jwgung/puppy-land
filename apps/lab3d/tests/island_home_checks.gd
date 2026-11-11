@@ -1,6 +1,6 @@
 ## Plan G2: the island home — the 3D island seen from above, the 5 zones and 11 spots, a tap (on a
 ## landmark or its name label) that hops the bread cat over and opens the experiment, a drag that
-## turns the map, the flag display, and the settings button on the map (phone and tablet). The map
+## turns the map, the flag display, and the map's 단서 button, no 설정 (phone and tablet). The map
 ## island (2026-10-27 "지도 전체 손보기", MapIsland): sea, coast, zone ground, landmarks, paths.
 extends RefCounted
 
@@ -57,7 +57,7 @@ func check_island_data() -> void:
 
 ## The home renders: the map island as one static opaque mesh (landmarks, water, land with its baked
 ## blob shadows: the draw and fill budget of the map on SM-P200), the cat, the 5 zones and 11 spots, the map buttons (no top bar) and
-## the settings button (no list button, 2026-10-27).
+## no settings button (설정 on the title only since 2026-11-11) and no list button (2026-10-27).
 func check_home_builds() -> void:
 	var screen := await _home(PHONE)
 	var problems := []

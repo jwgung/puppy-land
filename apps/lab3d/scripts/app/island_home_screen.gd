@@ -1,8 +1,8 @@
 ## The island home (Plan G2): the 3D island seen from above, with the 5 zones and their 11 spots.
 ## A tap on a spot (its landmark or its name label) makes the bread cat hop over, then the experiment
 ## opens; when all its stamps (3) are collected a flag stands there. One finger dragged on the map
-## turns it like the 3D labs (two fingers turn and zoom, View3D). The settings button sits on the
-## map. The stamps are read once when the map opens (refresh_progress), never per frame.
+## turns it like the 3D labs (two fingers turn and zoom, View3D). 설정 is not on the map (the
+## title has it). The stamps are read once when the map opens (refresh_progress), never per frame.
 ##
 ## The home is a Control that owns a View3D (top camera, the map's own island: MapIsland, with
 ## sea, zone ground, paths and one landmark per spot, MapLandmarks) and the bread cat
@@ -295,7 +295,7 @@ func _add_spot(world: Node3D, zone: String, id: String, info: Dictionary) -> voi
 		"stand": info.stand, "zone": zone, "marker": root, "tag": int(info.get("tag", 0))})
 
 
-## The map's own buttons, 단서 and 설정, floating over its top right corner (2026-10-31 user: no top bar,
+## The map's own button, 단서 (설정 left it, see below), floating over its top right corner (2026-10-31 user: no top bar,
 ## the app's name need not show; the bar ran edge to edge and a phone's rounded corners cut it), and
 ## its ← 돌아가기 alone in the top left (#114: back to the islands' map; worded as that map's own, #116). They keep MAP_EDGE
 ## units, plus the screen's safe-area inset, from the edges; the story's emblem sits under ←
