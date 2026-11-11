@@ -54,8 +54,9 @@ const STORY_HEIGHT := 40.0         # 이야기 다시 보기 under it, small
 const STORY_FONT := 17
 const BACK_HEIGHT := 56.0
 ## The world: the islands' little models (_mini_island_mesh) SLOT m apart along x (the row centred on
-## the origin); the camera looks down at the row from PITCH_DEG and backs off until the row and the
-## tags under it fit (VIEW_MARGIN of the width each side); a tag hangs under its island's front coast.
+## the origin); the camera looks down at the row from PITCH_DEG and backs off until VIEW_SLOTS slots
+## round the island in focus and the tags under them fit (see the carousel below); a tag hangs under
+## its island's front coast.
 const SLOT := 34.0   # (23 before; 2026-11-11 user: "섬이 너무 가까워서 배가 움직이는게 너무 짧아")
 ## Every other island a little back (z), the sea's radius and its wave strokes; the little islands'
 ## radius, their trees and how big their landmarks are against the map's.
@@ -86,6 +87,19 @@ const TAP_SLOP := 18.0
 const PITCH_DEG := -52.0
 const VIEW_MARGIN := 0.04
 const TAG_GAP := 6.0
+## The carousel (2026-11-11 user: "섬 여러개 늘어나면 왓다갓다 할 수 잇어야댈거같아. CAROUSEL 쓰는거처럼"):
+## the camera centres one island (at first the island in use) and shows VIEW_SLOTS slots (its
+## neighbours peek in at the sides), fewer on a narrow screen so a slot is never narrower than the tag
+## with ‹ › beside it; only the tag of the island nearest the middle shows, ‹ › (ARROW_SIZE) ARROW_GAP
+## beside it step one island and hide at the row's ends; a drag slides the row (ROW_OVERSCROLL slots
+## past its ends) and on release it settles on the nearest island, the next one once it moved
+## SNAP_SHARE of a slot (SNAP_RATE per second); during a sail the camera follows the boat.
+const VIEW_SLOTS := 2.0
+const ARROW_GAP := 14.0
+const ROW_OVERSCROLL := 0.3
+const SNAP_SHARE := 0.2
+const SNAP_RATE := 9.0
+const ARROW_SIZE := 64.0
 ## A locked island's tint (the map's own_tint), and the island still to come: a plain grey island
 ## (FAR_RADIUS m, its sand, land and hill in greys) under a cloud.
 const LOCKED_TINT := Vector3(0.6, 0.66, 0.78)
@@ -126,6 +140,14 @@ var _entries: Array = []
 var _middles: Dictionary = {}      # id -> its island's middle (world)
 var _reach: Dictionary = {}        # id -> its model's radius (m: MINI_RADIUS, FAR_RADIUS)
 var _pressed_at := Vector2.INF     # where the finger came down on the map (INF: none)
+## The carousel: the camera's x over the row, the island it settles on, the arrows [‹, ›].
+var focus_x := 0.0
+var focus := 0
+var arrows: Array[Button] = []
+var _drag_from := 0.0              # focus_x when the finger came down
+var _dragging := false
+var _distance := FIRST_DISTANCE
+var _m_per_px := 0.1               # m along the row per UI unit on screen
 
 
 ## The islands, in order: per island {id, name, about, open, complete, pieces, total, piece (its kind,
@@ -171,15 +193,29 @@ func _ready() -> void:
 	add_child(view)
 	view.rig.set_process(false)   # the map frames the camera itself
 	view.single_pointer.connect(_on_pointer)
+	focus = _index(Island.current_id())
 	world = Node3D.new()
 	world.name = "World"
 	view.set_world(world)
 	view.viewport.add_child(MapIsland.make_environment())
 	_build_world()
+	focus_x = _focus_at(focus)
 	for entry in _entries:
 		var tag := _tag(entry)
+		tag.mouse_filter = Control.MOUSE_FILTER_PASS   # a drag on a tag slides the row too (_gui_input)
 		cards[entry.id] = tag
 		add_child(tag)
+	for step in [-1, 1]:
+		var arrow := Ui.button("", "TitleButton", ARROW_SIZE)
+		arrow.name = "ArrowLeft" if step < 0 else "ArrowRight"
+		arrow.custom_minimum_size = Vector2(ARROW_SIZE, ARROW_SIZE)
+		var chevron := Chevron.new()
+		chevron.pointing = float(step)
+		chevron.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		arrow.add_child(chevron)
+		arrow.pressed.connect(func() -> void: step_focus(step))
+		arrows.append(arrow)
+		add_child(arrow)
 	heading = _heading()
 	add_child(heading)
 	back_button = Ui.button(Locale.t("islands.back"), "TitleButton", BACK_HEIGHT)
@@ -434,18 +470,63 @@ func _tag(entry: Dictionary) -> PanelContainer:
 func _on_pointer(event_type: String, at: Vector2) -> void:
 	if event_type == "press":
 		_pressed_at = at
+		_drag_from = focus_x
+		_dragging = false
+		return
+	if event_type == "move":
+		if not sail.is_empty() or not is_finite(_pressed_at.x):
+			return
+		_dragging = _dragging or _pressed_at.distance_to(at) > TAP_SLOP
+		if _dragging:   # the row follows the finger
+			var ends := Vector2(_focus_at(0), _focus_at(_entries.size() - 1)) + Vector2(-1.0, 1.0) * ROW_OVERSCROLL * SLOT
+			focus_x = clampf(_drag_from - (at.x - _pressed_at.x) * _m_per_px, ends.x, ends.y)
+			_place()
 		return
 	if event_type == "cancel":
 		_pressed_at = Vector2.INF
+		if _dragging:
+			_snap()
+		_dragging = false
 		return
 	if event_type != "release":
 		return
-	if is_finite(_pressed_at.x) and _pressed_at.distance_to(at) > TAP_SLOP:
-		_pressed_at = Vector2.INF
-		return
+	var dragged := _dragging or (is_finite(_pressed_at.x) and _pressed_at.distance_to(at) > TAP_SLOP)
 	_pressed_at = Vector2.INF
+	_dragging = false
+	if dragged:
+		if sail.is_empty():
+			_snap()
+		return
 	if not sail.is_empty():
 		_end_sail()
+
+
+## A drag or a click on a tag (MOUSE_FILTER_PASS) comes up here: the view takes it as its own, so the
+## row slides under a finger on a tag too. (Its buttons take their own taps.)
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch or event is InputEventScreenDrag or event is InputEventMouseButton or event is InputEventMouseMotion:
+		view._gui_input(event)
+
+
+## After a drag: the island the row settles on (the next one once it moved SNAP_SHARE of a slot).
+func _snap() -> void:
+	var moved := (focus_x - _focus_at(focus)) / SLOT
+	var step := roundi(moved)
+	if step == 0 and absf(moved) > SNAP_SHARE:
+		step = 1 if moved > 0.0 else -1
+	focus = clampi(focus + step, 0, _entries.size() - 1)
+
+
+## ‹ or › (`step` -1 or +1): the next island along the row.
+func step_focus(step: int) -> void:
+	if sail.is_empty():
+		focus = clampi(nearest() + step, 0, _entries.size() - 1)
+		_place()
+
+
+## The camera's x when island `k` of the row is in focus.
+func _focus_at(k: int) -> float:
+	return (_middles[_entries[k].id] as Vector3).x if not _middles.is_empty() else 0.0
 
 
 ## The small 보호자 at the tag's top right of an open island not bought (#77): the guardian's check,
@@ -527,19 +608,28 @@ func choose(id: String) -> void:
 	var j := _index(id)
 	var to_at := _shore(id, -1.0 if j > i else 1.0)
 	sail = {"to": id, "from": from, "to_at": to_at, "t": 0.0}
+	focus = j
 	for tag: Control in cards.values():
 		tag.visible = false
 	boat.rotation.y = PI * 0.5 * (1.0 if j > i else -1.0)
+	_place()
 
 
 func _process(delta: float) -> void:
 	if sail.is_empty():
+		if not _dragging and not is_equal_approx(focus_x, _focus_at(focus)):   # settling on `focus`
+			focus_x = lerpf(focus_x, _focus_at(focus), 1.0 - exp(-SNAP_RATE * delta))
+			if absf(focus_x - _focus_at(focus)) < 0.01:
+				focus_x = _focus_at(focus)
+			_place()
 		return
 	sail.t += delta
 	var k := clampf(float(sail.t) / SAIL_S, 0.0, 1.0)
 	var e := k * k * (3.0 - 2.0 * k)
 	var p := _way(sail.from, sail.to_at, e)
 	boat.position = Vector3(p.x, MapIsland.SEA_Y + 0.08 * sin(float(sail.t) * 6.0), p.z)
+	focus_x = p.x   # the camera follows the boat
+	_place()
 	if k >= 1.0:
 		_end_sail()
 
@@ -579,37 +669,69 @@ func _layout() -> void:
 	back_button.size = back_button.get_combined_minimum_size()
 	back_button.position = Vector2(EDGE + inset.left, TOP + inset.top)
 	heading.position = Vector2((size.x - heading.size.x) * 0.5, TOP + inset.top)
-	var first: Vector3 = _middles[_entries[0].id]
-	var last: Vector3 = _middles[_entries[-1].id]
-	var half := (last.x - first.x) * 0.5 + float(_reach[_entries[0].id])
+	var slots := clampf(size.x / (TAG_WIDTH + 2.0 * (ARROW_SIZE + ARROW_GAP)), 1.0, VIEW_SLOTS)
+	var half := slots * SLOT * 0.5
 	var pitch := deg_to_rad(PITCH_DEG)
-	var target := AIM
 	var tag_h := 0.0
 	for tag: Control in cards.values():
 		tag.size = tag.get_combined_minimum_size()
 		tag_h = maxf(tag_h, tag.size.y)
-	var distance := FIRST_DISTANCE
-	for _pass in FIT_PASSES:   # back off until the row fits the width and the tags fit under it
-		var eye := target + Vector3(0.0, -sin(pitch), cos(pitch)) * distance
-		view.rig.look_at_from_position(eye, target)
+	_distance = FIRST_DISTANCE
+	for _pass in FIT_PASSES:   # back off until the slots fit the width and the tags fit under them
+		_aim(0.0)
 		var left := _screen(Vector3(-half, 0.0, 0.0)).x
 		var right := _screen(Vector3(half, 0.0, 0.0)).x
-		var front := _screen(Vector3(0.0, 0.0, float(_reach[_entries[0].id]))).y
+		var front := _screen(Vector3(0.0, 0.0, ROW_STAGGER + MINI_RADIUS)).y
 		var want := size.x * (1.0 - 2.0 * VIEW_MARGIN)
 		var grow := maxf((right - left) / want, (front + TAG_GAP + tag_h) / (size.y - EDGE - inset.bottom))
-		distance *= maxf(grow, FIT_MIN)
-	# The tags in one line, their tops level under the lowest island (the row is staggered, ROW_STAGGER;
-	# 2026-11-11 user: "뉴턴섬이랑 허턴섬 딱지가 높이가 다른게 별로임"), each under its island's middle.
-	var unders := {}
+		_distance *= maxf(grow, FIT_MIN)
+	_aim(0.0)
+	_m_per_px = SLOT / maxf(_screen(Vector3(SLOT, 0.0, 0.0)).x - _screen(Vector3.ZERO).x, 1.0)
+	for arrow in arrows:
+		arrow.size = arrow.get_combined_minimum_size()
+	_place()
+
+
+## The camera over the row at `x` (PITCH_DEG, _distance back from AIM).
+func _aim(x: float) -> void:
+	var target := AIM + Vector3(x, 0.0, 0.0)
+	view.rig.look_at_from_position(target + Vector3(0.0, -sin(deg_to_rad(PITCH_DEG)), cos(deg_to_rad(PITCH_DEG))) * _distance, target)
+
+
+## The camera at focus_x, the tags under their islands, ‹ › at the sides of the row.
+func _place() -> void:
+	if view == null or size.x < 1.0:
+		return
+	_aim(focus_x)
+	var inset := Ui.safe_insets(self)
+	var tag_h := 0.0
+	for tag: Control in cards.values():
+		tag_h = maxf(tag_h, tag.size.y)
+	# The tag of the island nearest the middle under it (its top level for every island, under the
+	# lowest of the staggered row, 2026-11-11 user: "뉴턴섬이랑 허턴섬 딱지가 높이가 다른게 별로임"); the
+	# others hidden; none during a sail.
 	var top := 0.0
 	for entry in _entries:
-		unders[entry.id] = _screen(_middles[entry.id] + Vector3(0.0, 0.0, float(_reach[entry.id]) * TAG_UNDER))
-		top = maxf(top, (unders[entry.id] as Vector2).y + TAG_GAP)
+		top = maxf(top, _screen(_middles[entry.id] + Vector3(0.0, 0.0, float(_reach[entry.id]) * TAG_UNDER)).y + TAG_GAP)
 	var y := minf(top, size.y - tag_h - EDGE - inset.bottom)
-	for entry in _entries:
+	var near := nearest()
+	for k in _entries.size():
+		var entry: Dictionary = _entries[k]
 		var tag: Control = cards[entry.id]
-		var x: float = (unders[entry.id] as Vector2).x - tag.size.x * 0.5
+		var x := _screen(_middles[entry.id]).x - tag.size.x * 0.5
 		tag.position = Vector2(clampf(x, EDGE + inset.left, size.x - tag.size.x - EDGE - inset.right), y)
+		tag.visible = sail.is_empty() and k == near
+	var shown: Control = cards[_entries[near].id]
+	for k in arrows.size():
+		var arrow := arrows[k]
+		var x: float = shown.position.x - ARROW_GAP - arrow.size.x if k == 0 else shown.position.x + shown.size.x + ARROW_GAP
+		arrow.position = Vector2(clampf(x, inset.left, size.x - arrow.size.x - inset.right), shown.position.y + (shown.size.y - arrow.size.y) * 0.5)
+		arrow.visible = sail.is_empty() and (near > 0 if k == 0 else near < _entries.size() - 1)
+
+
+## The island of the row nearest the middle of the view now (its tag shows).
+func nearest() -> int:
+	return clampi(roundi((focus_x - _focus_at(0)) / SLOT), 0, _entries.size() - 1)
 
 
 ## The picture of `id`, its small world under `host` (the island's offer: IslandOffer).
@@ -641,8 +763,28 @@ static func thumbnail(host: Node, id: String) -> Texture2D:
 func rects() -> Array[Rect2]:
 	var out: Array[Rect2] = [heading.get_global_rect(), back_button.get_global_rect()]
 	for tag: Control in cards.values():
-		out.append(tag.get_global_rect())
+		if tag.visible:
+			out.append(tag.get_global_rect())
+	for arrow in arrows:
+		if arrow.visible:
+			out.append(arrow.get_global_rect())
 	return out
+
+
+## A chevron (‹ when `pointing` is -1, › when +1) in the storybook brown, on the carousel's arrows.
+class Chevron extends Control:
+	const WIDTH := 7.0
+	var pointing := 1.0
+
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		var c := size * 0.5
+		var r := minf(size.x, size.y) * 0.18
+		var tip := c + Vector2(pointing * r * 0.7, 0.0)
+		var back := c - Vector2(pointing * r * 0.7, 0.0)
+		draw_polyline(PackedVector2Array([back + Vector2(0.0, -r), tip, back + Vector2(0.0, r)]), UiTheme.DIALOGUE_LINE, WIDTH, true)
 
 
 ## A padlock (gold body, steel shackle, brown storybook outline) in the middle of a locked picture.

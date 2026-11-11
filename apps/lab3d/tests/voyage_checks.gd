@@ -40,6 +40,7 @@ func run() -> void:
 	await check_title_islands(quality_script)
 	await check_map_back()
 	await check_sail()
+	await check_carousel()
 	await check_layout()
 	TitleScreen.app_may_show = false
 	Story.app_may_enable = false
@@ -469,7 +470,7 @@ func check_sail() -> void:
 		var tag: Control = map.cards[entry.id]
 		tops.append(tag.position.y)
 		var island := map._island_rect(str(entry.id))
-		if tag.get_global_rect().get_center().y < island.get_center().y or absf(tag.get_global_rect().get_center().x - island.get_center().x) > island.size.x * 0.6 + 20.0:
+		if tag.visible and (tag.get_global_rect().get_center().y < island.get_center().y or absf(tag.get_global_rect().get_center().x - island.get_center().x) > island.size.x * 0.6 + 20.0):
 			problems.append("the tag of %s is not under its island" % entry.id)
 	if tops.max() - tops.min() > 0.5:   # (one line, 2026-11-11 user: "딱지가 높이가 다른게 별로임")
 		problems.append("the tags' tops are not level %s" % str(tops))
@@ -535,6 +536,77 @@ func check_sail() -> void:
 		problems.append("--demo-story=islands left %s's prologue unseen" % NEXT)
 	await _free(app)
 	expect.call(problems.is_empty(), "섬 고르기 map: the islands on one sea, tags under them, the boat at the island in use; the island in use opens at once, another after the boat sails there (a tap lands it, a tap on an island chooses nothing, back closes the map); --demo-story=islands sees every prologue",
+		"; ".join(problems))
+
+
+## The islands' map as a carousel (2026-11-11 user: "섬 여러개 늘어나면 왓다갓다 할 수 잇어야댈거같아.
+## CAROUSEL 쓰는거처럼"): it opens with the island in use in the middle and only its tag shown, no ‹ at
+## the row's start; › steps to the next island (in the middle after it settles, its tag alone, both
+## arrows); a drag past SNAP_SHARE of a slot settles on the next island, a short one back where it was;
+## a drag that starts on a tag slides the row too; the arrows sit beside the tag, on screen.
+func check_carousel() -> void:
+	_first_done()
+	Story.mark_voyage_seen(NEXT)
+	var app := await _app(["--islands=open"])
+	var title := app._screen as TitleScreen
+	title.show_islands()
+	for i in 3:
+		await tree.process_frame
+	var map := title.island_cards
+	var problems := []
+	var middle := map.size.x * 0.5
+	var centred := func(id: String) -> bool: return absf(map._screen(map._middles[id]).x - middle) < 2.0
+	var shown := func() -> Array: return map.cards.keys().filter(func(id: String) -> bool: return (map.cards[id] as Control).visible)
+	if map.focus != map._index(ProgressStore.FIRST_ISLAND) or not centred.call(ProgressStore.FIRST_ISLAND) or shown.call() != [ProgressStore.FIRST_ISLAND]:
+		problems.append("opens on %d, tags %s, not the island in use in the middle" % [map.focus, str(shown.call())])
+	if map.arrows[0].visible or not map.arrows[1].visible:
+		problems.append("at the start: ‹ %s › %s" % [map.arrows[0].visible, map.arrows[1].visible])
+	map.arrows[1].pressed.emit()
+	for i in 90:
+		await tree.process_frame
+	if map.focus != map._index(NEXT) or not centred.call(NEXT) or shown.call() != [NEXT] or not (map.arrows[0].visible and map.arrows[1].visible):
+		problems.append("› did not settle on %s (focus %d, tags %s)" % [NEXT, map.focus, str(shown.call())])
+	var screen := Rect2(Vector2.ZERO, map.size)
+	var tag_rect: Rect2 = (map.cards[NEXT] as Control).get_global_rect()
+	for arrow: Button in map.arrows:
+		if not screen.encloses(arrow.get_global_rect()) or arrow.get_global_rect().intersects(tag_rect):
+			problems.append("%s off screen or over the tag" % arrow.name)
+	var slot_px := map._screen(Vector3(IslandCards.SLOT, 0.0, 0.0)).x - map._screen(Vector3.ZERO).x
+	var at := Vector2(middle, map.size.y * 0.3)
+	var drag := func(px: float) -> void:
+		map._on_pointer("press", at)
+		map._on_pointer("move", at + Vector2(px * 0.5, 0.0))
+		map._on_pointer("move", at + Vector2(px, 0.0))
+		map._on_pointer("release", at + Vector2(px, 0.0))
+	drag.call(-slot_px * (IslandCards.SNAP_SHARE + 0.1))   # leftwards: the next one
+	for i in 90:
+		await tree.process_frame
+	if map.focus != map._index(NEXT) + 1:
+		problems.append("a drag past SNAP_SHARE stayed on %d" % map.focus)
+	drag.call(slot_px * (IslandCards.SNAP_SHARE * 0.5))   # a short one: back
+	for i in 90:
+		await tree.process_frame
+	if map.focus != map._index(NEXT) + 1 or absf(map.focus_x - map._focus_at(map.focus)) > 0.05:
+		problems.append("a short drag moved it (%d, %.2f)" % [map.focus, map.focus_x])
+	# A drag starting on the tag in view (its events come up to the map, MOUSE_FILTER_PASS).
+	var tag: Control = map.cards[map._entries[map.focus].id]
+	var on_tag := tag.get_global_rect().get_center() - Vector2(0.0, tag.size.y * 0.3)
+	for e in [[true, on_tag], [false, on_tag + Vector2(slot_px * 0.6, 0.0)]]:
+		var touch := InputEventScreenTouch.new()
+		touch.pressed = e[0]
+		touch.position = e[1]
+		if not e[0]:
+			var move := InputEventScreenDrag.new()
+			move.position = e[1]
+			move.relative = e[1] - on_tag
+			map._gui_input(move)
+		map._gui_input(touch)
+	for i in 90:
+		await tree.process_frame
+	if map.focus != map._index(NEXT):
+		problems.append("a drag on the tag did not slide the row back (%d)" % map.focus)
+	await _free(app)
+	expect.call(problems.is_empty(), "섬 고르기 carousel: the island in use in the middle with its tag alone; › and ‹ step one island (none past the ends); a drag past SNAP_SHARE moves on, a short one settles back; a drag on a tag slides it too",
 		"; ".join(problems))
 
 
