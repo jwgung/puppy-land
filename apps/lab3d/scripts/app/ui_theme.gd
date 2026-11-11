@@ -31,6 +31,10 @@ const DIALOGUE_LINE := ArtPalette.OUTLINE
 const DIALOGUE_TERM := Color("ffe066")
 ## The logo ribbon's red (assets/icon/splash.png, splash_banner.py RED) for the title's start button.
 const TITLE_RED := Color("e2483c")
+## The 자세히 note's tiles (a lighter paper with a tan line) and its formula's warm yellow.
+const NOTE_TILE := Color("fffbf2")
+const NOTE_TILE_LINE := Color("ead6b8")
+const NOTE_FORMULA := Color("ffeab0")
 const SIZE_DIALOGUE := 24
 ## Bottom "lip" of buttons and cards (units): the darker edge that makes them look pressable.
 const LIP := 5
@@ -93,6 +97,16 @@ static func build() -> Theme:
 	_label_variation(theme, "FpsLabel", bold, 18, WHITE)
 	theme.set_stylebox("normal", "FpsLabel", _box(Color(0.09, 0.14, 0.23, 0.78), Color.TRANSPARENT, 8, 10, 4))
 	_label_variation(theme, "BadgeLabel", bold, 26, WHITE)
+	# The 자세히 note (2026-11-11 user: "디자인도 정리해주규"): the storybook look of the dialogue and
+	# 섬 고르기 — cream paper cards with the brown outline, brown titles, the category as a brown tag,
+	# the question in ink, the formula on a warm yellow.
+	_label_variation(theme, "NoteSectionLabel", bold, SIZE_SMALL, DIALOGUE_LINE)
+	_label_variation(theme, "NoteQuestionLabel", bold, 20, INK)
+	_label_variation(theme, "NoteTagLabel", bold, 16, DIALOGUE_PAPER)
+	theme.set_stylebox("normal", "NoteTagLabel", _box(DIALOGUE_LINE, Color.TRANSPARENT, 10, 12, 3))
+	_label_variation(theme, "NoteFormulaLabel", bold, 20, DIALOGUE_LINE)
+	theme.set_stylebox("normal", "NoteFormulaLabel", _box(NOTE_FORMULA, Color.TRANSPARENT, 10, 12, 6))
+	_label_variation(theme, "NotePendingLabel", regular, SIZE_SMALL, MUTED)
 	# Key observation cards over the 3D view (Task 2d): small caption, the value as in the panel.
 	_label_variation(theme, "KeyLabel", bold, 16, SUBTLE)
 	_label_variation(theme, "KeyValueLabel", bold, 24, INK)
@@ -119,6 +133,9 @@ static func build() -> Theme:
 	_panel_variation(theme, "SoftCard", _box(SURFACE, Color("dbe7f3"), 14, 16, 14))
 	_panel_variation(theme, "ObserveCard", _box(GREEN_SOFT, Color.TRANSPARENT, 14, 16, 12))
 	_panel_variation(theme, "Tile", _box(Color("f5faff"), Color("dfeaf5"), 12, 12, 10))
+	_panel_variation(theme, "NoteCard", _box(DIALOGUE_PAPER, DIALOGUE_LINE, 18, 18, 16, Color.TRANSPARENT, 3, 6))
+	_panel_variation(theme, "NoteTile", _box(NOTE_TILE, NOTE_TILE_LINE, 12, 12, 10))
+	_panel_variation(theme, "NoteObserveCard", _box(GREEN_SOFT, Color("b9dfa8"), 14, 16, 12))
 	# No fill: the clear color shows through (each full-screen layer costs fill rate on low-end GPUs).
 	_panel_variation(theme, "SideSheet", StyleBoxEmpty.new())
 	_panel_variation(theme, "TopBar", _box(WHITE, Color.TRANSPARENT, 0, 16, 8, LINE))

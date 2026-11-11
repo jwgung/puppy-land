@@ -2124,12 +2124,14 @@ func _build_sidebar() -> void:
 	sheet.add_child(header_pad)
 	var header := Ui.hbox(8)
 	header_pad.add_child(header)
-	var heading := Ui.vbox(6)
+	var heading := Ui.vbox(8)
 	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	heading.add_child(Ui.label(definition.text("category"), "EyebrowLabel"))
-	heading.add_child(Ui.label(definition.text("question"), "MutedLabel", true))
+	var tag := Ui.label(definition.text("category"), "NoteTagLabel")
+	tag.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	heading.add_child(tag)
+	heading.add_child(Ui.label(definition.text("question"), "NoteQuestionLabel", true))
 	header.add_child(heading)
-	close_button = Ui.button(Locale.t("common.close"), "", 56)
+	close_button = Ui.button(Locale.t("common.close"), "TitleButton", 56)
 	close_button.name = "CloseSheet"
 	close_button.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	close_button.pressed.connect(close_sidebar.bind(true))
@@ -2144,21 +2146,32 @@ func _build_sidebar() -> void:
 	var column := Ui.vbox(16)
 	pad.add_child(column)
 
+	# The note for a guardian or teacher (2026-11-11 user, plan A: "애초에 그 목적이긴 했어"): first 조건
+	# 바꾸기 (to try the lab again another way after its missions; none when the lab has no conditions),
+	# then what the run shows (its numbers, the graph), the law, how to run it and what to watch, the
+	# words; 더 보기 keeps the rest of the numbers and the deeper concept card.
 	var note := ExperimentRegistry.note(definition.raw)
-	_sections = {
-		"law": _build_law(note),
-		"numbers": _build_numbers(note),
-		"conditions": _build_conditions(),
-	}
+	_sections = {}
+	var conditions := _build_conditions()
+	if definition.controls().is_empty():
+		conditions.free()   # (an empty card: nothing to change, e.g. 낮과 밤)
+	else:
+		_sections["conditions"] = conditions
+	_sections["numbers"] = _build_numbers(note)
 	var graph := _build_graph()
 	if note.get("graph", true):
 		_sections["graph"] = graph
+	_sections["law"] = _build_law(note)
+	_sections["guide"] = _build_guide()
+	var terms := _build_terms()
+	if terms != null:
+		_sections["terms"] = terms
 	for id in _sections:
 		_sections[id].name = "Note_" + id
 		column.add_child(_sections[id])
 
 	# 더 보기: a button and the collapsed rest.
-	_more_button = Ui.button(Locale.t("screen.more"), "", 56)
+	_more_button = Ui.button(Locale.t("screen.more"), "TitleButton", 56)
 	_more_button.name = "MoreButton"
 	_more_button.pressed.connect(func() -> void: set_more_open(not _more.visible))
 	column.add_child(_more_button)
@@ -2250,7 +2263,7 @@ func _build_law(note: Dictionary) -> Control:
 	var parts := _section(Locale.t("screen.section_law"))
 	var body: VBoxContainer = parts[1]
 	body.add_child(Ui.label(str(note.get("law", "")), "", true))
-	var formula := Ui.label(str(note.get("formula", "")), "EquationLabel", true)
+	var formula := Ui.label(str(note.get("formula", "")), "NoteFormulaLabel", true)
 	formula.name = "Formula"
 	formula.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	body.add_child(formula)
@@ -2268,7 +2281,7 @@ func _build_numbers(note: Dictionary) -> Control:
 	var parts := _section(Locale.t("screen.section_numbers"))
 	var body: VBoxContainer = parts[1]
 	for row in note.get("numbers", []):
-		var tile := Ui.panel("Tile")
+		var tile := Ui.panel("NoteTile")
 		var stack := Ui.vbox(2)
 		tile.add_child(stack)
 		stack.add_child(Ui.label(str(row.get("label", "")), "MutedLabel", true))
@@ -2279,18 +2292,21 @@ func _build_numbers(note: Dictionary) -> Control:
 		for i in ids.size():
 			if i > 0:
 				values.add_child(Ui.label("→", "MutedLabel"))
-			var value := Ui.label("—", "ValueLabel")
+			var value := Ui.label("—", "ValueLabel", true)
+			value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			values.add_child(value)
 			_observation_labels[ids[i]] = value
 		body.add_child(tile)
 	return parts[0]
 
 
+## A note card: the storybook's cream paper with the brown outline (as Dugi's box and 섬 고르기's tags),
+## its title in brown.
 func _section(title: String) -> Array:
-	var card := Ui.panel()
+	var card := Ui.panel("NoteCard")
 	var body := Ui.vbox(12)
 	card.add_child(body)
-	body.add_child(Ui.label(title, "SectionLabel"))
+	body.add_child(Ui.label(title, "NoteSectionLabel", true))
 	return [card, body]
 
 
@@ -2444,7 +2460,7 @@ func _build_observations(observations: Array) -> Control:
 	grid.add_theme_constant_override("h_separation", 10)
 	grid.add_theme_constant_override("v_separation", 10)
 	for observation in observations:
-		var tile := Ui.panel("Tile")
+		var tile := Ui.panel("NoteTile")
 		var stack := Ui.vbox(2)
 		tile.add_child(stack)
 		stack.add_child(Ui.label(observation.label, "MutedLabel", true))
@@ -2482,16 +2498,17 @@ func _build_graph() -> Control:
 	return parts[0]
 
 
-func _build_explanation() -> Control:
-	var parts := _section(Locale.t("screen.section_about"))
+## 실험하는 방법: the lab's title as a heading, how to play it, its steps and what to watch.
+func _build_guide() -> Control:
+	var parts := _section(Locale.t("screen.section_guide"))
 	var body: VBoxContainer = parts[1]
 	body.add_child(Ui.label(definition.text("title"), "HeadingLabel", true))
 	if definition.text("tip") != "":
-		var how := Ui.panel("SoftCard")
+		var how := Ui.panel("NoteTile")
 		var how_body := Ui.vbox(6)
 		how.add_child(how_body)
-		how_body.add_child(Ui.label(Locale.t("screen.how_to"), "SectionLabel"))
-		how_body.add_child(Ui.label(definition.text("tip"), "MutedLabel", true))
+		how_body.add_child(Ui.label(Locale.t("screen.how_to"), "NoteSectionLabel"))
+		how_body.add_child(Ui.label(definition.text("tip"), "", true))
 		body.add_child(how)
 	var steps := Ui.vbox(10)
 	var number := 1
@@ -2504,26 +2521,36 @@ func _build_explanation() -> Control:
 		steps.add_child(row)
 		number += 1
 	body.add_child(steps)
-	var observe := Ui.panel("ObserveCard")
+	var observe := Ui.panel("NoteObserveCard")
 	var observe_body := Ui.vbox(4)
 	observe.add_child(observe_body)
 	observe_body.add_child(Ui.label(Locale.t("screen.observe"), "ObserveTitleLabel"))
 	observe_body.add_child(Ui.label(definition.text("observe"), "ObserveLabel", true))
 	body.add_child(observe)
-	var law := definition.law()
-	var law_card := Ui.panel("SoftCard")
-	var law_body := Ui.vbox(6)
-	law_card.add_child(law_body)
-	law_body.add_child(Ui.label(law.title, "SectionLabel"))
-	law_body.add_child(Ui.label(law.description, "MutedLabel", true))
-	var equation := Ui.label(law.equation, "EquationLabel", true)
-	law_body.add_child(equation)
-	body.add_child(law_card)
+	return parts[0]
+
+
+## 낱말 풀이: each term and what it means (null when the lab has none).
+func _build_terms() -> Control:
+	if definition.terms().is_empty():
+		return null
+	var parts := _section(Locale.t("screen.section_terms"))
 	for term in definition.terms():
 		var term_box := Ui.vbox(2)
-		term_box.add_child(Ui.label(term.name, "SectionLabel"))
-		term_box.add_child(Ui.label(term.description, "MutedLabel", true))
-		body.add_child(term_box)
+		term_box.add_child(Ui.label(term.name, "HeadingLabel", true))
+		term_box.add_child(Ui.label(term.description, "", true))
+		parts[1].add_child(term_box)
+	return parts[0]
+
+
+## Under 더 보기: the lab's deeper concept (its law's title, words and equation).
+func _build_explanation() -> Control:
+	var law := definition.law()
+	var parts := _section(Locale.t("screen.section_concept"))
+	var body: VBoxContainer = parts[1]
+	body.add_child(Ui.label(law.title, "HeadingLabel", true))
+	body.add_child(Ui.label(law.description, "", true))
+	body.add_child(Ui.label(law.equation, "NoteFormulaLabel", true))
 	return parts[0]
 
 
@@ -2564,6 +2591,16 @@ static func hidden_observation(observation: Dictionary) -> String:
 ## hidden_until_end ones until the run has its result); `values` are the observations shown now.
 func _hidden_answers(values: Dictionary) -> Array:
 	return mission_round.hidden_observations(values) if mission_round != null else []
+
+
+## The note's text of an observation: its value in its unit (format_observation), "실험하면 나와요" while
+## there is none yet (format_observation's "—"), "실험이 끝나면 보여요" while a mission hides the answer
+## (2026-11-11: "? s" and "—" read like an unfinished screen).
+static func note_value(observation: Dictionary, value: Variant, hidden := false) -> String:
+	if hidden:
+		return Locale.t("screen.value_hidden")
+	var text := format_observation(observation, value)
+	return Locale.t("screen.value_pending") if text == "—" else text
 
 
 ## The sidebar's text of an observation value (ScienceNote.format_observation: the question for
@@ -2619,12 +2656,11 @@ func _update_readouts(force_graph: bool) -> void:
 	var values := experiment.observations()
 	var hidden := _hidden_answers(values)
 	for observation in definition.observations():
-		var text := format_observation(observation, values.get(observation.id))
-		if hidden.has(observation.id):
-			text = hidden_observation(observation)
+		var text := note_value(observation, values.get(observation.id), hidden.has(observation.id))
 		var label: Label = _observation_labels[observation.id]
 		if label.text != text:
 			label.text = text
+			label.theme_type_variation = "NotePendingLabel" if text in [Locale.t("screen.value_pending"), Locale.t("screen.value_hidden")] else "ValueLabel"
 		var key: Label = _key_labels.get(observation.id)
 		if key == null:
 			continue

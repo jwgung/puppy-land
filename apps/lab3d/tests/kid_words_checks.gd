@@ -385,9 +385,11 @@ func check_push_bar() -> void:
 
 # --- the science note -----------------------------------------------------------------------------
 
-## 법칙 (one sentence, one formula), 이번 실험 숫자 (3-4 rows with every number in its unit), 조건
-## 바꾸기, 그래프 where the note keeps it, then 더 보기 (closed): every other observation, the graph
-## otherwise, the explanation. Every observation has its one label with the panel's text.
+## The note for a guardian (2026-11-11 user, plan A): 조건 바꾸기 (when the lab has conditions), 이번 실험
+## 숫자 (3-4 rows with every number in its unit), 그래프 where the note keeps it, 법칙 (one sentence, one
+## formula), 실험하는 방법, 낱말 풀이 (when it has terms), then 더 보기 (closed): every other observation,
+## the graph otherwise, the deeper concept. Every observation has its one label with the note's text
+## (note_value: "실험하면 나와요" before a value, "실험이 끝나면 보여요" while a mission hides it).
 func check_note(definition: Dictionary) -> void:
 	var screen := await _open(definition.id)
 	screen.open_sidebar(false)
@@ -403,7 +405,8 @@ func check_note(definition: Dictionary) -> void:
 		for id in screen._sections:
 			if screen._sections[id] == child:
 				order.append(id)
-	var want := ["law", "numbers", "conditions"] + (["graph"] if note.graph else []) + ["more"] + (["ask"] if ScienceNote.enabled else [])
+	var want := (["conditions"] if not ExperimentDefinition.new(definition).controls().is_empty() else []) + ["numbers"] + (["graph"] if note.graph else []) \
+		+ ["law", "guide"] + (["terms"] if not ExperimentDefinition.new(definition).terms().is_empty() else []) + ["more"] + (["ask"] if ScienceNote.enabled else [])
 	if order != want:
 		problems.append("order %s (want %s)" % [str(order), str(want)])
 	var law_texts: Array = screen._sections.law.find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text)
@@ -420,7 +423,7 @@ func check_note(definition: Dictionary) -> void:
 			in_numbers[id] = true
 	for observation in definition.observations:
 		var label: Label = screen._observation_labels.get(observation.id)
-		var text := ExperimentScreen.hidden_observation(observation) if hidden.has(observation.id) else ExperimentScreen.format_observation(observation, values.get(observation.id))
+		var text := ExperimentScreen.note_value(observation, values.get(observation.id), hidden.has(observation.id))
 		if label == null or label.text != text:
 			problems.append("%s reads '%s' (want '%s')" % [observation.id, label.text if label != null else "-", text])
 			continue

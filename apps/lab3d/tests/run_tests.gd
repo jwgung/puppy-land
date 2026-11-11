@@ -1645,7 +1645,7 @@ func _check_key_cards() -> void:
 		for id in screen.key_card_ids():
 			var observation: Dictionary = screen._observation(id)
 			var card: String = screen._key_labels[id].text
-			var panel: String = screen.hidden_observation(observation) if hidden.has(id) else screen.format_observation(observation, values.get(id))
+			var panel: String = screen.note_value(observation, values.get(id), hidden.has(id))   # (the note's text, 2026-11-11)
 			# A bar card (kid.bars: the push that started the box) draws a number as its bar, no text.
 			var bar: Control = screen._key_bars.get(id)
 			var number: bool = values.get(id) is float or values.get(id) is int
