@@ -598,12 +598,18 @@ func _layout() -> void:
 		var want := size.x * (1.0 - 2.0 * VIEW_MARGIN)
 		var grow := maxf((right - left) / want, (front + TAG_GAP + tag_h) / (size.y - EDGE - inset.bottom))
 		distance *= maxf(grow, FIT_MIN)
+	# The tags in one line, their tops level under the lowest island (the row is staggered, ROW_STAGGER;
+	# 2026-11-11 user: "뉴턴섬이랑 허턴섬 딱지가 높이가 다른게 별로임"), each under its island's middle.
+	var unders := {}
+	var top := 0.0
+	for entry in _entries:
+		unders[entry.id] = _screen(_middles[entry.id] + Vector3(0.0, 0.0, float(_reach[entry.id]) * TAG_UNDER))
+		top = maxf(top, (unders[entry.id] as Vector2).y + TAG_GAP)
+	var y := minf(top, size.y - tag_h - EDGE - inset.bottom)
 	for entry in _entries:
 		var tag: Control = cards[entry.id]
-		var middle: Vector3 = _middles[entry.id]
-		var under := _screen(middle + Vector3(0.0, 0.0, float(_reach[entry.id]) * TAG_UNDER))
-		var at := Vector2(under.x - tag.size.x * 0.5, minf(under.y + TAG_GAP, size.y - tag.size.y - EDGE - inset.bottom))
-		tag.position = Vector2(clampf(at.x, EDGE + inset.left, size.x - tag.size.x - EDGE - inset.right), at.y)
+		var x: float = (unders[entry.id] as Vector2).x - tag.size.x * 0.5
+		tag.position = Vector2(clampf(x, EDGE + inset.left, size.x - tag.size.x - EDGE - inset.right), y)
 
 
 ## The picture of `id`, its small world under `host` (the island's offer: IslandOffer).

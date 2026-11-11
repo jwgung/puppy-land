@@ -464,11 +464,15 @@ func check_sail() -> void:
 		problems.append("no world view and boat, or the title's view still drawn")
 	elif map.boat.position.distance_to(map._shore(ProgressStore.FIRST_ISLAND, 1.0)) > 0.5:
 		problems.append("the boat is not at the island in use (%s)" % str(map.boat.position))
+	var tops := []
 	for entry in IslandCards.entries(ProgressStore.load()):
 		var tag: Control = map.cards[entry.id]
+		tops.append(tag.position.y)
 		var island := map._island_rect(str(entry.id))
 		if tag.get_global_rect().get_center().y < island.get_center().y or absf(tag.get_global_rect().get_center().x - island.get_center().x) > island.size.x * 0.6 + 20.0:
 			problems.append("the tag of %s is not under its island" % entry.id)
+	if tops.max() - tops.min() > 0.5:   # (one line, 2026-11-11 user: "딱지가 높이가 다른게 별로임")
+		problems.append("the tags' tops are not level %s" % str(tops))
 	# The island in use: its map at once.
 	(map.buttons[ProgressStore.FIRST_ISLAND] as Button).pressed.emit()
 	await tree.process_frame
