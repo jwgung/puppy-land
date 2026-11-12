@@ -231,13 +231,13 @@ func check_thresholds() -> void:
 			var shown: Dictionary = lab.observations()
 			if case.holding[i]:
 				holds_ok = holds_ok and first_state == "holding" and lab.status() == "holding" and moved <= 0.001 and float(shown.friction) == absf(force) \
-					and shown.state == "버티는 중 · 마찰이 막고 있어요"
+					and shown.state == "버티는 중 · 마찰이 막고 있어"
 			else:
 				var t := 1.0
 				var a: float = (force - lab.model.kinetic_friction()) / lab.model.mass
 				slides_ok = slides_ok and first_state == "sliding" and first_x > 0.0 and lab.status() == "sliding" \
 					and absf(lab.model.displacement - 0.5 * a * t * t) <= 1e-9 * maxf(1.0, lab.model.displacement) \
-					and absf(lab.engine_displacement() - lab.model.displacement) <= 1e-4 and shown.state == "움직여요 · 주는 힘이 마찰을 이겼어요"
+					and absf(lab.engine_displacement() - lab.model.displacement) <= 1e-4 and shown.state == "움직여 · 주는 힘이 마찰을 이겼어"
 				details.append("%s: s(1 s) %.5f m (a %.4f)" % [case.material, lab.model.displacement, a])
 	expect.call(holds_ok, "friction: at and 0.01 N below the maximum static friction the box holds 2 s (<= 1 mm, friction = F)", "")
 	expect.call(slides_ok, "friction: 0.01 N above it the box slides from the first step, s = (F - mu_k m g) t^2 / 2m", "; ".join(details))
@@ -278,7 +278,7 @@ func check_state_is_formula() -> void:
 	await _until(lab, 10)
 	var engine_status: String = lab.corrector.status
 	var shown: Dictionary = lab.observations()
-	expect.call(lab.status() == "sliding" and engine_status == "holding" and shown.state == "움직여요 · 주는 힘이 마찰을 이겼어요" and lab.model.displacement > 0.0,
+	expect.call(lab.status() == "sliding" and engine_status == "holding" and shown.state == "움직여 · 주는 힘이 마찰을 이겼어" and lab.model.displacement > 0.0,
 		"friction: the state is the formula's (engine box held still: the panel still says sliding)", "engine %s" % engine_status)
 	lab.set_applied_force(0.0)
 	# The same gravity as the engine's (the formulas' g is the project setting, not a copy).
@@ -312,7 +312,7 @@ func check_track_end() -> void:
 	var stopped: bool = lab.status() == "end" and lab.box.freeze and absf(lab.model.velocity) == 0.0 \
 		and absf(engine_x - (high - lab.END_PADDING)) <= 1e-5 and absf(engine_x - lab.formula_x()) <= 1e-5
 	var shown: Dictionary = lab.observations()
-	expect.call(stopped and shown.state == "바닥 끝에 닿았어요" and float(shown.speed) == 0.0,
+	expect.call(stopped and shown.state == "바닥 끝에 닿았어" and float(shown.speed) == 0.0,
 		"friction: the box stops at the track end (formula stop; the engine box is frozen there)", "x %.3f (formula %.3f), state %s" % [engine_x, lab.formula_x(), shown.state])
 	lab.hold_started("box")
 	var freed: bool = not lab.ended and not lab.box.freeze and lab.status() == "holding"
@@ -414,7 +414,7 @@ func check_first_pull_input() -> void:
 	var engine_ok: bool = absf(lab.engine_displacement() - lab.model.displacement) <= 1e-4
 	await tree.process_frame
 	var stays: bool = lab.applied_force() == at_start and lab.push.stopped() and absf(lab.props.gauge.fraction * lab.PUSH_MAX - at_start) < 1e-9
-	expect.call(shown.state == "움직여요 · 주는 힘이 마찰을 이겼어요" and engine_ok and lab.model.velocity > 0.0 and lab.box.global_position.x > lab.START_X and stays,
+	expect.call(shown.state == "움직여 · 주는 힘이 마찰을 이겼어" and engine_ok and lab.model.velocity > 0.0 and lab.box.global_position.x > lab.START_X and stays,
 		"friction: while held the push (and its gauge) stays at the force that started the box (2026-11-01), the box slides towards +x and the engine follows the formula",
 		"x %.3f m, push %.3f N (start %.3f N), gauge %.3f" % [lab.box.global_position.x, lab.applied_force(), at_start, lab.props.gauge.fraction])
 	var peak_now: float = lab.applied_force()
@@ -430,7 +430,7 @@ func check_first_pull_input() -> void:
 	await tree.physics_frame
 	var model: PushFrictionModel = lab.model
 	var stopped: Dictionary = lab.observations()
-	expect.call(let_go and gauge_gone and lab.status() == "holding" and float(stopped.speed) < 1e-9 and stopped.state == "멈춰 있어요"
+	expect.call(let_go and gauge_gone and lab.status() == "holding" and float(stopped.speed) < 1e-9 and stopped.state == "멈춰 있어"
 		and absf(model.heat - model.kinetic_friction() * model.path) <= 1e-9 * model.heat and model.heat > 1.0,
 		"friction: letting go sets the push to 0 at once (gauge gone) and the box slides to a stop; heat = mu_k m g x distance",
 		"heat %.3f J over %.3f m" % [model.heat, model.path])
@@ -448,7 +448,7 @@ func check_first_pull_input() -> void:
 	await _until(lab, held_at + 30)
 	var pushed: Dictionary = lab.observations()
 	_touch(screen, press, false)
-	expect.call(lab.status() == "holding" and float(pushed.applied) == 12.5 and float(pushed.friction) == 12.5 and pushed.state == "버티는 중 · 마찰이 막고 있어요"
+	expect.call(lab.status() == "holding" and float(pushed.applied) == 12.5 and float(pushed.friction) == 12.5 and pushed.state == "버티는 중 · 마찰이 막고 있어"
 		and absf(lab.box.global_position.x - x_before) <= 0.001,
 		"friction: a short press (12.5 N, below the limit) is held by static friction", str(pushed.applied))
 	await _close(screen)

@@ -193,7 +193,7 @@ func check_map_riddle_tap() -> void:
 	Story.enabled = was
 
 
-## The name each lab's introduction teaches ("이 힘을 마찰력이라고 해요", 2026-10-31 user: "용어를
+## The name each lab's introduction teaches ("이 힘을 마찰력이라고 해", 2026-10-31 user: "용어를
 ## 알려는 줘야지").
 const INTRO_TERMS := {"buoyancy": "부력", "collision": "작용 반작용", "constraints": "진자",
 	"free-fall": "중력", "friction": "마찰력", "incline-friction": "마찰력", "orbit": "중력",

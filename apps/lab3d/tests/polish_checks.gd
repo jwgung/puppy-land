@@ -278,7 +278,7 @@ func check_restart() -> void:
 		problems.append("question '%s'" % question.text)
 	await _tap(screen.restart_no.get_global_rect().get_center())
 	if screen.restart_confirm.visible or not screen.restart_button.visible or _store_text() != full or restarts[0] != 0:
-		problems.append("아니요 erased or kept the question")
+		problems.append("아니 erased or kept the question")
 	screen.restart()   # without the question showing: nothing
 	if _store_text() != full or restarts[0] != 0:
 		problems.append("restart() without the question erased")
@@ -292,7 +292,7 @@ func check_restart() -> void:
 		and ProgressStore.pending(ProgressStore.PIECES).is_empty() and ProgressStore.last_spot(ProgressStore.FIRST_ISLAND) == ""
 	if not empty or restarts[0] != 1:
 		problems.append("다시 하기: empty %s, restarts %d" % [empty, restarts[0]])
-	expect.call(problems.is_empty(), "처음부터 다시 하기: the first tap only asks '정말 처음부터 다시 할까요?'; 아니요 keeps everything; 다시 하기 erases stamps, flags, story, pieces and the last spot",
+	expect.call(problems.is_empty(), "처음부터 다시 하기: the first tap only asks '정말 처음부터 다시 할까?'; 아니 keeps everything; 다시 하기 erases stamps, flags, story, pieces and the last spot",
 		"; ".join(problems))
 	host.queue_free()
 	await tree.process_frame

@@ -357,7 +357,7 @@ func check_input_path() -> void:
 	await _stroke(screen, lab, 12, check)
 	var lift: float = lab.driver.engine_lift()
 	var shown: Dictionary = lab.observations()
-	expect.call(waiting.state == "줄 끝을 꾹 눌러 짐을 올려요" and ramp and ratchet and graph_ok
+	expect.call(waiting.state == "줄 끝을 꾹 눌러 짐을 올려" and ramp and ratchet and graph_ok
 		and absf(lift - 0.8) < 1e-5 and absf(float(shown.pulled) - 1.6) < 1e-12,
 		"pulley (fresh screen, 2 strands): holding the rope end ramps the hand's force 65 N/s (gauge = force / 250 N, the load stays down below F); the rope moves on step %d (%.2f s) at F = %.1f N, the pull and its gauge then stay at that step's force, and two strokes (1.0 m + 0.6 m) lift the engine load 0.8 m = 1/2 of the rope; the ratchet holds it between strokes and the rope end goes back up" % [want_step, want_step / float(STEP_HZ), required],
 		"held %s, moved at %d (want %d), before %.2f N, shown %.2f N, gauge %s, stays %s, ratchet %s, graph %s, lift %.4f m" % [check.held, check.moved_at, want_step, check.before, check.get("shown", -1.0), check.get("gauge", false), check.get("stays", false), ratchet, graph_ok, lift])

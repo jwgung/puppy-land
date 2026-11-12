@@ -44,8 +44,8 @@ func run() -> void:
 
 ## Friends talk in 반말 (2026-11-12 user: "친구끼리 반말해야지", "다 반말로 바꿔"): every line a character
 ## says in Korean (Dugi's intro, stage says, question, reason and bridge, the picture buttons and the
-## bread cat's guesses, the lab question, the story pages) ends without 해요체 (…요, …까요?, …세요).
-## The guardian's note (자세히) and the settings keep their polite words.
+## bread cat's guesses, the lab question, the story pages) ends without 해요체 (…요, …까요?, …세요);
+## since 2026-11-12 ("다 바꿔야지") every Korean text of the app is 반말: ui.json too.
 func check_banmal() -> void:
 	var polite := RegEx.create_from_string("(요|세요)([.!?…,*\\s]|$)")
 	var found := []
@@ -76,7 +76,24 @@ func check_banmal() -> void:
 					check.call("%s %s" % [island, part], page.get("text"))
 			for key in ["finale_retry", "finale_next", "map_wrong", "map_today"]:
 				check.call("%s %s" % [island, key], story.get(key))
-	expect.call(found.is_empty() and Locale.lang == "ko", "kid words: the characters talk in 반말 (no 해요체 in Dugi's lines, the question, the buttons, the guesses, the story)",
+	var ui: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://content/locale/ko/ui.json"))
+	var walk := func(self_fn: Callable, key: String, value: Variant) -> void:
+		if value is Dictionary:
+			for k in value:
+				self_fn.call(self_fn, key + "." + str(k), value[k])
+		elif value is Array:
+			for v in value:
+				self_fn.call(self_fn, key, v)
+		else:
+			check.call("ui " + key, value)
+	walk.call(walk, "", ui)
+	for d in ExperimentRegistry.load_all():
+		check.call(d.id + " tip", d.get("tip"))
+		check.call(d.id + " tip_short", d.get("tip_short"))
+		check.call(d.id + " observe", d.get("observe"))
+		for step in d.get("steps", []):
+			check.call(d.id + " step", step)
+	expect.call(found.is_empty() and Locale.lang == "ko", "kid words: the app talks in 반말 (no 해요체 in Dugi's lines, the question, the buttons, the guesses, the story, ui.json, tips and steps)",
 		"; ".join(found.slice(0, 4)))
 
 
@@ -263,7 +280,7 @@ func check_term_box() -> void:
 	box.queue_free()
 	# The science note's AI question takes the words without the marks.
 	var marked := ExperimentRegistry.find("incline-friction").duplicate(true)   # (find shares its cached definition)
-	marked.kid.say = "바닥이 붙잡는 힘을 **마찰력**이라고 해요."
+	marked.kid.say = "바닥이 붙잡는 힘을 **마찰력**이라고 해."
 	var lab := ExperimentRegistry.instantiate(marked)
 	host.add_child(lab)
 	await tree.process_frame
@@ -368,7 +385,7 @@ func check_free_fall_card() -> void:
 
 
 ## The spring's card (2026-10-29, the bell game): every stage shows how far the first swing went
-## past the rest ("반대쪽으로 간 길이"), "흔들면 보여요" until the ball got there, then the length in words.
+## past the rest ("반대쪽으로 간 길이"), "흔들면 보여" until the ball got there, then the length in words.
 func check_spring_card() -> void:
 	var screen := await _open("spring")
 	screen.mission_round.end_question()
@@ -385,9 +402,9 @@ func check_spring_card() -> void:
 	screen._show_stamps(1)
 	await tree.process_frame
 	var second: Array = screen.key_card_ids()
-	expect.call(first == ["bell_reach"] and caption == "반대쪽으로 간 길이" and waiting == "흔들면 보여요" and reached == "1.5미터" and second == ["bell_reach"]
+	expect.call(first == ["bell_reach"] and caption == "반대쪽으로 간 길이" and waiting == "흔들면 보여" and reached == "1.5미터" and second == ["bell_reach"]
 		and screen._key_row.get_child_count() == 1,
-		"kid words: the spring's card is how far the first swing went past the rest (반대쪽으로 간 길이: 흔들면 보여요, then 1.5미터 from a 1.5 m pull), every stage",
+		"kid words: the spring's card is how far the first swing went past the rest (반대쪽으로 간 길이: 흔들면 보여, then 1.5미터 from a 1.5 m pull), every stage",
 		"%s '%s' '%s' '%s' -> %s" % [str(first), caption, waiting, reached, str(second)])
 	await _close(screen)
 
@@ -429,7 +446,7 @@ func check_push_bar() -> void:
 ## note.learn), 법칙 (one sentence, one formula), 실험하는 방법, 낱말 풀이 (when it has terms), 아이와 이야기해
 ## 보기 (two questions, note.talk), then 더 보기 (closed): every other observation,
 ## the graph otherwise, the deeper concept. Every observation has its one label with the note's text
-## (note_value: "실험하면 나와요" before a value, "실험이 끝나면 보여요" while a mission hides it).
+## (note_value: "실험하면 나와" before a value, "실험이 끝나면 보여" while a mission hides it).
 func check_note(definition: Dictionary) -> void:
 	var screen := await _open(definition.id)
 	screen.open_sidebar(false)

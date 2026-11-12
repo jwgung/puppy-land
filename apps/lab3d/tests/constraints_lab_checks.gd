@@ -475,7 +475,7 @@ func check_first_release_screen() -> void:
 	reference.step(1.0 / STEP_HZ)
 	var member: BodyModelDriver = lab.driver.members[0]
 	var first_step_ok: bool = member.engine.size() > 1 and member.engine[1].distance_to(reference.position()) < ENGINE_TOLERANCE
-	expect.call(waiting.state == "놓기 전 · 추를 끌어 각도를 정해요" and absf(float(waiting.rope_angle) - rad_to_deg(0.62)) < 1e-9 and waiting.rope_period is String
+	expect.call(waiting.state == "놓기 전 · 추를 끌어 각도를 정해" and absf(float(waiting.rope_angle) - rad_to_deg(0.62)) < 1e-9 and waiting.rope_period is String
 		and worst <= ENGINE_TOLERANCE and first_step_ok and lab.status() == "swinging",
 		"constraints (fresh screen): 놓기 → both engine bobs follow the TS start motion from the first step", "|d| %s m" % String.num_scientific(worst))
 	await _until(lab, 360)

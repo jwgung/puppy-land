@@ -398,7 +398,7 @@ func check_first_release_screen() -> void:
 		await _until(lab, k)
 		worst = maxf(worst, absf(lab.ball.global_position.x - (rest_x + float(s.x))))
 	var first_step_ok: bool = lab.driver.engine.size() > 1 and absf(lab.driver.engine[1].x - (rest_x + PhysicsLaws.harmonic_displacement(1.2, sqrt(5.0), 1.0 / STEP_HZ, 0.0))) < ENGINE_TOLERANCE
-	expect.call(waiting.state == "놓기 전 · 공을 끌어 당겨요" and float(waiting.extension) == 1.2 and float(waiting.speed) == 0.0
+	expect.call(waiting.state == "놓기 전 · 공을 끌어 당겨" and float(waiting.extension) == 1.2 and float(waiting.speed) == 0.0
 		and worst <= ENGINE_TOLERANCE and first_step_ok and lab.status() == "moving",
 		"spring (fresh screen): 놓기 → the engine ball follows the TS start motion from the first step", "|dx| %s m" % String.num_scientific(worst))
 	await _until(lab, 240)

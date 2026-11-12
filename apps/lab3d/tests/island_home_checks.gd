@@ -87,7 +87,7 @@ func check_home_builds() -> void:
 	if screen.find_child("TopBar", true, false) != null or screen.find_child("MapButtons", true, false) == null:
 		problems.append("a top bar, or no map buttons")
 	for label in screen.find_children("*", "Label", true, false):
-		if (label as Label).text in ["빵고양이 과학섬", "가고 싶은 곳을 눌러 봐요"]:
+		if (label as Label).text in ["빵고양이 과학섬", "가고 싶은 곳을 눌러 봐"]:
 			problems.append("the app's name or the bar's line still shows")
 	var buttons: Array = screen.find_children("ListButton", "", true, false)
 	var settings: Array = screen.find_children("SettingsButton", "", true, false)
