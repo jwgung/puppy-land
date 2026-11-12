@@ -410,7 +410,7 @@ func check_input_path() -> void:
 	var level: bool = lab.status() == "ready" and absf(lab.driver.engine_angle()) < 1e-6 and lab.model.hand == 0.0 and not lab.gauge.visible
 	var still: int = lab.clock_steps
 	await tree.physics_frame
-	expect.call(waiting.state == "힘점을 골라 막대의 빨간 힘점을 꾹 눌러 보세요" and held and ramp_ok and gauge_ok and lifted_at == want_step and lifted
+	expect.call(waiting.state == "힘점을 골라 막대의 빨간 힘점을 꾹 눌러 봐" and held and ramp_ok and gauge_ok and lifted_at == want_step and lifted
 		and absf(float(shown.applied) - float(shown.required)) < 1e-12 and absf(float(shown.net_torque)) < 1e-9 and clock_runs and capped and level and lab.clock_steps == still,
 		"rotation (fresh screen): holding the effort end ramps the hand's force 110 N/s (gauge = force / 400 N); the beam lifts on step %d (%.2f s) at F = %.2f N and stays lifted 13 s (graph window slides, the press and its gauge stay at the lifting step's force); the graph clock runs only while held; letting go puts it back level" % [want_step, want_step / float(STEP_HZ), required],
 		"held %s, ramp %s, gauge %s, lifted at %d, F %.2f N, clock %s, capped %s, level %s (%s, %s), still %s, waiting %s" % [held, ramp_ok, gauge_ok, lifted_at, shown.applied, clock_runs, capped, level, lab.status(), lab.driver.engine_angle(), lab.clock_steps == still, waiting.state])

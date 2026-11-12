@@ -420,7 +420,7 @@ func check_first_release_screen() -> void:
 	for s in c.samples:
 		if int(s.step) == 120:
 			worst = maxf(worst, absf(lab.drum.global_position.y - float(s.y)))
-	expect.call(waiting.state == "놓기 전 · 통을 끌어 물에 넣어요" and float(waiting.depth) == 0.0 and worst <= ENGINE_TOLERANCE and lab.splashes == 1 and entry_step > 0,
+	expect.call(waiting.state == "놓기 전 · 통을 끌어 물에 넣어" and float(waiting.depth) == 0.0 and worst <= ENGINE_TOLERANCE and lab.splashes == 1 and entry_step > 0,
 		"buoyancy (fresh screen): 놓기 → the engine drum follows the TS start motion from the first step, one splash on entering the water",
 		"|dy| %s m, entry step %d" % [String.num_scientific(worst), entry_step])
 	await _until(lab, 300)

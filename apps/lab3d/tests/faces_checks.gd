@@ -118,7 +118,7 @@ func check_puppy_words() -> void:
 
 ## The box: faces, the default, no re-pop for the same face, a soft pop for a new one, stable rects.
 func check_box() -> void:
-	var box := DialogueBox.new("두기두기의 설명이에요.")
+	var box := DialogueBox.new("두기두기의 설명이야.")
 	var host := Control.new()
 	host.theme = load(UI_THEME).build()
 	host.size = TABLET
@@ -132,7 +132,7 @@ func check_box() -> void:
 	var tag := box.name_tag.get_rect()
 	var problems := []
 	var swaps := box.swaps
-	box.open("다시 같은 얼굴이에요.", "explain")
+	box.open("다시 같은 얼굴이야.", "explain")
 	if box.swaps != swaps or box.portrait.scale != Vector2.ONE:
 		problems.append("same face re-popped")
 	for who in ["dugi", "puppy", "fox"]:

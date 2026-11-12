@@ -247,7 +247,7 @@ func check_free_fall_zero_g() -> void:
 	for id in lab.ORDER:
 		moved = maxf(moved, absf(lab.corrector_of(id).samples[STEP_HZ]))
 	var shown: Dictionary = lab.observations()
-	expect.call(moved <= 1e-6 and shown.state == "무중력: 떠 있어요" and shown.fall_time == "닿지 않아요" and absf(float(shown.time) - 1.0) < 1e-9 and float(shown.height_red) == 5.0,
+	expect.call(moved <= 1e-6 and shown.state == "무중력: 떠 있어" and shown.fall_time == "닿지 않아" and absf(float(shown.time) - 1.0) < 1e-9 and float(shown.height_red) == 5.0,
 		"free fall: no field, the balls stay where they were let go (time runs, no landing)", "moved %s m, %s" % [String.num_scientific(moved), str(shown)])
 	await _free(lab)
 
@@ -376,8 +376,8 @@ func check_projectile_zero_g() -> void:
 		await tree.physics_frame
 	var t_after: float = lab.observations().time
 	lab.run_action("reset")
-	expect.call(lab.out_of_bounds == false and lab._ball_visual.visible and hidden and shown.state == "섬 밖으로 날아감" and shown.range == "닿지 않아요"
-		and shown.flight_time == "닿지 않아요" and shown.apex == "계속 올라가요" and t_after > t_before,
+	expect.call(lab.out_of_bounds == false and lab._ball_visual.visible and hidden and shown.state == "섬 밖으로 날아감" and shown.range == "닿지 않아"
+		and shown.flight_time == "닿지 않아" and shown.apex == "계속 올라가" and t_after > t_before,
 		"projectile: no field, the ball flies straight off the island, is stopped there (time keeps running), reset brings it back", str(shown))
 	await _free(lab)
 
@@ -549,7 +549,7 @@ func check_free_fall_zero_g_on_floor() -> void:
 	lab.release()
 	await _until_step(lab.corrector_of("red"), STEP_HZ)
 	var shown: Dictionary = lab.observations()
-	expect.call(absf(float(shown.time) - 1.0) < 1e-9 and shown.state == "무중력: 떠 있어요" and shown.fall_time == "닿지 않아요",
+	expect.call(absf(float(shown.time) - 1.0) < 1e-9 and shown.state == "무중력: 떠 있어" and shown.fall_time == "닿지 않아",
 		"landing: no field with every ball on the floor, the time is the clock (1 s after 60 steps), not INF", str(shown.time))
 	# In a field the same balls have landed at the release: time 0, the graph stops at once.
 	lab.set_control("gravity", "earth")
@@ -781,7 +781,7 @@ func check_free_fall_manipulation() -> void:
 		lands[id] = lab.corrector_of(id).landed_step
 	expect.call(lab.ORDER.all(func(id: String) -> bool: return absi(lands[id] - want[id]) <= 2)
 		and float(lab.observations().fall_time) == PhysicsLaws.landing_time(0.0, -9.81, 7.0)
-		and lab.observations().together_time == "따로 닿았어요" and lab.game.pressed("red") and lab.game.pressed("yellow"),
+		and lab.observations().together_time == "따로 닿았어" and lab.game.pressed("red") and lab.game.pressed("yellow"),
 		"free fall: after the drag each ball lands at the formula time of its own height; red 7 m and yellow 3 m press their buttons apart, not together",
 		"steps %s (formula %s), together %s" % [str(lands), str(want), str(lab.observations().together_time)])
 	# Picking up a landed ball stops the run (every ball back at its start).

@@ -1,4 +1,4 @@
-## Easy controls (2026-10-27 user decision "조작이 쉬운게 중요"), every lab on its real screen:
+## Easy controls (2026-10-27 user decision "조작이 쉬운게 중"), every lab on its real screen:
 ## - the mission's picture buttons (ConditionPicks): per stage the row shows exactly the controls the
 ##   stage's conditions name (not one every stage asks the same of), each with a button that fits
 ##   and one that does not, at most four; none for a stage without conditions or a finished round;

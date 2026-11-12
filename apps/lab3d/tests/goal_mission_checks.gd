@@ -343,7 +343,7 @@ func check_pendulum_card() -> void:
 			break
 		before = values.rope_half_swing
 	var want: float = lab.models[0].half_swing_period
-	if before != "한 번 왕복하면 보여요" or shown_at < 4.0 or shown_at > 4.4 or not (period_then is String) or absf(want - measured_period(2.75, 1.62, lab.models[0].damping)) > 1e-9:
+	if before != "한 번 왕복하면 보여" or shown_at < 4.0 or shown_at > 4.4 or not (period_then is String) or absf(want - measured_period(2.75, 1.62, lab.models[0].damping)) > 1e-9:
 		problems.append("before %s, shown at %.2f s (%.4f s), rope_period then %s" % [before, shown_at, want, period_then])
 	lab.queue_free()
 	expect.call(problems.is_empty(), "goal (pendulum): the card waits (\"한 번 왕복하면 보여요\") until the turning point, then shows the half swing x 2 at about T/2 (Moon 2.75 m: about 4.2 s) while the measured period still waits",
