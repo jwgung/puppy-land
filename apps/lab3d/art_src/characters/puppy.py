@@ -3,7 +3,6 @@
 Run (headless):
     blender -b --factory-startup -P apps/lab3d/art_src/characters/puppy.py -- \
         [--out apps/lab3d/assets/characters/puppy.glb] [--monocle on|off] [--flag on|off] [--hat on|off] \
-        [--lang ko|en]   # the flag's word: 과학섬 (puppy.glb) or SCIENCE (--lang en: puppy_en.glb, 2026-11-02)
 
 A golden-tan chibi puppy from the same storybook as the bread cat and Dugi (2026-10-23 user
 reference 1792701655210.png, the centre character), standing on its hind legs like Dugi: a big round
@@ -12,10 +11,11 @@ point between the eyes, small dark dot eyes with one highlight dot, a big dark-b
 muzzle bump, a small open smile with a tongue, floppy ears with darker tips, a brown deerstalker
 (front and back brims, tied flaps on the crown), a red bow tie, a cream bib, cream feet and paws and
 a curly tail with a cream tip. Role (2026-10-24 user decision): Puppy stands at the back holding the
-app's flag, a wooden pole with a butter-yellow swallowtail banner reading "과학섬" (the app is
-"빵고양이 과학섬"). The text is real Hangul (Noto Sans CJK Bold, laid out by Blender's FreeType and
-rasterised here) painted into the atlas,
-once for each side of the cloth, so it reads left to right from the front and from behind. The
+app's flag, a wooden pole with a swallowtail banner: Puppy Land's flag, a cream cloth with one dark
+brown dog paw print (#128, 2026-11-12 user: "크림색에 발바닥만 있는걸로 하자"; a plump round pad wider
+below and four round toes, no claws; until then the word "과학섬" / "SCIENCE", one model per language).
+No letters, so one model and one set of portraits for every language. The paw is painted into the atlas
+once for each side of the cloth (the same from the front and from behind). The
 reference dog's monocle is Dugi's signature item (2026-10-23), so here it is an option
 (`--monocle on`: a gold rim on the eye at the viewer's right, a thin chain to the bow tie), default
 off. The earlier magnifying glass was dropped (the flag takes its mesh slots). Same style and
@@ -82,11 +82,8 @@ P = dict(
     hat="#9a6440", hat_dark="#7a4a2e", hat_seam="#6e4630",
     bow="#e2493b", bow_dark="#b9342c", frame="#6e4630", gold="#e3b04b",
     # flag: butter yellow (bright against the sky and the grass), brown text like the outline
-    pole="#c08a55", cloth="#ffe28a", cloth_trim="#f5b84e", ink="#6b3a1c",
+    pole="#c08a55", cloth="#fff4e2", ink="#6b3a1c",
 )
-FLAG_TEXTS = {"ko": "과학섬", "en": "SCIENCE"}
-FLAG_TEXT = FLAG_TEXTS[os.environ.get("PUPPY_LANG", "ko")]   # set_language() / --lang
-FONT = ("/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",)   # Noto Sans CJK Bold (Blender reads its first face)
 
 # Atlas layout (pixels, origin bottom-left like Blender UVs)
 R_HEAD = (0, 512, 1024, 1024)
@@ -269,80 +266,50 @@ def paint_hat():
     return img
 
 
-def _box_blur(a, r, axis):
-    """Box blur of radius r (pixels) along one axis, via a cumulative sum."""
-    if r < 1:
-        return a
-    pad = [(0, 0)] * a.ndim; pad[axis] = (r + 1, r)
-    c = np.cumsum(np.pad(a, pad, mode="edge"), axis=axis)
-    n = a.shape[axis]
-    hi = np.take(c, np.arange(2 * r + 1, 2 * r + 1 + n), axis=axis)
-    lo = np.take(c, np.arange(0, n), axis=axis)
-    return (hi - lo) / (2 * r + 1)
+# The paw print, in units of PAW_R (the cloth's height x PAW_SIZE), y down from its centre: the main
+# pad (centre, half width, half height; 16 % wider at its bottom) and the four toes (centre, half
+# axes, lean in radians), as approved on the mockup (#128).
+PAW_SIZE = 0.40
+PAW_PAD = (0.0, 0.30, 0.55, 0.43)
+PAW_TOES = ((-0.19, -0.40, 0.165, 0.20, -0.12), (0.19, -0.40, 0.165, 0.20, 0.12),
+            (-0.53, -0.14, 0.15, 0.18, -0.50), (0.53, -0.14, 0.15, 0.18, 0.50))
 
 
-def text_mask(text, w, h, cx, height=0.56, ss=3):
-    """Coverage mask (h x w, rows bottom-up like the atlas) of `text` set in FONT, centred at
-    (cx * w, h / 2) with the glyphs `height` of the region tall. Blender's own FreeType lays out the
-    glyphs (a temporary text curve, removed again); its triangles are rasterised here with ss x ss
-    supersampling, so no image library is needed inside Blender."""
-    font = bpy.data.fonts.load(FONT[0], check_existing=True)
-    cu = bpy.data.curves.new("flag_text", "FONT")
-    cu.body = text; cu.font = font; cu.align_x = "CENTER"
-    ob = bpy.data.objects.new("flag_text", cu)
-    bpy.context.scene.collection.objects.link(ob)
-    deps = bpy.context.evaluated_depsgraph_get()
-    me = ob.evaluated_get(deps).to_mesh()
-    me.calc_loop_triangles()
-    co = np.array([v.co[:2] for v in me.vertices])
-    tris = np.array([t.vertices[:] for t in me.loop_triangles])
-    ob.evaluated_get(deps).to_mesh_clear()
-    bpy.data.objects.remove(ob); bpy.data.curves.remove(cu); bpy.data.fonts.remove(font)
-    W, H = w * ss, h * ss
-    lo, hi = co.min(0), co.max(0)
-    k = min(height * H / (hi[1] - lo[1]), 0.62 * W / (hi[0] - lo[0]))   # a long word: smaller, inside the cloth
-    px = (co[:, 0] - (lo[0] + hi[0]) / 2) * k + cx * W
-    py = (co[:, 1] - (lo[1] + hi[1]) / 2) * k + 0.5 * H
-    m = np.zeros((H, W))
-    for a, b, c in tris:
-        xs, ys = px[[a, b, c]], py[[a, b, c]]
-        x0, x1 = int(max(0, np.floor(xs.min()))), int(min(W - 1, np.ceil(xs.max())))
-        y0, y1 = int(max(0, np.floor(ys.min()))), int(min(H - 1, np.ceil(ys.max())))
-        if x1 < x0 or y1 < y0:
-            continue
-        gx, gy = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
-        d = (ys[1] - ys[2]) * (xs[0] - xs[2]) + (xs[2] - xs[1]) * (ys[0] - ys[2])
-        if abs(d) < 1e-12:
-            continue
-        l0 = ((ys[1] - ys[2]) * (gx - xs[2]) + (xs[2] - xs[1]) * (gy - ys[2])) / d
-        l1 = ((ys[2] - ys[0]) * (gx - xs[2]) + (xs[0] - xs[2]) * (gy - ys[2])) / d
-        inside = (l0 >= 0) & (l1 >= 0) & (l0 + l1 <= 1)
-        m[y0:y1 + 1, x0:x1 + 1] = np.maximum(m[y0:y1 + 1, x0:x1 + 1], inside)
-    return m.reshape(h, ss, w, ss).mean(axis=(1, 3))
+def paw_mask(w, h, cx, ss=3):
+    """Coverage mask (h x w, rows bottom-up like the atlas) of the paw print centred at (cx * w, h / 2)
+    on a region laid out in the cloth's proportions (w x h), PAW_SIZE of its height across one
+    PAW_R; ss x ss supersampled."""
+    xs = (np.arange(w * ss) + 0.5) / ss
+    ys = (np.arange(h * ss) + 0.5) / ss
+    gx, gy = np.meshgrid(xs, ys)
+    r = PAW_SIZE * h
+    dx = (gx - cx * w) / r
+    dy = -(gy - 0.5 * h) / r        # rows bottom-up: y down from the paw's centre
+    px, py, hw, hh = PAW_PAD
+    t = np.clip((dy - py) / hh, -1.0, 1.0)
+    inside = ((dx - px) / (hw * (1.0 + 0.16 * t))) ** 2 + ((dy - py) / hh) ** 2 <= 1.0
+    for tx, ty, rx, ry, a in PAW_TOES:
+        c, s_ = math.cos(a), math.sin(a)
+        lx = (dx - tx) * c + (dy - ty) * s_
+        ly = -(dx - tx) * s_ + (dy - ty) * c
+        inside |= (lx / rx) ** 2 + (ly / ry) ** 2 <= 1.0
+    return inside.astype(float).reshape(h, ss, w, ss).mean(axis=(1, 3))
 
 
 def paint_flag(rect, aspect):
-    """Banner side: u = across the cloth as the viewer of this side reads it (left -> right),
-    v = bottom (0) -> top (1). Butter yellow with a deeper hem top and bottom; the text in bold
-    brown with a soft cream halo, centred on the part of the cloth left of the swallowtail."""
+    """Banner side: u = across the cloth as the viewer of this side sees it (left -> right),
+    v = bottom (0) -> top (1). Plain cream with the dark brown paw print, centred on the part of the
+    cloth left of the swallowtail."""
     x0, y0, x1, y1 = rect
     w, h = x1 - x0, y1 - y0
-    u, v = region_grid(rect)
-    img = np.zeros(u.shape + (3,)); img[...] = hexc(P["cloth"])
-    hem = np.minimum(v, 1 - v)
-    blend(img, smooth_fill(hem - 0.085, 0.01), hexc(P["cloth_trim"]))
+    img = np.zeros((h, w, 3)); img[...] = hexc(P["cloth"])
     cx = 0.54 if rect == R_FLAG_F else 0.46   # the notch is at u = 0 on the front, u = 1 on the back
-    # the region may be squarer than the cloth: lay the text out in cloth proportions, then squeeze
+    # the region may be squarer than the cloth: lay the paw out in cloth proportions, then squeeze
     tw = int(round(h * aspect))
-    m = text_mask(FLAG_TEXT, tw, h, cx, height=0.50)
+    m = paw_mask(tw, h, cx)
     xs = (np.arange(w) + 0.5) / w * tw - 0.5
     i0 = np.clip(np.floor(xs).astype(int), 0, tw - 1); i1 = np.clip(i0 + 1, 0, tw - 1); f = xs - np.floor(xs)
     m = m[:, i0] * (1 - f) + m[:, i1] * f
-    r = max(1, int(h * 0.018))
-    halo = m
-    for _ in range(3):
-        halo = _box_blur(_box_blur(halo, r, 0), r, 1)
-    blend(img, np.clip(halo * 6, 0, 1), hexc(P["cream"]))
     blend(img, m, hexc(P["ink"]))
     return img
 
@@ -824,7 +791,7 @@ def stats():
 
 def parse_args():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-    opts = {"out": None, "monocle": "off", "flag": "on", "hat": "on", "arms": "A", "lang": "ko"}
+    opts = {"out": None, "monocle": "off", "flag": "on", "hat": "on", "arms": "A"}
     i = 0
     while i < len(argv):
         k = argv[i].lstrip("-")
@@ -837,7 +804,6 @@ def parse_args():
 
 if __name__ == "__main__":
     opts = parse_args()
-    FLAG_TEXT = FLAG_TEXTS[opts["lang"]]
     bc.clear_scene()
     set_arm_variant(opts["arms"])
     build(opts["monocle"] == "on", opts["flag"] != "off", opts["hat"] != "off")

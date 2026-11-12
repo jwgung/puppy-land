@@ -51,12 +51,9 @@ static func face_or_default(face: Variant) -> String:
 
 
 ## The portrait of `who` with `face` (an unknown face: the default).
-## Puppy's portraits show his flag's word: the English ones are in portraits/en (2026-11-02).
+## The speaker's portrait for a face: one set for every language (#128: Puppy's flag has no word).
 static func portrait_path(who: String, face: String) -> String:
-	var path := str(SPEAKERS[who][1]) % face_or_default(face)
-	if who == "puppy" and Locale.lang == "en":
-		path = path.get_base_dir().path_join("en").path_join(path.get_file())
-	return path
+	return str(SPEAKERS[who][1]) % face_or_default(face)
 
 ## The story plays (App: the child's app; off for measurements, screenshots without --demo-story
 ## and tests that build screens directly).
