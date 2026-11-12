@@ -142,7 +142,7 @@ func check_doc_lines() -> void:
 	var q: Dictionary = doc.question
 	var labels: Array = predict.choices.map(func(c: Dictionary) -> String: return str(c.label))
 	if predict.question != q.get("text") or predict.get("question_face") != faces.get(q.get("face")) or labels != q.get("choices") \
-			or predict.reason != q.get("reason") or predict.bridge != q.get("bridge") or str(predict.answer) != "earth" or labels[1] != "지구가 돌아요":
+			or predict.reason != q.get("reason") or predict.bridge != q.get("bridge") or str(predict.answer) != "earth" or labels[1] != "지구가 돌아":
 		problems.append("the question %s (doc %s)" % [str(predict), str(q)])
 	if Story.map_clue(definition) != doc.get("riddle"):
 		problems.append("the riddle '%s' (doc '%s')" % [Story.map_clue(definition), doc.get("riddle")])

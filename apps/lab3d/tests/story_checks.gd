@@ -30,18 +30,18 @@ const CLUES := {
 	"orbit": "조각 하나가 저 멀리 우주에 떠 있어! 행성을 쏴서 데려오자!",
 }
 const PROLOGUE := [
-	["dugi", "여기는 바다 위 나라, 퍼피랜드예요."],
-	["dugi", "퍼피랜드에는 섬이 많아요. 그중 하나가 우리 뉴턴섬이에요."],
+	["dugi", "여기는 바다 위 나라, 퍼피랜드야."],
+	["dugi", "퍼피랜드에는 섬이 많아. 그중 하나가 우리 뉴턴섬이야."],
 	["puppy", "밤마다 길잡이 별이 바다를 비춰 줘. 배들이 길을 잃지 않게!"],
 	["puppy", "어? 길잡이 별이 깨졌어!"],
-	["dugi", "별빛이 없으면 밤바다에서는 아무것도 안 보여요. 배가 길을 찾을 수 없어요."],
+	["dugi", "별빛이 없으면 밤바다에서는 아무것도 안 보여. 배가 길을 찾을 수 없어."],
 	["puppy", "조각이 떨어지는 걸 봤어. 들판, 언덕, 놀이터, 연못… 섬 곳곳이야!"],
-	["dugi", "조각마다 숨은 곳이 달라요. 공을 던지고, 상자를 밀고, 통을 띄워 봐야 꺼낼 수 있어요."],
+	["dugi", "조각마다 숨은 곳이 달라. 공을 던지고, 상자를 밀고, 통을 띄워 봐야 꺼낼 수 있어."],
 	["puppy", "빵고양이, 같이 가자!"],
 	["cat", "좋아! 조각, 내가 다 찾아 줄게!"],   # (#132: the bread cat speaks)
 ]
-const FINALE := [["cat", "해냈다! 조각을 모두 찾았어!"], ["dugi", "조각을 다시 맞추면 별이 빛을 낼 수 있어요. 하늘로 돌려보내요."],
-	["dugi", "새총처럼 별을 아래로 당겼다가 놓아 봐요! 세게 당길수록 더 빨리, 더 높이 날아가요."]]
+const FINALE := [["cat", "해냈다! 조각을 모두 찾았어!"], ["dugi", "조각을 다시 맞추면 별이 빛을 낼 수 있어. 하늘로 돌려보내."],
+	["dugi", "새총처럼 별을 아래로 당겼다가 놓아 봐! 세게 당길수록 더 빨리, 더 높이 날아가."]]
 
 
 func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:
@@ -641,7 +641,7 @@ func _free(screen: Control) -> void:
 ## (emulate_mouse_from_touch). The dialogue box takes one step for it: the next page, not the next
 ## page already typed out (2026-10-28, SM-X115 prologue check).
 func check_one_tap() -> void:
-	var words := "퍼피랜드에는 섬이 많아요. 그중 하나가 우리 뉴턴섬이에요."
+	var words := "퍼피랜드에는 섬이 많아. 그중 하나가 우리 뉴턴섬이야."
 	for i in 16:
 		words += " 밤마다 길잡이 별이 바다를 비춰 줘. 배들이 길을 잃지 않게!"
 	var box := DialogueBox.new(words)

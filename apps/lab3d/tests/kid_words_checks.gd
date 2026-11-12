@@ -33,12 +33,51 @@ func run() -> void:
 	check_shown_number()
 	check_content_lint()
 	check_term_content()
+	check_banmal()
 	await check_term_box()
 	await check_free_fall_card()
 	await check_spring_card()
 	await check_push_bar()
 	for definition in ExperimentRegistry.load_all():
 		await check_note(definition)
+
+
+## Friends talk in 반말 (2026-11-12 user: "친구끼리 반말해야지", "다 반말로 바꿔"): every line a character
+## says in Korean (Dugi's intro, stage says, question, reason and bridge, the picture buttons and the
+## bread cat's guesses, the lab question, the story pages) ends without 해요체 (…요, …까요?, …세요).
+## The guardian's note (자세히) and the settings keep their polite words.
+func check_banmal() -> void:
+	var polite := RegEx.create_from_string("(요|세요)([.!?…,*\\s]|$)")
+	var found := []
+	var check := func(where: String, text: Variant) -> void:
+		if text is String and polite.search(text) != null:
+			found.append("%s: %s" % [where, text])
+	for d in ExperimentRegistry.load_all():
+		var id: String = d.id
+		check.call(id + " question", d.get("question"))
+		var kid: Dictionary = d.get("kid", {})
+		check.call(id + " kid.intro", kid.get("intro"))
+		check.call(id + " kid.say", kid.get("say"))
+		for more in kid.get("intro_more", []):
+			check.call(id + " kid.intro_more", more.get("text"))
+		for stage in MissionRound.missions(d).get("stages", []):
+			check.call(id + " stage say", stage.get("say"))
+		var predict := MissionRound.predict(d)
+		for key in ["question", "reason", "bridge"]:
+			check.call("%s predict.%s" % [id, key], predict.get(key))
+		for choice in predict.get("choices", []):
+			check.call(id + " choice", choice.get("label"))
+			check.call(id + " guess", choice.get("guess"))
+	for island in Island.ids():
+		var story: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://content/locale/ko/story/%s.json" % island))
+		if story is Dictionary:
+			for part in ["prologue", "finale", "finale_after", "voyage"]:
+				for page in story.get(part, []):
+					check.call("%s %s" % [island, part], page.get("text"))
+			for key in ["finale_retry", "finale_next", "map_wrong", "map_today"]:
+				check.call("%s %s" % [island, key], story.get(key))
+	expect.call(found.is_empty() and Locale.lang == "ko", "kid words: the characters talk in 반말 (no 해요체 in Dugi's lines, the question, the buttons, the guesses, the story)",
+		"; ".join(found.slice(0, 4)))
 
 
 func _open(id: String) -> Control:
@@ -289,9 +328,9 @@ func check_content_lint() -> void:
 		if want[id][0] != want[id][1]:
 			found.append("%s: '%s' (want '%s')" % [id, str(want[id][0]), str(want[id][1])])
 	var fall := ExperimentRegistry.find("free-fall")
-	if not (ExperimentRegistry.kid_text(fall, "say").contains("같은 높이에서 놓으면 같이 닿아요") and fall.predict.reason.contains("같은 높이에서 놓으면 같이 닿아요")
-			and fall.predict.choices[0].label == "같이 닿아요"):
-		found.append("free-fall: the law 같은 높이에서 놓으면 같이 닿아요 (choice kept short)")
+	if not (ExperimentRegistry.kid_text(fall, "say").contains("같은 높이에서 놓으면 같이 닿아") and fall.predict.reason.contains("같은 높이에서 놓으면 같이 닿아")
+			and fall.predict.choices[0].label == "같이 닿아"):
+		found.append("free-fall: the law 같은 높이에서 놓으면 같이 닿아 (choice kept short)")
 	# The collision's balls by weight in words: one word per weight, the same word = the same weight.
 	var words := {}
 	for presets in ConditionPicks.picks(ExperimentRegistry.find("collision")).values():

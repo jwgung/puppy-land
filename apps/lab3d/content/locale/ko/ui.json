@@ -101,9 +101,9 @@
   "islands.again": "다시 가기",
   "islands.back": "← 돌아가기",
   "islands.continue": "이어서 하기",
-  "islands.locked": "%s 조각을 다 모으면 열려요",
+  "islands.locked": "%s 조각을 다 모으면 열려",
   "islands.go": "출발!",
-  "islands.soon": "곧 만나요!",
+  "islands.soon": "곧 만나!",
   "islands.next": "다음 섬",
   "kid.units": {
     "": ["", ""],
