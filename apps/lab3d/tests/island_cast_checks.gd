@@ -32,7 +32,8 @@
 ##    "퍼피가 울타리 밖에 있어서 잘 안 보임").
 ## 7. physics unchanged, every listed experiment: engine bodies (every step) and panel texts are the
 ##    same with and without the cast while Dugi explains (from its own trigger, or made to explain
-##    at step 120 when the run reaches no result status in 420 steps).
+##    at step 120 when the run reaches no result status in 420 steps), both runs with the lab's
+##    missions done, so no stamp moves the round on (#130).
 extends RefCounted
 
 const EXPERIMENT_SCREEN := "res://scripts/shell/experiment_screen.gd"
@@ -791,6 +792,21 @@ static func _page_problems(box: DialogueBox, id: String, text: String) -> Array:
 
 # --- 7. physics unchanged ---------------------------------------------------------------------
 
+## The progress file's bytes (null when there is none), to put back with _restore_progress.
+func _saved_progress() -> Variant:
+	return FileAccess.get_file_as_bytes(ProgressStore.path) if FileAccess.file_exists(ProgressStore.path) else null
+
+
+func _restore_progress(saved: Variant) -> void:
+	if saved == null:
+		if FileAccess.file_exists(ProgressStore.path):
+			DirAccess.remove_absolute(ProgressStore.path)
+		return
+	var f := FileAccess.open(ProgressStore.path, FileAccess.WRITE)
+	f.store_buffer(saved)
+	f.close()
+
+
 func _record(id: String, with_cast: bool) -> Array:
 	var screen := await _open(id, TABLET, false, with_cast)
 	var lab: Experiment = screen.experiment
@@ -841,8 +857,19 @@ func check_sentence_lines() -> void:
 func check_physics_unchanged() -> void:
 	for definition in ExperimentRegistry.load_all():
 		var id: String = definition.id
+		# Both runs with this lab's missions already done (#130): a stamp would start the next stage,
+		# which resets the lab, and without the cast that comes NEXT_WAIT_MIN_S after the stamp while
+		# with the cast it waits for Dugi's words (ExperimentScreen._run_next_wait, by design). That is
+		# the screen's flow, not physics: spring's run earned stage 1's stamp and the run without the
+		# cast reset at step 216. Before, the runs used whatever progress the earlier checks left.
+		var saved: Variant = _saved_progress()
+		var done := ProgressStore.load()
+		done[id] = (MissionRound.missions(definition).get("stages", []) as Array).size()
+		ProgressStore.save(done)
 		var without: Array = await _record(id, false)
+		ProgressStore.save(done)
 		var with_cast: Array = await _record(id, true)
+		_restore_progress(saved)
 		var same: bool = without[0] == with_cast[0]
 		var first := -1
 		if not same:
