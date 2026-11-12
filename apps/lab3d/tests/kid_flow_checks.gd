@@ -134,6 +134,7 @@ func check_question_nudge() -> void:
 			break
 	var picked_none: bool = r.asking() and r.pick == ""
 	screen._predict_pick_choice(str(MissionRound.predict(screen.definition.raw).get("answer", "")))
+	await _read_cat_guess(screen)   # (#132: the bread cat says the pick first)
 	await _frames(2)
 	var back: bool = not screen._nudging and screen.hand_guide.get_index() < screen._tip.get_index() + 3
 	expect.call(tapped and on_button and over and waited > 0 and picked_none and back,
@@ -146,6 +147,7 @@ func check_box_tap_on_view() -> void:
 	var screen := await _open("spring")
 	var box: DialogueBox = screen.dialogue
 	screen._predict_pick_choice(str(MissionRound.predict(screen.definition.raw).get("answer", "")))
+	await _read_cat_guess(screen)   # (#132: the bread cat says the pick first)
 	for i in 60:
 		await tree.process_frame
 		if box.active and box.visible:
@@ -454,3 +456,19 @@ func check_bubble_tail() -> void:
 		await _close(screen)
 	expect.call(problems.is_empty(), "kid flow: Puppy's bubble tail leaves the edge facing him (above, beside, below) and the bubble stays off him, every game lab",
 		"; ".join(problems) + " sides used %s" % str(sides.keys()))
+
+
+## The bread cat says the child's pick first (#132): wait for his box and read it (close), so Dugi's
+## bridge comes next. Returns [speaker, text, face] of the box it closed ([] when none came).
+func _read_cat_guess(screen: Control) -> Array:
+	for i in 30:
+		await tree.process_frame
+		if not screen.cat_guess_pending():
+			return []
+		var box: DialogueBox = screen.dialogue
+		if box.active and box.speaker == "cat":
+			var seen := [box.speaker, box.text, box.face]
+			box.close()
+			await tree.process_frame
+			return seen
+	return []

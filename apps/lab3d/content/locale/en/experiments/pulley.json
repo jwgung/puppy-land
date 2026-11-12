@@ -34,8 +34,8 @@
   "predict": {
     "question": "Lifting the heavy chest with one rope, does it take a lot of force?",
     "choices": [
-      { "label": "A lot" },
-      { "label": "A little" }
+      { "label": "A lot", "guess": "I think it'll take a lot of force!" },
+      { "label": "A little", "guess": "I think it'll take a little force!" }
     ],
     "reason": "With one rope, your hand holds the chest's whole weight. So it takes a lot of force.",
     "bridge": "Pull it and see for yourself!"

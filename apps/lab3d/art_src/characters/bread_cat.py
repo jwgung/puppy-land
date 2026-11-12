@@ -221,7 +221,10 @@ def paint_volume(img, qx, qz, front, hw, hh, muzzle_c, muzzle_r, glow, warm, amo
     blend(img, np.exp(-dm * 1.8) * front, glow, 0.55 * amount)
 
 
-def paint_head(P, mouth, eyes="dot"):
+def paint_head(P, mouth, eyes="dot", face=None):
+    """The head; `face` (face_kit, #132: the bread cat's dialogue portraits) repaints the eyes, brows,
+    blush and mouth for an expression. Without it the head is exactly the in-game model's."""
+    face = face or {}
     u, v = region_grid(R_HEAD)
     lon = (u - 0.5) * 2 * math.pi
     lat = (v - 0.5) * math.pi
@@ -268,10 +271,18 @@ def paint_head(P, mouth, eyes="dot"):
                  hexc("#fffbf2"), (0.95, 0.84, 0.78))
     # blush
     for s in (-1, 1):
-        sdf = sd_ellipse(qx, qz, s * 0.150, -0.060, 0.045, 0.026)
-        blend(img, smooth_fill(sdf, 0.02) * front, hexc(P["blush"]), 0.75)
+        bk = float(face.get("blush", 1.0))
+        sdf = sd_ellipse(qx, qz, s * 0.150, -0.060, 0.045 * (0.85 + 0.15 * bk), 0.026 * (0.85 + 0.15 * bk))
+        blend(img, smooth_fill(sdf, 0.02) * front, hexc(P["blush"]), min(1.0, 0.75 * bk))
     # eyes: big glossy, a touch taller than wide, warm lower gradient
-    for s in (-1, 1):
+    if face.get("eyes", "dot") != "dot":
+        import face_kit as fk   # (here: face_kit imports this module)
+        fk.eyes(img, qx, qz, front, aa, 0.092, -0.008, 0.022, 0.026, face["eyes"], hexc(P["eye"]))
+        eyes = None
+    if face.get("brows"):
+        import face_kit as fk
+        fk.brows(img, qx, qz, front, aa, 0.092, 0.042, face["brows"], hexc(P["stripe"]), length=0.030)
+    for s in (-1, 1) if eyes is not None else ():
         if eyes == "dot":  # default (2026-10-23 user decision): small simple storybook eyes, one dot
             ex, ez = s * 0.092, -0.008
             blend(img, smooth_fill(sd_ellipse(qx, qz, ex, ez, 0.022, 0.026), aa) * front, hexc(P["eye"]))
@@ -293,7 +304,11 @@ def paint_head(P, mouth, eyes="dot"):
     # mouth
     mcol = hexc(P["mouth"])
     stroke = 0.0042
-    if mouth == "omega":
+    if mouth not in ("omega", "smile", "calm"):   # a portrait expression's mouth (face_kit)
+        import face_kit as fk
+        philtrum = sd_segment(qx, qz, 0.0, nz - 0.012, 0.0, nz - 0.019) - stroke * 0.8
+        fk.mouth(img, qx, qz, front, aa, nz - 0.019, mouth, mcol, hexc(P["pink"]), philtrum, 0.62, stroke)
+    elif mouth == "omega":
         r = 0.0165
         sdf = sd_segment(qx, qz, 0.0, nz - 0.012, 0.0, nz - 0.021) - stroke * 0.8
         for s in (-1, 1):
@@ -412,9 +427,9 @@ def paint_bag_front(P):
     return img
 
 
-def build_atlas(P, mouth, eyes="dot"):
+def build_atlas(P, mouth, eyes="dot", face=None):
     canvas = np.zeros((TEX, TEX, 3))
-    for rect, fn in ((R_HEAD, lambda: paint_head(P, mouth, eyes)), (R_BODY, lambda: paint_body(P)),
+    for rect, fn in ((R_HEAD, lambda: paint_head(P, mouth, eyes, face)), (R_BODY, lambda: paint_body(P)),
                      (R_ARM, lambda: paint_arm(P)), (R_TAIL, lambda: paint_tail(P)),
                      (R_BAGU, lambda: paint_baguette(P)), (R_BAGF, lambda: paint_bag_front(P))):
         x0, y0, x1, y1 = rect
@@ -845,9 +860,9 @@ def empty(name, loc_world, parent, parent_pivot, size=0.03):
     return ob
 
 
-def build(mouth="omega", palette="cheese", eyes="dot"):
+def build(mouth="omega", palette="cheese", eyes="dot", face=None):
     P = PALETTES[palette]
-    img = build_atlas(P, mouth, eyes)
+    img = build_atlas(P, mouth, eyes, face)
     mat = make_material(img)
     origin = Vector((0, 0, 0))
     root = empty("BreadCat", origin, None, origin, 0.2)

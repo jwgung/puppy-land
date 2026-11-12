@@ -147,6 +147,7 @@ func check_lab_card(size: Vector2) -> void:
 		await tree.process_frame
 	var box: DialogueBox = screen.dialogue
 	screen._predict_pick_choice(str(MissionRound.predict(screen.definition.raw).get("answer", "")))
+	await _read_cat_guess(screen)   # (#132: the bread cat says the pick first)
 	for i in 90:
 		await tree.process_frame
 		if box.active and box.visible:
@@ -290,3 +291,19 @@ func _tap(at: Vector2) -> void:
 	lift.position = at
 	tree.root.push_input(lift)
 	await tree.process_frame
+
+
+## The bread cat says the child's pick first (#132): wait for his box and read it (close), so Dugi's
+## bridge comes next. Returns [speaker, text, face] of the box it closed ([] when none came).
+func _read_cat_guess(screen: Control) -> Array:
+	for i in 30:
+		await tree.process_frame
+		if not screen.cat_guess_pending():
+			return []
+		var box: DialogueBox = screen.dialogue
+		if box.active and box.speaker == "cat":
+			var seen := [box.speaker, box.text, box.face]
+			box.close()
+			await tree.process_frame
+			return seen
+	return []

@@ -35,8 +35,8 @@
   "predict": {
     "question": "If you pull the ball and let go, how far will it go to the other side?",
     "choices": [
-      { "label": "As far as I pulled" },
-      { "label": "Only a little" }
+      { "label": "As far as I pulled", "guess": "I think it'll go as far as I pulled!" },
+      { "label": "Only a little", "guess": "I think it'll go only a little!" }
     ],
     "reason": "The spring pulls the ball back as much as you pulled it. So the ball goes as far to the other side as you pulled.",
     "bridge": "Pull it, let go and see for yourself!"

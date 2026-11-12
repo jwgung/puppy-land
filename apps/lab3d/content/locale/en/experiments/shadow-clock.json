@@ -32,7 +32,7 @@
   "actions": [{ "label": "Start over" }],
   "predict": {
     "question": "When the sun is high, what happens to the shadow?",
-    "choices": [{ "label": "It gets shorter" }, { "label": "It gets longer" }],
+    "choices": [{ "label": "It gets shorter", "guess": "I think it'll get shorter!" }, { "label": "It gets longer", "guess": "I think it'll get longer!" }],
     "reason": "A high sun shines from above. So the shadow gets shorter.",
     "bridge": "Move the sun and see for yourself!"
   },

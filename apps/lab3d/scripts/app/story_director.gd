@@ -584,6 +584,8 @@ func _prologue_page(i: int) -> void:
 				SoundBoard.play(&"hop"))
 			_beat(2.1, func() -> void: home.cat.cheer(true, 2))
 			_beat(2.0, _fade_pieces)
+		8:   # the bread cat answers (#132: "좋아! 조각, 내가 다 찾아 줄게!") and cheers on the square
+			_beat(0.3, func() -> void: home.cat.cheer(true, 2))
 
 
 ## The words of the page closed (a tap past it, or its read timer): the next page, or the end.

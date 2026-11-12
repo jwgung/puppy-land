@@ -841,7 +841,7 @@ func _record(id: String, with_cast: bool) -> Array:
 ## joined back are the words exactly; "…" in a sentence does not break it.
 func check_sentence_lines() -> void:
 	var font: Font = load(UI_THEME).build().default_font
-	var words := "조각을 다시 맞추면 별이 빛을 낼 수 있어요. 하늘로 돌려보내요! 들판, 언덕… 섬 곳곳이야?"
+	var words := "조각을 다시 맞추면 별이 빛을 낼 수 있어. 하늘로 돌려보내! 들판, 언덕… 섬 곳곳이야?"
 	var pages := DialogueBox.paginate(words, font, 28, 1200.0)
 	var lines: Array = []
 	var joined := ""
@@ -849,7 +849,7 @@ func check_sentence_lines() -> void:
 		lines.append_array(pg.lines)
 		for j in pg.lines.size():
 			joined += pg.lines[j] + pg.seps[j]
-	var ok := lines == ["조각을 다시 맞추면 별이 빛을 낼 수 있어요.", "하늘로 돌려보내요!", "들판, 언덕… 섬 곳곳이야?"] \
+	var ok := lines == ["조각을 다시 맞추면 별이 빛을 낼 수 있어.", "하늘로 돌려보내!", "들판, 언덕… 섬 곳곳이야?"] \
 		and pages.size() == 2 and joined == words
 	expect.call(ok, "dialogue: each sentence starts its own line (two short ones share a page), the pages join back to the words", str(lines))
 

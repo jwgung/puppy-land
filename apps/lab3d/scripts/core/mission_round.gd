@@ -531,7 +531,8 @@ static func _validate_conditions(conditions: Variant, controls: Array, i: int) -
 
 
 ## `predict` (Plan G4, optional): Dugi's question before the run —
-## {"question": <text>, "choices": [{"id", "label", "picture": <PredictPictures kind>} x 2],
+## {"question": <text>, "choices": [{"id", "label", "picture": <PredictPictures kind>,
+##              "guess": <the bread cat's line when the child picks it, 반말 (#132)>} x 2],
 ##  "answer": <a choice id>, "reason": <text>, "bridge"?: <Dugi's line from the answer to the mission>,
 ##  "stage"?: <the stage index whose result answers it, 0 by default: the reason comes after it>,
 ##  "question_face"?, "bridge_face"?: <Story.FACES>,
@@ -566,6 +567,8 @@ static func _validate_predict(predict: Variant, stage_count := ProgressStore.MAX
 		if not (choice is Dictionary and choice.get("id") is String and choice.get("label") is String and choice.label != ""):
 			problems.append("predict choice needs id and label")
 			continue
+		if not (choice.get("guess") is String and choice.guess != ""):
+			problems.append("predict choice %s: guess (the bread cat's line, #132) must be a text" % choice.id)
 		if choice.get("picture") not in PredictPictures.KINDS:
 			problems.append("predict choice %s: picture must be one of PredictPictures.KINDS" % choice.id)
 		ids.append(choice.id)

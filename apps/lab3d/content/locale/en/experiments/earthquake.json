@@ -26,7 +26,7 @@
   "actions": [{ "label": "Start over" }],
   "predict": {
     "question": "Rock ground or sand ground: which one shakes more?",
-    "choices": [{ "label": "Rock ground" }, { "label": "Sand ground" }],
+    "choices": [{ "label": "Rock ground", "guess": "I think the rock ground shakes more!" }, { "label": "Sand ground", "guess": "I think the sand ground shakes more!" }],
     "reason": "Sand ground is soft and wobbly. So the same earthquake shakes it more.",
     "bridge": "Shake it and see for yourself!"
   },

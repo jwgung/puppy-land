@@ -30,17 +30,18 @@ const CLUES := {
 	"orbit": "조각 하나가 저 멀리 우주에 떠 있어! 행성을 쏴서 데려오자!",
 }
 const PROLOGUE := [
-	["dugi", "여기는 바다 위 나라, 퍼피랜드예요."],
-	["dugi", "퍼피랜드에는 섬이 많아요. 그중 하나가 우리 뉴턴섬이에요."],
+	["dugi", "여기는 바다 위 나라, 퍼피랜드야."],
+	["dugi", "퍼피랜드에는 섬이 많아. 그중 하나가 우리 뉴턴섬이야."],
 	["puppy", "밤마다 길잡이 별이 바다를 비춰 줘. 배들이 길을 잃지 않게!"],
 	["puppy", "어? 길잡이 별이 깨졌어!"],
-	["dugi", "별빛이 없으면 밤바다에서는 아무것도 안 보여요. 배가 길을 찾을 수 없어요."],
+	["dugi", "별빛이 없으면 밤바다에서는 아무것도 안 보여. 배가 길을 찾을 수 없어."],
 	["puppy", "조각이 떨어지는 걸 봤어. 들판, 언덕, 놀이터, 연못… 섬 곳곳이야!"],
-	["dugi", "조각마다 숨은 곳이 달라요. 공을 던지고, 상자를 밀고, 통을 띄워 봐야 꺼낼 수 있어요."],
+	["dugi", "조각마다 숨은 곳이 달라. 공을 던지고, 상자를 밀고, 통을 띄워 봐야 꺼낼 수 있어."],
 	["puppy", "빵고양이, 같이 가자!"],
+	["cat", "좋아! 조각, 내가 다 찾아 줄게!"],   # (#132: the bread cat speaks)
 ]
-const FINALE := [["puppy", "조각을 모두 찾았어!"], ["dugi", "조각을 다시 맞추면 별이 빛을 낼 수 있어요. 하늘로 돌려보내요."],
-	["dugi", "새총처럼 별을 아래로 당겼다가 놓아 봐요! 세게 당길수록 더 빨리, 더 높이 날아가요."]]
+const FINALE := [["cat", "해냈다! 조각을 모두 찾았어!"], ["dugi", "조각을 다시 맞추면 별이 빛을 낼 수 있어. 하늘로 돌려보내."],
+	["dugi", "새총처럼 별을 아래로 당겼다가 놓아 봐! 세게 당길수록 더 빨리, 더 높이 날아가."]]
 
 
 func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:
@@ -78,7 +79,7 @@ func check_content() -> void:
 	var finale := Story.pages("finale").map(func(p: Dictionary) -> Array: return [p.who, p.text])
 	expect.call(wrong.is_empty() and Story.spots().size() == 11 and CLUES.keys().all(func(id: String) -> bool: return id in Story.spots()),
 		"story: every one of the 11 spots has Puppy's clue, word for word", str(wrong))
-	expect.call(str(pages) == str(PROLOGUE) and str(finale) == str(FINALE), "story: the prologue (8 pages) and the finale words, speakers and order",
+	expect.call(str(pages) == str(PROLOGUE) and str(finale) == str(FINALE), "story: the prologue (9 pages) and the finale words, speakers and order",
 		str(pages.size()))
 
 
@@ -108,7 +109,7 @@ func check_old_files() -> void:
 	DirAccess.remove_absolute(ProgressStore.path)
 
 
-## The prologue: 8 pages with their speakers, the camera from the far sea in to the island, up to the
+## The prologue: 9 pages with their speakers, the camera from the far sea in to the island, up to the
 ## star, the night and the darker night, the 11 pieces at the spots, the cat on the square, then the
 ## day, a clean map and the child's camera exactly, which the child can turn again.
 func check_prologue() -> void:
@@ -151,7 +152,7 @@ func check_prologue() -> void:
 				and story._star != null and story.sea.lanterns.all(func(l: Node3D) -> bool: return l.visible),
 				"prologue: page 3 brings the night (tint, a darker sea) and the guiding star; the boats' lanterns show", "night %.2f" % story.night)
 		_tap_through(story.dialogue)
-	expect.call(str(speakers) == str(PROLOGUE), "prologue: the 8 pages in order with their speakers' portraits (Dugi / Puppy)", str(speakers))
+	expect.call(str(speakers) == str(PROLOGUE), "prologue: the 9 pages in order with their speakers' portraits (Dugi / Puppy / the bread cat)", str(speakers))
 	expect.call(max_pitch > 15.0 and min_dist < 10.0 and eye_moves > 400 and max_night > 1.9,
 		"prologue: the camera moves on every page (tilts up to the star, comes close to the square) and the night darkens after the break",
 		"pitch %.0f dist %.1f moves %d night %.2f" % [max_pitch, min_dist, eye_moves, max_night])
@@ -416,7 +417,7 @@ func check_finale() -> void:
 		if story._star != null:
 			rose = maxf(rose, story._star.position.y)
 		sparkled = sparkled or story._sparkles.size() > 10
-	expect.call(gathered and str(words) == str(FINALE), "finale: the pieces gather into the star, then Puppy and Dugi speak", str(words))
+	expect.call(gathered and str(words) == str(FINALE), "finale: the pieces gather into the star, then the bread cat and Dugi speak", str(words))
 	expect.call(lifted and waits and no_throw and came_back and story.launches == 2,
 		"finale: the cat lifts the star and it waits for the child's pull (the paw shows it; a tap or an upward pull throws nothing); a weak pull rises to y0 + v^2 / 2g and comes back down, Dugi says pull harder",
 		"lifted %s, waits %s, no throw %s, back %s (top %.2f, want %.2f), launches %d" % [lifted, waits, no_throw, came_back, weak_top, want_top, story.launches])
@@ -640,7 +641,7 @@ func _free(screen: Control) -> void:
 ## (emulate_mouse_from_touch). The dialogue box takes one step for it: the next page, not the next
 ## page already typed out (2026-10-28, SM-X115 prologue check).
 func check_one_tap() -> void:
-	var words := "퍼피랜드에는 섬이 많아요. 그중 하나가 우리 뉴턴섬이에요."
+	var words := "퍼피랜드에는 섬이 많아. 그중 하나가 우리 뉴턴섬이야."
 	for i in 16:
 		words += " 밤마다 길잡이 별이 바다를 비춰 줘. 배들이 길을 잃지 않게!"
 	var box := DialogueBox.new(words)

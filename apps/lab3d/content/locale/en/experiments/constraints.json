@@ -43,8 +43,8 @@
   "predict": {
     "question": "Does a longer rope swing more slowly?",
     "choices": [
-      { "label": "More slowly" },
-      { "label": "The same" }
+      { "label": "More slowly", "guess": "I think it'll swing more slowly!" },
+      { "label": "The same", "guess": "I think it'll swing the same!" }
     ],
     "reason": "With a longer rope, the pendulum goes around a longer path. So one swing there and back takes longer.",
     "bridge": "First swing the medium rope and watch the beat!"

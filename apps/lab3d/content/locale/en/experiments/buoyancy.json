@@ -34,8 +34,8 @@
   "predict": {
     "question": "If Bread Cat rides the small barrel, will it float?",
     "choices": [
-      { "label": "It floats" },
-      { "label": "It sinks" }
+      { "label": "It floats", "guess": "I think it'll float!" },
+      { "label": "It sinks", "guess": "I think it'll sink!" }
     ],
     "reason": "Bread Cat and the load are heavy, so the weight is bigger than the buoyancy. So the small barrel sinks.",
     "bridge": "First float the empty barrel!"

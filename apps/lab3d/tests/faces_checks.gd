@@ -199,7 +199,7 @@ func check_story_faces() -> void:
 			if not story.dialogue.active or story.dialogue.text != words:
 				break
 			story.dialogue.advance()
-	expect.call(str(shown) == str(want), "faces: the prologue's 8 pages show their speakers' tagged faces", str(shown))
+	expect.call(str(shown) == str(want), "faces: the prologue's pages show their speakers' tagged faces", str(shown))
 	host.queue_free()
 	await tree.process_frame
 	# Puppy's riddle and his not-here line on the night map.
@@ -252,6 +252,7 @@ func check_lab_faces() -> void:
 			if str(choice.id) != answer:
 				other = str(choice.id)
 		screen._predict_pick_choice(answer if pick == "right" else other)
+		await _read_cat_guess(screen)   # (#132: the bread cat says the pick first)
 		screen.mission_round.reveal()
 		# 2026-10-29: Dugi's bridge to the first mission first (its face), the reason only after the first
 		# attempt's result line (here a miss), then at once.
@@ -362,3 +363,19 @@ func _free(screen: Control) -> void:
 	screen.get_parent().queue_free()
 	for i in 3:
 		await tree.process_frame
+
+
+## The bread cat says the child's pick first (#132): wait for his box and read it (close), so Dugi's
+## bridge comes next. Returns [speaker, text, face] of the box it closed ([] when none came).
+func _read_cat_guess(screen: Control) -> Array:
+	for i in 30:
+		await tree.process_frame
+		if not screen.cat_guess_pending():
+			return []
+		var box: DialogueBox = screen.dialogue
+		if box.active and box.speaker == "cat":
+			var seen := [box.speaker, box.text, box.face]
+			box.close()
+			await tree.process_frame
+			return seen
+	return []

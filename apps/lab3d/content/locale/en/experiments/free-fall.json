@@ -39,8 +39,8 @@
   "predict": {
     "question": "Will the heavy ball land first?",
     "choices": [
-      { "label": "They land together" },
-      { "label": "The heavy ball first" }
+      { "label": "They land together", "guess": "I think they'll land together!" },
+      { "label": "The heavy ball first", "guess": "I think the heavy ball lands first!" }
     ],
     "reason": "Heavy and light balls speed up at the same rate. So dropped from the same height, they land together.",
     "bridge": "Drop them and see for yourself!"

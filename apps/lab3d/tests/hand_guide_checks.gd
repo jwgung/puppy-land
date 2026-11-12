@@ -177,6 +177,7 @@ func check_lab(id: String) -> void:
 	# The child answers with a picture button; Dugi's bridge box opens and waits for a tap that a child
 	# who cannot read may never make: the hand comes anyway.
 	screen._predict_pick_choice(str(MissionRound.predict(screen.definition.raw).get("answer", "")))
+	await _read_cat_guess(screen)   # (#132: the bread cat says the pick first)
 	var lab: Experiment = screen.experiment
 	var bodies := _bodies(lab)
 	var status := lab.status()
@@ -241,6 +242,7 @@ func check_once_and_idle() -> void:
 	ProgressStore.set_mark(ProgressStore.GUIDES, "spring", true)
 	var screen := await _open("spring")
 	screen._predict_pick_choice(str(MissionRound.predict(screen.definition.raw).get("answer", "")))
+	await _read_cat_guess(screen)   # (#132: the bread cat says the pick first)
 	var guide: HandGuide = screen.hand_guide
 	await _seconds(GuideCoach.FIRST_DELAY_S + 0.3)
 	var no_first := not guide.playing() and guide.plays == 0
@@ -330,6 +332,7 @@ func check_picks_after_miss() -> void:
 	screen = await _open("free-fall")
 	guide = screen.hand_guide
 	screen._predict_pick_choice(str(MissionRound.predict(screen.definition.raw).get("answer", "")))
+	await _read_cat_guess(screen)   # (#132: the bread cat says the pick first)
 	await _seconds(0.3)
 	screen._set_control("gravity", "moon")
 	await _frames(3)
@@ -444,3 +447,19 @@ func check_map_walk() -> void:
 	await _frames(3)
 	expect.call(none and kept_free, "hand guide (map): a riddle closed by walking to a spot shows no hand and keeps the once",
 		"none %s kept free %s" % [none, kept_free])
+
+
+## The bread cat says the child's pick first (#132): wait for his box and read it (close), so Dugi's
+## bridge comes next. Returns [speaker, text, face] of the box it closed ([] when none came).
+func _read_cat_guess(screen: Control) -> Array:
+	for i in 30:
+		await tree.process_frame
+		if not screen.cat_guess_pending():
+			return []
+		var box: DialogueBox = screen.dialogue
+		if box.active and box.speaker == "cat":
+			var seen := [box.speaker, box.text, box.face]
+			box.close()
+			await tree.process_frame
+			return seen
+	return []

@@ -155,6 +155,11 @@ var _stamps_landed := 0
 var _confetti: Confetti = null
 var _done_card: RoundDoneCard = null
 var _next_due := false                # a stage was won and nothing was done since (its stamp may still fly)
+## The bread cat says the child's pick (#132, 2026-11-12 user: "우리가 고르면 빵고양이가 말하는거로 하자"):
+## his line waiting for the box ("" when none), and whether it is open; Dugi's bridge comes after it.
+var _cat_guess := ""
+var _cat_guess_open := false
+const CAT_GUESS_FACE := "thinking"
 var _next_wait := -1.0                # >= 0: a stage was won, the next one comes once Dugi is done (_run_next_wait)
 var next_goes := 0                     # times the round went on to the next stage by itself (tests)
 var _play_open := false                # what the lab was last told (_sync_play_open)
@@ -434,6 +439,8 @@ func _run_dialogue() -> void:
 	if _asking():
 		_run_question()
 		return
+	if _run_cat_guess():
+		return
 	var dugi := cast.dugi
 	if dialogue.active:
 		if not dugi.speaking() or is_sidebar_open():
@@ -458,6 +465,39 @@ func _run_dialogue() -> void:
 		dialogue.visible = true
 	elif not dugi.speaking():
 		_dialogue_started = false
+
+
+## The bread cat's line after the pick (#132): one page in the dialogue box with his portrait, opened
+## as soon as there is room (not over the sidebar); once it is read (a tap, back, the sidebar opening,
+## the child taking hold of the lab)
+## the box is Dugi's again and his bridge starts (_start_bridge). True while it is pending or open.
+func _run_cat_guess() -> bool:
+	if _cat_guess == "":
+		return false
+	if not _cat_guess_open:
+		if is_sidebar_open() or dialogue.active or not _layout_dialogue():
+			return true
+		dialogue.set_speaker("cat", CAT_GUESS_FACE)
+		dialogue.hold = false
+		dialogue.open(_cat_guess, CAT_GUESS_FACE)
+		dialogue.visible = true
+		_cat_guess_open = true
+		return true
+	if dialogue.active and not is_sidebar_open() and (manipulator == null or manipulator.mode == ""):
+		dialogue.visible = _layout_dialogue()
+		return true
+	if dialogue.active:   # the sidebar opened, or the child took hold of the lab: his box goes, like Dugi's
+		dialogue.close(true)
+	dialogue.set_speaker("dugi")
+	_cat_guess = ""
+	_cat_guess_open = false
+	_start_bridge()
+	return true
+
+
+## The bread cat's line after the pick is waiting or open (tests).
+func cat_guess_pending() -> bool:
+	return _cat_guess != ""
 
 
 ## Dugi's question (Plan G4), after Puppy's clue on the spot's first visit and Dugi's introduction of the
@@ -1107,7 +1147,15 @@ func _predict_pick_choice(choice_id: String) -> void:
 	if _mission_text != null and picked != "":
 		_mission_text.text = Locale.t("screen.pick_prefix") + picked
 		_fit_mission_strip()
-	_start_bridge()
+	var guess := ""
+	for choice in MissionRound.predict(definition.raw).get("choices", []):
+		if str(choice.get("id")) == choice_id:
+			guess = str(choice.get("guess", ""))
+	if guess != "" and dialogue != null and cast != null and cast.dugi != null:
+		_cat_guess = guess   # the cat says it first (predict.choices[i].guess, 반말), then Dugi's bridge
+		_cat_guess_open = false
+	else:
+		_start_bridge()
 
 
 ## After the answer (2026-10-29 user: "예측 → 첫 미션 연결"): Dugi says the round's bridge line in his box
@@ -1470,7 +1518,7 @@ func _run_mission_reveal() -> void:
 ## touch stopped him, the box had no room): once he is at rest, no box or sidebar is open and no
 ## finger holds the lab, he starts over and tells it.
 func _retell_mission() -> void:
-	if cast == null or cast.dugi == null or cast.dugi.speaking() or _reason_waits:
+	if cast == null or cast.dugi == null or cast.dugi.speaking() or _reason_waits or _cat_guess != "":
 		return
 	if (dialogue != null and dialogue.active) or is_sidebar_open() or (manipulator != null and manipulator.mode != ""):
 		return
