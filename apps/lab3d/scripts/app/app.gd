@@ -73,6 +73,7 @@ func _ready() -> void:
 	_definitions = ExperimentRegistry.load_all()
 	Island.set_dev_open(Quality.dev_value("islands") == "open")   # a developer switch: never in the Play build
 	add_child(IslandStore.make())   # #77: the islands bought (Play's billing, --store=, or none)
+	add_child(CloudSync.make())     # #103: 기기 사이 기록 맞추기 (off until a guardian turns it on)
 	var dev_island := dev_island_of(Quality.all_args(), OS.has_feature("play"))
 	if dev_island != "":
 		Island.use_for_run(dev_island)
