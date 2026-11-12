@@ -468,7 +468,8 @@ func _run_dialogue() -> void:
 
 
 ## The bread cat's line after the pick (#132): one page in the dialogue box with his portrait, opened
-## as soon as there is room (not over the sidebar); once it is read (a tap, back, the sidebar opening)
+## as soon as there is room (not over the sidebar); once it is read (a tap, back, the sidebar opening,
+## the child taking hold of the lab)
 ## the box is Dugi's again and his bridge starts (_start_bridge). True while it is pending or open.
 func _run_cat_guess() -> bool:
 	if _cat_guess == "":
@@ -482,10 +483,10 @@ func _run_cat_guess() -> bool:
 		dialogue.visible = true
 		_cat_guess_open = true
 		return true
-	if dialogue.active and not is_sidebar_open():
+	if dialogue.active and not is_sidebar_open() and (manipulator == null or manipulator.mode == ""):
 		dialogue.visible = _layout_dialogue()
 		return true
-	if dialogue.active:
+	if dialogue.active:   # the sidebar opened, or the child took hold of the lab: his box goes, like Dugi's
 		dialogue.close(true)
 	dialogue.set_speaker("dugi")
 	_cat_guess = ""
