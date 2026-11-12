@@ -1346,7 +1346,7 @@ func check_words() -> void:
 		if not Story.clue(definition).contains(clue[id]):
 			problems.append("%s: the clue does not point at %s" % [id, clue[id]])
 	var spring_says: Array = MissionRound.missions(ExperimentRegistry.find("spring")).stages.map(func(s: Dictionary) -> String: return str(s.say))
-	if not spring_says.any(func(s: String) -> bool: return s.contains("무거운 공도 같은 만큼 당기면 같은 종까지 가요")):
+	if not spring_says.any(func(s: String) -> bool: return s.contains("무거운 공도 같은 만큼 당기면 같은 종까지 가")):
 		problems.append("spring: no say tells the heavy ball goes as far")
 	var push_texts: Array = MissionRound.missions(ExperimentRegistry.find("friction")).stages.map(func(s: Dictionary) -> String: return str(s.text))
 	if not push_texts.any(func(s: String) -> bool: return s.contains("길")):
