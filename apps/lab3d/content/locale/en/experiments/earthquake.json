@@ -82,6 +82,8 @@
   },
   "note": {
     "law": "A shake starts in one place and spreads out all around. Soft ground shakes more, and a house with a brace stands well.",
+    "learn": "Shaking starts in one place and spreads out every way. Soft sandy ground shakes more than rock, and a house with braces holds up well.",
+    "talk": ["Why do we get under a desk in an earthquake?", "A block on jelly and a block on a table: which shakes more?"],
     "formula": "soft ground = bigger shake",
     "numbers": [{ "label": "Block house" }, { "label": "Shake" }, { "label": "Ground" }]
   },

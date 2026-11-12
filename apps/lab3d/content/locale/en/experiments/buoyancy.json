@@ -96,6 +96,8 @@
   },
   "note": {
     "law": "Water pushes the barrel up as much as the volume under water. It floats when the buoyancy equals the weight.",
+    "learn": "Water pushes up on what sinks into it, the more the deeper (buoyancy). Something floats when that push equals its weight; a big drum that pushes a lot of water aside floats even with a load.",
+    "talk": ["Why doesn't a big steel ship sink?", "Why do you float more easily with a swim ring?"],
     "formula": "F_buoyancy = ρ_water g V_under",
     "numbers": [
       { "label": "Barrel's weight mg" },

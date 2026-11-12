@@ -386,8 +386,9 @@ func check_push_bar() -> void:
 # --- the science note -----------------------------------------------------------------------------
 
 ## The note for a guardian (2026-11-11 user, plan A): 조건 바꾸기 (when the lab has conditions), 이번 실험
-## 숫자 (3-4 rows with every number in its unit), 그래프 where the note keeps it, 법칙 (one sentence, one
-## formula), 실험하는 방법, 낱말 풀이 (when it has terms), then 더 보기 (closed): every other observation,
+## 숫자 (3-4 rows with every number in its unit), 그래프 where the note keeps it, 이 실험에서 배우는 것 (#126,
+## note.learn), 법칙 (one sentence, one formula), 실험하는 방법, 낱말 풀이 (when it has terms), 아이와 이야기해
+## 보기 (two questions, note.talk), then 더 보기 (closed): every other observation,
 ## the graph otherwise, the deeper concept. Every observation has its one label with the note's text
 ## (note_value: "실험하면 나와요" before a value, "실험이 끝나면 보여요" while a mission hides it).
 func check_note(definition: Dictionary) -> void:
@@ -407,9 +408,19 @@ func check_note(definition: Dictionary) -> void:
 				order.append(id)
 	var parsed := ExperimentDefinition.new(definition)
 	var want := (["conditions"] if not parsed.controls().is_empty() else []) + ["numbers"] + (["graph"] if note.graph else []) \
-		+ ["law", "guide"] + (["terms"] if not parsed.terms().is_empty() else []) + ["more"] + (["ask"] if ScienceNote.enabled else ["copy"])
+		+ ["learn", "law", "guide"] + (["terms"] if not parsed.terms().is_empty() else []) + ["talk", "more"] + (["ask"] if ScienceNote.enabled else ["copy"])
 	if order != want:
 		problems.append("order %s (want %s)" % [str(order), str(want)])
+	# 이 실험에서 배우는 것 and 아이와 이야기해 보기 (#126): the note's words as they are.
+	var texts := func(id: String) -> Array:
+		return screen._sections[id].find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text)
+	var learn_texts: Array = texts.call("learn")
+	if not (learn_texts.has("이 실험에서 배우는 것") and learn_texts.has(note.learn)):
+		problems.append("learn %s" % str(learn_texts))
+	var talk_texts: Array = texts.call("talk")
+	var talk_want: Array = ["아이와 이야기해 보기"] + (note.talk as Array).map(func(q: String) -> String: return "• " + q)
+	if talk_texts != talk_want or (note.talk as Array).size() != 2:
+		problems.append("talk %s" % str(talk_texts))
 	var law_texts: Array = screen._sections.law.find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text)
 	if not (law_texts.has("법칙") and law_texts.has(note.law) and law_texts.has(note.formula) and str(note.law).length() < 90):
 		problems.append("law %s" % str(law_texts))

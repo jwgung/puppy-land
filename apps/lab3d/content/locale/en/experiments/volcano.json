@@ -136,6 +136,8 @@
   },
   "note": {
     "law": "Runny lava runs far and makes a low, wide mountain; sticky lava piles up close and makes a tall, steep one. Lava that cools in the sea becomes new land.",
+    "learn": "Runny lava flows far and builds a low, wide mountain; sticky lava piles up close and builds a tall, pointed one. Lava that cools in the sea becomes new land.",
+    "talk": ["Spill honey and water: which spreads out wider?", "Where do the black stones of Jeju Island come from?"],
     "formula": "stickier lava = taller, steeper mountain",
     "numbers": [
       {

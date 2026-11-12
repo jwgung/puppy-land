@@ -79,6 +79,8 @@
   },
   "note": {
     "law": "When air gets cold, its water vapor turns into tiny drops (condensation). So dew forms on a cold cup, and clouds form in air that climbs a mountain.",
+    "learn": "The drops on a cold cup do not come from inside it. Water vapour in the air turns into drops when it cools. Air that cools as it climbs a mountain makes clouds.",
+    "talk": ["Why does the outside of a cold drink get wet?", "Why does a window fog up when you breathe on it in winter?"],
     "formula": "air gets cold → water vapor turns into drops (condensation)",
     "numbers": [{ "label": "Drops and clouds" }, { "label": "Cup" }, { "label": "Air height" }]
   },

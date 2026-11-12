@@ -119,6 +119,8 @@
   },
   "note": {
     "law": "Fast water wears the land away and slow water piles sand up.",
+    "learn": "Fast water wears the ground away and slow water drops its sand. Where a river bends, the outside bank is worn away and sand builds up on the inside.",
+    "talk": ["After rain, how do little streams form in a sandpit?", "Why is there so much sand where a river meets the sea?"],
     "formula": "fast water cuts, slow water piles up",
     "numbers": [
       {

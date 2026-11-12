@@ -389,6 +389,8 @@ static func card_label(definition: Dictionary, id: String) -> String:
 ## takes the shared law and the key observations (note()).
 const NOTE_NUMBERS_MIN := 3
 const NOTE_NUMBERS_MAX := 4
+const NOTE_TALK_MIN := 1
+const NOTE_TALK_MAX := 2
 
 
 static func _validate_note(note: Variant, observations: Array) -> PackedStringArray:
@@ -399,11 +401,16 @@ static func _validate_note(note: Variant, observations: Array) -> PackedStringAr
 		problems.append("note must be an object")
 		return problems
 	for key in note:
-		if not key in ["law", "formula", "numbers", "graph"]:
-			problems.append("note.%s unknown (law, formula, numbers, graph)" % key)
-	for key in ["law", "formula"]:
+		if not key in ["law", "formula", "numbers", "graph", "learn", "talk"]:
+			problems.append("note.%s unknown (law, formula, numbers, graph, learn, talk)" % key)
+	for key in ["law", "formula", "learn"]:
 		if not (note.get(key) is String and note.get(key) != ""):
 			problems.append("note.%s must be a text" % key)
+	# 아이와 이야기해 보기 (#126): NOTE_TALK_MIN-NOTE_TALK_MAX questions a guardian can read out.
+	var talk: Variant = note.get("talk")
+	if not (talk is Array and talk.size() >= NOTE_TALK_MIN and talk.size() <= NOTE_TALK_MAX
+			and talk.all(func(t: Variant) -> bool: return t is String and t != "")):
+		problems.append("note.talk must list %d-%d questions" % [NOTE_TALK_MIN, NOTE_TALK_MAX])
 	if not note.get("graph", true) is bool:
 		problems.append("note.graph must be true or false")
 	var ids := observations.map(func(o: Dictionary) -> Variant: return o.get("id"))

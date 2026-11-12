@@ -87,6 +87,8 @@
   },
   "note": {
     "law": "The steeper the slope, the bigger the force pulling the box down, so it gains speed faster as it slides.",
+    "learn": "The steeper the slope, the harder the box is pulled down it. It starts to slide at the angle where that pull beats the grip of the surface, and a slippery surface lets go at a lower angle.",
+    "talk": ["Where on a playground slide do you go fastest?", "Why is a slide more slippery after rain?"],
     "numbers": [
       { "label": "Acceleration a" },
       { "label": "Angle where it starts to slide θc" },

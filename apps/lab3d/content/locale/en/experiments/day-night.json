@@ -76,6 +76,8 @@
   },
   "note": {
     "law": "The side facing the sun has day, the other side night. The Earth turns once a day, and that brings day and night.",
+    "learn": "It looks as if the Sun goes round the Earth, but the Earth turns once a day. The side facing the Sun has day, the far side has night.",
+    "talk": ["When it is day here, what is it like on the other side of the world?", "Does the Sun really move, or are we the ones turning?"],
     "formula": "one rotation = one day",
     "numbers": [
       { "label": "Sky over the fox's house" },
