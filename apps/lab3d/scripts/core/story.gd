@@ -4,7 +4,8 @@
 ## the lookout (전망대) on the map and, all 11 there, the star goes back to the sky.
 ##
 ## Roles (fixed): 퍼피 the detective finds clues (what, where), 두기두기 the scientist gives the reason
-## (why), the bread cat acts and never speaks. The story is pictures and words only: it never sets a
+## (why), the bread cat, the hero, acts and says how he feels and what he will do: never a clue or a
+## reason (#132, 2026-11-12 user: "빵고양이가 주인공인데... 말은 해야지"; before, he never spoke). The story is pictures and words only: it never sets a
 ## control, runs an action or reads a body (the labs' physics, missions, controls and numbers are
 ## the same with or without it).
 ##
@@ -20,6 +21,7 @@ extends RefCounted
 const CONTENT_ROOT := "res://content/story"
 ## Who speaks: [the name tag's Locale key, portrait path pattern (%s = the face)] (DialogueBox.set_speaker).
 const SPEAKERS := {
+	"cat": ["speaker.cat", "res://assets/characters/portraits/cat_%s.webp"],   # the bread cat (#132)
 	"dugi": ["speaker.dugi", "res://assets/characters/portraits/dugi_%s.webp"],
 	"puppy": ["speaker.puppy", "res://assets/characters/portraits/puppy_%s.webp"],
 	# The second island's keeper (#71, 2026-11-06 look chosen by the user), named 여우친구 / "Fox Friend"

@@ -779,7 +779,7 @@ func check_opening() -> void:
 		again.clue_opened()
 		again.clue_read()
 	Story.enabled = was
-	var wrong := ExperimentRegistry._validate_story({"more": [{"speaker": "cat", "text": "…"}, {"speaker": "puppy"}, {"speaker": "fox", "text": "…", "face": "angry"}]})
+	var wrong := ExperimentRegistry._validate_story({"more": [{"speaker": "nobody", "text": "…"}, {"speaker": "puppy"}, {"speaker": "fox", "text": "…", "face": "angry"}]})
 	expect.call(first_ok and later == ["dugi", "dugi"] and wrong.size() == 3,
 		"volcano opening: first visit the fox (worried), Puppy's clue, Puppy and the fox in turn (story.more), Puppy's glint, Dugi's two lines, then the question; later visits Dugi's two lines; story.more checks its speakers, texts and faces",
 		"%s / %s / %s" % [str(told), str(later), str(wrong)])

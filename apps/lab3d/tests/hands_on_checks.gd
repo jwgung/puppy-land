@@ -372,6 +372,23 @@ func check_bridge_and_reason() -> void:
 	var lab: Experiment = screen.experiment
 	var box: DialogueBox = screen.dialogue
 	screen._predict_pick_choice(str(predict.answer))
+	# The bread cat says the pick first (#132), in his own box; his box read, Dugi's bridge follows.
+	var cat_said := ""
+	for i in 10:
+		await tree.process_frame
+		if box.active and box.visible and box.speaker == "cat":
+			cat_said = box.joined()
+			break
+	var picked_label := ""
+	for choice in predict.choices:
+		if str(choice.id) == str(predict.answer):
+			picked_label = str(choice.label)
+	if cat_said != Locale.t("screen.cat_guess") % picked_label or box.face != ExperimentScreen.CAT_GUESS_FACE \
+			or screen.cast.dugi.speaking() or box.portrait.texture != DialogueBox.portrait_texture("cat", box.face):
+		problems.append("cat: said '%s' (want '%s'), face %s, Dugi speaking %s" % [cat_said,
+			Locale.t("screen.cat_guess") % picked_label, box.face, screen.cast.dugi.speaking()])
+	box.advance()
+	box.advance()   # (the first tap shows the whole page, the next closes it)
 	var said := ""
 	for i in 30:
 		await tree.process_frame
@@ -419,7 +436,7 @@ func check_bridge_and_reason() -> void:
 		problems.append("bridge at stage 2: '%s'" % screen.mission_round.bridge_line())
 	await _free(screen)
 	DirAccess.remove_absolute(ProgressStore.path)
-	expect.call(problems.is_empty(), "bridge: after the answer Dugi says the lab's bridge (첫 번째 미션 / 다음 미션) and the strip pulses once; the prediction's reason only after the first attempt's line", "; ".join(problems))
+	expect.call(problems.is_empty(), "bridge: after the answer the bread cat says the pick (내 생각엔… <choice>!, his portrait), then Dugi says the lab's bridge (첫 번째 미션 / 다음 미션) and the strip pulses once; the prediction's reason only after the first attempt's line", "; ".join(problems))
 
 
 ## Every lab's prediction is answered by its first stage: the formula of a run that clears stage 1

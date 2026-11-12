@@ -3,24 +3,24 @@
   "map_today_face": "explain",
   "voyage": [
     { "who": "dugi", "face": "happy", "shot": "depart" },
-    { "who": "puppy", "face": "happy", "shot": "depart" },
+    { "who": "cat", "face": "happy", "shot": "depart" },
     { "who": "dugi", "face": "explain", "shot": "depart" },
     { "who": "puppy", "face": "surprised", "shot": "sea" },
     { "who": "puppy", "face": "thinking", "shot": "flicker" },
     { "who": "fox_stranger", "face": "worried", "shot": "arrive" }
   ],
   "prologue": [
-    { "who": "puppy", "face": "explain" },
+    { "who": "cat", "face": "explain" },
     { "who": "fox", "face": "thinking" },
     { "who": "fox", "face": "worried" },
     { "who": "fox", "face": "worried" },
     { "who": "dugi", "face": "explain" },
     { "who": "fox", "face": "worried" },
-    { "who": "puppy", "face": "worried" },
+    { "who": "cat", "face": "worried" },
     { "who": "puppy", "face": "thinking" },
     { "who": "fox", "face": "worried" },
     { "who": "puppy", "face": "thinking" },
-    { "who": "puppy", "face": "explain" },
+    { "who": "cat", "face": "explain" },
     { "who": "fox", "face": "happy" }
   ],
   "finale": [
@@ -32,6 +32,6 @@
     { "who": "puppy", "face": "surprised" },
     { "who": "fox", "face": "happy" },
     { "who": "fox", "face": "happy" },
-    { "who": "puppy", "face": "happy" }
+    { "who": "cat", "face": "happy" }
   ]
 }
