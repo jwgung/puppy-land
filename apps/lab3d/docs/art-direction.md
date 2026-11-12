@@ -410,7 +410,7 @@ Blender 참고 그림(갈색 외곽선 + 한 단계 셀 셰이딩)과 같은 동
 
 ## 12. 두기두기와 퍼피 (Task 4h)
 
-섬에는 빵고양이 말고 둘이 더 있다. 과학토끼 **두기두기**는 실험을 설명하고, 강아지 **퍼피**는 "과학섬" 깃발을 들고 뒤에 서 있다(2026-10-24 사용자 결정, 승인한 모습 3종). 이야기 "별 조각 찾기"(2026-10-28, 15절)의 역할은 고정이다: 퍼피 = 탐정(단서: 무엇이 어디에, 탐정 모자), 두기두기 = 과학자(이유: 왜), 빵고양이 = 몸으로 함(말하지 않음). 규칙은 11절과 같다. 물리는 모델, 캐릭터는 연기다. 둘 다 몸체·충돌 모양·층이 없는 메시이고, 셸이 실험 노드 밖(3D 뷰의 SubViewport, 실험 옆)에 둔다. 실험은 상태(`status()`)와 가리킬 점(`explain_point()`)만 답하고, 캐릭터는 실험의 몸체·표시 값을 읽거나 바꾸지 않는다. 캐릭터가 있든 없든 엔진 몸체(매 스텝)·패널 문구가 같다(`tests/island_cast_checks.gd`, 11개 실험 모두 두기두기가 가리키는 동안: 결과 상태가 420스텝 안에 오지 않는 실험은 120스텝에 가리키게 함).
+섬에는 빵고양이 말고 둘이 더 있다. 과학토끼 **두기두기**는 실험을 설명하고, 강아지 **퍼피**는 퍼피랜드 깃발(크림 천에 갈색 발자국, #128 2026-11-12; 전에는 "과학섬" 글자)을 들고 뒤에 서 있다(2026-10-24 사용자 결정, 승인한 모습 3종). 이야기 "별 조각 찾기"(2026-10-28, 15절)의 역할은 고정이다: 퍼피 = 탐정(단서: 무엇이 어디에, 탐정 모자), 두기두기 = 과학자(이유: 왜), 빵고양이 = 몸으로 함(말하지 않음). 규칙은 11절과 같다. 물리는 모델, 캐릭터는 연기다. 둘 다 몸체·충돌 모양·층이 없는 메시이고, 셸이 실험 노드 밖(3D 뷰의 SubViewport, 실험 옆)에 둔다. 실험은 상태(`status()`)와 가리킬 점(`explain_point()`)만 답하고, 캐릭터는 실험의 몸체·표시 값을 읽거나 바꾸지 않는다. 캐릭터가 있든 없든 엔진 몸체(매 스텝)·패널 문구가 같다(`tests/island_cast_checks.gd`, 11개 실험 모두 두기두기가 가리키는 동안: 결과 상태가 420스텝 안에 오지 않는 실험은 120스텝에 가리키게 함).
 
 ### 모델
 
@@ -420,12 +420,12 @@ Blender 참고 그림(갈색 외곽선 + 한 단계 셀 셰이딩)과 같은 동
 | 키 | 1.65 m(귀 포함), 머리 윗면 1.13 m | 1.27 m(모자 포함), 깃대 윗끝 1.55 m |
 | 노드(뼈대 없음, 원점 = 피벗) | `Dugi > Body > Head > EarL, EarR; ArmL > HandL; ArmR > HandR, Pointer > PointerTip` | `Puppy > Body > Head > EarL, EarR; ArmL > HandL; ArmR > HandR, Flag > FlagCloth` |
 | 메시 · 정점 · 삼각형 | 7 · 3,050 · 5,626 | 8 · 3,199 · 5,756 |
-| 기본 옵션 | 팔 변형 A(옆구리에 붙어 아래로), 벙어리장갑 팔, 외눈 안경 켬, 막대 켬 | 서 있음, 깃발 "과학섬", 외눈 안경 끔(두기두기 상징) |
+| 기본 옵션 | 팔 변형 A(옆구리에 붙어 아래로), 벙어리장갑 팔, 외눈 안경 켬, 막대 켬 | 서 있음, 퍼피랜드 깃발(발자국), 외눈 안경 끔(두기두기 상징) |
 
 - 빌드: `blender -b --factory-startup -P apps/lab3d/art_src/characters/<이름>.py -- --out apps/lab3d/assets/characters/<이름>.glb`(Blender 4.5.15). 네 스크립트는 같은 폴더의 `bread_cat.py` 도우미를 `import`한다(환경 변수 없음). 저장소 사본으로 두 번 빌드해 세 glb 모두 바이트가 같았다(결정적).
 - `bread_cat.py`는 얼굴에 칠한 입체감(`paint_volume`: 얼굴 아래 가장자리와 주둥이 아래의 부드러운 따뜻한 그늘, 밝은 주둥이 가운데)을 더했다. 앱이 읽는 값(어깨·손·봉투 크기)은 그대로다.
 - 외곽선 메시 계약(11절)은 네 모델 모두 지킨다: 같은 위치 법선 차이 0.5° 이하(실측 0°), 닫힌 껍질(열린 모서리 0), 안쪽을 향한 껍질 0. 확인: `blender -b --factory-startup -P apps/lab3d/tools/mesh_contract.py -- apps/lab3d/assets/characters/*.glb`(어기면 종료 코드 1). 같은 계약을 헤드리스 시험이 가져온 메시로도 확인한다(CI에 Blender 없음).
-- 깃발 글자 "과학섬"은 Noto Sans CJK Bold(`/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc`, SIL OFL 1.1)로 Blender가 그린 글리프를 아틀라스에 구운 그림이다. 글꼴 파일은 앱에 들어가지 않는다. OFL은 글꼴로 만든 결과물(그림·문서)에 제한을 두지 않는다. 다시 빌드하려면 `fonts-noto-cjk`가 필요하다.
+- 깃발 무늬(#128, 2026-11-12 사용자 "크림색에 발바닥만 있는걸로 하자", 시안에서 고름): 크림 천(`#fff4e2`)에 진한 갈색(`#6b3a1c`) 강아지 발자국 하나. 아래가 조금 넓은 동글한 큰 발바닥과 둥근 발가락 넷, 발톱 없음(`puppy.py` `paw_mask`, `PAW_PAD`·`PAW_TOES`, 천 높이의 `PAW_SIZE` 0.40 단위, 천 양면에 같은 자리). 글자가 없어 모델 하나·초상화 한 벌이 모든 언어에 쓰인다. 전에는 "과학섬"·"SCIENCE"를 Noto Sans CJK Bold로 구운 글자였고 언어마다 모델(`puppy_en.glb`)과 초상화(`portraits/en/`)가 따로 있었다.
 - 아틀라스 임포트는 다른 캐릭터와 같이 `process/fix_alpha_border=false`다(알파 없음, RGB 그대로: `run_tests.gd` 아틀라스 시험).
 
 **섬지기 여우**(둘째 섬 허턴섬, 이슈 #71, 2026-11-06 사용자가 시안 3개에서 고름: 주황 털 + 큰 복슬 꼬리 + 청록 목도리). 이름은 **여우친구**(2026-11-06 사용자 결정). 말 이름표는 배 장면에서 처음 만날 때 `speaker.fox_stranger` = "여우친구" / "Fox Friend", 스스로 섬지기라고 소개한 뒤 `speaker.fox` = "섬지기" / "Island Keeper"(#118, 2026-11-11). 같은 동화책 모습과 비율이다. 소스 `art_src/characters/fox.py`(`blender -b --factory-startup -P apps/lab3d/art_src/characters/fox.py -- --out apps/lab3d/assets/characters/fox.glb`) → `assets/characters/fox.glb` + 아틀라스 1024 px(`fox_fox_atlas.png`, 임포트는 위와 같음). 키 약 1.30 m(귀 포함), 노드 `Fox > Body > Head > EarL, EarR; ArmL > HandL; ArmR > HandR`(꼬리·목도리는 `Body`), 메시 6개, 삼각형 약 5.4천. 뾰족한 귀(끝 짙은 갈색, 안쪽 크림), 크림 뺨·주둥이·턱·배, 짙은 갈색 양말, 꼬리 끝 크림, 작고 차분한 콩 눈과 작은 미소, 수줍은 볼 연지. 초상화는 `fox_portrait.py`(같은 명령, 퍼피와 같은 `portraits/` 폴더, 512 px 무손실 WebP) → `fox_{explain,happy,surprised,thinking,worried}.webp`. 얼굴은 `face_kit.py`를 두기두기·퍼피와 함께 쓰고, 귀는 걱정할 때 살짝 처진다. `Story.SPEAKERS`의 `fox`로 말한다. 배 장면 도착과 허턴섬 실험 11곳 내내 3D로 선다(`IslandCast.fox_model`, 실험 JSON `cast.fox`, 2026-11-11 사용자 "여우친구가 실험내내 안따라다니네? 따라다니게 해줘").
@@ -488,7 +488,7 @@ Blender 참고 그림(갈색 외곽선 + 한 단계 셀 셰이딩)과 같은 동
 
 - 상자: 3D 뷰 아래쪽, 왼쪽 여백(12)부터 액션 버튼 왼쪽까지(두기두기가 그 높이에 서 있으면 그의 왼쪽까지). 크림색 종이 `UiTheme.DIALOGUE_PAPER` `#fff6e6`(불투명도 93 %), 캐릭터 외곽선 갈색 테두리 3 단위(`ArtPalette.OUTLINE`), 모서리 18. 위 가장자리에 갈색 이름표 "두기두기"(크림 글자 20). 글 24 단위(SM-P200 가로에서 40 px), 2줄.
 - 초상화: 두기두기 상반신 236 × 236 단위가 늘 상자 왼쪽 끝에 서서 위 가장자리를 넘고(옛날 게임 대화창처럼 자리가 늘 같다, 2026-10-24 사용자 결정), 이름표는 그 오른쪽 위에 붙는다. 초상화·상자가 가리키는 점을 덮지 않는 것은 상자를 옮겨서가 아니라 실험 자리로 지킨다: 실험마다 한 번 실행하는 동안 표본으로 뽑은 가리키는 점(움직이는 몸체 포함)이 대화창 위에 있는지 시험한다(11개 실험 × 폰·태블릿). 글은 초상화 폭의 94 %(막대 끝)를 피해 시작한다. 퍼피가 말할 때(단서, 이야기)는 같은 자리에 퍼피 초상화와 이름표 "퍼피"(`DialogueBox.set_speaker`). 표정은 줄마다 다섯 가지 중 하나다(아래 "대화 표정", 2026-10-29). 한 줄 안에서는 바뀌지 않는다(2026-10-27 사용자 의견: 쪽마다 바뀌던 "talk"·"smile"은 너무 잦았다).
-- 초상화 그림: `art_src/characters/dugi_portrait.py`(`blender -b --factory-startup -P apps/lab3d/art_src/characters/dugi_portrait.py -- --out apps/lab3d/assets/characters/portraits`) → `assets/characters/portraits/dugi_{explain,happy,surprised,thinking,worried}.webp`(512 px, 무손실 WebP, 투명 배경, 각 약 70 KB; `explain`은 예전 `point`와 같은 자세). `dugi.py`로 같은 모델을 지어 승인한 trio 그림과 같은 동화책 셀 셰이딩·갈색 외곽선으로 그린다. 퍼피 초상화는 `art_src/characters/puppy_portrait.py`(같은 명령, `--out` 같은 폴더) → `puppy_{explain,happy,surprised,thinking,worried}.webp`(512 px, 무손실, 각 약 80–87 KB; `explain`은 예전 `talk`에 빈 앞발을 글 쪽으로 든 것): `puppy.py` 모델(탐정 모자, 나비 넥타이, "과학섬" 깃발) 그대로, 두기두기 초상화 스크립트의 셀 셰이딩·외곽선 함수를 그대로 쓰고, 카메라는 퍼피 키(1.27 m)에 맞춰 가슴 위를 같은 방향에서 본다(머리는 글 쪽으로 조금 기욺). "point"는 초상화가 늘 왼쪽 끝이라 막대를 왼팔(보는 사람 기준 오른쪽)에 쥐여 글 쪽을 가리킨다(앱 모델은 그대로 오른팔). Eevee라 기계마다 픽셀이 똑같다는 보장은 없다. 2D 손그림 초상화를 시도했으나(사용자 요청 "캡처본 말고 원래 준 2D 그림처럼") 코드로 그린 그림이 원본과 충분히 같지 않아 2026-10-24 사용자 결정으로 3D 렌더로 돌아왔다. 원본 고해상도 그림이 생기면 그것을 오려 쓰는 안을 다시 본다.
+- 초상화 그림: `art_src/characters/dugi_portrait.py`(`blender -b --factory-startup -P apps/lab3d/art_src/characters/dugi_portrait.py -- --out apps/lab3d/assets/characters/portraits`) → `assets/characters/portraits/dugi_{explain,happy,surprised,thinking,worried}.webp`(512 px, 무손실 WebP, 투명 배경, 각 약 70 KB; `explain`은 예전 `point`와 같은 자세). `dugi.py`로 같은 모델을 지어 승인한 trio 그림과 같은 동화책 셀 셰이딩·갈색 외곽선으로 그린다. 퍼피 초상화는 `art_src/characters/puppy_portrait.py`(같은 명령, `--out` 같은 폴더) → `puppy_{explain,happy,surprised,thinking,worried}.webp`(512 px, 무손실, 각 약 80–87 KB; `explain`은 예전 `talk`에 빈 앞발을 글 쪽으로 든 것): `puppy.py` 모델(탐정 모자, 나비 넥타이, 퍼피랜드 깃발) 그대로, 두기두기 초상화 스크립트의 셀 셰이딩·외곽선 함수를 그대로 쓰고, 카메라는 퍼피 키(1.27 m)에 맞춰 가슴 위를 같은 방향에서 본다(머리는 글 쪽으로 조금 기욺). "point"는 초상화가 늘 왼쪽 끝이라 막대를 왼팔(보는 사람 기준 오른쪽)에 쥐여 글 쪽을 가리킨다(앱 모델은 그대로 오른팔). Eevee라 기계마다 픽셀이 똑같다는 보장은 없다. 2D 손그림 초상화를 시도했으나(사용자 요청 "캡처본 말고 원래 준 2D 그림처럼") 코드로 그린 그림이 원본과 충분히 같지 않아 2026-10-24 사용자 결정으로 3D 렌더로 돌아왔다. 원본 고해상도 그림이 생기면 그것을 오려 쓰는 안을 다시 본다.
 
 ### 대화 표정 (2026-10-29)
 
@@ -680,7 +680,7 @@ Blender 참고 그림(갈색 외곽선 + 한 단계 셀 셰이딩)과 같은 동
 사용자 결정. 앱을 켤 때마다 부트 스플래시 다음에 나온다(흐름·건너뜀은 앱 README "타이틀 화면"). `TitleScreen`(`scripts/app/title_screen.gd`).
 
 - **뒤**: 지도의 섬(`MapIsland`, 낮, 불 켜진 장소 없음)을 아래 36°·25 m에서 100초에 한 바퀴 도는 엽서. 이름표·캐릭터·깃발·수수께끼 없음, 터치 없음. 지도 카메라(−55°)보다 낮아 섬이 로고 둘레를 채운다.
-- **로고**: 언어별 그림(`assets/icon/splash.png` 한국어, `splash_en.png` 영어, 1200 px; 2026-11-02부터 부트 스플래시는 그림 없음, 세 얼굴 + 빨간 리본), 화면 폭의 56 %(320–660 단위), 0.45 Hz로 7 단위 위아래. 스플래시에서 타이틀로 넘어갈 때 같은 그림이 이어진다.
+- **로고**: 세 얼굴 + 빨간 리본 그림 한 장(`assets/icon/splash.png`, 1200 px, 글자 없음; 2026-11-02부터 부트 스플래시는 그림 없음) 위에 앱 이름을 글자로(`TitleScreen.title_label`, `ui.json` `app.title`, #128: 크림 글자, 갈색 테두리 = 로고 폭의 1 %, 짙은 빨강 그림자 0.42 %, 리본 띠 높이의 62 %에서 리본 폭 68 %에 맞을 때까지 줄임; 리본 윗줄 하이라이트는 빈 줄처럼 보여 뺐다), 화면 폭의 56 %(320–660 단위), 0.45 Hz로 7 단위 위아래. 
 - **단추**: `시작하기` = 리본 빨강 `#e2483c`(`UiTheme.TITLE_RED`), 크림 굵은 글자 36, 갈색 테두리 4·아랫단 9, 모서리 22, 300 × 92 이상(`TitleStartButton`). `이야기 다시 보기`·`설정` = 대화창 크림 종이, 갈색 테두리 3·아랫단 6, 글자 20 `INK`(`TitleButton`). 누르면 다른 단추처럼 살짝 줄었다 튐.
 - **배치**: 로고와 단추를 한 덩어리로 화면 가운데보다 조금 위(남는 높이의 45 % 위). 짧은 화면에서는 로고가 줄어든다(단추 크기는 그대로). 폰·태블릿에서 화면 안, 겹침 없음(시험).
 - **성능**: 지도와 같은 섬 메시 + 하늘, 2D 로고 한 장·단추 3개, 전체 화면 반투명 레이어 없음. SM-X115 61.2 fps(지도 61.1).

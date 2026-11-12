@@ -1,23 +1,20 @@
-"""The start screen picture, step 2: the app's name ribbon banner ("빵고양이 과학섬", or in English
-"Bread Cat Science Island" with --lang en, 2026-11-02) over the trio's lower edge
-(splash.py renders the trio). A red ribbon with folded tails, the characters' brown outline and
-cream letters with a brown edge (the app's bold Korean face). Transparent around it: Godot's boot
-splash draws it centred on the sky colour (project.godot application/boot_splash).
+"""The start screen picture, step 2: the red ribbon banner over the trio's lower edge (splash.py
+renders the trio). A red ribbon with folded tails and the characters' brown outline, no letters: the
+app's name is drawn over the ribbon by the title screen in the language (TitleScreen.title_label,
+ui.json `app.title`; #128, 2026-11-12 user: "문자열 처리하면 번역하기도 좋잖아"; until then the name was
+painted in here, one picture per language). One picture for every language. Transparent around it.
 
 Run (system Python with Pillow and NumPy), from the repository root:
     python3 apps/lab3d/art_src/characters/splash_banner.py [--trio /tmp/op-splash/splash_trio.png] \
         [--out apps/lab3d/assets/icon/splash.png]
-    python3 apps/lab3d/art_src/characters/splash_banner.py --lang en --out apps/lab3d/assets/icon/splash_en.png
+It prints the ribbon band's rect in fractions of the picture (RIBBON): TitleScreen.RIBBON.
 """
 import argparse
 import os
 
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageFilter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-FONT = os.path.join(HERE, "..", "..", "assets", "fonts", "NotoSansKR-Lab3dSubset-Bold.otf")
-TITLES = {"ko": "빵고양이 과학섬", "en": "Bread Cat Science Island"}
-TEXT_SHARE = 0.68            # the title fits in this share of the picture's width (the band is 0.76)
 SS = 2                       # drawn at 2x, then halved (smooth edges)
 OUT_W = 1200                 # final width (px); the boot splash shows it at its own size
 RED = (226, 72, 60, 255)
@@ -45,7 +42,8 @@ def ribbon(w, top, h):
         d.polygon([(fold, top + h), (fold, top + h + drop), (fold - side * tail * 0.35, top + h + drop)],
                   fill=RED_DARK, outline=OUTLINE, width=line)
     d.rounded_rectangle((band_l, top, band_r, top + h), radius=int(h * 0.18), fill=RED, outline=OUTLINE, width=line)
-    d.line((band_l + h * 0.2, top + h * 0.16, band_r - h * 0.2, top + h * 0.16), fill=(255, 255, 255, 70), width=4 * SS)
+    # No highlight line along the band's top (#128, 2026-11-12 user: "상단에 또 빈줄 생긴다", "아직도
+    # 보이는데"): over the plain band it read as a blank stripe.
     return canvas
 
 
@@ -53,7 +51,6 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--trio", default="/tmp/op-splash/splash_trio.png")
     ap.add_argument("--out", default=os.path.join(HERE, "..", "..", "assets", "icon", "splash.png"))
-    ap.add_argument("--lang", default="ko", choices=sorted(TITLES))
     args = ap.parse_args()
 
     trio = Image.open(args.trio).convert("RGBA")
@@ -70,21 +67,11 @@ def main():
     canvas.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(10 * SS)), (0, 8 * SS))
     canvas.alpha_composite(banner)
 
-    d = ImageDraw.Draw(canvas)
-    title = TITLES[args.lang]
-    size = int(band_h * 0.62)
-    font = ImageFont.truetype(FONT, size)
-    while d.textlength(title, font=font) > canvas.width * TEXT_SHARE:   # a longer name: smaller letters
-        size -= 2
-        font = ImageFont.truetype(FONT, size)
-    box = d.textbbox((0, 0), title, font=font, stroke_width=0)
-    x = (canvas.width - (box[2] - box[0])) / 2 - box[0]
-    y = top + (band_h - (box[3] - box[1])) / 2 - box[1]
-    d.text((x, y + 5 * SS), title, font=font, fill=RED_DARK)                      # drop
-    d.text((x, y), title, font=font, fill=CREAM, stroke_width=6 * SS, stroke_fill=OUTLINE)
-
     bbox = canvas.getbbox()
     canvas = canvas.crop((0, bbox[1], canvas.width, bbox[3]))
+    band = (int(canvas.width * 0.12), top - bbox[1], int(canvas.width * 0.88), top - bbox[1] + band_h)
+    print("RIBBON %.4f %.4f %.4f %.4f" % (band[0] / canvas.width, band[1] / canvas.height,
+                                          (band[2] - band[0]) / canvas.width, band_h / canvas.height))
     out_h = round(canvas.height * OUT_W / canvas.width)
     canvas = canvas.resize((OUT_W, out_h), Image.LANCZOS)
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)

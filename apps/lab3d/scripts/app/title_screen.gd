@@ -28,14 +28,21 @@ signal island_story_chosen(island: String)
 ## Headless test runs build App without a title unless a check turns it on (like Story.app_may_enable).
 static var app_may_show := true
 
-## The logo with the app's name in the language. The boot splash shows no picture (only the sky
-## colour): it comes before the language is known, and the faces alone read as a title with a hole
-## (2026-11-02 user: "타이틀에 또 빈칸생겼다").
-const LOGOS := {"ko": "res://assets/icon/splash.png", "en": "res://assets/icon/splash_en.png"}
-
-
-static func logo_texture() -> Texture2D:
-	return load(LOGOS.get(Locale.lang, LOGOS[Locale.DEFAULT]))
+## The logo: the three faces over the red ribbon, one picture for every language, and the app's name
+## over the ribbon as text in the language (title_label, ui.json `app.title`; #128, 2026-11-12 user:
+## "문자열 처리하면 번역하기도 좋잖아"; until then one picture per language with the name painted in).
+## The boot splash shows no picture (only the sky colour; 2026-11-02 user: "타이틀에 또 빈칸생겼다").
+const LOGO := preload("res://assets/icon/splash.png")
+## Where the ribbon's band is in the picture (fractions; splash_banner.py prints it as RIBBON).
+const RIBBON := Rect2(0.12, 0.6214, 0.76, 0.2632)
+## The name's letters: TITLE_SIZE of the band's height, smaller until the name fits in TITLE_SHARE of
+## the logo's width (the band is 0.76); cream with the characters' brown outline (TITLE_OUTLINE of the
+## logo's width) and a dark red drop (TITLE_DROP), as the picture's name was drawn.
+const TITLE_SIZE := 0.62
+const TITLE_SHARE := 0.68
+const TITLE_OUTLINE := 0.010
+const TITLE_DROP := 0.0042
+const TITLE_DROP_COLOR := Color8(170, 46, 40)
 ## The camera: a little lower than the map's (-55 deg) so the island fills the screen round the logo,
 ## turning once every TURN_S seconds (slow, a calm postcard).
 const PITCH_DEG := -36.0
@@ -55,6 +62,7 @@ var view: View3D
 var map: MapIsland
 var env: WorldEnvironment
 var logo: TextureRect
+var title_label: Label
 var start_button: Button
 var story_button: Button
 var settings_button: Button
@@ -93,11 +101,25 @@ func _ready() -> void:
 
 	logo = TextureRect.new()
 	logo.name = "TitleLogo"
-	logo.texture = logo_texture()
+	logo.texture = LOGO
 	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	logo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(logo)
+	title_label = Label.new()
+	title_label.name = "TitleName"
+	title_label.text = Locale.t("app.title")
+	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var letters := LabelSettings.new()
+	letters.font = UiTheme.bold_font()
+	letters.font_color = UiTheme.DIALOGUE_PAPER
+	letters.outline_color = ArtPalette.OUTLINE
+	letters.shadow_color = TITLE_DROP_COLOR
+	letters.shadow_size = 0
+	title_label.label_settings = letters
+	logo.add_child(title_label)
 
 	_buttons = Ui.vbox(14)
 	_buttons.name = "TitleButtons"
@@ -144,9 +166,24 @@ func _layout() -> void:
 	var block := height + GAP + buttons.y
 	_logo_top = maxf(BOB_UNITS + 8.0, (size.y - block) * 0.45)
 	logo.size = Vector2(width, height)
+	_fit_title()
 	logo.position = Vector2((size.x - width) * 0.5, _logo_top)
 	_buttons.size = buttons
 	_buttons.position = Vector2((size.x - buttons.x) * 0.5, _logo_top + height + GAP)
+
+
+## The name on the ribbon at the logo's size (see TITLE_SIZE).
+func _fit_title() -> void:
+	var w := logo.size.x
+	var letters := title_label.label_settings
+	var font_size := int(RIBBON.size.y * logo.size.y * TITLE_SIZE)
+	while font_size > 8 and letters.font.get_string_size(title_label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > w * TITLE_SHARE:
+		font_size -= 1
+	letters.font_size = font_size
+	letters.outline_size = maxi(2, roundi(w * TITLE_OUTLINE))
+	letters.shadow_offset = Vector2(0.0, w * TITLE_DROP)
+	title_label.position = RIBBON.position * logo.size
+	title_label.size = RIBBON.size * logo.size
 
 
 func _process(delta: float) -> void:
