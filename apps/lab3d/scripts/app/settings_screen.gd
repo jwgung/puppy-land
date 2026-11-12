@@ -270,10 +270,25 @@ func _show_sync() -> void:
 	var state := sync.status if sync != null else CloudSync.NO_SERVICE
 	if sync == null and not CloudSync.is_on():
 		state = CloudSync.NO_SERVICE
-	sync_status.text = Locale.t("settings.sync_" + state)
+	sync_status.text = _sync_words(state)
 	var on := CloudSync.is_on()
-	sync_button.text = Locale.t("settings.sync_turn_off" if on else "settings.sync_turn_on")
+	sync_button.text = Locale.t("settings.sync_turn_off") if on else Locale.t("settings.sync_turn_on")
 	sync_button.disabled = not on and (sync == null or sync.backend == null)
+
+
+static func _sync_words(state: String) -> String:
+	match state:
+		CloudSync.OFF:
+			return Locale.t("settings.sync_off")
+		CloudSync.SIGNING_IN:
+			return Locale.t("settings.sync_signing_in")
+		CloudSync.SYNCING:
+			return Locale.t("settings.sync_syncing")
+		CloudSync.SYNCED:
+			return Locale.t("settings.sync_synced")
+		CloudSync.FAILED:
+			return Locale.t("settings.sync_failed")
+	return Locale.t("settings.sync_no_service")
 
 
 func _on_sync_pressed() -> void:
