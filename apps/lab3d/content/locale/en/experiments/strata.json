@@ -67,6 +67,8 @@
   },
   "note": {
     "law": "Strata pile up from the bottom. So the bottom layer, laid down first, is the oldest.",
+    "learn": "Layers of rock pile up from the bottom, so the lowest layer is the oldest. Fossils in a layer tell us what lived at that time.",
+    "talk": ["In a pile of papers on a desk, where is the one put down first?", "If shell fossils are found on a mountain, what was that place like long ago?"],
     "formula": "first layer laid down = bottom layer",
     "numbers": [{ "label": "Now" }, { "label": "Bottom layer" }, { "label": "Top layer" }]
   },

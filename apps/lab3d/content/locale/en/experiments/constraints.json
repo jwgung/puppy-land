@@ -96,6 +96,8 @@
   },
   "note": {
     "law": "The longer the rope and the weaker the gravity, the more slowly the pendulum swings. The weight's mass does not matter.",
+    "learn": "How long one swing takes depends on the string's length and on gravity, not on the weight of the bob. The longer the string, the slower the swing.",
+    "talk": ["Does a swing with long ropes swing slowly or quickly?", "Why does a big grandfather clock have a long pendulum?"],
     "numbers": [
       { "label": "Rope length L" },
       { "label": "Formula period 2π√(L/g) (small swing)" },

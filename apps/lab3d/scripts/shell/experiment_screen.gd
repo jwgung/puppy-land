@@ -2196,11 +2196,13 @@ func _build_sidebar() -> void:
 	var graph := _build_graph()
 	if note.get("graph", true):
 		_sections["graph"] = graph
+	_sections["learn"] = _build_learn(note)   # (#126: what the lab teaches, then the law)
 	_sections["law"] = _build_law(note)
 	_sections["guide"] = _build_guide()
 	var terms := _build_terms()
 	if terms != null:
 		_sections["terms"] = terms
+	_sections["talk"] = _build_talk(note)
 	for id in _sections:
 		_sections[id].name = "Note_" + id
 		column.add_child(_sections[id])
@@ -2322,6 +2324,23 @@ func set_more_open(open: bool) -> void:
 
 func is_more_open() -> bool:
 	return _more != null and _more.visible
+
+
+## 이 실험에서 배우는 것 (#126, 2026-11-12 user: "괜찮은거같아"): what the lab teaches a guardian or
+## teacher in a sentence or two, with the usual mix-up when there is one (note.learn).
+func _build_learn(note: Dictionary) -> Control:
+	var parts := _section(Locale.t("screen.section_learn"))
+	parts[1].add_child(Ui.label(str(note.get("learn", "")), "", true))
+	return parts[0]
+
+
+## 아이와 이야기해 보기 (#126): questions from everyday life a guardian can read out to the child
+## (note.talk), one per line.
+func _build_talk(note: Dictionary) -> Control:
+	var parts := _section(Locale.t("screen.section_talk"))
+	for question in note.get("talk", []):
+		parts[1].add_child(Ui.label("• " + str(question), "NoteQuestionLabel", true))
+	return parts[0]
 
 
 ## 법칙: the lab's law in one plain sentence and its formula (note.law, note.formula).

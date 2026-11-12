@@ -83,6 +83,8 @@
   },
   "note": {
     "law": "A shadow is on the side away from the sun. The higher the sun and the shorter the stick, the shorter the shadow.",
+    "learn": "A shadow falls on the side away from the Sun. The higher the Sun, the shorter the shadow; it is long in the morning and evening when the Sun is low.",
+    "talk": ["How long is your shadow at lunchtime, and in the evening?", "Could you tell the time from a shadow?"],
     "formula": "higher sun = shorter shadow",
     "numbers": [
       { "label": "Stick's shadow" },

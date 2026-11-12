@@ -813,17 +813,19 @@ Android 뒤로가기 한 번이 두 번 오는 문제(2026-10-29, SM-X115 Androi
 1. **조건 바꾸기**: 슬라이더·선택지(그림 단추보다 촘촘함) 그대로. 미션을 다 한 뒤 다른 조건으로 다시 해 볼 때 쓴다(사용자 "미션 후 다시 할때 조건을 못바꾸잖아"). 미션 중에도 바꿀 수 있다. 바꿀 조건이 없는 실험(낮과 밤 등)은 카드가 없다.
 2. **이번 실험 숫자**: 그 공식에 드는 이번 실행의 값 3–4줄, 단위 그대로(m/s, kg·m/s, N, s, m). 두 값이면 "전 → 뒤" 한 줄. 값이 아직 없으면 "실험하면 나와요", 미션이 숨긴 답은 "실험이 끝나면 보여요"(`ExperimentScreen.note_value`, 전에는 "—"·"? s").
 3. **그래프**: 법칙을 보여 줄 때만(`note.graph`).
-4. **법칙**: 그 실험의 법칙 한 문장 + 공식 하나(위 "목표 · 공식" 표, 아래첨자·프라임은 유니코드).
-5. **실험하는 방법**: 실험 제목, 조작 방법, 순서, 관찰 포인트.
-6. **낱말 풀이**: 실험의 용어(없으면 카드가 없다).
-7. **더 보기**(처음엔 접힘): 나머지 관찰값 전부("다른 숫자"), 접은 그래프, "더 알아보기"(공유 법칙의 제목·설명·식). 빠지는 값은 없다(모든 관찰값에 라벨이 하나씩, 웹 대조 시험이 읽는 `_observation_labels`).
-8. **AI에게 더 물어보기**(2026-10-28 사용자 승인, 2026-10-29 AI 앱만 있는 시스템 공유 창): 노트 맨 끝(더 보기와 그 접힌 내용 아래) 단추 하나와 설명 한 줄. 아래 "AI에게 더 물어보기". **2026-10-31부터 앱에서 꺼져 있다**(`ScienceNote.enabled = false`, 사용자 결정): Play 스토어 대상에 어린이를 넣으므로, 아이를 바깥 AI 앱·웹으로 보내는 단추는 가족 정책상 보호자 확인 없이 둘 수 없다. 코드와 시험은 남겨 두고(시험과 `--ask=show` 기기 확인만 켬), 보호자 확인을 만들면 다시 켠다. **2026-11-11부터 그 자리에 "AI에게 물어보기" 카드**(#122, 사용자 "대신에 뭐 프롬프트 복사같은거 하게 해줘"): 설명 한 줄과 `질문 복사하기` 단추(`ExperimentScreen.copy_question`). 누르면 AI 단추와 같은 질문(`ScienceNote.question`, 가린 답은 뺌)을 클립보드에 넣고(`copy_handler`, 기본 `DisplayServer.clipboard_set`) "질문을 복사했어요…" 한 줄을 보인다. 앱·웹은 열지 않는다. 보호자가 직접 AI 앱에 붙여 넣는다. 측정에는 없다. 시험: `tests/ask_ai_checks.gd` `check_off_screen`.
+4. **이 실험에서 배우는 것**(#126, 2026-11-12 사용자 승인 "괜찮은거같아"): 보호자·선생님이 읽는 한두 문장(`note.learn`). 흔한 오해가 있는 실험은 그 오해를 먼저 짚는다(공 떨어뜨리기 "무거운 물체가 먼저", 계절 "해에 가까워서 여름", 낮과 밤 "해가 돌아서").
+5. **법칙**: 그 실험의 법칙 한 문장 + 공식 하나(위 "목표 · 공식" 표, 아래첨자·프라임은 유니코드).
+6. **실험하는 방법**: 실험 제목, 조작 방법, 순서, 관찰 포인트.
+7. **낱말 풀이**: 실험의 용어(없으면 카드가 없다).
+8. **아이와 이야기해 보기**(#126): 보호자가 아이에게 그대로 읽어 줄 수 있는 생활 속 질문 2개(`note.talk`, 반말, 1–2개 `NOTE_TALK_MIN`·`NOTE_TALK_MAX`). 노트 글(ko·en `content/locale/<lang>/experiments/<id>.json`)이고 `ExperimentRegistry._validate_note`가 `learn`·`talk`를 검사한다.
+9. **더 보기**(처음엔 접힘): 나머지 관찰값 전부("다른 숫자"), 접은 그래프, "더 알아보기"(공유 법칙의 제목·설명·식). 빠지는 값은 없다(모든 관찰값에 라벨이 하나씩, 웹 대조 시험이 읽는 `_observation_labels`).
+10. **AI에게 더 물어보기**(2026-10-28 사용자 승인, 2026-10-29 AI 앱만 있는 시스템 공유 창): 노트 맨 끝(더 보기와 그 접힌 내용 아래) 단추 하나와 설명 한 줄. 아래 "AI에게 더 물어보기". **2026-10-31부터 앱에서 꺼져 있다**(`ScienceNote.enabled = false`, 사용자 결정): Play 스토어 대상에 어린이를 넣으므로, 아이를 바깥 AI 앱·웹으로 보내는 단추는 가족 정책상 보호자 확인 없이 둘 수 없다. 코드와 시험은 남겨 두고(시험과 `--ask=show` 기기 확인만 켬), 보호자 확인을 만들면 다시 켠다. **2026-11-11부터 그 자리에 "AI에게 물어보기" 카드**(#122, 사용자 "대신에 뭐 프롬프트 복사같은거 하게 해줘"): 설명 한 줄과 `질문 복사하기` 단추(`ExperimentScreen.copy_question`). 누르면 AI 단추와 같은 질문(`ScienceNote.question`, 가린 답은 뺌)을 클립보드에 넣고(`copy_handler`, 기본 `DisplayServer.clipboard_set`) "질문을 복사했어요…" 한 줄을 보인다. 앱·웹은 열지 않는다. 보호자가 직접 AI 앱에 붙여 넣는다. 측정에는 없다. 시험: `tests/ask_ai_checks.gd` `check_off_screen`.
 
-`--scroll-to=`은 `conditions`·`numbers`·`graph`·`law`·`guide`·`terms`·`more`·`copy`·`ask`(예전 `observations` = `numbers`, `explanation` = `guide`).
+`--scroll-to=`은 `conditions`·`numbers`·`graph`·`learn`·`law`·`guide`·`terms`·`talk`·`more`·`copy`·`ask`(예전 `observations` = `numbers`, `explanation` = `guide`).
 
 #### AI에게 더 물어보기
 
-- 2026-10-31부터 꺼져 있다(위 6번). 아래는 켰을 때의 동작이다.
+- 2026-10-31부터 꺼져 있다(위 10번). 아래는 켰을 때의 동작이다.
 - 2026-10-28 "Gemini에게 더 물어보기"(공유 시트)로 시작했다. 2026-10-29 앱 안의 AI 앱 고르기 창(`AiPicker`)을 거쳐, 같은 날 사용자 결정으로 **Android 시스템 공유 창에 AI 앱만 보이게** 바꿨다(앱 안 창은 지웠다). 단추 글자는 그대로 "AI에게 더 물어보기", 누르면 바로 시스템 공유 창이 뜬다.
 - 앱 목록: `content/ai_apps.json`(`name`, `package` = Google Play 패키지 이름, 순서). 고치려면 이 파일만 바꾼다. 2026-10-29 확인한 목록: Gemini `com.google.android.apps.bard`, ChatGPT `com.openai.chatgpt`, Claude `com.anthropic.claude`, Grok `ai.x.grok`, Meta AI `com.facebook.stella`, Perplexity `ai.perplexity.app.android`, DeepSeek `com.deepseek.chat`, Le Chat `ai.mistral.chat`, 뤼튼 `com.wrtn.app`.
 - 누르면 그 순간의 실험으로 한국어 질문을 만들어(`ScienceNote.question(definition, experiment, hidden)`, 순수 함수) 공유 창으로 넘긴다(`ScienceNote.send_to_ai(패키지 목록, 글)`). 보낼지는 고른 앱에서 정한다. 앱 자신은 네트워크를 쓰지 않는다.

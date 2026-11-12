@@ -79,6 +79,8 @@
   },
   "note": {
     "law": "The Earth goes around the sun with its axis tilted, so the sun's height and the day's length change. That brings the seasons.",
+    "learn": "A common mix-up is that summer is hot because we are closer to the Sun. Seasons come from the tilted Earth going round the Sun, which changes how high the Sun climbs and how long the days are.",
+    "talk": ["Why does it stay light so late on summer evenings?", "If the Earth stood up straight, would there be seasons?"],
     "formula": "tilted axis + revolution = seasons",
     "numbers": [{ "label": "Season on Hutton Island" }, { "label": "Noon sun's height" }, { "label": "Day length" }]
   },

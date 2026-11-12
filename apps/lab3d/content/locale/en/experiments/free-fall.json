@@ -92,6 +92,8 @@
   },
   "note": {
     "law": "Dropped from the same height, a heavy ball and a light ball fall together. The smaller the gravity g, the longer it takes.",
+    "learn": "A common mix-up is that heavy things fall first. With little air in the way, heavy and light things fall together, and the stronger the gravity, the faster they fall.",
+    "talk": ["If you drop a feather and a coin together, why does the coin land first?", "Why would you come down slowly after a big jump on the Moon?"],
     "numbers": [
       { "label": "Gravitational acceleration g" },
       { "label": "Red ball's time to the ground √(2h/g)" },

@@ -87,6 +87,8 @@
   },
   "note": {
     "law": "The farther from the pivot you push, the smaller the force that lifts the load. It lifts when force × distance (torque) is the same on both sides.",
+    "learn": "The farther from the pivot you press, the less force it takes to lift something heavy. It lifts when force times distance is the same on both sides.",
+    "talk": ["On a seesaw, where should a lighter child sit to lift a heavier one?", "Why is a door handle far from the hinges?"],
     "numbers": [
       { "label": "Load weight F₂ = mg" },
       { "label": "Pivot to load r₂" },

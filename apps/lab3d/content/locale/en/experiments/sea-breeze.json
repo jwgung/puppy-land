@@ -82,6 +82,8 @@
   },
   "note": {
     "law": "The wind blows from the cool side to the warm side. The bigger the difference between the land and the sea, the stronger the wind.",
+    "learn": "In the day the land warms up faster than the sea, so the wind blows from the cool sea to the warm land; at night it turns round.",
+    "talk": ["On a beach in the daytime, which way does the wind come from?", "Which gets hot faster in the sun: sand or sea water?"],
     "formula": "cool side → warm side = wind",
     "numbers": [{ "label": "Wind" }, { "label": "Land temperature" }, { "label": "Sea temperature" }]
   },

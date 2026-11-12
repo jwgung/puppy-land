@@ -76,6 +76,8 @@
   },
   "note": {
     "law": "A rain cloud grows on the water vapor of a warm sea. Over a very warm sea it becomes a typhoon; over a cold sea or land it weakens.",
+    "learn": "Rain clouds grow on the water vapour of a warm sea. Over a very warm sea they become a typhoon; over a cool sea or land they lose their strength.",
+    "talk": ["Why do typhoons mostly come in summer and autumn?", "Why does a typhoon get weaker once it reaches land?"],
     "formula": "warm sea + water vapor = a growing rain cloud",
     "numbers": [{ "label": "Cloud" }, { "label": "Under the cloud" }, { "label": "Water vapor rising" }]
   },

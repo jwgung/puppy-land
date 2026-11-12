@@ -128,6 +128,8 @@
   },
   "note": {
     "law": "When the sun warms water, it rises as vapor, cools into a cloud up high, and comes back down as rain. The stronger the sun, the more evaporates.",
+    "learn": "The Sun warms water into vapour that rises, cools into clouds high up and comes back down as rain. The water never disappears; it keeps going round.",
+    "talk": ["Why does washing dry faster in the sun?", "Where does a puddle go after the rain?"],
     "formula": "evaporation → cloud → rain",
     "numbers": [
       {

@@ -85,6 +85,8 @@
   },
   "note": {
     "law": "A spring pulls back as much as it is stretched. So the ball goes as far to the other side as you pulled. The heavier the ball, the slower it swings back and forth.",
+    "learn": "A spring pulls back as much as it is stretched. Pull it farther and the ball comes back faster; a heavy ball goes just as far but swings more slowly.",
+    "talk": ["Why does a rubber band snap back harder when you stretch it more?", "Why does a trampoline push you back up?"],
     "numbers": [
       { "label": "Pull before letting go x₀" },
       { "label": "Formula period T = 2π√(m/k)" },

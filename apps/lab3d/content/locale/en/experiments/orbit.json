@@ -81,6 +81,8 @@
   },
   "note": {
     "law": "The star's gravity pulls the planet and bends its path. At the circular orbit speed it goes round and round, and faster than the escape speed it leaves.",
+    "learn": "The star's gravity pulls the planet and bends its path. At the right speed it keeps going round; too slow and it falls in, too fast and it flies away.",
+    "talk": ["Why doesn't the Moon fall down onto the Earth?", "Swing a ball round on a string and let go: where does it fly?"],
     "formula": "v_escape = √(2GM/r) = √2 · v_circle",
     "numbers": [
       { "label": "Launch speed" },
