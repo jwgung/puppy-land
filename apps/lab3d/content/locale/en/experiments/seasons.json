@@ -27,7 +27,7 @@
   "actions": [{ "label": "Start over" }],
   "predict": {
     "question": "If the Earth stood up straight, would there be seasons?",
-    "choices": [{ "label": "Yes, seasons" }, { "label": "No seasons" }],
+    "choices": [{ "label": "Yes, seasons", "guess": "I think there'll be seasons!" }, { "label": "No seasons", "guess": "I think there'll be no seasons!" }],
     "reason": "Seasons come from the Earth's tilt. Standing straight, the sun is just as high all year.",
     "bridge": "Move the Earth and see for yourself!"
   },

@@ -25,8 +25,8 @@ import dugi_portrait as dp  # noqa: E402
 
 # The cat's head spans 0.77-1.40 m (the bag's rim at 0.76 m): the bust from the paws on the rim up to
 # the ear tips, seen a little from the viewer's right like the others.
-CAM_POS = Vector((0.40, -2.10, 1.16))
-CAM_TGT = Vector((0.0, 0.0, 1.03))
+CAM_POS = Vector((0.55, -2.95, 1.10))
+CAM_TGT = Vector((0.0, 0.0, 0.98))
 # mouth: the model's ("omega", "smile") or a face_kit mouth; head: (tilt about y, turn about z) deg;
 # nod: about x (+ = chin down).
 EXPRESSIONS = {

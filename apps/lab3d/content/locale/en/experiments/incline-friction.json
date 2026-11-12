@@ -33,8 +33,8 @@
   "predict": {
     "question": "If you tilt the wooden slide a little, will the box go down?",
     "choices": [
-      { "label": "It slides down" },
-      { "label": "It won't budge" }
+      { "label": "It slides down", "guess": "I think it'll slide down!" },
+      { "label": "It won't budge", "guess": "I think it won't budge!" }
     ],
     "reason": "Even a little tilt lets gravity pull the box hard. Once that is bigger than friction, the box slides down.",
     "bridge": "Tilt it, let go and see for yourself!"

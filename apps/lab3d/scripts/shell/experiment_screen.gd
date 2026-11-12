@@ -1147,8 +1147,12 @@ func _predict_pick_choice(choice_id: String) -> void:
 	if _mission_text != null and picked != "":
 		_mission_text.text = Locale.t("screen.pick_prefix") + picked
 		_fit_mission_strip()
-	if picked != "" and dialogue != null and cast != null and cast.dugi != null:
-		_cat_guess = Locale.t("screen.cat_guess") % picked   # the cat says it first, then Dugi's bridge
+	var guess := ""
+	for choice in MissionRound.predict(definition.raw).get("choices", []):
+		if str(choice.get("id")) == choice_id:
+			guess = str(choice.get("guess", ""))
+	if guess != "" and dialogue != null and cast != null and cast.dugi != null:
+		_cat_guess = guess   # the cat says it first (predict.choices[i].guess, 반말), then Dugi's bridge
 		_cat_guess_open = false
 	else:
 		_start_bridge()

@@ -54,12 +54,8 @@
   "predict": {
     "question": "If you warm up seawater, where does the water go?",
     "choices": [
-      {
-        "label": "Up into the sky"
-      },
-      {
-        "label": "It stays in the sea"
-      }
+      { "label": "Up into the sky", "guess": "I think it'll go up into the sky!" },
+      { "label": "It stays in the sea", "guess": "I think it'll stay in the sea!" }
     ],
     "reason": "Warm water turns into vapor and rises into the sky. You just can't see it.",
     "bridge": "Shine the sun and see for yourself!"

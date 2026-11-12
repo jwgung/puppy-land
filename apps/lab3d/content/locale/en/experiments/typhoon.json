@@ -24,7 +24,7 @@
   "actions": [{ "label": "Start over" }],
   "predict": {
     "question": "Does a rain cloud grow over a cold sea too?",
-    "choices": [{ "label": "Yes, it grows" }, { "label": "It hardly grows" }],
+    "choices": [{ "label": "Yes, it grows", "guess": "I think it'll grow!" }, { "label": "It hardly grows", "guess": "I think it'll hardly grow!" }],
     "reason": "Little water vapor rises from a cold sea. So the rain cloud has nothing to feed on and hardly grows.",
     "bridge": "Move the cloud and see for yourself!"
   },

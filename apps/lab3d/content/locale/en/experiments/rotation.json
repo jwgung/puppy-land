@@ -31,8 +31,8 @@
   "predict": {
     "question": "If you push near the pivot, will the chest lift easily?",
     "choices": [
-      { "label": "It takes a lot of force" },
-      { "label": "It lifts easily" }
+      { "label": "It takes a lot of force", "guess": "I think it'll take a lot of force!" },
+      { "label": "It lifts easily", "guess": "I think it'll lift easily!" }
     ],
     "reason": "Pushing near the pivot, it's hard for the bar to lift the chest. So you must push very hard.",
     "bridge": "Press it and see for yourself!"

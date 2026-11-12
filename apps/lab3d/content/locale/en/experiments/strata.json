@@ -23,7 +23,7 @@
   "actions": [{ "label": "Start over" }],
   "predict": {
     "question": "Which layer of the strata is the oldest?",
-    "choices": [{ "label": "The bottom layer" }, { "label": "The top layer" }],
+    "choices": [{ "label": "The bottom layer", "guess": "I think it's the bottom layer!" }, { "label": "The top layer", "guess": "I think it's the top layer!" }],
     "reason": "Layers pile up from the bottom. So the bottom layer was laid down longest ago.",
     "bridge": "Pile them up and see for yourself!"
   },

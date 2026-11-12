@@ -26,7 +26,7 @@
   "actions": [{ "label": "Start over" }],
   "predict": {
     "question": "Where do the drops on the outside of a cold cup come from?",
-    "choices": [{ "label": "From the air" }, { "label": "They leaked out of the cup" }],
+    "choices": [{ "label": "From the air", "guess": "I think they came from the air!" }, { "label": "They leaked out of the cup", "guess": "I think they leaked out of the cup!" }],
     "reason": "The air around the cup got cold, so the water vapor in the air turned into drops. The water in the cup does not leak.",
     "bridge": "Put some ice in and see!"
   },

@@ -29,7 +29,7 @@
   "actions": [{ "label": "Start over" }],
   "predict": {
     "question": "Does night come because the sun moves, or because the Earth turns?",
-    "choices": [{ "label": "The sun moves" }, { "label": "The Earth turns" }],
+    "choices": [{ "label": "The sun moves", "guess": "I think the sun moves!" }, { "label": "The Earth turns", "guess": "I think the Earth turns!" }],
     "reason": "The sun stays still. The Earth turns, and the fox's house goes to the far side. Then it's night.",
     "bridge": "Turn the Earth and see for yourself!"
   },

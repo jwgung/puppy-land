@@ -53,12 +53,8 @@
   "predict": {
     "question": "What mountain does sticky lava make?",
     "choices": [
-      {
-        "label": "Tall and steep"
-      },
-      {
-        "label": "Low and wide"
-      }
+      { "label": "Tall and steep", "guess": "I think it'll make a tall, steep mountain!" },
+      { "label": "Low and wide", "guess": "I think it'll make a low, wide mountain!" }
     ],
     "reason": "Sticky lava can't run far, so it piles up close by. That makes a tall, steep mountain.",
     "bridge": "Bring up some magma and see!"

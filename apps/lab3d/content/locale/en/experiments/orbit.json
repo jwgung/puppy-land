@@ -30,8 +30,8 @@
   "predict": {
     "question": "Launched just right, what will the planet do?",
     "choices": [
-      { "label": "Go around the star" },
-      { "label": "Leave the star" }
+      { "label": "Go around the star", "guess": "I think it'll go around the star!" },
+      { "label": "Leave the star", "guess": "I think it'll leave the star!" }
     ],
     "reason": "The star pulls the planet. At just the right speed, it neither falls in nor leaves. It goes round and round.",
     "bridge": "Launch it and see for yourself!"

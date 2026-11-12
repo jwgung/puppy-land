@@ -27,7 +27,7 @@
   "actions": [{ "label": "Start over" }],
   "predict": {
     "question": "On a sunny day, which way does the wind blow?",
-    "choices": [{ "label": "From the sea to the land" }, { "label": "From the land to the sea" }],
+    "choices": [{ "label": "From the sea to the land", "guess": "I think it blows from the sea to the land!" }, { "label": "From the land to the sea", "guess": "I think it blows from the land to the sea!" }],
     "reason": "In the daytime the land is warmer than the sea, so the cool air over the sea blows onto the land.",
     "bridge": "Shine the sun and see for yourself!"
   },

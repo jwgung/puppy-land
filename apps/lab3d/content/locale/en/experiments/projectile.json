@@ -32,8 +32,8 @@
   "predict": {
     "question": "If you throw low, where will the ball land?",
     "choices": [
-      { "label": "Close" },
-      { "label": "Very far" }
+      { "label": "Close", "guess": "I think it'll land close!" },
+      { "label": "Very far", "guess": "I think it'll go very far!" }
     ],
     "reason": "Thrown low with the same strength, the ball comes down to the ground soon. So it lands close.",
     "bridge": "Throw it and see for yourself!"

@@ -45,8 +45,8 @@
   "predict": {
     "question": "What if the blue ball hits the orange ball hard?",
     "choices": [
-      { "label": "The orange ball zooms away" },
-      { "label": "Both stop" }
+      { "label": "The orange ball zooms away", "guess": "I think the orange ball will zoom away!" },
+      { "label": "Both stop", "guess": "I think they'll both stop!" }
     ],
     "reason": "In the bump, the blue ball's motion passes to the orange ball. So the orange ball zooms away.",
     "bridge": "Bump them and see for yourself!"

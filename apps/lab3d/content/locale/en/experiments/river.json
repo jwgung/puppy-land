@@ -50,12 +50,8 @@
   "predict": {
     "question": "Where does water wear away the most land?",
     "choices": [
-      {
-        "label": "Steep land"
-      },
-      {
-        "label": "Flat land"
-      }
+      { "label": "Steep land", "guess": "I think it's the steep land!" },
+      { "label": "Flat land", "guess": "I think it's the flat land!" }
     ],
     "reason": "On steep land the water rushes down. So it wears away a lot of land.",
     "bridge": "Make it rain and see for yourself!"

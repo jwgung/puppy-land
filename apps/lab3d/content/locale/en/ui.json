@@ -183,7 +183,6 @@
   "screen.ask_ai": "Ask an AI more",
   "screen.ask_caption": "Makes a question from this experiment's conditions and numbers and sends it to the AI app you pick.",
   "screen.back_to_map": "← Map",
-  "screen.cat_guess": "My guess… %s!",
   "screen.graph_y_axis": "Up: %s (%s)",
   "screen.copy_caption": "Copies a question made from this run's conditions and numbers. Paste it into your AI app and ask it with your child.",
   "screen.copy_question": "Copy the question",
