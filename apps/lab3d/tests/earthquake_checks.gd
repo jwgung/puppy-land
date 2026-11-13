@@ -415,11 +415,17 @@ func check_buttons() -> void:
 	tree.root.add_child(lab)
 	await tree.process_frame
 	var problems := []
+	# One factor at a time (2026-11-13): stage 1 and 2 the ground (rock -> sand), stage 3 the brace;
+	# a ground that does not fit (changed in 자세히) brings its buttons back beside the brace.
+	var want := [["ground"], ["ground"], ["brace"]]
 	for i in 3:
 		var groups := ConditionPicks.groups(definition, i)
 		var ids := groups.map(func(g: Dictionary) -> String: return str(g.control))
-		if ids.size() != 2 or not "ground" in ids or not "brace" in ids or groups.any(func(g: Dictionary) -> bool: return g.presets.size() != 2):
+		if ids != want[i] or groups.any(func(g: Dictionary) -> bool: return g.presets.size() != 2):
 			problems.append("stage %d buttons %s" % [i + 1, str(ids)])
+	var both := ConditionPicks.groups(definition, 2, {"ground": "rock", "brace": "none"}).map(func(g: Dictionary) -> String: return str(g.control))
+	if both != ["ground", "brace"]:
+		problems.append("stage 3 on rock: buttons %s (want the ground back too)" % str(both))
 	if lab.control_value("ground") != "rock" or lab.control_value("brace") != "none" or lab.props.sand.visible or lab.props.brace.visible:
 		problems.append("the start is not rock without a brace")
 	_run(lab, "rock", "none", 0.3)
@@ -432,7 +438,7 @@ func check_buttons() -> void:
 	lab.reset_run()
 	if lab.model.input("ground") != EarthquakeModel.SAND or not lab.props.brace.visible:
 		problems.append("다시 lost the conditions")
-	expect.call(problems.is_empty(), "earthquake buttons: ground (rock / sand) and house (no brace / brace) on every stage; a new choice starts the run over and shows the sand slab and the brace; 다시 keeps them",
+	expect.call(problems.is_empty(), "earthquake buttons: one factor a stage (ground, ground, house brace; a ground that does not fit comes back); a new choice starts the run over and shows the sand slab and the brace; 다시 keeps them",
 		"; ".join(problems))
 	lab.queue_free()
 	await tree.process_frame

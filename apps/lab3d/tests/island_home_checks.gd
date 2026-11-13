@@ -295,7 +295,8 @@ func _trio_problems(screen: Control, view_name: String) -> Array:
 	return out
 
 
-## The map camera is almost free (2026-10-27 user decision): straight down to almost level, 6-60 m,
+## The map camera is almost free (2026-10-27 user decision): straight down to almost level, 2-60 m
+## (2026-11-13: closer, like the labs; pinching closes in on what is under the fingers),
 ## moved over the ground within its radius; the island stays reachable (the look-at point never
 ## leaves PAN_RADIUS of the centre, and the pan stays on the ground).
 func check_camera_limits() -> void:
@@ -304,7 +305,7 @@ func check_camera_limits() -> void:
 	var problems := []
 	if not is_equal_approx(rad_to_deg(rig.pitch_range.x), -89.0) or not is_equal_approx(rad_to_deg(rig.pitch_range.y), -8.0):
 		problems.append("pitch range %s" % str(rig.pitch_range))
-	if rig.distance_range != Vector2(6.0, 60.0):
+	if rig.distance_range != Vector2(2.0, 60.0) or not rig.zoom_to_point or rig.keep_out_boxes.is_empty():
 		problems.append("distance range %s" % str(rig.distance_range))
 	if not screen.view.two_finger_pan or not rig.pan_ground:
 		problems.append("two fingers do not move the map over the ground")
@@ -320,7 +321,21 @@ func check_camera_limits() -> void:
 		rig.pan_by(Vector2(-300.0, 200.0))
 	if rig.pan.length() > rig.pan_radius + 1e-3 or absf(rig.pan.y) > 1e-4 or rig.pan_radius < 12.0:
 		problems.append("pan %s (radius %.1f)" % [str(rig.pan), rig.pan_radius])
-	expect.call(problems.is_empty(), "map camera: -89..-8 deg, 6-60 m, two-finger pan over the ground within the island", "; ".join(problems))
+	expect.call(problems.is_empty(), "map camera: -89..-8 deg, 2-60 m (closing in on the point under the fingers), two-finger pan over the ground within the island", "; ".join(problems))
+	# A pinch on a spot closes in on it to 2 m: the spot stays under the fingers and the camera stays
+	# out of every landmark's stage.
+	var pinched: Dictionary = screen._spots[0]
+	rig.set_mode("three_quarter", true)
+	var fingers: Vector2 = screen._world_to_screen(pinched.at) / screen.view.size
+	for i in 60:
+		rig.zoom(0.9, fingers)
+	for i in 120:
+		await tree.process_frame
+	var near: Vector2 = screen._world_to_screen(pinched.at) / screen.view.size
+	var inside := rig.keep_out_boxes.filter(func(b: AABB) -> bool: return b.grow(-0.01).has_point(rig.global_position))
+	expect.call(is_equal_approx(rig.goal_distance, 2.0) and near.distance_to(fingers) < 0.12 and inside.is_empty(),
+		"map camera: a pinch on a spot closes in to 2 m on it (it stays under the fingers), the camera outside the landmarks",
+		"distance %.2f, spot %s -> %s, inside %d" % [rig.goal_distance, str(fingers), str(near), inside.size()])
 	# A close, low view: spots behind the camera have no label and cannot be tapped.
 	rig.set_state({"mode": rig.mode, "yaw": 0.0, "pitch": deg_to_rad(-8.0), "distance": 6.0, "pan": Vector3.ZERO})
 	for i in 4:
@@ -338,7 +353,7 @@ func check_camera_limits() -> void:
 	await _free(screen)
 
 
-## The sea and sky at every camera the map allows (turned all round, -89..-8 deg, 6-60 m, moved to
+## The sea and sky at every camera the map allows (turned all round, -89..-8 deg, 2-60 m, moved to
 ## its edge; phone and tablet): the open sea is the clear colour (MapIsland.make_environment, no
 ## sea plane: SM-P200 fill cost); every view ray below the horizon meets the sea inside the sky
 ## backdrop, every ray above it meets the backdrop below its top (no bare clear colour as sky).
@@ -352,7 +367,7 @@ func check_sea_fills_view() -> void:
 			problems.append("clear colour %s is not the sea" % str(environment.background_color))
 		for yaw_deg in [0.0, 90.0, 180.0, -135.0]:
 			for pitch_deg in [-8.0, -30.0, -89.0]:
-				for distance in [6.0, 60.0]:
+				for distance in [2.0, 60.0]:
 					var pan := Vector3(cos(deg_to_rad(yaw_deg)), 0.0, sin(deg_to_rad(yaw_deg))) * rig.pan_radius
 					rig.set_state({"mode": rig.mode, "yaw": deg_to_rad(yaw_deg), "pitch": deg_to_rad(pitch_deg), "distance": distance, "pan": pan})
 					var vp: Vector2 = Vector2(screen.view.viewport.size)

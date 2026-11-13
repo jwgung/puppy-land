@@ -74,8 +74,7 @@
     "picks": {
       "material": [
         { "label": "강철" },
-        { "label": "나무" },
-        { "label": "고무" }
+        { "label": "나무" }
       ],
       "angle": [
         { "label": "조금 기울기" },

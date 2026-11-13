@@ -118,8 +118,7 @@
     "picks": {
       "material": [
         { "value": "steel", "picture": "slide_steel" },
-        { "value": "wood", "picture": "slide_wood" },
-        { "value": "rubber", "picture": "slide_rubber" }
+        { "value": "wood", "picture": "slide_wood" }
       ],
       "angle": [
         { "value": 25, "picture": "slope", "size": 0.56 },

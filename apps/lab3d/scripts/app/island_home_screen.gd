@@ -53,6 +53,8 @@ var _route := PackedVector2Array()   # the way (x, z) from the cat to the spot's
 var _route_at := PackedFloat32Array()   # its length up to each point
 var _walk_last: Dictionary = {}      # actor -> its last position on the ground (its steps)
 var _walk_heading: Dictionary = {}   # actor -> its recent velocity (x, z; its facing)
+var _fox_side := 1.0               # the side of the way the guide leads on this walk (+1 left, -1 right)
+var _walk_step := {}             # actor -> its last walk step (x, z), the guide's easing
 ## The spot the three stand at (its index; -1: the square). Saved as the store's last spot on arrival.
 var rest_spot := -1
 var _down := [Vector2.INF, false]    # screen point of the press, cancelled (a drag)
@@ -191,6 +193,7 @@ func _ready() -> void:
 	light_spots([])
 
 	view.rig.configure(_map_camera())
+	_close_view()
 	view.rig.focus_modes = ["three_quarter", "orbit", "front", "top", "side"]   # the flag raise frames the spot from any view
 	_demo_flag()
 	view.two_finger_pan = true   # one finger turns the map; two move it (and pinch zooms)
@@ -243,11 +246,14 @@ func placed_wedges(progress: Dictionary) -> int:
 
 ## The map's camera definition (CameraRig.configure): a 3/4 view from above by default, then almost
 ## free (2026-10-27 user decision "거의 제한 없이"): turns all the way round, tilts from straight
-## down to almost level (one finger), zooms 6-60 m (pinch) and moves over the ground (two fingers)
-## within PAN_RADIUS of the centre, so the island is never lost. The look-at point is TARGET_Y
+## down to almost level (one finger), zooms 2-60 m (pinch) and moves over the ground (two fingers)
+## within PAN_RADIUS of the centre, so the island is never lost. Close in like the labs (2026-11-13
+## user "지도에서 확대는 왜 여전히 제한되어있나": it stopped at 6 m): the pinch closes in on what is
+## under the fingers (CameraRig.zoom_to_point) and the camera keeps out of the landmarks' stages
+## (_close_view). The look-at point is TARGET_Y
 ## above the grass so a close, low camera stays over the hills.
 const PITCH_RANGE := [-89.0, -8.0]
-const DISTANCE_RANGE := [6.0, 60.0]
+const DISTANCE_RANGE := [2.0, 60.0]
 const PAN_RADIUS := 15.0
 const TARGET_Y := 0.5
 ## The default distance and PAN_RADIUS are for an island of BASE_RADIUS_X; a wider one gets them that
@@ -280,6 +286,18 @@ func _map_camera() -> Dictionary:
 			"follow": {"yaw_deg": 0.0, "pitch_deg": -55.0},
 		},
 	}
+
+
+## Zooming in like the labs (2026-11-13): toward the point under the fingers, the camera outside every
+## landmark's stage (a box of its radius and height round it).
+func _close_view() -> void:
+	view.rig.zoom_to_point = true
+	var boxes := []
+	for spot in _spots:
+		var r := float(spot.radius)
+		if r > 0.0:
+			boxes.append(AABB(spot.at - Vector3(r, 0.0, r), Vector3(2.0 * r, maxf(float(spot.top), 0.5), 2.0 * r)))
+	view.rig.keep_out_boxes = boxes
 
 
 ## A spot: its node at the landmark's stage (the landmark itself is in the map's one landmark
@@ -694,6 +712,10 @@ const FOX_SIDE := 1.25
 ## follower's top speed (it passes the cat at the start).
 const FOX_LEAD := 2.0
 const FOX_PACE := 1.6
+## The share of a new step the guide takes each frame (the rest is its last step): its walk eases.
+const FOX_EASE := 0.15
+## m to the side of the way the guide walks while it leads (clear of the cat it passes).
+const FOX_WIDE := 0.6
 const FOX_SHAPES := [Vector2(0.2, FOX_SIDE), Vector2(0.2, -FOX_SIDE), Vector2(GROUP_BACK + 0.6, 0.0), Vector2(-0.4, 1.0), Vector2(-0.4, -1.0)]
 
 
@@ -1009,39 +1031,58 @@ func _step_walk(delta: float) -> void:
 	var top_speed := maxf(FOLLOW_SPEED, 1.6 * length / maxf(_walk_total, 0.01))
 	var settle := smoothstep(1.0 - SETTLE_SHARE, 1.0, k)
 	var spots := {}
-	for entry in [[puppy, 1.0, 1.0], [dugi, -1.0, 2.0], [fox, 1.0, -FOX_LEAD]]:   # (the fox leads ahead, #120)
+	for entry in [[puppy, 1.0, 1.0], [dugi, -1.0, 2.0], [fox, _fox_side, -FOX_LEAD]]:   # (the fox leads ahead, #120, on the side it starts on)
 		var actor: Node3D = entry[0]
 		if actor == null:
 			continue
 		var side: float = entry[1]
 		var lag: float = FOLLOW_LAG * float(entry[2])
+		var is_fox := actor == fox
 		var behind: Array = _along(clampf(s - lag, 0.0, length))
 		var dir: Vector2 = behind[1] if behind[1] != Vector2.ZERO else cat_dir
-		var goal: Vector2 = behind[0] + Vector2(dir.y, -dir.x) * FOLLOW_SIDE * side   # (dir.y, -dir.x): the walker's left
+		# (dir.y, -dir.x): the walker's left. The guide walks FOX_WIDE m out to the side, so it passes the
+		# cat with room to spare instead of squeezing by it (2026-11-13 user "막 비벼지고").
+		var wide := FOX_WIDE if is_fox else FOLLOW_SIDE
+		var goal: Vector2 = behind[0] + Vector2(dir.y, -dir.x) * wide * side
 		# (behind the way's start: they wait for their turn where they stand, not further back off the way)
 		var place: Vector3 = group[actor]
-		goal = goal.lerp(Vector2(place.x, place.z), settle)
+		var to_place := settle
+		if is_fox:   # its lead point would end on the cat's own stand: over the last lead it heads for its place
+			to_place = maxf(settle, clampf(1.0 - (length - s) / -lag, 0.0, 1.0))
+		goal = goal.lerp(Vector2(place.x, place.z), to_place)
 		var now: Vector3 = _walk_last.get(actor, actor.position)
 		var at := Vector2(now.x, now.z)
-		at += (goal - at).limit_length((top_speed * (FOX_PACE if actor == fox else 1.0) + 4.0 * settle) * delta)
+		var step := (goal - at).limit_length((top_speed * (FOX_PACE if is_fox else 1.0) + 4.0 * settle) * delta)
+		if is_fox:   # the fast guide eases its steps (no jerk back and forth when its goal turns, 2026-11-13)
+			step = (_walk_step.get(actor, step) as Vector2).lerp(step, lerpf(FOX_EASE, 1.0, settle))   # (into its place at the end)
+		var start := at
+		at += step
 		# Out of the cat's way: never nearer than KEEP_APART, a follower ahead of it to its own side.
 		var off := at - cat_at
 		if off.length() < KEEP_APART:
 			var away := off.normalized() if off.length() > 0.01 else Vector2(cat_dir.y, -cat_dir.x) * side
-			if off.dot(cat_dir) > 0.0 or actor == fox:   # (the guide passes the cat to its own side to lead)
-				away = (away + Vector2(cat_dir.y, -cat_dir.x) * side * (2.0 if actor == fox else 1.0)).normalized()
+			if off.dot(cat_dir) > 0.0 or is_fox:   # (the guide passes the cat to its own side to lead)
+				away = (away + Vector2(cat_dir.y, -cat_dir.x) * side * (2.0 if is_fox else 1.0)).normalized()
 			at = cat_at + away * KEEP_APART
+		if is_fox:   # (the step it really took: kept off the cat it does not push on into it)
+			_walk_step[actor] = at - start
 		spots[actor] = at
-	if spots.has(puppy) and spots.has(dugi):
-		var gap: Vector2 = spots[dugi] - spots[puppy]
-		if gap.length() < KEEP_APART:
-			var push := (gap.normalized() if gap.length() > 0.01 else Vector2(cat_dir.y, -cat_dir.x) * -1.0) * (KEEP_APART - gap.length()) * 0.5
-			spots[puppy] -= push
-			spots[dugi] += push
-			for actor: Node3D in spots:   # still out of the cat's way
-				var off: Vector2 = spots[actor] - cat_at
-				if off.length() < KEEP_APART and off.length() > 0.01:
-					spots[actor] = cat_at + off.normalized() * KEEP_APART
+	# The followers keep apart from each other too (the fox as well: 2026-11-13 user "여우친구 이동할때 막
+	# 비벼지고"), each pair pushed apart half each, then still out of the cat's way.
+	var followers: Array = spots.keys()
+	for i in followers.size():
+		for j in range(i + 1, followers.size()):
+			var a: Node3D = followers[i]
+			var b: Node3D = followers[j]
+			var gap: Vector2 = spots[b] - spots[a]
+			if gap.length() < KEEP_APART:
+				var push := (gap.normalized() if gap.length() > 0.01 else Vector2(cat_dir.y, -cat_dir.x) * -1.0) * (KEEP_APART - gap.length()) * 0.5
+				spots[a] -= push
+				spots[b] += push
+	for actor: Node3D in spots:   # still out of the cat's way
+		var off: Vector2 = spots[actor] - cat_at
+		if off.length() < KEEP_APART and off.length() > 0.01:
+			spots[actor] = cat_at + off.normalized() * KEEP_APART
 	for actor: Node3D in spots:
 		var hop: Array = FOLLOW_HOPS[str(actor.name)]
 		_set_walker(actor, spots[actor], HOP_HEIGHT * float(hop[1]) * absf(sin((_walk_t + float(hop[0]) / HOP_HZ) * PI * HOP_HZ)), delta)
@@ -1069,6 +1110,7 @@ func stroll_home(from: Vector2, seconds: float) -> void:
 	_stroll = {"route": way, "at": route_lengths(way), "t": 0.0, "total": maxf(seconds, 0.1)}
 	_walk_last.clear()
 	_walk_heading.clear()
+	_walk_step.clear()
 	for actor: Node3D in walkers():
 		actor.position = Vector3(from.x, map.walk_height(from.x, from.y), from.y)
 
@@ -1094,7 +1136,11 @@ func _step_stroll(delta: float) -> void:
 		var s := length * walk_share(float(_stroll.t), float(_stroll.total)) - STROLL_LAG * float(entry[1])
 		var p: Vector2 = along(way, at, s)[0]
 		var place := trio_spot(actor)
-		p = p.lerp(Vector2(place.x, place.z), settle)
+		# Near the way's end each heads for its own place in the row (the way ends on the cat's): they
+		# never bunch up on that one point (2026-11-13 user "막 비벼지고").
+		var tail := 2.0 * STROLL_LAG   # (the last stretch of the way)
+		var to_place := maxf(settle, clampf((s - (at[at.size() - 1] - tail)) / tail, 0.0, 1.0))
+		p = p.lerp(Vector2(place.x, place.z), to_place)
 		_set_walker(actor, p, HOP_HEIGHT * absf(sin(float(_stroll.t) * PI * HOP_HZ + float(entry[1]))) * (1.0 - settle), delta)
 		if settle > 0.0:
 			actor.rotation.y = lerp_angle(actor.rotation.y, TRIO_YAW, settle)
@@ -1354,6 +1400,12 @@ func _walk_to_spot(index: int) -> void:
 	_walk_t = 0.0
 	_walk_last = {}
 	_walk_heading = {}
+	_walk_step = {}
+	_fox_side = 1.0
+	if fox != null and _route.size() > 1:   # the side it already stands on: it never crosses the group (2026-11-13)
+		var d := (_route[1] - _route[0]).normalized()
+		var off := Vector2(fox.position.x, fox.position.z) - _route[0]
+		_fox_side = -1.0 if d.x * off.y - d.y * off.x > 0.0 else 1.0
 	_walking = true
 	SoundBoard.play(&"spot")
 	var first: Array = _along(0.3)
