@@ -9,8 +9,8 @@
 ## --demo-story screenshot). The title only shows; it never touches progress, the story's marks or
 ## an experiment. Its cost is the map's (one island mesh + the sky, no labels, no characters).
 ##
-## 섬 고르기 (#75; one way in since 2026-11-09, user "게임 시작이랑 섬 선택이 어색해" → A): once a
-## voyage to another island is due or was seen (#118: Story.voyage_due, Story.any_voyage_seen)
+## 섬 고르기 (#75; one way in since 2026-11-09, user "게임 시작이랑 섬 선택이 어색해" → A): with more
+## than one island (from the first launch since 2026-11-13; before, once a voyage was due or seen, #118)
 ## 시작하기 opens the islands' map (IslandCards) over the turning island, the logo and the buttons hidden meanwhile; a card emits
 ## `island_chosen` (App: that island in use, its map). Before, with one island, 시작하기 goes straight
 ## to it. There is no separate 섬 고르기 button any more, and 이야기 다시 보기 moves onto each island's
@@ -201,10 +201,12 @@ func _on_start() -> void:
 		start_requested.emit()
 
 
-## 시작하기 opens the islands' map (a second island is there to choose: a voyage was seen, or one is
-## due since the first island's finale, #118).
+## 시작하기 opens the islands' map whenever the app has more than one island (2026-11-13 user "처음
+## 시작할 때 왜 섬 고르기 없이 바로 뉴턴섬으로 감?": from the first launch, the next islands locked;
+## until then only once a voyage was seen or was due, #118). The first island's 출발! plays its first
+## story on its map as before.
 static func picks_island() -> bool:
-	return Story.any_voyage_seen() or Story.voyage_due(ProgressStore.load()) != ""
+	return Island.ids().size() > 1
 
 
 ## The logo's rect and the buttons' rects (tests: inside the screen, no overlap).

@@ -61,20 +61,36 @@ func check_flow(quality_script: GDScript) -> void:
 	app.quit = func() -> void: quits[0] += 1
 	app._go_back()
 	var back_quits: bool = quits[0] == 1 and app._screen is TitleScreen
-	# 시작하기, the first time: the map with the prologue.
+	# 시작하기 opens the islands' map from the first launch (2026-11-13: two islands); the first island's
+	# 출발!, the first time: its map with the prologue.
+	var go_first := func() -> void:
+		(app._screen as TitleScreen).start_button.pressed.emit()
+		await tree.process_frame
+		var cards = (app._screen as TitleScreen).island_cards
+		if cards != null:
+			(cards.buttons[ProgressStore.FIRST_ISLAND] as Button).pressed.emit()
+			await tree.process_frame
+	# (a new player's islands' map: the first island to go to, the next one locked: no button)
 	(app._screen as TitleScreen).start_button.pressed.emit()
 	await tree.process_frame
-	var first: bool = app._screen is IslandHomeScreen and app._screen.play_prologue_on_open
+	var new_cards = (app._screen as TitleScreen).island_cards
+	var locked_next: bool = new_cards != null and new_cards.buttons.get(ProgressStore.FIRST_ISLAND) != null \
+		and Island.ids().size() > 1 and new_cards.buttons.get(Island.ids()[1]) == null
+	app.show_title()
+	await tree.process_frame
+	await go_first.call()
+	var first: bool = locked_next and app._screen is IslandHomeScreen and app._screen.play_prologue_on_open
 	ProgressStore.set_mark(ProgressStore.STORY, "prologue", true)
 	app.show_title()
 	await tree.process_frame
-	(app._screen as TitleScreen).start_button.pressed.emit()
-	await tree.process_frame
+	await go_first.call()
 	var later: bool = app._screen is IslandHomeScreen and not app._screen.play_prologue_on_open
-	# 이야기 다시 보기: the prologue again.
+	# 이야기 다시 보기 (on the first island's card): the prologue again.
 	app.show_title()
 	await tree.process_frame
-	(app._screen as TitleScreen).story_button.pressed.emit()
+	(app._screen as TitleScreen).start_button.pressed.emit()
+	await tree.process_frame
+	((app._screen as TitleScreen).island_cards.story_buttons[ProgressStore.FIRST_ISLAND] as Button).pressed.emit()
 	await tree.process_frame
 	var replay: bool = app._screen is IslandHomeScreen and app._screen.play_prologue_on_open
 	# 설정: the settings; back (Android or its own button) returns to the title.
@@ -99,7 +115,7 @@ func check_flow(quality_script: GDScript) -> void:
 	var map_back: bool = app._screen is IslandHomeScreen
 	await _free(app)
 	expect.call(title_first and back_quits, "title: the app opens on the title (story on, measured as 'title'); back there quits", "%s %s" % [title_first, back_quits])
-	expect.call(first and later and replay, "title: 시작하기 = the prologue the first time, the map afterwards; 이야기 다시 보기 = the prologue again",
+	expect.call(first and later and replay, "title: 시작하기 = the islands' map, the first island's 출발! = the prologue the first time, the map afterwards; its card's 이야기 다시 보기 = the prologue again",
 		"%s %s %s" % [first, later, replay])
 	expect.call(settings and back_title and button_title and map_back, "title: 설정 opens the settings and back returns to the title (from the map: to the map)",
 		"%s %s %s %s" % [settings, back_title, button_title, map_back])
@@ -259,8 +275,10 @@ func check_layout() -> void:
 		for k in range(1, rects.size()):
 			if rects[0].grow(-TitleScreen.BOB_UNITS).intersects(rects[k]):
 				problems.append("logo over button %d" % k)
-		if rects[1].intersects(rects[2]) or rects[1].intersects(rects[3]) or rects[2].intersects(rects[3]):
-			problems.append("buttons overlap")
+		for i in range(1, rects.size()):   # (the buttons: 이야기 다시 보기 only with one island)
+			for j in range(i + 1, rects.size()):
+				if rects[i].intersects(rects[j]):
+					problems.append("buttons overlap")
 		if rects[0].size.x < TitleScreen.LOGO_MIN * 0.9 or rects[1].size.y < 80.0:
 			problems.append("too small")
 		var yaw: float = title.view.rig.cur_yaw
