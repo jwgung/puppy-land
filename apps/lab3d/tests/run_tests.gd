@@ -130,6 +130,9 @@
 ##    first), the island in use saved and opened again, an island open when every spot of the one before
 ##    is complete, the island-level saves keyed by island (an old save is the first island's), no
 ##    experiment on two islands, the island's story file.
+## 22c2. the curie island's map (tests/curie_map_checks.gd, #152 2026-11-13): content/islands/curie.json
+##    (three zones, 12 spots in the story's order, the lighthouse), its stages and paths on land, an
+##    island in the making (never open, 곧 만나요 on its card).
 ## 22c. the hutton island's map (tests/hutton_map_checks.gd, #72 2026-11-06): content/islands/hutton.json
 ##    (11 spots once in the order, the lookout on the square, the features checked), open after the
 ##    first island, now that every spot is a lab (an island in the making never opens), its map (one
@@ -398,6 +401,11 @@ func _run() -> void:
 	_expect(hutton != null and hutton.can_instantiate(), "hutton map checks compile", "")
 	if hutton != null and hutton.can_instantiate():
 		await hutton.new(self, _expect).run()
+	print("== the curie island's map (#152: its layout on land, an island in the making) ==")
+	var curie: GDScript = load("res://tests/curie_map_checks.gd")
+	_expect(curie != null and curie.can_instantiate(), "curie map checks compile", "")
+	if curie != null and curie.can_instantiate():
+		await curie.new(self, _expect).run()
 	print("== the hutton island's pieces (#101: golden sundial wedges, the dial emblem; the mechanics star unchanged) ==")
 	var sundial: GDScript = load("res://tests/sundial_piece_checks.gd")
 	_expect(sundial != null and sundial.can_instantiate(), "sundial piece checks compile", "")

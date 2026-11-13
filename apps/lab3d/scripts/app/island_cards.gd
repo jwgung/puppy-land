@@ -190,7 +190,9 @@ static func island_name(id: String) -> String:
 ## The line under a locked island's name: what opens it; 다음 섬 promises nothing yet (2026-11-09: no
 ## island opens after the last one, so not "collect them all and it opens").
 static func locked_line(entry: Dictionary) -> String:
-	if str(entry.id) == "":
+	# The 다음 섬 card, and an island still in the making (its spots not all labs yet: it would not
+	# open even after the island before it, #151): 곧 만나요.
+	if str(entry.id) == "" or not Island.by_id(str(entry.id)).playable():
 		return Locale.t("islands.soon")
 	return Locale.t("islands.locked") % str(entry.after)
 
@@ -204,6 +206,9 @@ func _ready() -> void:
 	view.name = "WorldView"
 	view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(view)
+	# Its own 3D world (#152): the title's turning island under it is in the shared world and showed
+	# through between the islands' models once a row had an even count (four with curie).
+	view.viewport.own_world_3d = true
 	view.rig.set_process(false)   # the map frames the camera itself
 	view.single_pointer.connect(_on_pointer)
 	focus = _index(Island.current_id())
@@ -333,6 +338,8 @@ static func _mini_island_mesh(id: String) -> Mesh:
 			MapLandmarks.volcano(b, Transform3D(Basis(), Vector3(-1.6, top - 0.2, -2.0)), 3.4, 4.0, 0.2)
 			MapLandmarks.lighthouse(b, place.call(4.0, 1.4))
 			MapLandmarks.sundial(b, place.call(-0.6, 2.6))
+		"curie":   # (the rainbow lighthouse on its hill: the lighthouse until #154 / #167)
+			MapLandmarks.lighthouse(b, place.call(2.6, -1.8))
 		"mechanics":
 			MapLandmarks.add(b, "orbit", place.call(-2.2, -1.6))
 			MapLandmarks.add(b, "spring", place.call(2.4, -0.8))
