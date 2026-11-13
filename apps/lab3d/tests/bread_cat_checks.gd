@@ -67,6 +67,7 @@ func run() -> void:
 	await check_layout("projectile")
 	await check_layout("friction")
 	await check_layout("friction", true)   # 2026-11-03: it opens on the light box (stage 1)
+	await check_push_seen()
 	await run_roles()
 
 
@@ -613,6 +614,38 @@ func check_layout(id: String, entry := false) -> void:
 			"cat %s in view %s%s, hidden %d" % [rect, view_rect.size, hit, hidden])
 		screen.get_parent().queue_free()
 		await tree.process_frame
+
+
+## The pushing cat stays in sight behind every box (2026-11-13 user: "큰 상자로 바꾸면 빵고양이가
+##가려져서 잘 안 보임"): in the front view, at the start and pushed along the track, most of the lines
+## of sight from the camera to points on the cat (low to its head, front and back: at most a quarter
+## hidden) miss the box's drawn cube, for each box weight.
+func check_push_seen() -> void:
+	var problems := []
+	for mass in ["light", "normal", "start", "heavy"]:
+		var screen: Control = await _open("friction", TABLET, false)
+		var lab: Experiment = screen.experiment
+		screen._set_control("mass", mass)
+		for travel in [0.0, 2.0]:
+			lab.box.global_position.x = lab.START_X + travel
+			lab.props.update_cat(0.0, 1.0, travel, 0.0)
+			var cat: CatActor = lab.props.cat
+			cat.advance(0.0)
+			await tree.process_frame
+			var eye: Vector3 = screen.view.rig.global_position
+			var drawn: AABB = lab.props.look_bounds(lab.box.global_position)
+			var body := cat_aabb(cat)
+			var c := body.get_center()
+			var points := []
+			for dz in [-0.25, 0.0, 0.25]:
+				for y in [0.25, 0.45, 0.65, 0.85]:
+					points.append(Vector3(c.x, body.position.y + body.size.y * y, c.z + body.size.z * dz))
+			var hidden := points.filter(func(p: Vector3) -> bool: return drawn.intersects_segment(eye, p) != null).size()
+			if hidden > points.size() / 4:
+				problems.append("%s box, %.0f m along: %d of %d sight lines to the cat hit the box" % [mass, travel, hidden, points.size()])
+		screen.get_parent().queue_free()
+		await tree.process_frame
+	expect.call(problems.is_empty(), "bread cat (friction): behind every box weight (light to heavy) the pushing cat stays in sight from the front view", "; ".join(problems))
 
 
 # --- 6. every lab (2026-10-27: the cat has a hand in all 11 labs) -------------------------------
