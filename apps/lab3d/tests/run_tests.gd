@@ -388,6 +388,11 @@ func _run() -> void:
 	_expect(payment != null and payment.can_instantiate(), "payment checks compile", "")
 	if payment != null and payment.can_instantiate():
 		await payment.new(self, _expect).run()
+	print("== 기기 사이 기록 맞추기 (#103): merge, the sync with a stand-in cloud, the guardian's switch ==")
+	var cloud_sync: GDScript = load("res://tests/cloud_sync_checks.gd")
+	_expect(cloud_sync != null and cloud_sync.can_instantiate(), "cloud sync checks compile", "")
+	if cloud_sync != null and cloud_sync.can_instantiate():
+		await cloud_sync.new(self, _expect).run()
 	print("== the hutton island's map (#72: its layout, grounds and features, open after the first island, never while in the making) ==")
 	var hutton: GDScript = load("res://tests/hutton_map_checks.gd")
 	_expect(hutton != null and hutton.can_instantiate(), "hutton map checks compile", "")

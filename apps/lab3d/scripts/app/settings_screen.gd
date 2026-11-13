@@ -102,6 +102,7 @@ func _ready() -> void:
 	column.add_child(quality_card)
 	column.add_child(_build_sound_card())
 	column.add_child(_build_story_card())
+	column.add_child(_build_sync_card())
 
 	_select(_selected)
 
@@ -235,6 +236,80 @@ func _build_story_card() -> Control:
 	return card
 
 
+## 기기 사이 기록 맞추기 (#103, ADR 0006): the state in a line and one button. 켜기 opens the parental
+## gate first (a guardian's choice: the child's progress goes to the guardian's Google Play Games
+## account); 끄기 needs no gate. Without Play Games (this build or device) the button is off.
+var sync_button: Button
+var sync_status: Label
+
+
+func _build_sync_card() -> Control:
+	var card := Ui.panel()
+	card.name = "SyncCard"
+	var box := Ui.vbox(8)
+	card.add_child(box)
+	box.add_child(Ui.label(Locale.t("settings.sync"), "SectionLabel"))
+	box.add_child(Ui.label(Locale.t("settings.sync_note"), "MutedLabel", true))
+	sync_status = Ui.label("", "", true)
+	sync_status.name = "SyncStatus"
+	box.add_child(sync_status)
+	sync_button = Ui.button("", "", 60)
+	sync_button.name = "SyncButton"
+	sync_button.pressed.connect(_on_sync_pressed)
+	box.add_child(sync_button)
+	if CloudSync.instance != null:
+		CloudSync.instance.changed.connect(_show_sync)
+	_show_sync()
+	return card
+
+
+func _show_sync() -> void:
+	if sync_status == null or not is_instance_valid(sync_status):
+		return
+	var sync := CloudSync.instance
+	var state := sync.status if sync != null else CloudSync.NO_SERVICE
+	if sync == null and not CloudSync.is_on():
+		state = CloudSync.NO_SERVICE
+	sync_status.text = _sync_words(state)
+	var on := CloudSync.is_on()
+	sync_button.text = Locale.t("settings.sync_turn_off") if on else Locale.t("settings.sync_turn_on")
+	sync_button.disabled = not on and (sync == null or sync.backend == null)
+
+
+static func _sync_words(state: String) -> String:
+	match state:
+		CloudSync.OFF:
+			return Locale.t("settings.sync_off")
+		CloudSync.SIGNING_IN:
+			return Locale.t("settings.sync_signing_in")
+		CloudSync.SYNCING:
+			return Locale.t("settings.sync_syncing")
+		CloudSync.SYNCED:
+			return Locale.t("settings.sync_synced")
+		CloudSync.FAILED:
+			return Locale.t("settings.sync_failed")
+	return Locale.t("settings.sync_no_service")
+
+
+func _on_sync_pressed() -> void:
+	var sync := CloudSync.instance
+	if CloudSync.is_on():
+		if sync != null:
+			sync.set_on(false)
+		else:
+			CloudSync._store_on(false)
+		_show_sync()
+		return
+	if sync == null or sync.backend == null:
+		return
+	var gate := ParentalGate.new()
+	add_child(gate)
+	gate.passed.connect(func() -> void:
+		if is_instance_valid(sync):
+			sync.set_on(true)
+		_show_sync())
+
+
 ## A big check box in the island style (UiTheme "CheckBox": the box 44 units, the row 64 units).
 static func check_box(text: String, on := false) -> CheckBox:
 	var check := CheckBox.new()
@@ -268,6 +343,8 @@ func restart() -> void:
 	if not restart_confirm.visible:
 		return
 	ProgressStore.reset_all()
+	if CloudSync.instance != null:
+		CloudSync.instance.mark_reset()   # (#103: the other devices start over too)
 	ExperimentScreen.reset_tips_shown()
 	show_restart_confirm(false)
 	# After this input pass: the tap came through the scroller's replay (DragScroll), and changing the
