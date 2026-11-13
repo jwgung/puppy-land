@@ -193,6 +193,7 @@ func _ready() -> void:
 	light_spots([])
 
 	view.rig.configure(_map_camera())
+	_close_view()
 	view.rig.focus_modes = ["three_quarter", "orbit", "front", "top", "side"]   # the flag raise frames the spot from any view
 	_demo_flag()
 	view.two_finger_pan = true   # one finger turns the map; two move it (and pinch zooms)
@@ -245,11 +246,14 @@ func placed_wedges(progress: Dictionary) -> int:
 
 ## The map's camera definition (CameraRig.configure): a 3/4 view from above by default, then almost
 ## free (2026-10-27 user decision "거의 제한 없이"): turns all the way round, tilts from straight
-## down to almost level (one finger), zooms 6-60 m (pinch) and moves over the ground (two fingers)
-## within PAN_RADIUS of the centre, so the island is never lost. The look-at point is TARGET_Y
+## down to almost level (one finger), zooms 2-60 m (pinch) and moves over the ground (two fingers)
+## within PAN_RADIUS of the centre, so the island is never lost. Close in like the labs (2026-11-13
+## user "지도에서 확대는 왜 여전히 제한되어있나": it stopped at 6 m): the pinch closes in on what is
+## under the fingers (CameraRig.zoom_to_point) and the camera keeps out of the landmarks' stages
+## (_close_view). The look-at point is TARGET_Y
 ## above the grass so a close, low camera stays over the hills.
 const PITCH_RANGE := [-89.0, -8.0]
-const DISTANCE_RANGE := [6.0, 60.0]
+const DISTANCE_RANGE := [2.0, 60.0]
 const PAN_RADIUS := 15.0
 const TARGET_Y := 0.5
 ## The default distance and PAN_RADIUS are for an island of BASE_RADIUS_X; a wider one gets them that
@@ -282,6 +286,18 @@ func _map_camera() -> Dictionary:
 			"follow": {"yaw_deg": 0.0, "pitch_deg": -55.0},
 		},
 	}
+
+
+## Zooming in like the labs (2026-11-13): toward the point under the fingers, the camera outside every
+## landmark's stage (a box of its radius and height round it).
+func _close_view() -> void:
+	view.rig.zoom_to_point = true
+	var boxes := []
+	for spot in _spots:
+		var r := float(spot.radius)
+		if r > 0.0:
+			boxes.append(AABB(spot.at - Vector3(r, 0.0, r), Vector3(2.0 * r, maxf(float(spot.top), 0.5), 2.0 * r)))
+	view.rig.keep_out_boxes = boxes
 
 
 ## A spot: its node at the landmark's stage (the landmark itself is in the map's one landmark
