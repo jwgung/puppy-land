@@ -32,16 +32,13 @@ const SHARED_ON_PURPOSE := ["spring 1-2"]
 ## load), ["stroke", cells] (one pulley stroke let go).
 const ROUNDS := {
 	"free-fall": [
-		["the start: red 5 m, yellow 3 m (2026-10-29: not level), the buttons are not pressed together", [["act", "release"]], 240, 0],
-		["the red ball dragged up to 8 m alone: it lands after the yellow one, no button pair", [["drop", "red", 8.0], ["act", "release"]], 240, 0],
-		["the yellow ball up to 8 m too: the heavy red and the light yellow land together on the earth", [["drop", "yellow", 8.0], ["act", "release"]], 240, 1],
-		["the Moon's stage set the balls (2026-10-30: red waits at the top, 8 m, the pink one at 4 m): on the earth nothing", [["act", "release"]], 240, 1],
-		["the Moon, both at 7 m (the 1 m grid's next step down): together in 2.94 s: not past 3", [["ctl", "gravity", "moon"], ["drop", "red", 7.0], ["drop", "yellow", 7.0], ["act", "release"]], 300, 1],
-		["the Moon, red at 8 m, yellow at 7 m: not together", [["drop", "red", 8.0], ["act", "release"]], 300, 1],
-		["the Moon, both at 8 m: together in 3.14 s (3.1초)", [["drop", "yellow", 8.0], ["act", "release"]], 300, 2],
-		["Jupiter with the light red ball: together, but not two different balls", [["ctl", "gravity", "jupiter"], ["ctl", "mass", "light"], ["act", "release"]], 150, 2],
-		["Jupiter's stage set red 6 m, pink 3 m: the heavy red ball alone is not together", [["ctl", "mass", "heavy"], ["act", "release"]], 150, 2],
-		["Jupiter, the pink ball lifted to the red one's 6 m: together in 0.70 s", [["drop", "yellow", 6.0], ["act", "release"]], 150, 3],
+		# (2026-11-12: both balls level at 5 m, the stages change only the world; a finger keeps the height)
+		["the Moon on the earth's stage: together, but not the earth", [["ctl", "gravity", "moon"], ["act", "release"]], 300, 0],
+		["the start's earth, both at 5 m: the heavy red and the light yellow land together", [["ctl", "gravity", "earth"], ["act", "release"]], 240, 1],
+		["the earth again: the next stage wants the Moon", [["act", "release"]], 240, 1],
+		["the Moon: together, slowly (2.48 s)", [["ctl", "gravity", "moon"], ["act", "release"]], 300, 2],
+		["the earth on Jupiter's stage: nothing", [["ctl", "gravity", "earth"], ["act", "release"]], 240, 2],
+		["Jupiter, the red ball dragged up and let go: the height stays, both drop together (0.64 s)", [["ctl", "gravity", "jupiter"], ["drop", "red", 8.0]], 150, 3],
 	],
 	"collision": [
 		["the start: the two 1 kg balls set by the stage, 3.4 m/s: too gentle", [["act", "release"]], 600, 0],
@@ -298,7 +295,7 @@ func _ops(screen: Control, ops: Array) -> void:
 				m.notifying = false
 				m.changed.emit()
 			"drop":
-				# A free-fall ball let go on its drop line at a height (its own, 2026-10-29), like a finger.
+				# A free-fall ball let go on its drop line at a height, like a finger (2026-11-12: the lab keeps its own height).
 				var drop_id := "drop_" + str(op[1])
 				var at: Vector3 = lab.starts[op[1]]
 				var drop_xf := Transform3D(Basis.IDENTITY, Vector3(at.x, float(op[2]) + lab.BALL_RADIUS, at.z))
