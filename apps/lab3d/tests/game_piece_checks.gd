@@ -342,32 +342,44 @@ func check_free_fall() -> void:
 	var heights: Array = goals.call("grid", definition, "height")
 	var problems := []
 	var lab: Experiment = await _lab("free-fall")
-	# The lab's value: the common formula landing when the two land within one step, else words.
-	var together := func(world: String, mass: String, h_red: float, h_yellow: float) -> Variant:
-		lab.set_control("gravity", world)
-		lab.set_control("mass", mass)
-		lab.manipulation_placed("drop_red", Transform3D(Basis(), Vector3(lab.starts.red.x, h_red + lab.BALL_RADIUS, 0.0)))
-		lab.manipulation_placed("drop_yellow", Transform3D(Basis(), Vector3(lab.starts.yellow.x, h_yellow + lab.BALL_RADIUS, 0.0)))
+	var run := func() -> Variant:
 		lab.release()
 		var steps := 0
 		while lab.status() != "landed" and steps < 700:
 			await tree.physics_frame
 			steps += 1
 		return lab.observations().together_time
-	var level: Variant = await together.call("earth", "heavy", 5.0, 5.0)
-	var light: Variant = await together.call("earth", "light", 5.0, 5.0)
-	var apart: Variant = await together.call("earth", "heavy", 8.0, 7.0)
-	# Two balls only (2026-10-29), and a drag moves its own ball to a whole metre (6.4 m -> 6 m).
+	# Both balls start level at DROP_HEIGHT (2026-11-12 user: only the world changes, not the height).
+	var level_start: bool = lab.starts.red.y == lab.DROP_HEIGHT and lab.starts.yellow.y == lab.DROP_HEIGHT
+	# The lab's value: the common formula landing when the two land within one step, else words.
+	lab.set_control("gravity", "earth")
+	lab.set_control("mass", "heavy")
+	var level: Variant = await run.call()
+	lab.set_control("mass", "light")
+	var light: Variant = await run.call()
+	lab.set_control("mass", "heavy")
+	# A finger on a ball's drop line keeps both where they are and drops both (6.4 m asked: still 5 m).
 	lab.manipulation_placed("drop_red", Transform3D(Basis(), Vector3(lab.starts.red.x, 6.4 + lab.BALL_RADIUS, 0.0)))
-	var dragged_one: bool = absf(lab.starts.red.y - 6.0) < 1e-9 and absf(lab.starts.yellow.y - 7.0) < 1e-9 \
+	var kept: bool = lab.starts.red.y == lab.DROP_HEIGHT and lab.starts.yellow.y == lab.DROP_HEIGHT \
 		and lab.ORDER == ["yellow", "red"] and lab.balls.size() == 2
-	if not (level is float and absf(level - sqrt(2.0 * 5.0 / 9.81)) < 1e-9 and light is float and absf(light - level) < 1e-12 and apart is String and dragged_one):
-		problems.append("the lab: level %s, light %s, 8 vs 7 m %s, own whole-metre drag / two balls %s" % [level, light, apart, dragged_one])
+	var steps := 0
+	while lab.status() != "landed" and steps < 700:
+		await tree.physics_frame
+		steps += 1
+	var tapped: Variant = lab.observations().together_time
+	# Apart (placed straight, not by a finger): words, not a time.
+	lab.manipulation_placed("red", Transform3D(Basis(), Vector3(lab.starts.red.x, 8.0 + lab.BALL_RADIUS, 0.0)))
+	lab.manipulation_placed("yellow", Transform3D(Basis(), Vector3(lab.starts.yellow.x, 7.0 + lab.BALL_RADIUS, 0.0)))
+	var apart: Variant = await run.call()
+	var t5 := sqrt(2.0 * 5.0 / 9.81)
+	if not (level_start and level is float and absf(level - t5) < 1e-9 and light is float and absf(light - level) < 1e-12 \
+			and tapped is float and absf(tapped - t5) < 1e-9 and apart is String and kept):
+		problems.append("the lab: level start %s, level %s, light %s, tapped %s (kept %s), 8 vs 7 m %s" % [level_start, level, light, tapped, kept, apart])
 	if heights != [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]:
 		problems.append("the height grid %s (want 1–8 m by 1 m)" % str(heights))
 	lab.queue_free()
-	# The formula on the grid: two different heights never land within a step (Jupiter's 7 and 8 m
-	# are the closest pair: 0.052 s), the same height always does.
+	# The formula on the slider's grid: two different heights never land within a step (Jupiter's 7 and
+	# 8 m are the closest pair: 0.052 s), the same height always does.
 	var g := {"earth": 9.81, "moon": 1.62, "jupiter": 24.79}
 	var closest := INF
 	for world in g:
@@ -377,27 +389,20 @@ func check_free_fall() -> void:
 					closest = minf(closest, absf(sqrt(2.0 * a / g[world]) - sqrt(2.0 * b / g[world])))
 	if closest <= lab.TOGETHER_S:
 		problems.append("two grid heights land within a step (%.4f s)" % closest)
-	# Stage 2 (the Moon, past 3 s): only both at 8 m; never on the earth or Jupiter. Stage 3 (Jupiter,
-	# under 1 s): from every height; the Moon never; the earth not from 5 m up.
+	# Every stage: the two together from any height counts; no number goal (no "past 3 s").
 	var fall := func(world: String, h: float) -> float: return sqrt(2.0 * h / g[world])
-	var moon: Array = heights.filter(func(h: float) -> bool: return _beats(definition, 1, fall.call("moon", h)))
-	if moon != [8.0] or heights.any(func(h: float) -> bool: return _beats(definition, 1, fall.call("earth", h)) or _beats(definition, 1, fall.call("jupiter", h))):
-		problems.append("stage 2: the Moon from %s" % str(moon))
-	if not heights.all(func(h: float) -> bool: return _beats(definition, 2, fall.call("jupiter", h))) \
-			or heights.filter(func(h: float) -> bool: return h >= 1.0).any(func(h: float) -> bool: return _beats(definition, 2, fall.call("moon", h))) \
-			or heights.filter(func(h: float) -> bool: return h >= 5.0).any(func(h: float) -> bool: return _beats(definition, 2, fall.call("earth", h))):
-		problems.append("stage 3: Jupiter / the Moon / the earth")
-	if not heights.all(func(h: float) -> bool: return _beats(definition, 0, fall.call("earth", h))):
-		problems.append("stage 1: some earth height does not count")
-	# Each stage wants the two different balls (the heavy red one: every stage alike, so it is no picture
-	# button, ConditionPicks) and its world (one button fits, the others not).
+	var worlds := ["earth", "moon", "jupiter"]
+	for i in 3:
+		if not heights.all(func(h: float) -> bool: return _beats(definition, i, fall.call(worlds[i], h))):
+			problems.append("stage %d: some %s height does not count" % [i + 1, worlds[i]])
+	# Each stage wants only its world (one button fits, the others not); no ball button.
 	for i in 3:
 		var want: Dictionary = MissionRound.missions(definition).stages[i].conditions
-		if want.get("mass") != "heavy" or (goals.call("picked", definition, i, "gravity", true) as Array) != [want.gravity] \
+		if want.keys() != ["gravity"] or want.gravity != worlds[i] or (goals.call("picked", definition, i, "gravity", true) as Array) != [want.gravity] \
 				or (goals.call("picked", definition, i, "gravity", false) as Array).size() != 2:
 			problems.append("stage %d: the conditions / buttons" % (i + 1))
 	expect.call(problems.is_empty(),
-		"piece game (drop): the buttons count when the heavy red and the light yellow ball land within one step (the same height: √(2h/g) has no mass); grid heights (1–8 m by 1 m) apart never do (closest %.3f s); the earth any height, the Moon only both at 8 m (3.14 s; 7 m is 2.94 s), Jupiter any height under 1 s (the Moon not from 1 m, the earth not from 5 m); each stage wants the heavy red ball" % closest,
+		"piece game (drop): both balls start level at 5 m and a finger on a ball keeps the height and drops both; the buttons count when the heavy red and the light yellow ball land within one step (√(2h/g) has no mass); grid heights apart never do (closest %.3f s); each stage wants only its world (the earth, the Moon, Jupiter), from any height" % closest,
 		"; ".join(problems))
 
 

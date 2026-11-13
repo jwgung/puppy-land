@@ -13,14 +13,14 @@ const HOME_SCREEN := "res://scripts/app/island_home_screen.gd"
 const TABLET := Vector2(1152, 720)
 ## The gesture each lab's guide shows: what its object really takes (its slingshot, its hold, a tap
 ## where a touch is the whole action, else a drag). 2026-11-03 playtest: the slide's box goes with a
-## touch (a tap, not a drag), the spring's ball is pulled away from the bell.
+## touch (a tap, not a drag), the spring's ball is pulled away from the bell; 2026-11-12: a tap on a
+## falling ball drops both (the heights stay).
 const GESTURES := {"projectile": "pull", "collision": "pull", "orbit": "pull", "friction": "hold",
-	"rotation": "hold", "pulley": "hold", "free-fall": "drag", "spring": "drag", "constraints": "drag",
+	"rotation": "hold", "pulley": "hold", "free-fall": "tap", "spring": "drag", "constraints": "drag",
 	"buoyancy": "drag", "incline-friction": "tap"}
 ## The world direction a lab's drag guide carries its object (the rule's guide_to): the spring's ball
-## out, away from the bell on the pressed side; a falling ball up (the tip, "맨 위에서"); the drum down
-## into the water.
-const TOWARD := {"spring": Vector3.RIGHT, "free-fall": Vector3.UP, "buoyancy": Vector3.DOWN}
+## out, away from the bell on the pressed side; the drum down into the water.
+const TOWARD := {"spring": Vector3.RIGHT, "buoyancy": Vector3.DOWN}
 
 
 func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:

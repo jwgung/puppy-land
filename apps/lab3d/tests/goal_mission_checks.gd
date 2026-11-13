@@ -156,16 +156,17 @@ func check_free_fall() -> void:
 	var definition := ExperimentRegistry.find("free-fall")
 	var problems := []
 	var rules := [0, 1, 2].map(func(i: int) -> Dictionary: return MissionRound.rule(definition, i))
-	if rules.any(func(r: Dictionary) -> bool: return r.observe != "together_time") or rules[2].compare != "less":
+	# (2026-11-12 user: only the world changes, no "past 3 s" / "under 1 s" goal: every stage the same rule)
+	if rules.any(func(r: Dictionary) -> bool: return r.observe != "together_time" or r.compare == "less"):
 		problems.append("the stages do not judge the two balls together (%s)" % str(rules))
 	var worlds := [0, 1, 2].map(func(i: int) -> String: return str(MissionRound.missions(definition).stages[i].conditions.gravity))
 	if worlds != ["earth", "moon", "jupiter"]:
 		problems.append("the worlds %s" % str(worlds))
-	# The start (the earth, the heavy red ball; red 5 m, yellow 3 m) is stage 1's setup (the world and
-	# the ball); the child lifts the two level. The decision of 2026-10-29 (README).
+	# The start (the earth; both balls level at 5 m) is stage 1's setup; a tap drops both (2026-11-12).
 	var start: Experiment = await _lab("free-fall")
-	if not MissionRound.conditions_met(MissionRound.missions(definition).stages[0].conditions, start):
-		problems.append("the start is not stage 1's setup")
+	if not MissionRound.conditions_met(MissionRound.missions(definition).stages[0].conditions, start) \
+			or start.starts.red.y != start.starts.yellow.y:
+		problems.append("the start is not stage 1's setup, level")
 	start.queue_free()
 	var lab: Experiment = await _lab("free-fall")
 	lab.set_control("gravity", "moon")
@@ -177,7 +178,7 @@ func check_free_fall() -> void:
 		problems.append("the card is not the red ball's time")
 	lab.queue_free()
 	expect.call(problems.is_empty(),
-		"goal (free fall): every stage judges the heavy red and the light yellow ball landing together (the earth, the Moon past 3 s, Jupiter under 1 s); the start is stage 1's setup; fall_time = √(2h/g); the card is the red ball's time",
+		"goal (free fall): every stage judges the heavy red and the light yellow ball landing together, only the world changing (the earth, the Moon, Jupiter); the start is stage 1's setup, level; fall_time = √(2h/g); the card is the red ball's time",
 		"; ".join(problems))
 
 

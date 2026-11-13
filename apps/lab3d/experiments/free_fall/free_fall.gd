@@ -3,11 +3,11 @@
 ## the light yellow one (0.5 kg) and the heavy red one (the "mass" control, 3 kg by default); the web's
 ## third, violet reference ball is not in the 3D lab (the web keeps its three; the law is the same).
 ## Conditions: gravity (the web's buttons), the drop height of both (slider) and the red ball's
-## mass. A finger drags either ball up or down (2026-10-27, one drag per lab: "drop_<ball>" objects on
-## a vertical line through the ball). Since 2026-10-29 (the piece game "두 공을 같이 떨어뜨려 버튼
-## 누르기", FreeFallGame) letting go sets that ball's own drop height (the other stays), so the child
-## starts the two balls level or not; the "height" control (the "자세히" slider) still sets both.
-## Heights are whole metres (1–8 m, the slider's and the drags' 1 m step: user "스텝을 크게 해서 쉽게").
+## mass. A finger taps (or drags) either ball ("drop_<ball>" objects) and both drop together. Since
+## 2026-11-12 (user: "높이 자꾸 바꾸게 하지 말고, 중력 조건만 바꾸는 걸로 하자") the finger no longer
+## changes a height: both start level at DROP_HEIGHT and the piece game's stages change only the world
+## (2026-10-29 to 11-12 letting go set that ball's own height and the child lifted the pink one level).
+## The "height" control (the "자세히" slider) still sets both, in whole metres (1–8 m).
 ## A finger does not move a ball sideways (definition: "drag": false).
 ## Motion: Jolt + UniformFieldCorrector (uniform_field_lab.gd). Displayed numbers: PhysicsLaws at the formula time (the landing at landing_time(0, -g, h0)); the engine is
 ## only the graph's "시뮬레이션" points and the measured landing times.
@@ -22,7 +22,7 @@ const BALLS := {
 }
 const ORDER := ["yellow", "red"]
 const LINE_X := 3.0              # the balls move along the floor line x = -3..3 m (z = 0)
-const DROP := "drop_"             # the finger's object of a ball: "drop_red" drags the red ball up and down
+const DROP := "drop_"             # the finger's object of a ball: a tap on "drop_red" drops both balls
 const BOUNCE := 0.5               # the web's wood balls (restitution 0.5)
 const LOOK_MASS := 1.0            # kg: the mass that looks BALL_RADIUS round (the web's violet reference ball)
 const SIGN_AT := Vector3(-5.0, 0.0, -2.2)   # the gravity's signpost (PlanetSign), left of the ruler
@@ -34,17 +34,18 @@ const PAIR := ["red", "yellow"]
 var balls: Dictionary = {}        # id -> FormulaBody
 ## id -> start point of the ball's bottom (x, height above the floor, z).
 var starts: Dictionary = {}
-## The "height" control (both balls); a height handle changes one ball only.
+## The "height" control (both balls).
 var height := 5.0
-## Each ball's own start (its bottom, m) when the lab opens (2026-10-29): not level, so the first drop
-## of the piece game's buttons is not together by itself (the slider still sets both alike).
-const START_HEIGHTS := {"red": 5.0, "yellow": 3.0}
-## Per stage of the piece game (2026-10-30 user: a ball let go drops both, so one ball can be lifted
-## per try): the red ball already waits where the stage needs it (the Moon's stage at the top, 8 m:
-## √(2·8/1.62) = 3.14 s > 3 s), the pink one lower; the child lifts the pink ball to the red one.
-const STAGE_HEIGHTS := [{"red": 5.0, "yellow": 3.0}, {"red": 8.0, "yellow": 4.0}, {"red": 6.0, "yellow": 3.0}]
-var _heights_stage := -1          # the stage whose STAGE_HEIGHTS the balls got
-var _heights_pending := false     # a stage just cleared: its next heights wait for the next run
+## Both balls start level at DROP_HEIGHT and a finger does not move them up or down (2026-11-12 user:
+## "높이 자꾸 바꾸게 하지 말고, 중력 조건만 바꾸는 걸로 하자"): a tap (or a drag) on a ball drops both from
+## there, and the stages ask only for the world (지구 / 달 / 목성). Until then the two started at
+## different heights and the child lifted the pink one to the red one. The 자세히 slider still sets
+## both alike.
+const DROP_HEIGHT := 5.0
+## A new stage of the piece game puts both balls back at DROP_HEIGHT (after the slider moved them).
+## Until 2026-11-12 each stage had its own heights (the red ball at the stage's, the pink one lower).
+var _heights_stage := -1          # the stage whose DROP_HEIGHT the balls got
+var _heights_pending := false     # a stage just cleared: the level start waits for the next run
 var mass_id := "heavy"
 ## The signpost showing which world the gravity is (2026-10-28).
 var planet_sign: PlanetSign
@@ -55,14 +56,12 @@ func _init() -> void:
 	props = FreeFallProps.new()
 
 
-## The balls start at different heights (2026-10-29 user: the first drop must not press both buttons
-## at once): after the controls' defaults (the "height" slider sets both), each ball gets its
-## own START_HEIGHTS; the child lifts the yellow (pink) ball to the red one (the hand guide shows that
-## ball: drop_yellow is the definition's first object, 2026-11-03 playtest).
+## After the controls' defaults (the "height" slider sets both), both balls wait at DROP_HEIGHT (the
+## hand guide taps drop_yellow, the definition's first object).
 func _ready() -> void:
 	super()
 	for id in ORDER:
-		starts[id].y = float(START_HEIGHTS[id])
+		starts[id].y = DROP_HEIGHT
 	reset_run()
 
 
@@ -124,11 +123,11 @@ func look_radius(id: String) -> float:
 	return BALL_RADIUS * MassLook.factor(mass_of(id), LOOK_MASS)
 
 
-## The stage changed (opened, or one just cleared): its STAGE_HEIGHTS, now or (the balls still lie
-## where the win landed them) at the next run.
+## The stage changed (opened, or one just cleared): both balls back at DROP_HEIGHT, now or (the balls
+## still lie where the win landed them) at the next run.
 func set_game_stage(stage: int, stamps: int, just_cleared: bool) -> void:
 	super(stage, stamps, just_cleared)
-	if stage < 0 or stage >= STAGE_HEIGHTS.size() or stage == _heights_stage:
+	if stage < 0 or stage == _heights_stage:
 		return
 	_heights_stage = stage
 	_heights_pending = true
@@ -141,7 +140,7 @@ func reset_run() -> void:
 	if _heights_pending and _heights_stage >= 0:
 		_heights_pending = false
 		for id in ORDER:
-			starts[id].y = definition.clamp_value("height", float(STAGE_HEIGHTS[_heights_stage][id]))
+			starts[id].y = DROP_HEIGHT
 	if game != null:
 		game.run_reset()
 		(game as FreeFallGame).place_buttons(starts)
@@ -359,19 +358,19 @@ func manipulation_body(id: String) -> PhysicsBody3D:
 
 
 ## "line": the floor line under the balls in front of the ruler (0.5 m grid, the balls' `snap` rule).
-## "drop_<ball>": the vertical line of that ball's drop, plane x = the height of the ball's bottom over
-## the floor in the height slider's range (its 1 m step is the drop objects' `snap`, 2026-10-29). The frame stands
-## upright (x up, its normal towards the front camera) one radius behind the ball, so a ball lifted
-## by its radius off the frame is on its own drop line.
+## "drop_<ball>": the ball's own point, plane x = the height of the ball's bottom (one point since
+## 2026-11-12, so a drag keeps the height; before, the slider's range). The frame stands upright (x up,
+## its normal towards the front camera) one radius behind the ball, so a ball lifted by its radius off
+## the frame is on its own drop line.
 func manipulation_surface(surface_id: String) -> ManipSurface:
 	var surface: ManipSurface
 	if surface_id == "line":
 		surface = ManipSurface.new(Transform3D.IDENTITY, Vector2(-LINE_X, 0.0), Vector2(LINE_X, 0.0))
 	elif surface_id.begins_with(DROP) and starts.has(surface_id.trim_prefix(DROP)):
-		var control := definition.control("height")
 		var x: float = starts[surface_id.trim_prefix(DROP)].x
+		var h: float = starts[surface_id.trim_prefix(DROP)].y   # (the ball stays at its height: 2026-11-12)
 		var frame := Transform3D(Basis(Vector3.UP, Vector3.BACK, Vector3.RIGHT), Vector3(x, BALL_RADIUS, -BALL_RADIUS))
-		surface = ManipSurface.new(frame, Vector2(float(control.get("min", 0.5)), 0.0), Vector2(float(control.get("max", 8.0)), 0.0))
+		surface = ManipSurface.new(frame, Vector2(h, 0.0), Vector2(h, 0.0))
 	else:
 		return null
 	surface.exclude = [floor_body.get_rid()]
@@ -382,9 +381,8 @@ func manipulation_juice(id: String) -> ArtJuice:
 	return fall_props().juices.get(id.trim_prefix(DROP))
 
 
-## Picked up (also a falling or landed ball): the run stops and every ball waits at its start, so
-## the picked one is lifted from its start height (the handle keeps that height); the bread cat
-## stands where it stands (between the balls).
+## Picked up (also a falling or landed ball): the run stops and every ball waits at its start (the
+## picked one too: a finger does not change a height); the bread cat stands between the balls.
 func manipulation_started(id: String) -> void:
 	if released:
 		reset_run()
@@ -418,16 +416,11 @@ func nearest_placement(id: String, transform: Transform3D) -> Transform3D:
 
 func manipulation_placed(id: String, transform: Transform3D) -> void:
 	if id.begins_with(DROP):
-		# A ball let go on its drop line starts at that height, the others stay (2026-10-29), and the
-		# lifted finger drops both balls together (2026-10-29 user: no "공 놓기" button; a new drag after
-		# a drop starts a fresh run, manipulation_started). A restored placement (a batch) only places.
+		# The lifted finger drops both balls together from where they wait (2026-11-12: the finger's
+		# height is not taken; 2026-10-29 user: no "공 놓기" button; a new touch after a drop starts a
+		# fresh run, manipulation_started). A restored placement (a batch) only places.
 		var ball_id := id.trim_prefix(DROP)
-		var grid := definition.grid_step(id)
-		var step := grid if grid > 0.0 else 1.0
-		var h := definition.clamp_value("height", snappedf(transform.origin.y - BALL_RADIUS, step))
-		if is_nan(h):
-			return
-		manipulation_placed(ball_id, Transform3D(Basis(), Vector3(starts[ball_id].x, h + BALL_RADIUS, starts[ball_id].z)))
+		manipulation_placed(ball_id, Transform3D(Basis(), starts[ball_id] + Vector3.UP * BALL_RADIUS))
 		if _batch == 0:
 			release()
 		return

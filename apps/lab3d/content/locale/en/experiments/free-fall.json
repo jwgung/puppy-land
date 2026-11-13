@@ -2,7 +2,7 @@
   "title": "Do different masses fall together?",
   "category": "Motion and force",
   "question": "Do a light ball and a heavy ball take different times to reach the ground?",
-  "steps": ["Put both balls at the same height.", "Change the gravity to the Moon or Jupiter.", "Compare when the two balls reach the ground."],
+  "steps": ["Both balls start at the same height.", "Change the gravity to the Moon or Jupiter.", "Compare when the two balls reach the ground."],
   "observe": "See how the gravity of the place, more than the mass, changes how the falling speed grows.",
   "terms": [
     { "name": "Mass", "description": "How much a thing resists a change in its motion." },
@@ -10,8 +10,8 @@
     { "name": "Acceleration", "description": "How quickly the speed changes over time." }
   ],
   "law": { "title": "Gravity and acceleration", "description": "Gravity pulls things down and keeps changing their speed." },
-  "tip": "Drag a ball up or down with one finger to set the height (1 m steps) and let go: both balls fall together. Drag again to start over. Drag with two fingers to turn the view.",
-  "tip_short": "Drag a ball and let go: both balls fall",
+  "tip": "Tap a ball with one finger: both balls fall together from the same height. Tap again to start over. The height can be changed in More, under the conditions. Drag with two fingers to turn the view.",
+  "tip_short": "Tap a ball and both balls fall",
   "controls": [
     {
       "label": "Gravity",
@@ -48,25 +48,25 @@
   "missions": {
     "stages": [
       {
-        "text": "Drop the red and pink balls together to press the buttons!",
+        "text": "On the Earth, drop both balls to press the buttons!",
         "say": "The pull of the ground is called **gravity**. Gravity makes heavy and light balls speed up at the same rate. So dropped from the same height, they land together.",
         "win": "Click! Both buttons went down together!",
-        "miss": "The balls landed apart. Make them the same height!",
-        "miss_conditions": "Pick the Earth and the heavy ball!"
+        "miss": "Tap a ball to drop them again!",
+        "miss_conditions": "Pick the Earth!"
       },
       {
-        "text": "On the Moon, drop both balls together from the very top!",
-        "say": "The Moon's gravity is weaker than the Earth's, so it pulls gently. That is why the balls fall slowly. From the very top it takes more than 3 seconds.",
+        "text": "Switch to the Moon and drop both balls!",
+        "say": "The Moon's gravity is weaker than the Earth's, so it pulls gently. That is why the balls fall slowly. But the two balls still land together.",
         "win": "Together on the Moon too! Another light is on!",
-        "miss": "Take both balls up to the very top!",
-        "miss_conditions": "Pick the Moon and the heavy ball!"
+        "miss": "Tap a ball to drop them again!",
+        "miss_conditions": "Pick the Moon!"
       },
       {
-        "text": "On Jupiter, drop both balls together in under 1 second!",
+        "text": "Switch to Jupiter and drop both balls!",
         "say": "Jupiter's gravity is much stronger than the Earth's. So the balls fall very fast. But the two balls still land together.",
         "win": "The door opened! I see the piece!",
-        "miss": "On Jupiter, put both balls at the same height!",
-        "miss_conditions": "Pick Jupiter and the heavy ball!"
+        "miss": "Tap a ball to drop them again!",
+        "miss_conditions": "Pick Jupiter!"
       }
     ]
   },
@@ -76,16 +76,12 @@
     "title": "Let's drop balls from up high!",
     "place": "Ball drop",
     "say": "A heavy ball and a light ball fall the same way. Dropped from the same height, they land together. They fall slowly on the Moon and fast on Jupiter.",
-    "tip": "Drag a ball up and let go: both balls fall together!",
+    "tip": "Tap a ball and both balls fall together!",
     "picks": {
       "gravity": [
         { "label": "Earth" },
         { "label": "Moon" },
         { "label": "Jupiter" }
-      ],
-      "mass": [
-        { "label": "Light ball" },
-        { "label": "Heavy ball" }
       ]
     },
     "cards": { "red_time": "Red ball's fall time", "fall_time": "Time to the ground", "speed": "Red ball's speed" }

@@ -1,14 +1,13 @@
 ## The lab stands as its mission says when it opens (2026-11-03 playtest: "가벼운 상자를 밀어서" on the
-## 8 kg start box, "막대를 가까이 눌러" on the middle point, the drum and the orbit likewise, and the
-## free fall's hand on the red ball while the stages wait for the pink one).
+## 8 kg start box, "막대를 가까이 눌러" on the middle point, the drum and the orbit likewise).
 ## - data: every stage of every lab has settings that fit its conditions (ConditionPicks.stage_values).
 ## - every lab with missions, opened fresh: each stage-1 condition holds on the lab, the lit picture
 ##   buttons fit it, the controls the stage does not name keep their defaults, and the hand guide still
 ##   waits for the child (the screen set the conditions, the child touched nothing).
 ## - a lab opened at a later stage (saved stamps) stands as that stage says; a screen rebuilt from its
 ##   saved state keeps the child's own conditions.
-## - the free fall: at every stage the red ball waits where the stage needs it, the pink one is lower
-##   and the hand guide lifts the pink one (the stage 2 hint "분홍 공도 빨간 공처럼 맨 위로").
+## - the free fall: at every stage both balls wait level and the hand guide taps a ball (2026-11-12
+##   user: only the world changes, not the height).
 extends RefCounted
 
 var tree: SceneTree
@@ -31,7 +30,7 @@ func run() -> void:
 	await check_saved_stage("friction", 1, {"mass": "normal"})
 	await check_saved_stage("rotation", 2, {"effort": "far"})
 	await check_rebuilt()
-	await check_free_fall_pink()
+	await check_free_fall_level()
 	DirAccess.remove_absolute(ProgressStore.path)
 
 
@@ -149,7 +148,7 @@ func check_rebuilt() -> void:
 	DirAccess.remove_absolute(ProgressStore.path)
 
 
-func check_free_fall_pink() -> void:
+func check_free_fall_level() -> void:
 	DirAccess.remove_absolute(ProgressStore.path)
 	var problems := []
 	var screen := await _open(ExperimentRegistry.find("free-fall"))
@@ -161,10 +160,10 @@ func check_free_fall_pink() -> void:
 		var red := float(lab.starts.red.y)
 		var pink := float(lab.starts.yellow.y)
 		var guide: Dictionary = screen.manipulator.guide()
-		if not (pink < red):
-			problems.append("stage %d: the pink ball (%.0f m) is not below the red one (%.0f m)" % [stage + 1, pink, red])
-		if guide.get("id", "") != "drop_yellow" or guide.get("kind", "") != "drag" or not (guide.to as Vector3).y > (guide.from as Vector3).y:
-			problems.append("stage %d: the hand guide shows %s %s, not the pink ball lifted" % [stage + 1, str(guide.get("kind")), str(guide.get("id"))])
-	expect.call(problems.is_empty(), "first entry (free-fall): at every stage the red ball waits, the pink one is lower and the hand guide lifts the pink one", "; ".join(problems))
+		if not (pink == red and red == lab.DROP_HEIGHT):
+			problems.append("stage %d: the balls at %.1f m and %.1f m, not level at %.1f m" % [stage + 1, pink, red, lab.DROP_HEIGHT])
+		if not str(guide.get("id", "")).begins_with("drop_") or guide.get("kind", "") != "tap":
+			problems.append("stage %d: the hand guide shows %s %s, not a tap on a ball" % [stage + 1, str(guide.get("kind")), str(guide.get("id"))])
+	expect.call(problems.is_empty(), "first entry (free-fall): at every stage both balls wait level and the hand guide taps a ball", "; ".join(problems))
 	await _close(screen)
 	DirAccess.remove_absolute(ProgressStore.path)

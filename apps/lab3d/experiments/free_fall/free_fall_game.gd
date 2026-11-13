@@ -3,7 +3,8 @@
 ## balls (a heavy red one and the light yellow one) to press their buttons together: MissionRound
 ## judges "together_time", the formula landing time of both when their landings are within one fixed
 ## step of each other (|√(2h_red/g) − √(2h_yellow/g)| ≤ 1/60 s; the same height lands together
-## whatever the mass), with the world of the stage (the earth, the Moon past 3 s, Jupiter under 1 s).
+## whatever the mass), with the world of the stage (the earth, the Moon, Jupiter; since 2026-11-12 only
+## the world changes: both balls start level, no time goal).
 ## Each button lights when its formula ball lands; a stamp lights one of the house's three lamps,
 ## the last opens its door and the piece hops out on the lab's own gravity (slowly on the Moon).
 ## Visual only: no body, the balls and the numbers are the lab's as before. Three drawn nodes and the
