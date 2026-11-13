@@ -1,6 +1,6 @@
 ## Term marks (2026-11-03 playtest: a child should see which word Dugi is teaching): in the kid texts a
 ## science word at the spot where Dugi introduces it is written between MARK pairs
-## ("이 힘을 **마찰력**이라고 해요."). Dugi's dialogue box (DialogueBox) draws it bold on a yellow
+## ("이 힘을 **마찰력**이라고 해."). Dugi's dialogue box (DialogueBox) draws it bold on a yellow
 ## highlight; every other reader takes plain() (the science note's AI question, lengths, comparisons).
 ## Only the introduction spots carry marks (kid.intro and the stage say that names the word), not every
 ## use of the word.

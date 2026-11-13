@@ -1,0 +1,97 @@
+{
+  "title": "Which way does the sea breeze blow?",
+  "category": "Earth and sky",
+  "question": "On a sunny day, which way does the wind blow?",
+  "steps": [
+    "Press and hold the sun in the sky to warm the coast. Let go and it cools.",
+    "Watch the thermometers on the sand and in the sea, the wind arrows and the pinwheel.",
+    "Use the button at the bottom left to switch between day and night."
+  ],
+  "observe": "When the sun shines, the land warms up faster than the sea, so the wind blows from the sea to the land (a sea breeze). At night the land cools down faster than the sea, so the wind blows from the land to the sea (a land breeze). The bigger the difference between the land and the sea, the stronger the wind.",
+  "terms": [
+    {
+      "name": "Sea breeze",
+      "description": "The wind that blows from the sea toward the land in the daytime."
+    },
+    { "name": "Land breeze", "description": "The wind that blows from the land toward the sea at night." },
+    { "name": "Temperature", "description": "How warm or cold something is. A thermometer measures it." }
+  ],
+  "law": {
+    "equation": "cool side → warm side = wind",
+    "title": "Sea breezes and land breezes",
+    "description": "Land warms up and cools down faster than the sea. When the air over the warm side rises, air from the cool side moves in to take its place, and that is the wind. So in the daytime it blows from the sea to the land (a sea breeze), and at night from the land to the sea (a land breeze)."
+  },
+  "tip": "Press and hold the sun: it shines on the coast and warms the land and the sea. The land warms up much faster. Let go and the land cools again. At night there is no sun, so the land cools by itself.",
+  "tip_short": "Hold the sun to warm the coast",
+  "controls": [{ "label": "Time", "options": [{ "label": "Day" }, { "label": "Night" }] }],
+  "actions": [{ "label": "Start over" }],
+  "predict": {
+    "question": "On a sunny day, which way does the wind blow?",
+    "choices": [{ "label": "From the sea to the land", "guess": "I think it blows from the sea to the land!" }, { "label": "From the land to the sea", "guess": "I think it blows from the land to the sea!" }],
+    "reason": "In the daytime the land is warmer than the sea, so the cool air over the sea blows onto the land.",
+    "bridge": "Shine the sun and see for yourself!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Hold the sun and turn the pinwheel with a sea breeze!",
+        "say": "When the land gets warmer than the sea, the cool air over the sea blows toward the land. It blows from the sea, so we call it a **sea breeze**.",
+        "win": "The pinwheel is spinning!",
+        "miss": "Keep pressing so the land warms up!",
+        "miss_conditions": "Pick day!"
+      },
+      {
+        "text": "Send the fishing boat out to sea on the night wind!",
+        "say": "At night the land cools down before the sea. Now the land is cooler, so the wind blows from the land to the sea. It blows from the land, so we call it a **land breeze**. Fishermen ride this night wind out to sea.",
+        "win": "Off goes the fishing boat!",
+        "miss": "Wait for the land to cool down!",
+        "miss_conditions": "Pick night!"
+      },
+      {
+        "text": "Bring in the sailboat with the piece on a strong sea breeze!",
+        "say": "The bigger the difference between the land and the sea, the stronger the wind. Make the land hotter and the wind gets stronger too.",
+        "win": "The sailboat is here! A piece!",
+        "miss": "Make the land even hotter!",
+        "miss_conditions": "Pick day!"
+      }
+    ]
+  },
+  "story": {
+    "keeper": "This is a seaside village. The wind blows every which way, so the boats can't go out to sea or come back…",
+    "clue": "There's a sailboat way out there! Huh? It's carrying a piece!",
+    "more": [
+      {
+        "text": "The wind has to blow toward the shore to bring the boat back."
+      }
+    ],
+    "map_clue": "By the sea, where the pinwheel stands!"
+  },
+  "kid": {
+    "intro": "This is the sea breeze lab. When the sun shines, the land gets warm before the sea, and at night the land cools down first.",
+    "intro_more": [
+      {
+        "text": "Warm air rises. Cool air moves in to fill the space, and that makes the wind. So the wind blows from the cool side to the warm side."
+      }
+    ],
+    "title": "Hold the sun and make the sea breeze blow!",
+    "place": "Sea breeze",
+    "say": "If the land is warmer than the sea, the wind blows from the sea to the land; if the land is cooler, from the land to the sea.",
+    "tip": "Hold the sun to warm the coast.",
+    "cards": { "state": "Wind", "land": "Land", "sea": "Sea" },
+    "picks": { "time": [{ "label": "Day" }, { "label": "Night" }] }
+  },
+  "note": {
+    "law": "The wind blows from the cool side to the warm side. The bigger the difference between the land and the sea, the stronger the wind.",
+    "learn": "In the day the land warms up faster than the sea, so the wind blows from the cool sea to the warm land; at night it turns round.",
+    "talk": ["On a beach in the daytime, which way does the wind come from?", "Which gets hot faster in the sun: sand or sea water?"],
+    "formula": "cool side → warm side = wind",
+    "numbers": [{ "label": "Wind" }, { "label": "Land temperature" }, { "label": "Sea temperature" }]
+  },
+  "observations": [{ "label": "Wind" }, { "label": "Land temperature" }, { "label": "Sea temperature" }],
+  "graph": {
+    "title": "Temperature difference and wind",
+    "x": { "label": "How much warmer or cooler the land is than the sea" },
+    "y": { "label": "Wind speed" },
+    "series": [{ "label": "Wind speed" }, { "label": "Now" }]
+  }
+}

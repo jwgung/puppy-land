@@ -32,8 +32,8 @@
   "predict": {
     "question": "If you throw low, where will the ball land?",
     "choices": [
-      { "label": "Close" },
-      { "label": "Very far" }
+      { "label": "Close", "guess": "I think it'll land close!" },
+      { "label": "Very far", "guess": "I think it'll go very far!" }
     ],
     "reason": "Thrown low with the same strength, the ball comes down to the ground soon. So it lands close.",
     "bridge": "Throw it and see for yourself!"
@@ -71,6 +71,8 @@
   },
   "note": {
     "law": "At the same speed (8 m/s here), the closer the angle is to 45°, the farther it goes. Sideways it keeps the same speed, and downwards gravity pulls it.",
+    "learn": "A thrown ball keeps its forward speed while gravity pulls it down, so it flies on a curve. Landing at the height it left from, a throw at about 45° goes farthest.",
+    "talk": ["Squirt a water gun up, straight ahead and at a slant: which goes farthest?", "Why does a basketball fly in an arc into the hoop?"],
     "numbers": [
       { "label": "Distance R (with the throw height)" },
       { "label": "Flight time T" },

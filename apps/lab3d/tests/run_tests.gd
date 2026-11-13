@@ -99,6 +99,20 @@
 ##    child's launch (skipped by measurements, --experiment, --screen, resume), its buttons' ways
 ##    (prologue first time, map later, replay, settings and back), its layout; the dialogue's faces
 ##    per line (files, tags, no re-pop, stable box), Dugi's explanation per stage, Puppy's words.
+## 23a1. the voyage and 섬 고르기 (tests/voyage_checks.gd, #75, 2026-11-06): the voyage due after the
+##    finale once the next island opens (never while it is in the making), its shots, skip, back and
+##    replay, the next island's map and prologue; 시작하기 opens 섬 고르기 only after a voyage, the cards (locked: lock,
+##    condition, no button), choosing (its button or the card itself), back; phone and tablet layouts.
+## 23a1b. the hutton finale (tests/hutton_finale_checks.gd, #106, 2026-11-09): its 9 lines (as in
+##    docs/islands/hutton-lines.md; English in content/locale/en), the broken sundial filling sector by sector with the found wedges (#114),
+##    the new land once the volcano is found, the gnomon's piece not flying, the finale page by page
+##    (the gnomon on the new land, the grass, the filled dial's glint, the drag that plants the gnomon,
+##    a short one putting it back, the day, the shadow, the emblem's gnomon and face, no star), 건너뛰기,
+##    once only; left half way it plays again, after 3 short drags a short one plants (#108).
+## 23a2. explanation pictures (tests/explain_picture_checks.gd, #73, 2026-11-06): a line's picture
+##    field is a known kind (registry, Story.validate), its card shows with that line only, in the
+##    middle of the view clear of the box and the chips (phone, tablet, zoomed phone), a tap on it turns
+##    the page, a story page's picture, the 4 pictures draw at 1x and 2x.
 ## 23b. the night map (tests/explore_checks.gd, 2026-10-28 "explore the night map in a fixed order"): the
 ##    order and the next spot, only the next and found spots open (a locked tap: Puppy's line, a shake),
 ##    names hidden until found, Puppy's riddle on open / after a flight / on a tap on him or 단서, the
@@ -112,6 +126,20 @@
 ##    lines and their bubble; Dugi's bridge, the strip's pulse, the reason after the first line, every
 ##    question answered by stage 1; the orbit shown 2.5x faster with the model's numbers; the play yard
 ##    spread out; the pulley rope on the wheels' rims.
+## 22b. the islands (tests/island_list_checks.gd, #69 2026-11-06): content/islands/index.json (mechanics
+##    first), the island in use saved and opened again, an island open when every spot of the one before
+##    is complete, the island-level saves keyed by island (an old save is the first island's), no
+##    experiment on two islands, the island's story file.
+## 22c. the hutton island's map (tests/hutton_map_checks.gd, #72 2026-11-06): content/islands/hutton.json
+##    (11 spots once in the order, the lookout on the square, the features checked), open after the
+##    first island, now that every spot is a lab (an island in the making never opens), its map (one
+##    mesh within the mechanics map's vertices; coast sand, valley,
+##    volcano, river to the sea, lighthouse, sundial clear of the spots and the three), a tap opens
+##    nothing, its coast and valley labs' ground.
+## 22d. the hutton island's pieces (tests/sundial_piece_checks.gd, #101 2026-11-07): Island.piece (hutton
+##    sundial, mechanics star), the 36° wedge (on its point, band, hour lines and face inside,
+##    two draws), the 10-wedge dial emblem, every hutton lab's piece, the cat's piece and the card, the
+##    map's emblem and flying pieces, the island cards; the mechanics ones stay stars.
 ## 23c. UI polish (tests/polish_checks.gd, 2026-10-29): 자세히's header (닫기) stays above the scrolled
 ##    note; a vertical drag from a button, check box or slider scrolls the settings and the note
 ##    (DragScroll) and presses nothing; check boxes instead of switches; 처음부터 다시 하기 asks first and
@@ -121,6 +149,57 @@
 ##    1.1, fixed choices, the long-side floor), on the root (units, the 3D view's pixels, the finger
 ##    radius, the demo's pulls), the choice saved and kept by 처음부터 다시 하기, the settings screen
 ##    zoomed; the layout checks here and in the other files also run at the zoomed phone (PHONE_ZOOMED).
+## 24. earth labs (tests/earth_model_checks.gd, #70 2026-11-06): SunModel against the textbook values
+##    (tests/earth_textbook_values.json: 24 h per rotation, Seoul's noon sun and day length at the
+##    solstices and equinoxes, the upright Earth's same noon sun, the shadow shortest at noon pointing
+##    north, sunrise in the east), EarthModel glides and reset, and EarthLab with a stand-in lab (what
+##    MissionRound reads comes from the model, steps only while it glides, the knob through the Manipulator),
+##    the sunrise / sunset bands (#74: an hour either side).
+## 24a. 낮과 밤 (tests/day_night_checks.gd, #74 2026-11-06): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 1, the bands and the judging of the three stages (the evening's miss),
+##    the spot on the hutton map, the opening lines (the fox first), the hand (one to one) and the piece.
+## 24c. 계절 (tests/seasons_checks.gd, #87 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 3, the seasons and the upright loop, the judging of the three stages
+##    (the wrong axis's line), the tilt button, no number on the screen, the Earth and the window in view,
+##    the spot, the opening lines (the fox first), the hand (round the path) and the piece.
+## 24d. 물의 여행 (tests/water_cycle_checks.gd, #91 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 4, the water's rules (the day's cap), the judging of the three stages
+##    (the wrong sun's line), the sun button, no number on the screen, the hold, what matters in view,
+##    the spot, the opening lines (the fox, Puppy's two lines) and the piece.
+## 24e. 구름과 이슬 (tests/dew_cloud_checks.gd, #92 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 5, the dew point against the textbook values, the cubes each day
+##    needs and the parcel's cloud, the judging (the wrong day's line), the day button, no number on the
+##    screen, the cup, the summit and the parcel in view, the spot, the opening, the hands and the piece.
+## 24f. 바닷바람 (tests/sea_breeze_checks.gd, #93 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 6, the land warming and cooling faster than the sea, the wind from the
+##    cooler side, the night's land breeze, the judging of the three stages (the wrong time's line), the
+##    hold on the sun, the day / night button, no number on the screen, the sun and the props in view,
+##    the spot, the opening lines (the fox, Puppy's two) and the piece.
+## 24g. 태풍·비구름 (tests/typhoon_checks.gd, #94 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 7, the rule model (warmer sea, bigger cloud; cold sea and land weaken
+##    it), the judging of the three stages (the wrong sea's line), the sea button, no number on the
+##    screen, the cloud and the cold strip in view, the spot, the opening, the hand and the piece.
+## 24h. 강물이 깎고 쌓기 (tests/river_checks.gd, #95 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 8, the rules (steep cuts deep, gentle drops its sand, the bend's outer
+##    bank), the judging of the three stages (the wrong slope's line), the slope button, no number on the
+##    screen, the targets in view, the spot, the opening lines, the hand (hold the cloud: rain) and the piece.
+## 24i. 지층 쌓기 (tests/strata_checks.gd, #96 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 9, the rule (the first pour is the bottom layer) and the statuses, the
+##    judging of the three stages, each stage's objects and the hand guide, no number on the screen, the
+##    buckets, the tank and the cliff in view, the spot, the opening, the hand (pour, dig) and the piece.
+## 24j. 지진 (tests/earthquake_checks.gd, #97 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 10, the shake model (the pull's levels, rock and sand, the brace),
+##    the judging of the three stages, the Jolt house posed on the model and falling with it, the
+##    buttons, no number on the screen, the table and the house in view, the volcano's stripes, the
+##    spot, the opening lines, the slingshot and the piece.
+## 24k. 화산 (tests/volcano_checks.gd, #98 2026-11-07): the lab's data and its lines against
+##    docs/islands/hutton-lines.md 11, the rules of the small model and the big volcano, the pump (press
+##    and hold), the judging of the three stages (the wrong magma's line), the magma button, the site
+##    (the big volcano at night on stage 3), no number on the screen, what matters in view, the spot,
+##    the opening lines (story.more), the hand and the piece (the needle pushed up).
+## 24l. the hutton cast (tests/hutton_cast_checks.gd, #114 2026-11-10): in every Hutton lab on the
+##    tablet and the phone, Puppy's result bubble clear of Dugi's open box and portrait, Puppy at most
+##    half under them.
 ## Times are engine fixed steps (60 Hz), independent of rendering FPS.
 extends SceneTree
 
@@ -299,6 +378,31 @@ func _run() -> void:
 	_expect(home != null and home.can_instantiate(), "island home checks compile", "")
 	if home != null and home.can_instantiate():
 		await home.new(self, _expect).run()
+	print("== the islands (#69: the list, the island in use, opening after the one before, island-level saves) ==")
+	var islands: GDScript = load("res://tests/island_list_checks.gd")
+	_expect(islands != null and islands.can_instantiate(), "island list checks compile", "")
+	if islands != null and islands.can_instantiate():
+		await islands.new(self, _expect).run()
+	print("== the payment (#77: the Play build's args, the islands bought, one new spot a day, the guardian's check and offer) ==")
+	var payment: GDScript = load("res://tests/payment_checks.gd")
+	_expect(payment != null and payment.can_instantiate(), "payment checks compile", "")
+	if payment != null and payment.can_instantiate():
+		await payment.new(self, _expect).run()
+	print("== 기기 사이 기록 맞추기 (#103): merge, the sync with a stand-in cloud, the guardian's switch ==")
+	var cloud_sync: GDScript = load("res://tests/cloud_sync_checks.gd")
+	_expect(cloud_sync != null and cloud_sync.can_instantiate(), "cloud sync checks compile", "")
+	if cloud_sync != null and cloud_sync.can_instantiate():
+		await cloud_sync.new(self, _expect).run()
+	print("== the hutton island's map (#72: its layout, grounds and features, open after the first island, never while in the making) ==")
+	var hutton: GDScript = load("res://tests/hutton_map_checks.gd")
+	_expect(hutton != null and hutton.can_instantiate(), "hutton map checks compile", "")
+	if hutton != null and hutton.can_instantiate():
+		await hutton.new(self, _expect).run()
+	print("== the hutton island's pieces (#101: golden sundial wedges, the dial emblem; the mechanics star unchanged) ==")
+	var sundial: GDScript = load("res://tests/sundial_piece_checks.gd")
+	_expect(sundial != null and sundial.can_instantiate(), "sundial piece checks compile", "")
+	if sundial != null and sundial.can_instantiate():
+		await sundial.new(self, _expect).run()
 	print("== game G3: the slingshot (pull = angle / speed, big readout, no path, formula stamp) ==")
 	var slingshot: GDScript = load("res://tests/slingshot_checks.gd")
 	_expect(slingshot != null and slingshot.can_instantiate(), "slingshot checks compile", "")
@@ -314,6 +418,71 @@ func _run() -> void:
 	_expect(definition_checks != null and definition_checks.can_instantiate(), "experiment definition checks compile", "")
 	if definition_checks != null and definition_checks.can_instantiate():
 		await definition_checks.new(self, _expect).run()
+	print("== earth labs (#70): the sun model against the textbook values, the EarthLab base ==")
+	var earth: GDScript = load("res://tests/earth_model_checks.gd")
+	_expect(earth != null and earth.can_instantiate(), "earth model checks compile", "")
+	if earth != null and earth.can_instantiate():
+		await earth.new(self, _expect).run()
+	print("== 낮과 밤 (#74): Hutton Island's first lab, its lines, judging, hand and piece ==")
+	var day_night: GDScript = load("res://tests/day_night_checks.gd")
+	_expect(day_night != null and day_night.can_instantiate(), "day-night checks compile", "")
+	if day_night != null and day_night.can_instantiate():
+		await day_night.new(self, _expect).run()
+	print("== 그림자 시계 (#86): Hutton Island's second lab, its lines, judging, stick, hand, view and piece ==")
+	var shadow_clock: GDScript = load("res://tests/shadow_clock_checks.gd")
+	_expect(shadow_clock != null and shadow_clock.can_instantiate(), "shadow-clock checks compile", "")
+	if shadow_clock != null and shadow_clock.can_instantiate():
+		await shadow_clock.new(self, _expect).run()
+	print("== 계절 (#87): Hutton Island's seasons lab, its lines, judging, tilt button, view, hand and piece ==")
+	var seasons: GDScript = load("res://tests/seasons_checks.gd")
+	_expect(seasons != null and seasons.can_instantiate(), "seasons checks compile", "")
+	if seasons != null and seasons.can_instantiate():
+		await seasons.new(self, _expect).run()
+	print("== 물의 여행 (#91): Hutton Island's water cycle lab, its lines, rules, judging, sun button, hold, view and piece ==")
+	var water_cycle: GDScript = load("res://tests/water_cycle_checks.gd")
+	_expect(water_cycle != null and water_cycle.can_instantiate(), "water-cycle checks compile", "")
+	if water_cycle != null and water_cycle.can_instantiate():
+		await water_cycle.new(self, _expect).run()
+	print("== 구름과 이슬 (#92): Hutton Island's dew and cloud lab, its lines, dew point, judging, day button, view, hands and piece ==")
+	var dew_cloud: GDScript = load("res://tests/dew_cloud_checks.gd")
+	_expect(dew_cloud != null and dew_cloud.can_instantiate(), "dew-cloud checks compile", "")
+	if dew_cloud != null and dew_cloud.can_instantiate():
+		await dew_cloud.new(self, _expect).run()
+	print("== 바닷바람 (#93): Hutton Island's sea breeze lab, its lines, model, judging, hold, time button, view and piece ==")
+	var sea_breeze: GDScript = load("res://tests/sea_breeze_checks.gd")
+	_expect(sea_breeze != null and sea_breeze.can_instantiate(), "sea breeze checks compile", "")
+	if sea_breeze != null and sea_breeze.can_instantiate():
+		await sea_breeze.new(self, _expect).run()
+	print("== 태풍·비구름 (#94): Hutton Island's typhoon lab, its lines, rule model, judging, sea button, view, hand and piece ==")
+	var typhoon: GDScript = load("res://tests/typhoon_checks.gd")
+	_expect(typhoon != null and typhoon.can_instantiate(), "typhoon checks compile", "")
+	if typhoon != null and typhoon.can_instantiate():
+		await typhoon.new(self, _expect).run()
+	print("== 강물이 깎고 쌓기 (#95): Hutton Island's river lab, its lines, rules, judging, slope button, view, hold and piece ==")
+	var river: GDScript = load("res://tests/river_checks.gd")
+	_expect(river != null and river.can_instantiate(), "river checks compile", "")
+	if river != null and river.can_instantiate():
+		await river.new(self, _expect).run()
+	print("== 지층 쌓기 (#96): Hutton Island's strata lab, its lines, rule, judging, stages, view, hand and piece ==")
+	var strata: GDScript = load("res://tests/strata_checks.gd")
+	_expect(strata != null and strata.can_instantiate(), "strata checks compile", "")
+	if strata != null and strata.can_instantiate():
+		await strata.new(self, _expect).run()
+	print("== 지진 (#97): Hutton Island's earthquake lab, its lines, model, judging, Jolt house, view, slingshot and piece ==")
+	var earthquake: GDScript = load("res://tests/earthquake_checks.gd")
+	_expect(earthquake != null and earthquake.can_instantiate(), "earthquake checks compile", "")
+	if earthquake != null and earthquake.can_instantiate():
+		await earthquake.new(self, _expect).run()
+	print("== 화산 (#98): Hutton Island's volcano lab, its lines, rules, pump, judging, site, view, hand and piece ==")
+	var volcano: GDScript = load("res://tests/volcano_checks.gd")
+	_expect(volcano != null and volcano.can_instantiate(), "volcano checks compile", "")
+	if volcano != null and volcano.can_instantiate():
+		await volcano.new(self, _expect).run()
+	print("== the hutton cast (#114): Puppy and his bubble clear of Dugi's box in every lab ==")
+	var hutton_cast: GDScript = load("res://tests/hutton_cast_checks.gd")
+	_expect(hutton_cast != null and hutton_cast.can_instantiate(), "hutton cast checks compile", "")
+	if hutton_cast != null and hutton_cast.can_instantiate():
+		await hutton_cast.new(self, _expect).run()
 	print("== the hand guide (2026-10-30: the gesture on the lab's object, once and after a quiet while; the map's tap) ==")
 	var hand: GDScript = load("res://tests/hand_guide_checks.gd")
 	_expect(hand != null and hand.can_instantiate(), "hand guide checks compile", "")
@@ -404,10 +573,25 @@ func _run() -> void:
 	_expect(title_checks != null and title_checks.can_instantiate(), "title checks compile", "")
 	if title_checks != null and title_checks.can_instantiate():
 		await title_checks.new(self, _expect).run()
+	print("== the voyage and 섬 고르기 (#75): due rule, shots, skip, replay, the next island's prologue; the cards ==")
+	var voyage: GDScript = load("res://tests/voyage_checks.gd")
+	_expect(voyage != null and voyage.can_instantiate(), "voyage checks compile", "")
+	if voyage != null and voyage.can_instantiate():
+		await voyage.new(self, _expect).run()
+	print("== the hutton finale (#106): the sundial broken then whole, the new land, the gnomon planted ==")
+	var hutton_finale: GDScript = load("res://tests/hutton_finale_checks.gd")
+	_expect(hutton_finale != null and hutton_finale.can_instantiate(), "hutton finale checks compile", "")
+	if hutton_finale != null and hutton_finale.can_instantiate():
+		await hutton_finale.new(self, _expect).run()
 	var faces: GDScript = load("res://tests/faces_checks.gd")
 	_expect(faces != null and faces.can_instantiate(), "faces checks compile", "")
 	if faces != null and faces.can_instantiate():
 		await faces.new(self, _expect).run()
+	print("== explanation pictures (#73): the picture field, the card in the middle, its layout and taps, the 4 pictures ==")
+	var pictures: GDScript = load("res://tests/explain_picture_checks.gd")
+	_expect(pictures != null and pictures.can_instantiate(), "explanation picture checks compile", "")
+	if pictures != null and pictures.can_instantiate():
+		await pictures.new(self, _expect).run()
 	print("== UI polish (2026-10-29): fixed sheet header, drag to scroll from controls, check boxes, start over, the map walk ==")
 	var polish: GDScript = load("res://tests/polish_checks.gd")
 	_expect(polish != null and polish.can_instantiate(), "polish checks compile", "")
@@ -865,7 +1049,7 @@ func _check_art_atlases() -> void:
 	var problems := []
 	for path in ["res://assets/props/parcel_box_parcel_box_atlas.png", "res://assets/props/yarn_ball_yarn_ball_atlas.png",
 			"res://assets/characters/bread_cat_bread_cat_atlas.png", "res://assets/characters/dugi_dugi_atlas.png",
-			"res://assets/characters/puppy_puppy_atlas.png"]:
+			"res://assets/characters/puppy_puppy_atlas.png", "res://assets/characters/fox_fox_atlas.png"]:
 		var source := Image.load_from_file(ProjectSettings.globalize_path(path))
 		var imported := (load(path) as Texture2D).get_image()
 		imported.clear_mipmaps()
@@ -1172,6 +1356,72 @@ func _check_camera(definition: Dictionary) -> void:
 	_expect(dipped < -0.01 and dipped > -0.1 and same_goal and rig.shake == 0.0 and rig.global_position.is_equal_approx(eye),
 		"landing nudge dips the view a few cm and settles without changing the mode or goal", "dip %.3f m" % dipped)
 	holder.queue_free()
+	await _check_close_view(definition)
+
+
+## Closer to the characters (#124, CameraRig.zoom_to_point / reach_points / keep_out_boxes): off (the
+## island map) a zoom at a corner keeps the look-at point; on, the point under the fingers stays
+## under them, the pan reaches a far character only zoomed in, the camera stays out of a box it
+## looks into or would stand in, and a zoom toward the ground keeps the look-at point above it.
+func _check_close_view(definition: Dictionary) -> void:
+	var holder := Node3D.new()
+	root.add_child(holder)
+	var rig := CameraRig.new()
+	holder.add_child(rig)
+	var vp := Vector2(root.get_visible_rect().size)
+	rig.fit_aspect(vp)
+	rig.configure(definition.camera)
+	rig.zoom(0.5, Vector2(0.1, 0.1))
+	_expect(rig.pan == Vector3.ZERO, "close view: off (the island map), a zoom at a corner keeps the look-at point", str(rig.pan))
+	rig.set_mode("front", true)
+	rig.zoom_to_point = true
+	var box := AABB(rig.view_target + Vector3(2.0, -0.5, -3.0), Vector3(0.8, 1.4, 0.8))
+	rig.keep_out_boxes = [box]
+	var at := rig.unproject_position(box.get_center()) / vp
+	var pivot := rig.zoom_pivot(at)
+	var before := rig.unproject_position(pivot)
+	for i in 6:
+		rig.zoom(0.8, at)
+		rig.snap()
+	var after := rig.unproject_position(pivot)
+	_expect(before.distance_to(after) < 1.0 and rig.pan.length() > 0.1 and box.grow(1e-3).has_point(pivot),
+		"close view: a pinch on a model closes in on it, the point under the fingers stays there",
+		"moved %.2f px, pan %.2f m" % [before.distance_to(after), rig.pan.length()])
+	rig.keep_out_boxes = []
+	rig.set_mode("front", true)
+	var far := rig.view_target + Vector3(rig.pan_radius + 6.0, 0.0, 0.0)
+	rig.reach_points = [far]
+	rig.goal_distance = rig.default_distance
+	var reach_far := rig.pan_reach()
+	rig.goal_distance = rig.distance_range.x
+	var reach_close := rig.pan_reach()
+	_expect(is_equal_approx(reach_far, rig.pan_radius) and is_equal_approx(reach_close, rig.pan_radius + 6.0 + CameraRig.CLOSE_REACH_MARGIN),
+		"close view: the pan reaches a character beyond pan_radius only zoomed in", "%.2f / %.2f m" % [reach_far, reach_close])
+	rig.reach_points = []
+	rig.set_mode("front", true)
+	var around := AABB(rig.view_target - Vector3.ONE, Vector3.ONE * 2.0)
+	rig.keep_out_boxes = [around]
+	rig.zoom(0.0001)
+	rig.snap()
+	var out_of_it := not around.grow(CameraRig.KEEP_OUT_MARGIN - 1e-3).has_point(rig.global_position) \
+		and is_equal_approx(rig.goal_distance, rig.distance_range.x)   # (the wanted distance is kept)
+	rig.set_mode("front", true)
+	var eye := rig.global_position
+	var behind := AABB(eye - Vector3.ONE, Vector3.ONE * 2.0)
+	rig.keep_out_boxes = [behind]
+	rig.snap()
+	var in_front := not behind.grow(CameraRig.KEEP_OUT_MARGIN - 1e-3).has_point(rig.global_position) \
+		and rig.global_position.distance_to(rig._view_goal_target()) < eye.distance_to(rig._view_goal_target())
+	_expect(out_of_it and in_front,
+		"close view: the camera stays out of a box it looks into (just outside) or would stand in (in front of it)",
+		"looking in %s, standing in %s" % [out_of_it, in_front])
+	rig.keep_out_boxes = []
+	rig.set_mode("front", true)
+	for i in 20:
+		rig.zoom(0.8, Vector2(0.5, 0.98))
+	_expect(rig._view_goal_target().y >= CameraRig.MIN_TARGET_Y - 1e-4,
+		"close view: a zoom toward the ground keeps the look-at point above it", "%.2f m" % rig._view_goal_target().y)
+	holder.queue_free()
 
 
 func _step(rig: CameraRig, seconds: float) -> void:
@@ -1394,7 +1644,7 @@ func _check_layout(definition: Dictionary) -> void:
 		var game_lab := not MissionRound.missions(definition).is_empty()
 		var actions_ok: bool = definition.actions.all(func(a: Dictionary) -> bool: return (game_lab and a.id != "reset" and not screen._action_buttons.has(a.id)) \
 			or (screen._action_buttons.has(a.id) and (screen._action_buttons[a.id].get_parent() == screen._action_row or screen._extra_actions.has(screen._action_buttons[a.id]))))
-		var compact: bool = screen._key_row.size.y <= 160.0 and screen._key_row.size.x <= size.x - 470.0 - 24.0
+		var compact: bool = screen._key_row.size.y <= 160.0 and screen._key_row.size.x <= size.x - screen.sidebar_width() - 24.0
 		var cards := ExperimentRegistry.shown_cards(definition)
 		# A game lab (2026-10-27): one card, reset as a small "다시" and (2026-10-29) no other button.
 		var lean := true
@@ -1466,7 +1716,7 @@ func _check_key_cards() -> void:
 		for id in screen.key_card_ids():
 			var observation: Dictionary = screen._observation(id)
 			var card: String = screen._key_labels[id].text
-			var panel: String = screen.hidden_observation(observation) if hidden.has(id) else screen.format_observation(observation, values.get(id))
+			var panel: String = screen.note_value(observation, values.get(id), hidden.has(id))   # (the note's text, 2026-11-11)
 			# A bar card (kid.bars: the push that started the box) draws a number as its bar, no text.
 			var bar: Control = screen._key_bars.get(id)
 			var number: bool = values.get(id) is float or values.get(id) is int

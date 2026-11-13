@@ -8,7 +8,7 @@
   "camera": {
     "target": [0.0, 3.2, 0.0],
     "distance": 13.0,
-    "distance_range": [3.0, 22.0],
+    "distance_range": [1.5, 22.0],
     "yaw_range_deg": [-100.0, 100.0],
     "pitch_range_deg": [-89.0, -2.0],
     "pan_radius": 5.0,
@@ -83,24 +83,23 @@
       {
         "observe": "together_time",
         "threshold": 0.1,
-        "conditions": { "gravity": "earth", "mass": "heavy" },
+        "conditions": { "gravity": "earth" },
         "say_face": "happy",
         "win_face": "happy",
         "miss_face": "thinking"
       },
       {
         "observe": "together_time",
-        "threshold": 3.0,
-        "conditions": { "gravity": "moon", "mass": "heavy" },
+        "threshold": 0.1,
+        "conditions": { "gravity": "moon" },
         "say_face": "explain",
         "win_face": "happy",
         "miss_face": "thinking"
       },
       {
         "observe": "together_time",
-        "compare": "less",
-        "threshold": 1.0,
-        "conditions": { "gravity": "jupiter", "mass": "heavy" },
+        "threshold": 0.1,
+        "conditions": { "gravity": "jupiter" },
         "say_face": "surprised",
         "win_face": "surprised",
         "miss_face": "thinking"
@@ -117,10 +116,6 @@
         { "value": "earth", "picture": "earth" },
         { "value": "moon", "picture": "moon" },
         { "value": "jupiter", "picture": "jupiter" }
-      ],
-      "mass": [
-        { "value": "light", "picture": "ball_red", "size": 0.55 },
-        { "value": "heavy", "picture": "ball_red", "size": 1.0 }
       ]
     }
   },
@@ -179,8 +174,8 @@
   "manipulation": {
     "grab_radius": 72.0,
     "objects": [
-      { "id": "drop_yellow", "surface": "drop_yellow", "snap": 1.0, "height": false, "guide_to": "max" },
-      { "id": "drop_red", "surface": "drop_red", "snap": 1.0, "height": false, "guide_to": "max" },
+      { "id": "drop_yellow", "surface": "drop_yellow", "height": false, "guide": "tap" },
+      { "id": "drop_red", "surface": "drop_red", "height": false, "guide": "tap" },
       { "id": "red", "surface": "line", "snap": 0.5, "height": false, "drag": false },
       { "id": "yellow", "surface": "line", "snap": 0.5, "height": false, "drag": false }
     ]

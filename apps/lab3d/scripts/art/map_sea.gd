@@ -18,7 +18,7 @@ const ISLANDS := [
 ]
 ## Boats [x, z, heading deg, hull colour]: around the coast, beyond the shallow ring.
 const BOATS := [[-21.0, 15.0, 30.0, ArtPalette.RED], [24.0, 13.0, -60.0, ArtPalette.BLUE], [19.0, -21.0, 150.0, ArtPalette.ORANGE]]
-const LANTERN_Y := 2.05
+const LANTERN_Y := BoatArt.LANTERN_Y
 const SEED := 1028
 
 var islands: MeshInstance3D
@@ -43,9 +43,7 @@ func build(world: Node3D) -> void:
 		boat.name = "Boat"
 		boat.position = Vector3(spec[0], MapIsland.SEA_Y, spec[1])
 		boat.rotation.y = deg_to_rad(spec[2])
-		var hull := ArtKit.builder()
-		_boat(hull, spec[3])
-		boat.add_child(ArtKit.instance(hull.commit(), MapIsland.material()))
+		boat.add_child(ArtKit.instance(BoatArt.mesh(spec[3]), MapIsland.material()))
 		var lantern := ArtKit.instance(lantern_mesh, StarArt.glow_material())
 		lantern.name = "Lantern"
 		lantern.position = Vector3(0.0, LANTERN_Y, 0.15)
@@ -85,17 +83,6 @@ func _island(b: ArtMeshBuilder, at: Vector3, radius: float, hills: int, rng: Ran
 		var p := at + Vector3(cos(a) * radius * 0.55, radius * 0.18 + 0.2, sin(a) * radius * 0.55)
 		b.add_cylinder(Transform3D(Basis(), p), 0.35, 0.3, 1.8, 5, ArtPalette.TRUNK)
 		b.add_sphere(Transform3D(Basis(), p + Vector3.UP * 2.5), 1.4, 3, 6, ArtPalette.LEAF)
-
-
-## A little boat (local: bow +z): a rounded hull, a white deck line, a mast and a white sail.
-func _boat(b: ArtMeshBuilder, hull: Color) -> void:
-	b.ao_min = 0.85
-	b.add_rounded_box(Transform3D(Basis(), Vector3(0.0, 0.25, 0.0)), Vector3(1.2, 0.55, 2.6), 0.22, 1, hull)
-	b.add_rounded_box(Transform3D(Basis(), Vector3(0.0, 0.55, 0.0)), Vector3(1.0, 0.08, 2.3), 0.04, 1, ArtPalette.WHITE)
-	b.add_cylinder(Transform3D(Basis(), Vector3(0.0, 0.55, 0.15)), 0.05, 0.05, 1.45, 5, ArtPalette.TRUNK)
-	var sail := [Vector3(0.0, 0.75, 0.25), Vector3(0.0, 1.95, 0.22), Vector3(0.0, 0.75, -0.85)]
-	b.add_triangle(sail, [ArtPalette.WHITE, ArtPalette.WHITE, ArtPalette.WHITE], Vector3.RIGHT)
-	b.add_triangle(sail, [ArtPalette.CLOUD, ArtPalette.CLOUD, ArtPalette.CLOUD], Vector3.LEFT)
 
 
 static func _lantern_mesh() -> Mesh:

@@ -11,8 +11,10 @@ extends Control
 signal back_requested
 
 const UI_REFRESH_HZ := 10.0
-const SIDEBAR_WIDTH := 470.0
-const SIDEBAR_MAX_FRACTION := 0.42      # of the screen width (tablet 1152 units -> 470, phone 1560 -> 470)
+## The note's width (2026-11-11 user: "자세히 화면이 좀 좁은거같기도해" → about half the screen; 470
+## and 0.42 before): tablet 1152 units -> 600, phone 1560 -> 600.
+const SIDEBAR_WIDTH := 600.0
+const SIDEBAR_MAX_FRACTION := 0.53
 const SIDEBAR_SLIDE_S := 0.22
 const OVERLAY_MARGIN := 12.0
 const KEY_CARD_WIDTH := 200.0
@@ -100,10 +102,14 @@ var _more_button: Button
 var ask_handler: Callable = func(packages: Array, text: String) -> String: return ScienceNote.send_to_ai(packages, text)
 ## The web link's tap (tests record it): copy the question and open the web AI (2026-10-29).
 var web_handler: Callable = func(text: String) -> void: ScienceNote.open_web_ai(text)
+## 질문 복사하기's copy (tests put a recorder here).
+var copy_handler: Callable = func(text: String) -> void: DisplayServer.clipboard_set(text)
+var _copy_button: Button = null
+var _copy_status: Label = null
 var _web_button: Button = null
 ## A measurement or a device check (Story.measurement_run): the note has no ask button, unless the
 ## device check of the button itself asks for it (--ask=show, with --progress=bench,--sound=0).
-var measurement := Story.measurement_run(Quality.all_args()) and Quality.cmdline_value("ask") != "show"
+var measurement := Story.measurement_run(Quality.all_args()) and Quality.dev_value("ask") != "show"
 var _ask_button: Button = null
 var _ask_status: Label = null           # "질문을 복사했어요..." when the text went to the clipboard
 var refresh_count := 0                  # full panel refreshes so far (tests)
@@ -149,8 +155,14 @@ var _stamps_landed := 0
 var _confetti: Confetti = null
 var _done_card: RoundDoneCard = null
 var _next_due := false                # a stage was won and nothing was done since (its stamp may still fly)
+## The bread cat says the child's pick (#132, 2026-11-12 user: "우리가 고르면 빵고양이가 말하는거로 하자"):
+## his line waiting for the box ("" when none), and whether it is open; Dugi's bridge comes after it.
+var _cat_guess := ""
+var _cat_guess_open := false
+const CAT_GUESS_FACE := "thinking"
 var _next_wait := -1.0                # >= 0: a stage was won, the next one comes once Dugi is done (_run_next_wait)
 var next_goes := 0                     # times the round went on to the next stage by itself (tests)
+var _play_open := false                # what the lab was last told (_sync_play_open)
 var _mission_text_held := false        # the stage's text is off the strip until Dugi has told it
 var _retells := 0                     # times he started the missed mission line again (_retell_mission)
 var _mission_announced := false        # his telling of it is on its way (the bridge, the next mission's): the text shows once his box closes
@@ -233,6 +245,8 @@ func _ready() -> void:
 	_build_sidebar()
 	experiment = ExperimentRegistry.instantiate(definition)
 	experiment.time_scale = definition.time_scale()   # the orbit's faster playback (2026-10-29)
+	_play_open = not show_cast   # (#93: a cast may talk first; _sync_play_open says when it is done)
+	experiment.set_play_open(_play_open)
 	# A game round draws no answer preview before the run (Experiment.answer_preview: visual only).
 	experiment.answer_preview = MissionRound.missions(definition.raw).is_empty()
 	experiment.state_changed.connect(_on_state_changed)
@@ -287,7 +301,36 @@ func _ready() -> void:
 	_setup_tap_catcher() # before the question: it keeps the overlays' order (the question moves the box)
 	_setup_guide()       # after the slingshot (its pull is the gesture), before the question (overlay order)
 	_setup_game()        # after the state: the stamp count and the question belong to the saved run
+	_setup_close_view()
 	Bench.reset(definition.bench_id())
+
+
+## Closer to the characters (#124): the zoom closes in on what is under the fingers, the pan reaches
+## the cast when zoomed in, and the camera stays out of the lab's models (the globe, a house, the
+## tank) and the cast, as they stand at the start (CameraRig.zoom_to_point, reach_points,
+## keep_out_boxes). The island's ground (LabWorld, one mesh) and anything wider than
+## KEEP_OUT_MAX_SIZE (the sea, the sky) are not boxes.
+const KEEP_OUT_MAX_SIZE := 20.0
+
+func _setup_close_view() -> void:
+	var rig := view.rig
+	rig.zoom_to_point = true
+	rig.reach_points = []
+	var roots: Array = [experiment]
+	if cast != null:
+		roots.append(cast)
+		for actor in [cast.dugi, cast.puppy, cast.fox]:
+			if actor != null:
+				rig.reach_points.append(actor.global_position + Vector3(0.0, 0.7, 0.0))
+	var boxes := []
+	for root_node: Node in roots:
+		for mi: MeshInstance3D in root_node.find_children("*", "MeshInstance3D", true, false):
+			if mi.has_meta("world") or not mi.is_visible_in_tree() or mi.mesh == null:
+				continue
+			var box := mi.global_transform * mi.get_aabb()
+			if box.size[box.get_longest_axis_index()] <= KEEP_OUT_MAX_SIZE:
+				boxes.append(box)
+	rig.keep_out_boxes = boxes
 
 
 func _restore_state() -> void:
@@ -309,8 +352,8 @@ func _restore_state() -> void:
 
 ## Measurement/screenshot hooks from the launch args (Quality.all_args):
 ## --camera=<mode>, --ctl-<control>=<value>, --auto-release=<seconds> (re-release periodically),
-## --sidebar=open (open the sidebar), --scroll-to=<law|numbers|conditions|graph|more|...> (open the
-## sidebar at that section; "observations" = numbers, "explanation" = more, opened).
+## --sidebar=open (open the sidebar), --scroll-to=<conditions|numbers|graph|law|guide|terms|more|ask>
+## (open the sidebar at that section; "observations" = numbers, "explanation" = guide).
 func _apply_launch_args() -> void:
 	for control in definition.controls():
 		var text := Quality.cmdline_value("ctl-" + control.id)
@@ -356,6 +399,7 @@ func _process(delta: float) -> void:
 			_run_measured_action(manipulator.demo_action)
 	_watch_touch()
 	_run_dialogue()
+	_sync_play_open()
 	_run_round_wait(delta)
 	_run_next_wait(delta)
 	_run_celebration(delta)
@@ -395,6 +439,8 @@ func _run_dialogue() -> void:
 	if _asking():
 		_run_question()
 		return
+	if _run_cat_guess():
+		return
 	var dugi := cast.dugi
 	if dialogue.active:
 		if not dugi.speaking() or is_sidebar_open():
@@ -409,16 +455,49 @@ func _run_dialogue() -> void:
 		# the next stage's mission (_go_next), then the prediction's reason after the first result line of predict.stage's
 		# stage, each told once). Dugi
 		# explains only after a throw has ended (cast explain_on).
-		var line: Array = mission_round.take_line() if mission_round != null else []
+		var line: Dictionary = mission_round.take_line() if mission_round != null else {}
 		if not line.is_empty():
-			dialogue.open(line[0], line[1])
+			dialogue.open(line.text, line.face, line.picture)
 		else:
 			var say := explain_say()
-			dialogue.set_words(say[0], say[1])
+			dialogue.set_words(say.text, say.face, say.picture)
 			dialogue.open()
 		dialogue.visible = true
 	elif not dugi.speaking():
 		_dialogue_started = false
+
+
+## The bread cat's line after the pick (#132): one page in the dialogue box with his portrait, opened
+## as soon as there is room (not over the sidebar); once it is read (a tap, back, the sidebar opening,
+## the child taking hold of the lab)
+## the box is Dugi's again and his bridge starts (_start_bridge). True while it is pending or open.
+func _run_cat_guess() -> bool:
+	if _cat_guess == "":
+		return false
+	if not _cat_guess_open:
+		if is_sidebar_open() or dialogue.active or not _layout_dialogue():
+			return true
+		dialogue.set_speaker("cat", CAT_GUESS_FACE)
+		dialogue.hold = false
+		dialogue.open(_cat_guess, CAT_GUESS_FACE)
+		dialogue.visible = true
+		_cat_guess_open = true
+		return true
+	if dialogue.active and not is_sidebar_open() and (manipulator == null or manipulator.mode == ""):
+		dialogue.visible = _layout_dialogue()
+		return true
+	if dialogue.active:   # the sidebar opened, or the child took hold of the lab: his box goes, like Dugi's
+		dialogue.close(true)
+	dialogue.set_speaker("dugi")
+	_cat_guess = ""
+	_cat_guess_open = false
+	_start_bridge()
+	return true
+
+
+## The bread cat's line after the pick is waiting or open (tests).
+func cat_guess_pending() -> bool:
+	return _cat_guess != ""
 
 
 ## Dugi's question (Plan G4), after Puppy's clue on the spot's first visit and Dugi's introduction of the
@@ -434,16 +513,16 @@ func _run_question() -> void:
 			return   # (no question after it: question_ended has let the box go)
 		dialogue.hold = r.clue_to_open().is_empty()   # the question holds; another line before it turns on a tap
 	elif not r.clue_to_open().is_empty() and not dialogue.active and not is_sidebar_open() and _layout_dialogue():
-		var clue := r.clue_to_open()   # [text, face, speaker]: Puppy's clue, then Dugi's introduction
-		dialogue.set_speaker(str(clue[2]), clue[1])
+		var clue := r.clue_to_open()   # MissionRound.dialogue_line(): Puppy's clue, then Dugi's introduction
+		dialogue.set_speaker(clue.speaker, clue.face)
 		dialogue.hold = false   # a tap closes it
-		dialogue.open(clue[0])
+		dialogue.open(clue.text, "", clue.picture)
 		r.clue_opened()   # the clue is told once
 	var asking_now := r.phase() == MissionRound.Phase.ASKING
 	if asking_now and not dialogue.active and not is_sidebar_open() and _layout_dialogue():
 		dialogue.set_speaker("dugi")
 		var question := r.question_line()
-		dialogue.open(question[0], question[1])
+		dialogue.open(question.text, question.face)
 	var shown := dialogue.active and not is_sidebar_open() and _layout_dialogue()
 	dialogue.visible = shown
 	if _choices != null:
@@ -455,20 +534,32 @@ func _run_question() -> void:
 				nudge_choices()
 
 
+## Tells the lab whether the child can play now (Experiment.set_play_open, #93): not while the clue
+## or the question is up, the stage's mission waits for Dugi, or his box is open.
+func _sync_play_open() -> void:
+	if experiment == null:
+		return
+	var open := not _asking() and not _mission_text_held and not (dialogue != null and dialogue.active)
+	if open != _play_open:
+		_play_open = open
+		experiment.set_play_open(open)
+
+
 ## The round's clue or question is open (its shield takes every touch).
 func _asking() -> bool:
 	return mission_round != null and mission_round.asking()
 
 
-## Dugi's explanation now [words, face] (2026-10-29 user "목표마다 두기두기의 설명이 달라지면 좋겠어"):
+## Dugi's explanation now (MissionRound.dialogue_line()) (2026-10-29 user "목표마다 두기두기의 설명이 달라지면 좋겠어"):
 ## the say of the stage it explains (MissionRound.stage_say), the lab's kid.say once every stage is
 ## done or without missions.
-func explain_say() -> Array:
-	var say: Array = mission_round.stage_say() if mission_round != null else []
+func explain_say() -> Dictionary:
+	var say: Dictionary = mission_round.stage_say() if mission_round != null else {}
 	if not say.is_empty():
 		return say
 	var kid: Variant = definition.raw.get("kid")
-	return [cast.text if cast != null else "", Story.face_or_default(kid.get("say_face") if kid is Dictionary else null)]
+	return MissionRound.dialogue_line(cast.text if cast != null else "", Story.face_or_default(kid.get("say_face") if kid is Dictionary else null),
+		ExplainPictures.picture_or_none(kid.get("say_picture") if kid is Dictionary else null))
 
 
 ## Closes an open dialogue now; Dugi lowers his arm.
@@ -493,6 +584,10 @@ func _layout_dialogue() -> bool:
 		right = minf(right, _dialogue_right)
 	_dialogue_right = right if dialogue.active else NAN
 	_dialogue_right_for = view.size
+	# The explanation picture's card keeps clear of the top chips (title, key cards, stamps and the
+	# guess, the top buttons) and the picture buttons.
+	dialogue.set_card_avoid([_title_bar, _key_row, _mission_pill, _mission_strip, _mission_text, _top_buttons, _picks_row])
+	dialogue.card_align = experiment.picture_card_align() if experiment != null else Vector2(0.5, 0.5)
 	return dialogue.layout(view_rect, right, OVERLAY_MARGIN)
 
 
@@ -632,6 +727,12 @@ func _fit_slingshot_hud() -> void:
 	if _mission_pill != null:
 		top = maxf(top, _mission_pill.get_rect().end.y)
 	_slingshot_hud.position = Vector2((view.size.x - _slingshot_hud.size.x) * 0.5, top + 16.0)
+	# #97: a lab whose middle the readout would hide names its own spot (slingshot_setup `readout_at`:
+	# () -> a world point): centred there, kept inside the view and under the top band.
+	var spot: Callable = _slingshot_spec.get("readout_at", Callable())
+	if spot.is_valid():
+		var at := view_point(spot.call()) - _slingshot_hud.size * 0.5
+		_slingshot_hud.position = Vector2(clampf(at.x, 16.0, maxf(16.0, view.size.x - _slingshot_hud.size.x - 16.0)), maxf(at.y, top + 16.0))
 
 
 ## Manipulator.slingshot: "rearm" resets a finished run (the next shot), "pull" moves the readout
@@ -1046,7 +1147,15 @@ func _predict_pick_choice(choice_id: String) -> void:
 	if _mission_text != null and picked != "":
 		_mission_text.text = Locale.t("screen.pick_prefix") + picked
 		_fit_mission_strip()
-	_start_bridge()
+	var guess := ""
+	for choice in MissionRound.predict(definition.raw).get("choices", []):
+		if str(choice.get("id")) == choice_id:
+			guess = str(choice.get("guess", ""))
+	if guess != "" and dialogue != null and cast != null and cast.dugi != null:
+		_cat_guess = guess   # the cat says it first (predict.choices[i].guess, 반말), then Dugi's bridge
+		_cat_guess_open = false
+	else:
+		_start_bridge()
 
 
 ## After the answer (2026-10-29 user: "예측 → 첫 미션 연결"): Dugi says the round's bridge line in his box
@@ -1377,7 +1486,7 @@ func _cancel_next() -> void:
 func _go_next() -> void:
 	_next_wait = -1.0   # (once: also when called directly)
 	_next_due = false
-	if experiment.status() != "ready":
+	if experiment.status() != "ready" and not experiment.keeps_run_between_stages():
 		experiment_action("reset")
 	mission_round.go_on()
 	next_goes += 1
@@ -1409,7 +1518,7 @@ func _run_mission_reveal() -> void:
 ## touch stopped him, the box had no room): once he is at rest, no box or sidebar is open and no
 ## finger holds the lab, he starts over and tells it.
 func _retell_mission() -> void:
-	if cast == null or cast.dugi == null or cast.dugi.speaking() or _reason_waits:
+	if cast == null or cast.dugi == null or cast.dugi.speaking() or _reason_waits or _cat_guess != "":
 		return
 	if (dialogue != null and dialogue.active) or is_sidebar_open() or (manipulator != null and manipulator.mode != ""):
 		return
@@ -1473,14 +1582,14 @@ func _celebrate_round() -> void:
 			_show_piece()
 
 
-## The story: the round's star piece appears over the bread cat, who lifts it (its cheer); pictures
+## The story: the round's piece (the island's: PieceArt) appears over the bread cat, who lifts it (its cheer); pictures
 ## only. A node beside the lab (the cast's place), never in it.
 func _show_piece() -> void:
 	if _piece != null and is_instance_valid(_piece):
 		_piece.queue_free()
 	var cat := lab_cat()
 	var height := cat.bounds().size.y if cat != null else 1.4
-	_piece = StarArt.make(true, clampf(height * 0.32, 0.25, 1.0))   # big enough to see its face
+	_piece = PieceArt.make(piece_kind(), clampf(height * 0.32, 0.25, 1.0))   # big enough to see its face
 	_piece.name = "FoundPiece"
 	_piece_t = 0.0
 	# The piece game's piece (LabGame, 2026-10-29): the one the child got out flies from where it lies
@@ -1528,6 +1637,11 @@ func found_piece() -> Node3D:
 	return _piece if _piece != null and is_instance_valid(_piece) else null
 
 
+## The piece this lab gives (PieceArt, #101): its island's, for the cat's paws and the card.
+func piece_kind() -> String:
+	return PieceArt.of_experiment(definition.id())
+
+
 ## The bread cat acting in the lab (inside its props; null in a lab without it).
 func lab_cat() -> CatActor:
 	if _cat != null and is_instance_valid(_cat):
@@ -1548,7 +1662,7 @@ func _show_done_card() -> void:
 	if is_sidebar_open():
 		close_sidebar(false)
 	_hide_tip()
-	_done_card = RoundDoneCard.new(_stamp_labels.size(), Story.enabled)
+	_done_card = RoundDoneCard.new(_stamp_labels.size(), Story.enabled, piece_kind())
 	if _piece != null and is_instance_valid(_piece):
 		_piece.queue_free()   # the card shows the piece now
 	_piece = null
@@ -2050,8 +2164,9 @@ func _fit_tip() -> void:
 	_tip.position = Vector2(m, bottom - _tip.size.y)
 
 
-## --scroll-to's older names: the numbers were "observations", the texts "explanation" (now in 더 보기).
-const SECTION_ALIASES := {"observations": "numbers", "explanation": "more"}
+## --scroll-to's older names: the numbers were "observations", the texts "explanation" (실험하는 방법,
+## the guide, since #122).
+const SECTION_ALIASES := {"observations": "numbers", "explanation": "guide"}
 ## The sections inside the collapsed 더 보기 (scrolling to one opens it first).
 const MORE_SECTIONS := ["more", "more_observations", "more_graph", "more_explanation"]
 
@@ -2068,16 +2183,18 @@ func _scroll_to(section: String) -> void:
 	_scroll.scroll_vertical = int(_sections[section].global_position.y - content.global_position.y)
 
 
-## The science note (2026-10-28 "세부쪽도 좀 정리가 필요해", for older children and adults): a few
-## cards with clear headings in this order —
-##   법칙 (the law in one plain sentence and its formula), 이번 실험 숫자 (3-4 numbers of this run in
-##   their units, a "before → after" pair on one row), 조건 바꾸기 (the sliders and choices), 그래프
-##   (only where it shows the law: note.graph), and 더 보기 (collapsed): every other observation, the
-##   graph when it is not kept above, the steps, the observe card, the shared law and its terms.
+## The note for a guardian or teacher (2026-10-28 "세부쪽도 좀 정리가 필요해"; 2026-11-11 #122 plan A
+## and the storybook look): cards with clear headings in this order —
+##   조건 바꾸기 (the sliders and choices; none when the lab has no conditions), 이번 실험 숫자 (3-4
+##   numbers of this run in their units, a "before → after" pair on one row, note_value), 그래프 (only
+##   where it shows the law: note.graph), 법칙 (the law in one plain sentence and its formula), 실험하는
+##   방법 (how to play, the steps, what to watch), 낱말 풀이 (the terms), and 더 보기 (collapsed): every
+##   other observation, the graph when it is not kept above, the shared law (더 알아보기).
 ## Last comes "AI에게 더 물어보기" (ScienceNote: this run as a question for the AI app the child picks
 ## in the system chooser of the AI apps; not in a measurement).
-## Every observation has one label (_observation_labels) wherever it sits, with format_observation's
-## text, so nothing the panel showed before is lost (ExperimentRegistry.note).
+## Every observation has one label (_observation_labels) wherever it sits, with note_value's text
+## (format_observation's, or the pending / hidden words), so nothing the panel showed before is lost
+## (ExperimentRegistry.note).
 func _build_sidebar() -> void:
 	_sidebar = Ui.panel("SideSheet")
 	_sidebar.visible = false
@@ -2093,12 +2210,14 @@ func _build_sidebar() -> void:
 	sheet.add_child(header_pad)
 	var header := Ui.hbox(8)
 	header_pad.add_child(header)
-	var heading := Ui.vbox(6)
+	var heading := Ui.vbox(8)
 	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	heading.add_child(Ui.label(definition.text("category"), "EyebrowLabel"))
-	heading.add_child(Ui.label(definition.text("question"), "MutedLabel", true))
+	var tag := Ui.label(definition.text("category"), "NoteTagLabel")
+	tag.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	heading.add_child(tag)
+	heading.add_child(Ui.label(definition.text("question"), "NoteQuestionLabel", true))
 	header.add_child(heading)
-	close_button = Ui.button(Locale.t("common.close"), "", 56)
+	close_button = Ui.button(Locale.t("common.close"), "TitleButton", 56)
 	close_button.name = "CloseSheet"
 	close_button.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	close_button.pressed.connect(close_sidebar.bind(true))
@@ -2113,21 +2232,31 @@ func _build_sidebar() -> void:
 	var column := Ui.vbox(16)
 	pad.add_child(column)
 
+	# The note for a guardian or teacher (2026-11-11 user, plan A: "애초에 그 목적이긴 했어"): first 조건
+	# 바꾸기 (to try the lab again another way after its missions; none when the lab has no conditions),
+	# then what the run shows (its numbers, the graph), the law, how to run it and what to watch, the
+	# words; 더 보기 keeps the rest of the numbers and the deeper concept card.
 	var note := ExperimentRegistry.note(definition.raw)
-	_sections = {
-		"law": _build_law(note),
-		"numbers": _build_numbers(note),
-		"conditions": _build_conditions(),
-	}
+	_sections = {}
+	if not definition.controls().is_empty():   # (no empty card: nothing to change, e.g. 낮과 밤)
+		_sections["conditions"] = _build_conditions()
+	_sections["numbers"] = _build_numbers(note)
 	var graph := _build_graph()
 	if note.get("graph", true):
 		_sections["graph"] = graph
+	_sections["learn"] = _build_learn(note)   # (#126: what the lab teaches, then the law)
+	_sections["law"] = _build_law(note)
+	_sections["guide"] = _build_guide()
+	var terms := _build_terms()
+	if terms != null:
+		_sections["terms"] = terms
+	_sections["talk"] = _build_talk(note)
 	for id in _sections:
 		_sections[id].name = "Note_" + id
 		column.add_child(_sections[id])
 
 	# 더 보기: a button and the collapsed rest.
-	_more_button = Ui.button(Locale.t("screen.more"), "", 56)
+	_more_button = Ui.button(Locale.t("screen.more"), "TitleButton", 56)
 	_more_button.name = "MoreButton"
 	_more_button.pressed.connect(func() -> void: set_more_open(not _more.visible))
 	column.add_child(_more_button)
@@ -2152,11 +2281,18 @@ func _build_sidebar() -> void:
 	# Last: the question for an AI app (or any app), never in a measurement; off unless turned on
 	# (ScienceNote.enabled, or the button's own device check --ask=show; the Play build (feature "play")
 	# ignores the switch, so a launch intent cannot turn the button on for a child).
-	var ask_switch := not OS.has_feature("play") and Quality.cmdline_value("ask") == "show"
+	var ask_switch := Quality.dev_value("ask") == "show"   # Quality.DEV_KEYS: off in the Play build
 	if not measurement and (ScienceNote.enabled or ask_switch):
 		_sections["ask"] = _build_ask()
 		_sections.ask.name = "Note_ask"
 		column.add_child(_sections.ask)
+	elif not measurement:
+		# The ask button stays off (no app or web opens from a children's app, 2026-11-11 user: "그럼 넣지마
+		# 됐어. 대신에 뭐 프롬프트 복사같은거 하게 해줘"): the same question, copied for the guardian to
+		# paste into an AI app themselves.
+		_sections["copy"] = _build_copy()
+		_sections.copy.name = "Note_copy"
+		column.add_child(_sections.copy)
 
 
 ## The note's last card: one button that opens the system chooser of the AI apps, and a line when
@@ -2179,6 +2315,30 @@ func _build_ask() -> Control:
 	_ask_status.visible = false
 	box.add_child(_ask_status)
 	return box
+
+
+## 질문 복사하기: a card with one button that puts this run's question (ScienceNote.question, the hidden
+## answers left out) on the clipboard through copy_handler, and a line once it did. Nothing opens.
+func _build_copy() -> Control:
+	var parts := _section(Locale.t("screen.copy_title"))
+	var body: VBoxContainer = parts[1]
+	body.add_child(Ui.label(Locale.t("screen.copy_caption"), "", true))
+	_copy_button = Ui.button(Locale.t("screen.copy_question"), "TitleButton", 56)
+	_copy_button.name = "CopyQuestion"
+	_copy_button.pressed.connect(copy_question)
+	body.add_child(_copy_button)
+	_copy_status = Ui.label(Locale.t("note.copied"), "ObserveLabel", true)
+	_copy_status.name = "CopyStatus"
+	_copy_status.visible = false
+	body.add_child(_copy_status)
+	return parts[0]
+
+
+func copy_question() -> void:
+	if measurement or experiment == null or _copy_button == null:
+		return
+	copy_handler.call(ScienceNote.question(definition, experiment, _hidden_answers(experiment.observations())))
+	_copy_status.visible = true
 
 
 ## The ask button's tap: this run's question (the hidden answers left out, as at that tap) and the AI
@@ -2214,12 +2374,29 @@ func is_more_open() -> bool:
 	return _more != null and _more.visible
 
 
+## 이 실험에서 배우는 것 (#126, 2026-11-12 user: "괜찮은거같아"): what the lab teaches a guardian or
+## teacher in a sentence or two, with the usual mix-up when there is one (note.learn).
+func _build_learn(note: Dictionary) -> Control:
+	var parts := _section(Locale.t("screen.section_learn"))
+	parts[1].add_child(Ui.label(str(note.get("learn", "")), "", true))
+	return parts[0]
+
+
+## 아이와 이야기해 보기 (#126): questions from everyday life a guardian can read out to the child
+## (note.talk), one per line.
+func _build_talk(note: Dictionary) -> Control:
+	var parts := _section(Locale.t("screen.section_talk"))
+	for question in note.get("talk", []):
+		parts[1].add_child(Ui.label("• " + str(question), "NoteQuestionLabel", true))
+	return parts[0]
+
+
 ## 법칙: the lab's law in one plain sentence and its formula (note.law, note.formula).
 func _build_law(note: Dictionary) -> Control:
 	var parts := _section(Locale.t("screen.section_law"))
 	var body: VBoxContainer = parts[1]
 	body.add_child(Ui.label(str(note.get("law", "")), "", true))
-	var formula := Ui.label(str(note.get("formula", "")), "EquationLabel", true)
+	var formula := Ui.label(str(note.get("formula", "")), "NoteFormulaLabel", true)
 	formula.name = "Formula"
 	formula.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	body.add_child(formula)
@@ -2235,9 +2412,14 @@ func _build_law(note: Dictionary) -> Control:
 ## format_observation text); two ids read "before → after".
 func _build_numbers(note: Dictionary) -> Control:
 	var parts := _section(Locale.t("screen.section_numbers"))
-	var body: VBoxContainer = parts[1]
+	var body := GridContainer.new()   # two columns in the wider note (2026-11-11)
+	body.columns = 2
+	body.add_theme_constant_override("h_separation", 10)
+	body.add_theme_constant_override("v_separation", 10)
+	(parts[1] as VBoxContainer).add_child(body)
 	for row in note.get("numbers", []):
-		var tile := Ui.panel("Tile")
+		var tile := Ui.panel("NoteTile")
+		tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var stack := Ui.vbox(2)
 		tile.add_child(stack)
 		stack.add_child(Ui.label(str(row.get("label", "")), "MutedLabel", true))
@@ -2248,18 +2430,21 @@ func _build_numbers(note: Dictionary) -> Control:
 		for i in ids.size():
 			if i > 0:
 				values.add_child(Ui.label("→", "MutedLabel"))
-			var value := Ui.label("—", "ValueLabel")
+			var value := Ui.label("—", "ValueLabel", true)
+			value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			values.add_child(value)
 			_observation_labels[ids[i]] = value
 		body.add_child(tile)
 	return parts[0]
 
 
+## A note card: the storybook's cream paper with the brown outline (as Dugi's box and 섬 고르기's tags),
+## its title in brown.
 func _section(title: String) -> Array:
-	var card := Ui.panel()
+	var card := Ui.panel("NoteCard")
 	var body := Ui.vbox(12)
 	card.add_child(body)
-	body.add_child(Ui.label(title, "SectionLabel"))
+	body.add_child(Ui.label(title, "NoteSectionLabel", true))
 	return [card, body]
 
 
@@ -2413,7 +2598,7 @@ func _build_observations(observations: Array) -> Control:
 	grid.add_theme_constant_override("h_separation", 10)
 	grid.add_theme_constant_override("v_separation", 10)
 	for observation in observations:
-		var tile := Ui.panel("Tile")
+		var tile := Ui.panel("NoteTile")
 		var stack := Ui.vbox(2)
 		tile.add_child(stack)
 		stack.add_child(Ui.label(observation.label, "MutedLabel", true))
@@ -2451,16 +2636,17 @@ func _build_graph() -> Control:
 	return parts[0]
 
 
-func _build_explanation() -> Control:
-	var parts := _section(Locale.t("screen.section_about"))
+## 실험하는 방법: the lab's title as a heading, how to play it, its steps and what to watch.
+func _build_guide() -> Control:
+	var parts := _section(Locale.t("screen.section_guide"))
 	var body: VBoxContainer = parts[1]
 	body.add_child(Ui.label(definition.text("title"), "HeadingLabel", true))
 	if definition.text("tip") != "":
-		var how := Ui.panel("SoftCard")
+		var how := Ui.panel("NoteTile")
 		var how_body := Ui.vbox(6)
 		how.add_child(how_body)
-		how_body.add_child(Ui.label(Locale.t("screen.how_to"), "SectionLabel"))
-		how_body.add_child(Ui.label(definition.text("tip"), "MutedLabel", true))
+		how_body.add_child(Ui.label(Locale.t("screen.how_to"), "NoteSectionLabel"))
+		how_body.add_child(Ui.label(definition.text("tip"), "", true))
 		body.add_child(how)
 	var steps := Ui.vbox(10)
 	var number := 1
@@ -2473,26 +2659,36 @@ func _build_explanation() -> Control:
 		steps.add_child(row)
 		number += 1
 	body.add_child(steps)
-	var observe := Ui.panel("ObserveCard")
+	var observe := Ui.panel("NoteObserveCard")
 	var observe_body := Ui.vbox(4)
 	observe.add_child(observe_body)
 	observe_body.add_child(Ui.label(Locale.t("screen.observe"), "ObserveTitleLabel"))
 	observe_body.add_child(Ui.label(definition.text("observe"), "ObserveLabel", true))
 	body.add_child(observe)
-	var law := definition.law()
-	var law_card := Ui.panel("SoftCard")
-	var law_body := Ui.vbox(6)
-	law_card.add_child(law_body)
-	law_body.add_child(Ui.label(law.title, "SectionLabel"))
-	law_body.add_child(Ui.label(law.description, "MutedLabel", true))
-	var equation := Ui.label(law.equation, "EquationLabel", true)
-	law_body.add_child(equation)
-	body.add_child(law_card)
+	return parts[0]
+
+
+## 낱말 풀이: each term and what it means (null when the lab has none).
+func _build_terms() -> Control:
+	if definition.terms().is_empty():
+		return null
+	var parts := _section(Locale.t("screen.section_terms"))
 	for term in definition.terms():
 		var term_box := Ui.vbox(2)
-		term_box.add_child(Ui.label(term.name, "SectionLabel"))
-		term_box.add_child(Ui.label(term.description, "MutedLabel", true))
-		body.add_child(term_box)
+		term_box.add_child(Ui.label(term.name, "HeadingLabel", true))
+		term_box.add_child(Ui.label(term.description, "", true))
+		parts[1].add_child(term_box)
+	return parts[0]
+
+
+## Under 더 보기: the lab's deeper concept (its law's title, words and equation).
+func _build_explanation() -> Control:
+	var law := definition.law()
+	var parts := _section(Locale.t("screen.section_concept"))
+	var body: VBoxContainer = parts[1]
+	body.add_child(Ui.label(law.title, "HeadingLabel", true))
+	body.add_child(Ui.label(law.description, "", true))
+	body.add_child(Ui.label(law.equation, "NoteFormulaLabel", true))
 	return parts[0]
 
 
@@ -2520,19 +2716,20 @@ func _poll() -> void:
 		mission_round.check_miss(manipulator != null and manipulator.mode != "")   # Puppy's hint after a miss
 
 
-## The displayed text of an observation value (panel tiles and key cards show the same text).
-## A mission's answer before the throw has ended (missions.hidden_until_end): "?" and the unit.
-static func hidden_observation(observation: Dictionary) -> String:
-	var unit: String = observation.get("unit", "")
-	if unit == "":
-		return "?"
-	return "?" + unit if unit == "°" else "? " + unit
-
-
 ## The observation ids a mission round hides now (MissionRound.hidden_observations: its
 ## hidden_until_end ones until the run has its result); `values` are the observations shown now.
 func _hidden_answers(values: Dictionary) -> Array:
 	return mission_round.hidden_observations(values) if mission_round != null else []
+
+
+## The note's text of an observation: its value in its unit (format_observation), "실험하면 나와요" while
+## there is none yet (format_observation's "—"), "실험이 끝나면 보여요" while a mission hides the answer
+## (2026-11-11: "? s" and "—" read like an unfinished screen).
+static func note_value(observation: Dictionary, value: Variant, hidden := false) -> String:
+	if hidden:
+		return Locale.t("screen.value_hidden")
+	var text := format_observation(observation, value)
+	return Locale.t("screen.value_pending") if text == "—" else text
 
 
 ## The sidebar's text of an observation value (ScienceNote.format_observation: the question for
@@ -2588,12 +2785,12 @@ func _update_readouts(force_graph: bool) -> void:
 	var values := experiment.observations()
 	var hidden := _hidden_answers(values)
 	for observation in definition.observations():
-		var text := format_observation(observation, values.get(observation.id))
-		if hidden.has(observation.id):
-			text = hidden_observation(observation)
+		var now: Variant = values.get(observation.id)
+		var text := note_value(observation, now, hidden.has(observation.id))
 		var label: Label = _observation_labels[observation.id]
 		if label.text != text:
 			label.text = text
+			label.theme_type_variation = "NotePendingLabel" if hidden.has(observation.id) or format_observation(observation, now) == "—" else "ValueLabel"
 		var key: Label = _key_labels.get(observation.id)
 		if key == null:
 			continue

@@ -5,11 +5,7 @@
 ## 남겨 둔 큰 일
 
 - **두 번째 섬(지구과학).** 낮과 밤, 계절, 달의 모양([ADR 0003](../../../docs/adr/0003-one-app-one-island-per-field.md)). 섬 배치는 데이터로 옮겨 두었다(`content/islands/mechanics.json`, `Island`). 남은 것:
-  - 섬 고르기(또는 다음 섬으로 넘어가기) 화면
-  - 진행 저장의 섬 구분(이야기 표시, 마지막 장소가 지금은 섬 구분 없는 키)
-  - 섬별 이야기 파일
-  - 강체 없는 실험 기반("모델이 계산하고 3D는 그리기만"), 교과서 값 시험
-  - 큰 작업이라 티켓 지도로 나눠 계획부터 잡는다.
+  - 2026-11-06 허턴섬으로 정하고 GitHub 지도 [#68](https://github.com/jwgung/puppy-land/issues/68)로 나눴다. 섬 목록·섬별 저장·섬별 이야기 파일은 #69에서 했다.
 - **스토어 출시.** 다른 작업에서 진행 중(PR #40 머지, `feat/play-release`·`feat/play-store-release`).
 
 ## 미뤄 둔 결정
@@ -19,7 +15,7 @@
 
 ## 결정 (기록)
 
-- **과금·하루 제한 없음**(2026-10-30). 어린이 앱이라 전부 무료.
+- ~~**과금·하루 제한 없음**(2026-10-30). 어린이 앱이라 전부 무료.~~ → 2026-11-06 [ADR 0005](../../../docs/adr/0005-paid-island-per-island.md)로 바뀜: 첫 섬은 무료, 둘째 섬부터 섬마다 990원, 사지 않으면 하루 새 장소 1개.
 - **별 조각 모양 유지**(2026-10-30).
 - **물에 띄우기는 통 뗏목 이야기**(2026-11-02): 조각은 물탱크 바위섬 위, 큰 통에 빵고양이를 태워 건넌다. 예전 보물 상자 건지기는 별 조각 찾기로 어색해서 바꿨다.
 
@@ -38,4 +34,4 @@
 
 ## 도구
 
-- 다 깬 상태로 보기: `adb shell am start -n org.puppyland.lab3d/com.godot.game.GodotAppLauncher --es opargs "--progress=complete"`(PR #39). 처음부터는 설정 → 처음부터 다시 하기.
+- 다 깬 상태로 보기: `adb shell am start -n org.puppyland.lab3d/com.godot.game.GodotAppLauncher --es opargs "--progress=complete"`(PR #39, Play 빌드에서는 무시: `Quality.DEV_KEYS`). 처음부터는 설정 → 처음부터 다시 하기.

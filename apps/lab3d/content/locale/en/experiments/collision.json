@@ -45,8 +45,8 @@
   "predict": {
     "question": "What if the blue ball hits the orange ball hard?",
     "choices": [
-      { "label": "The orange ball zooms away" },
-      { "label": "Both stop" }
+      { "label": "The orange ball zooms away", "guess": "I think the orange ball will zoom away!" },
+      { "label": "Both stop", "guess": "I think they'll both stop!" }
     ],
     "reason": "In the bump, the blue ball's motion passes to the orange ball. So the orange ball zooms away.",
     "bridge": "Bump them and see for yourself!"
@@ -96,6 +96,8 @@
   },
   "note": {
     "law": "Before and after the bump, the total momentum (mass × velocity) of the two balls is the same. What one ball loses, the other gains.",
+    "learn": "When balls bump, the motion one loses goes to the other. Add up both balls' motion (momentum) and it is the same before and after.",
+    "talk": ["In a game of marbles, why does the marble you hit roll away?", "What changes when a big ball hits a small one, or a small one hits a big one?"],
     "numbers": [
       { "label": "Blue ball's velocity · before → after" },
       { "label": "Orange ball's velocity · before → after" },

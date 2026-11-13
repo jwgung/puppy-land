@@ -13,7 +13,29 @@ const KINDS := ["long_arc", "same_arc", "fall_together", "fall_heavy_first", "li
 	# 2026-10-29: the questions that stage 1 answers (ExperimentScreen: answered by doing the first mission).
 	"throw_low_near", "throw_low_far", "hit_flies", "hit_stop", "spring_reach_full", "spring_reach_short",
 	"push_wait", "push_now", "lever_near_hard", "lever_near_easy", "drum_floats", "drum_sinks",
-	"pulley_one_hard", "pulley_one_easy", "slide_go", "slide_stay"]
+	"pulley_one_hard", "pulley_one_easy", "slide_go", "slide_stay",
+	# #74 (낮과 밤): does the sun move round, or does the Earth turn?
+	"sun_moves", "earth_spins",
+	# #86 (그림자 시계): with the sun high, does the stick's shadow get shorter or longer?
+	"shadow_short", "shadow_long",
+	# #87 (계절): would an upright Earth have seasons?
+	"seasons_change", "seasons_same",
+	# #91 (물의 여행): does warmed seawater rise into the sky, or stay in the sea?
+	"water_rises", "water_stays",
+	# #92 (구름과 이슬): the drops on a cold cup, from the air or from inside?
+	"dew_from_air", "dew_from_inside",
+	# #93 (바닷바람): on a sunny day, does the wind blow from the sea or from the land?
+	"breeze_from_sea", "breeze_from_land",
+	# #94 (태풍·비구름): does a rain cloud grow over a cold sea?
+	"cloud_grows", "cloud_stays",
+	# #95 (강물이 깎고 쌓기): where does the water cut the land most, the steep land or the flat land?
+	"cut_steep", "cut_flat",
+	# #96 (지층 쌓기): which layer is the oldest, the bottom one or the top one?
+	"strata_bottom", "strata_top",
+	# #97 (지진): which ground shakes more, rock or sand?
+	"quake_rock", "quake_sand",
+	# #98 (화산): what mountain does sticky lava make?
+	"mountain_tall", "mountain_wide"]
 const STRONG := Color("e2683c")
 const PALE := Color("c9b892")
 const GROUND := Color("8a6a46")
@@ -21,7 +43,14 @@ const WATER := Color("7fb8e0")
 const STEEL := Color("9aa7b0")
 const BALL_BLUE := Color("2d7cf6")
 const CRATE := Color("5b4636")
-const CAT := Color("f2a64a")             # the bread cat riding the barrel (drum_floats / drum_sinks)
+const CAT := Color("f2a64a")
+const SUN := Color("f2c14e")             # the star (orbit_*) and the sun (sun_moves / earth_spins)
+const LAND := Color("4fbf3b")            # the Earth's land (sun_moves / earth_spins)
+const SHADOW := ArtPalette.CAST_SHADOW  # the stick, its cap and its shadow (shadow_short / shadow_long)
+const STICK := Color("c98d4f")
+const CAP := Color("ff3b3b")
+const NIGHT_SHADE := Color(0.1, 0.14, 0.35, 0.55)   # the Earth's far half (the night)
+const LAVA_HILL := Color("c8501a")      # the mountain the sticky lava makes (mountain_*, #98)
 
 
 ## Draws `kind` filling `canvas` (an unknown kind draws the ground only).
@@ -70,6 +99,28 @@ static func draw(canvas: Control, kind: String) -> void:
 			_pulley_one(canvas, r, kind == "pulley_one_hard")
 		"slide_go", "slide_stay":
 			_slide(canvas, r, kind == "slide_go")
+		"sun_moves", "earth_spins":
+			_day_night(canvas, r, kind == "sun_moves")
+		"shadow_short", "shadow_long":
+			_shadow(canvas, r, kind == "shadow_short")
+		"seasons_change", "seasons_same":
+			_seasons(canvas, r, kind == "seasons_change")
+		"water_rises", "water_stays":
+			_water(canvas, r, kind == "water_rises")
+		"dew_from_air", "dew_from_inside":
+			_dew(canvas, r, kind == "dew_from_air")
+		"breeze_from_sea", "breeze_from_land":
+			_breeze(canvas, r, kind == "breeze_from_sea")
+		"cloud_grows", "cloud_stays":
+			_cold_cloud(canvas, r, kind == "cloud_grows")
+		"cut_steep", "cut_flat":
+			_cuts(canvas, r, kind == "cut_steep")
+		"strata_bottom", "strata_top":
+			_strata(canvas, r, kind == "strata_bottom")
+		"quake_rock", "quake_sand":
+			_quake(canvas, r, kind == "quake_sand")
+		"mountain_tall", "mountain_wide":
+			_mountains(canvas, r, kind == "mountain_tall")
 		_:
 			_ground(canvas, r)
 
@@ -226,7 +277,7 @@ static func _lever(canvas: Control, r: Rect2, less: bool) -> void:
 ## The star and the planet's path: off the picture ("orbit_leave") or a closed loop ("orbit_stay").
 static func _orbit(canvas: Control, r: Rect2, leave: bool) -> void:
 	var star := Vector2(r.position.x + r.size.x * 0.38, r.get_center().y)
-	canvas.draw_circle(star, 14.0, Color("f2c14e"))
+	canvas.draw_circle(star, 14.0, SUN)
 	var points := PackedVector2Array()
 	if leave:
 		for i in 17:   # from under the star, round its right side and away (an opening spiral)
@@ -453,3 +504,378 @@ static func _slide(canvas: Control, r: Rect2, goes: bool) -> void:
 			canvas.draw_line(back, back - down * 10.0, STRONG, 2.5)
 	else:
 		_still(canvas, at + Vector2(0.0, -12.0), STRONG)
+
+
+## The sun (left) and the Earth (right, its far half dark): the sun goes round the Earth on an
+## orange arc ("sun_moves"), or the Earth turns on the spot, an orange arrow round it ("earth_spins").
+## The one that moves is the choice's; the other stands still.
+static func _day_night(canvas: Control, r: Rect2, sun_moves: bool) -> void:
+	var sun := Vector2(r.position.x + r.size.x * 0.2, r.get_center().y + 4.0)
+	var earth := Vector2(r.position.x + r.size.x * 0.66, r.get_center().y + 4.0)
+	var radius := minf(r.size.y * 0.27, 26.0)
+	for k in 8:   # the sun's rays
+		var a := TAU * k / 8.0
+		var d := Vector2(cos(a), sin(a))
+		canvas.draw_line(sun + d * 15.0, sun + d * 21.0, SUN, 3.0, true)
+	canvas.draw_circle(sun, 12.0, SUN)
+	canvas.draw_circle(earth, radius, WATER)
+	canvas.draw_circle(earth + Vector2(-radius * 0.3, -radius * 0.2), radius * 0.35, LAND)
+	var night := PackedVector2Array()   # the half away from the sun
+	for k in 17:
+		var a := -PI * 0.5 + PI * k / 16.0
+		night.append(earth + Vector2(cos(a), sin(a)) * radius)
+	canvas.draw_colored_polygon(night, NIGHT_SHADE)
+	if sun_moves:
+		var arc := PackedVector2Array()   # over the Earth from the sun's side round to its far side
+		var mid := (sun + earth) * 0.5 + Vector2(r.size.x * 0.12, 0.0)
+		var rx := r.size.x * 0.4
+		for k in 15:
+			var a := PI + PI * 0.92 * k / 14.0
+			arc.append(mid + Vector2(cos(a) * rx, sin(a) * r.size.y * 0.42))
+		canvas.draw_polyline(arc, STRONG, 4.0, true)
+		_arrow(canvas, arc[-2], arc[-1], STRONG, 4.0)
+	else:
+		var ring := PackedVector2Array()   # round the Earth, passing in front left to right
+		var rx := radius + 9.0
+		for k in 23:
+			var a := PI * 0.8 + PI * 1.5 * k / 22.0   # left, the front (below) left to right, round the back
+			ring.append(earth + Vector2(cos(a) * rx, -sin(a) * rx * 0.42 + radius * 0.15))
+		canvas.draw_polyline(ring, STRONG, 4.0, true)
+		_arrow(canvas, ring[-2], ring[-1], STRONG, 4.0)
+
+
+## The sun climbing high (an orange arrow up to it) over a stick on the ground: the stick's shadow
+## along the ground is short ("shadow_short") or long ("shadow_long"), its round tip at the end.
+static func _shadow(canvas: Control, r: Rect2, short: bool) -> void:
+	var ground := r.end.y - 4.0
+	canvas.draw_line(Vector2(r.position.x, ground), Vector2(r.end.x, ground), GROUND, 3.0)
+	var foot := Vector2(r.position.x + r.size.x * 0.3, ground)
+	var top := foot - Vector2(0.0, r.size.y * 0.42)
+	var reach := r.size.x * (0.13 if short else 0.62)
+	var tip := foot + Vector2(reach, 0.0)
+	canvas.draw_line(foot, tip, SHADOW, 7.0, true)
+	canvas.draw_circle(tip, 6.0, SHADOW)
+	canvas.draw_line(foot, top, STICK, 5.0, true)
+	canvas.draw_circle(top, 5.0, CAP)
+	var sun := Vector2(foot.x - r.size.x * 0.1, r.position.y + 13.0)
+	for k in 8:   # the sun's rays
+		var a := TAU * k / 8.0
+		var d := Vector2(cos(a), sin(a))
+		canvas.draw_line(sun + d * 12.0, sun + d * 17.0, SUN, 3.0, true)
+	canvas.draw_circle(sun, 9.0, SUN)
+	var arrow := PackedVector2Array()   # a curve from low on the left up to the sun
+	var from := Vector2(r.position.x + 6.0, ground - r.size.y * 0.3)
+	for k in 9:
+		var t := k / 8.0
+		arrow.append(from.lerp(sun + Vector2(-16.0, 4.0), t) + Vector2(0.0, -sin(PI * t) * 6.0))
+	canvas.draw_polyline(arrow, STRONG, 3.0, true)
+	_arrow(canvas, arrow[-2], arrow[-1], STRONG, 3.0)
+
+
+## Grey rock (left) and yellow sand (right), a little house on each: the one the choice says shakes
+## big (orange wiggles either side of its house, the house leaning), the other only a little (pale).
+static func _quake(canvas: Control, r: Rect2, sand: bool) -> void:
+	var ground := r.end.y - r.size.y * 0.22
+	for side in 2:
+		var is_sand := side == 1
+		var mid := r.position.x + r.size.x * (0.26 if side == 0 else 0.74)
+		var w := r.size.x * 0.4
+		var slab := Rect2(mid - w * 0.5, ground, w, r.size.y * 0.2)
+		if is_sand:
+			canvas.draw_rect(slab, Color("f3d88c"))
+			canvas.draw_line(Vector2(slab.position.x + 6.0, ground + 6.0), Vector2(slab.end.x - 6.0, ground + 6.0), Color("d9ae4e"), 2.0, true)
+		else:
+			canvas.draw_rect(slab, STEEL)
+			canvas.draw_rect(Rect2(slab.position + Vector2(w * 0.2, 4.0), Vector2(w * 0.2, 4.0)), Color("c3cad6"))
+		var big := is_sand == sand
+		var lean := 0.22 if big else 0.0
+		var hw := w * 0.22
+		var hh := r.size.y * 0.3
+		var foot := Vector2(mid, ground)
+		var up := Vector2(sin(lean), -cos(lean))
+		var across := Vector2(cos(lean), sin(lean))
+		var body := PackedVector2Array([foot - across * hw, foot + across * hw, foot + across * hw + up * hh, foot - across * hw + up * hh])
+		canvas.draw_colored_polygon(body, Color("fbf4e2"))
+		canvas.draw_polyline(PackedVector2Array([body[0], body[1], body[2], body[3], body[0]]), GROUND, 1.5, true)
+		var roof := PackedVector2Array([body[3] - across * 4.0, body[2] + across * 4.0, foot + up * (hh + r.size.y * 0.17)])
+		canvas.draw_colored_polygon(roof, Color("ff5a4f"))
+		var color := STRONG if big else PALE
+		var reach := w * (0.45 if big else 0.32)
+		for s: float in [-1.0, 1.0]:   # the wiggles either side of the house
+			var wig := PackedVector2Array()
+			for k in 7:
+				wig.append(Vector2(mid + s * reach + (3.5 if k % 2 == 0 else -3.5) * (1.6 if big else 0.8), ground - 4.0 - k * hh * 0.14))
+			canvas.draw_polyline(wig, color, 3.0 if big else 2.0, true)
+
+
+## The sun (middle) and an upright Earth on either side of its path: over the two Earths a snowflake
+## and a flower, the seasons changing ("seasons_change", orange), or the same green sprout over both,
+## nothing changing ("seasons_same").
+static func _seasons(canvas: Control, r: Rect2, change: bool) -> void:
+	var c := r.get_center() + Vector2(0.0, r.size.y * 0.16)
+	var rx := r.size.x * 0.36
+	var path := PackedVector2Array()
+	for k in 41:
+		var a := TAU * k / 40.0
+		path.append(c + Vector2(cos(a) * rx, sin(a) * r.size.y * 0.13))
+	canvas.draw_polyline(path, PALE, 2.0, true)
+	for k in 8:
+		var a := TAU * k / 8.0
+		var d := Vector2(cos(a), sin(a))
+		canvas.draw_line(c + d * 12.0, c + d * 17.0, SUN, 3.0, true)
+	canvas.draw_circle(c, 10.0, SUN)
+	var radius := minf(r.size.y * 0.17, 15.0)
+	var mark_size := minf(r.size.y * 0.016, 1.8)
+	for side: float in [-1.0, 1.0]:
+		var earth := c + Vector2(side * rx, 0.0)
+		canvas.draw_circle(earth, radius, WATER)
+		canvas.draw_circle(earth + Vector2(-radius * 0.3, -radius * 0.25), radius * 0.42, LAND)
+		canvas.draw_line(earth + Vector2(0.0, -radius - 4.0), earth + Vector2(0.0, radius + 4.0), GROUND, 2.0, true)
+		canvas.draw_circle(earth + Vector2(0.0, -radius - 4.0), 2.5, Color("ff3b3b"))
+		var mark := earth + Vector2(0.0, -radius - 6.0 - 10.0 * mark_size)
+		if not change:
+			_sprout(canvas, mark, Color("4fbf3b"), mark_size)
+		elif side < 0.0:
+			_snowflake(canvas, mark, STRONG, mark_size)
+		else:
+			_flower(canvas, mark, STRONG, mark_size)
+
+
+## A snowflake (`k` times its base size): three crossing strokes with little ticks.
+static func _snowflake(canvas: Control, at: Vector2, color: Color, k := 1.0) -> void:
+	for n in 3:
+		var d := Vector2.from_angle(PI * n / 3.0 + PI * 0.5) * 8.0 * k
+		canvas.draw_line(at - d, at + d, color, 2.5 * k, true)
+		for end: Vector2 in [d, -d]:
+			var tick := end * 0.55
+			var side := Vector2(-end.y, end.x).normalized() * 3.0 * k
+			canvas.draw_line(at + tick, at + tick * 1.35 + side, color, 1.8 * k, true)
+			canvas.draw_line(at + tick, at + tick * 1.35 - side, color, 1.8 * k, true)
+
+
+## A flower (`k` times its base size): five round petals round a yellow heart.
+static func _flower(canvas: Control, at: Vector2, color: Color, k := 1.0) -> void:
+	for n in 5:
+		canvas.draw_circle(at + Vector2.from_angle(TAU * n / 5.0 - PI * 0.5) * 5.0 * k, 4.0 * k, color)
+	canvas.draw_circle(at, 3.0 * k, SUN)
+
+
+## A sprout (`k` times its base size): a stem and two leaves.
+static func _sprout(canvas: Control, at: Vector2, color: Color, k := 1.0) -> void:
+	canvas.draw_line(at + Vector2(0.0, 7.0) * k, at + Vector2(0.0, -3.0) * k, color, 2.5 * k, true)
+	for side: float in [-1.0, 1.0]:
+		var leaf := PackedVector2Array()
+		for n in 9:
+			var t := float(n) / 8.0
+			leaf.append(at + Vector2(side * 8.0 * t, -3.0 - 4.0 * sin(t * PI) - 2.0 * t) * k)
+		for n in 9:
+			var t := 1.0 - float(n) / 8.0
+			leaf.append(at + Vector2(side * 8.0 * t, -3.0 + 2.0 * sin(t * PI) - 2.0 * t) * k)
+		canvas.draw_colored_polygon(leaf, color)
+
+
+## The sun over the sea (a wavy blue band at the bottom), warming it: wavy arrows of vapour rise from
+## the sea into a cloud ("water_rises", orange, thick), or the water stays in the sea, its surface
+## outlined orange, under an empty sky with only pale short wisps ("water_stays").
+static func _water(canvas: Control, r: Rect2, rises: bool) -> void:
+	var sea_top := r.end.y - r.size.y * 0.26
+	var surface := PackedVector2Array()
+	for k in 25:
+		var x := lerpf(r.position.x, r.end.x, k / 24.0)
+		surface.append(Vector2(x, sea_top + 2.5 * sin(k * 1.3)))
+	var sea := surface.duplicate()
+	sea.append(r.end)
+	sea.append(Vector2(r.position.x, r.end.y))
+	canvas.draw_colored_polygon(sea, WATER)
+	canvas.draw_polyline(surface, PALE if rises else STRONG, 2.0 if rises else 4.0, true)
+	var sun := Vector2(r.position.x + 16.0, r.position.y + 14.0)
+	for k in 8:
+		var a := TAU * k / 8.0
+		var d := Vector2(cos(a), sin(a))
+		canvas.draw_line(sun + d * 11.0, sun + d * 15.0, SUN, 3.0, true)
+	canvas.draw_circle(sun, 8.0, SUN)
+	var cloud := Vector2(r.position.x + r.size.x * 0.68, r.position.y + 14.0)
+	if rises:
+		for blob: Array in [[Vector2(-12, 2), 8.0], [Vector2(0, -3), 10.0], [Vector2(12, 2), 8.0], [Vector2(2, 5), 8.0]]:
+			canvas.draw_circle(cloud + blob[0], blob[1], Color.WHITE)
+		canvas.draw_arc(cloud + Vector2(0, -3), 10.0, PI, TAU, 12, PALE, 1.5, true)
+	for i in 3:   # wisps of vapour from the sea
+		var x := r.position.x + r.size.x * (0.5 + 0.17 * i)
+		var top := cloud.y + 14.0 if rises else sea_top - r.size.y * 0.22
+		var wisp := PackedVector2Array()
+		for k in 9:
+			var t := k / 8.0
+			wisp.append(Vector2(x + 3.5 * sin(t * TAU * 1.5), lerpf(sea_top - 3.0, top, t)))
+		canvas.draw_polyline(wisp, STRONG if rises else PALE, 3.0 if rises else 2.0, true)
+		if rises:
+			_arrow(canvas, wisp[-2], wisp[-1], STRONG, 3.0)
+
+## A glass of iced water with drops on its outside; orange arrows show where the drops come from: in
+## from the vapour dots in the air round it ("dew_from_air"), or out through the glass from the water
+## inside ("dew_from_inside").
+static func _dew(canvas: Control, r: Rect2, from_air: bool) -> void:
+	_ground(canvas, r)
+	var c := Vector2(r.get_center().x, r.end.y)
+	var h := r.size.y * 0.8
+	var bottom := r.size.y * 0.2
+	var top := r.size.y * 0.25
+	var glass := PackedVector2Array([c + Vector2(-bottom, -2.0), c + Vector2(bottom, -2.0), c + Vector2(top, -h), c + Vector2(-top, -h)])
+	var water := PackedVector2Array([c + Vector2(-bottom + 3.0, -5.0), c + Vector2(bottom - 3.0, -5.0), c + Vector2(top - 4.0, -h * 0.7), c + Vector2(-top + 4.0, -h * 0.7)])
+	canvas.draw_colored_polygon(water, WATER)
+	for cube: Vector2 in [Vector2(-6.0, -h * 0.72), Vector2(6.0, -h * 0.68)]:
+		canvas.draw_rect(Rect2(c + cube - Vector2(5.0, 5.0), Vector2(10.0, 10.0)), Color("e3f4ff"))
+	canvas.draw_polyline(PackedVector2Array([glass[3], glass[0], glass[1], glass[2]]), GROUND, 2.0, true)
+	# Drops on both sides of the glass.
+	for k in 4:
+		var y := -h * (0.25 + 0.15 * k)
+		var w := lerpf(bottom, top, (-y) / h)
+		for side: float in [-1.0, 1.0]:
+			canvas.draw_circle(c + Vector2(side * (w + 3.0), y + (2.0 if side > 0.0 else -3.0)), 2.6, Color("4aa8f5"))
+	if from_air:
+		for side: float in [-1.0, 1.0]:
+			for k in 2:
+				var dot := c + Vector2(side * (top + 22.0 + 6.0 * k), -h * (0.45 + 0.3 * k))
+				canvas.draw_arc(dot, 3.5, 0.0, TAU, 12, Color("8cc8f2"), 1.5, true)
+				_arrow(canvas, dot + Vector2(-side * 5.0, 0.0), dot + Vector2(-side * 15.0, 1.0), STRONG, 2.5)
+	else:
+		for side: float in [-1.0, 1.0]:
+			var from := c + Vector2(side * 4.0, -h * 0.4)
+			_arrow(canvas, from, from + Vector2(side * (bottom + 14.0), -2.0), STRONG, 3.0)
+
+## A sunny coast as the 바닷바람 lab draws it (#93): the land on the left with a little house, the sea
+## on the right with waves, the sun over the land, and a big orange wind arrow low over the shore,
+## from the sea to the land ("breeze_from_sea") or from the land to the sea ("breeze_from_land").
+static func _breeze(canvas: Control, r: Rect2, from_sea: bool) -> void:
+	var shore := r.position.x + r.size.x * 0.5
+	var top := r.end.y - r.size.y * 0.24
+	canvas.draw_rect(Rect2(r.position.x, top, shore - r.position.x, r.end.y - top), Color("f3d88c"))
+	canvas.draw_rect(Rect2(r.position.x, top, shore - r.position.x, 4.0), LAND)
+	canvas.draw_rect(Rect2(shore, top + 5.0, r.end.x - shore, r.end.y - top - 5.0), WATER)
+	for k in 3:
+		var w := Vector2(shore + 12.0 + k * 20.0, top + 13.0 + (k % 2) * 5.0)
+		canvas.draw_arc(w, 5.0, PI * 1.1, PI * 1.9, 8, Color.WHITE, 2.0, true)
+	var house := Vector2(r.position.x + r.size.x * 0.2, top)
+	canvas.draw_rect(Rect2(house.x - 9.0, house.y - 13.0, 18.0, 13.0), Color("fff1d2"))
+	canvas.draw_colored_polygon(PackedVector2Array([house + Vector2(-12.0, -12.0), house + Vector2(0.0, -23.0), house + Vector2(12.0, -12.0)]), Color("e85a3c"))
+	_ground(canvas, r)
+	var sun := Vector2(r.position.x + r.size.x * 0.24, r.position.y + 14.0)
+	for k in 8:
+		var d := Vector2.from_angle(TAU * k / 8.0)
+		canvas.draw_line(sun + d * 13.0, sun + d * 18.0, SUN, 3.0, true)
+	canvas.draw_circle(sun, 10.0, SUN)
+	var y := top - r.size.y * 0.24
+	var sea_end := Vector2(r.end.x - 12.0, y)
+	var land_end := Vector2(r.position.x + r.size.x * 0.34, y)
+	if from_sea:
+		_arrow(canvas, sea_end, land_end, STRONG, 6.0)
+	else:
+		_arrow(canvas, land_end, sea_end, STRONG, 6.0)
+
+## A small cloud over a cold sea (an ice floe on it), an arrow to what it becomes: a big dark rain
+## cloud with rain ("cloud_grows"), or the same small cloud ("cloud_stays"); the choice's arrow orange.
+static func _cold_cloud(canvas: Control, r: Rect2, grows: bool) -> void:
+	var top := r.position.y + r.size.y * 0.74
+	canvas.draw_rect(Rect2(Vector2(r.position.x, top), Vector2(r.size.x, r.end.y - top)), TyphoonProps.COLD_SEA)
+	canvas.draw_line(Vector2(r.position.x, top), Vector2(r.end.x, top), TyphoonProps.COLD_SEA_TOP, 2.0)
+	for x: float in [0.3, 0.8]:
+		var floe := Vector2(r.position.x + r.size.x * x, top + (r.end.y - top) * 0.5)
+		canvas.draw_set_transform(floe, 0.0, Vector2(1.0, 0.35))
+		canvas.draw_circle(Vector2.ZERO, r.size.y * 0.13, Color.WHITE)
+		canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	var y := r.position.y + r.size.y * 0.36
+	var left := Vector2(r.position.x + r.size.x * 0.2, y)
+	var right := Vector2(r.position.x + r.size.x * 0.76, y)
+	_puff(canvas, left, r.size.y * 0.13, Color.WHITE, PALE)
+	_arrow(canvas, left + Vector2(r.size.y * 0.3, 0.0), right - Vector2(r.size.y * (0.38 if grows else 0.26), 0.0), STRONG, 4.0)
+	if grows:
+		for k in 5:
+			var x := right.x + (k - 2) * r.size.y * 0.1
+			canvas.draw_line(Vector2(x, y + r.size.y * 0.2), Vector2(x - 3.0, y + r.size.y * 0.34), WATER, 2.5, true)
+		_puff(canvas, right, r.size.y * 0.24, Color("97a3b8"), Color("5d6a86"))
+	else:
+		_puff(canvas, right, r.size.y * 0.13, Color.WHITE, PALE)
+
+
+## A cloud of three round puffs centred at `at` (`radius`: the middle puff's), outlined.
+static func _puff(canvas: Control, at: Vector2, radius: float, fill: Color, line: Color) -> void:
+	var balls := [[Vector2(-0.8, 0.25), 0.7], [Vector2(0.8, 0.25), 0.7], [Vector2(0.0, 0.0), 1.0]]
+	for ball: Array in balls:
+		canvas.draw_circle(at + (ball[0] as Vector2) * radius, float(ball[1]) * radius + 1.5, line)
+	for ball: Array in balls:
+		canvas.draw_circle(at + (ball[0] as Vector2) * radius, float(ball[1]) * radius, fill)
+
+## A steep slope (left) and a flat land (right), water running over each (a blue line with its arrow)
+## into a V cut in the land: the choice's land is orange with a deep cut, the other pale with a
+## shallow one ("cut_steep": the steep land cuts deep; "cut_flat": the flat land does).
+static func _cuts(canvas: Control, r: Rect2, steep_wins: bool) -> void:
+	_ground(canvas, r)
+	var half := r.size.x * 0.5
+	var lands := [[0.0, true], [half, false]]
+	for land: Array in lands:
+		var x0: float = r.position.x + float(land[0]) + 4.0
+		var steep: bool = land[1]
+		var wins := steep == steep_wins
+		var color := STRONG if wins else PALE
+		var top := Vector2(x0, r.end.y - r.size.y * (0.8 if steep else 0.24))
+		var end := Vector2(x0 + half - 12.0, r.end.y - (2.0 if steep else r.size.y * 0.24))
+		var body := PackedVector2Array([top, end, Vector2(end.x, r.end.y), Vector2(x0, r.end.y)])
+		canvas.draw_colored_polygon(body, Color(color, 0.4))
+		var d := (end - top).normalized()
+		var inward := Vector2(-d.y, d.x)
+		var mid := top.lerp(end, 0.55)
+		var wide := 9.0 if wins else 6.0
+		var deep := r.size.y * (0.2 if wins else 0.05)
+		var notch := PackedVector2Array([mid - d * wide, mid + inward * deep, mid + d * wide])
+		canvas.draw_colored_polygon(notch, GROUND)
+		canvas.draw_polyline(PackedVector2Array([top, mid - d * wide, mid + inward * deep, mid + d * wide, end]), color, 3.0 if wins else 2.0, true)
+		var water := PackedVector2Array([top - inward * 4.0, mid - d * wide - inward * 3.0, mid + inward * (deep - 3.0), mid + d * wide - inward * 3.0, end - inward * 4.0])
+		canvas.draw_polyline(water, WATER.darkened(0.15), 3.0, true)
+		_arrow(canvas, end - inward * 4.0 - d * 14.0, end - inward * 4.0 + d * 2.0, WATER.darkened(0.15), 3.0)
+
+## A cut through three layers (gravel at the bottom, sand, mud on top: the tank's colours) in the
+## middle of the card, the layer the choice names ringed in orange with an orange arrow pointing at it
+## from the right ("strata_bottom": the bottom one, "strata_top": the top one).
+static func _strata(canvas: Control, r: Rect2, bottom: bool) -> void:
+	var w := minf(r.size.x * 0.5, r.size.y * 1.3)
+	var h := r.size.y * 0.24
+	var x0 := r.get_center().x - w * 0.5 - r.size.x * 0.06
+	var y0 := r.get_center().y + h * 1.5
+	var stripes := ["gravel", "sand", "mud"]
+	for i in 3:
+		var colors: Array = StrataProps.COLORS[stripes[i]]
+		var band := Rect2(x0, y0 - h * (i + 1), w, h)
+		canvas.draw_rect(band, colors[0])
+		canvas.draw_rect(Rect2(band.position, Vector2(w, h * 0.18)), colors[1])
+		for k in 7:
+			var p := band.position + Vector2(w * fposmod((k + 0.5) * 0.618 + i * 0.3, 1.0), h * (0.35 + 0.45 * fposmod(k * 0.414 + i * 0.2, 1.0)))
+			canvas.draw_circle(p, h * (0.12 if i == 0 else 0.05), StrataProps.PEBBLES[k % 3] if i == 0 else colors[0].darkened(0.25))
+	var pick := Rect2(x0, y0 - h * (1 if bottom else 3), w, h).grow(2.0)
+	var ring := PackedVector2Array([pick.position, Vector2(pick.end.x, pick.position.y), pick.end, Vector2(pick.position.x, pick.end.y), pick.position])
+	canvas.draw_polyline(ring, STRONG, 4.0, true)
+	var tip := Vector2(pick.end.x + 4.0, pick.get_center().y)
+	_arrow(canvas, tip + Vector2(r.size.x * 0.18, 0.0), tip, STRONG, 4.0)
+
+## Two mountains of lava side by side on the ground, a tall steep one and a low wide one: the one the
+## choice says in orange (lava running down it, a glowing top), the other pale (#98).
+static func _mountains(canvas: Control, r: Rect2, tall: bool) -> void:
+	_ground(canvas, r)
+	var ground := r.end.y - 1.5
+	var shapes := [[r.position.x + r.size.x * 0.27, r.size.x * 0.17, r.size.y * 0.78],
+		[r.position.x + r.size.x * 0.7, r.size.x * 0.27, r.size.y * 0.3]]
+	for i in 2:
+		var mine := (i == 0) == tall
+		var x: float = shapes[i][0]
+		var half: float = shapes[i][1]
+		var height: float = shapes[i][2]
+		var peak := PackedVector2Array([Vector2(x - half, ground), Vector2(x - half * 0.18, ground - height),
+			Vector2(x + half * 0.18, ground - height), Vector2(x + half, ground)])
+		canvas.draw_colored_polygon(peak, LAVA_HILL if mine else PALE)
+		if mine:
+			# The glowing top and two lava streams down its sides.
+			canvas.draw_colored_polygon(PackedVector2Array([Vector2(x - half * 0.32, ground - height * 0.8),
+				Vector2(x - half * 0.18, ground - height), Vector2(x + half * 0.18, ground - height),
+				Vector2(x + half * 0.32, ground - height * 0.8)]), SUN)
+			canvas.draw_line(Vector2(x - half * 0.1, ground - height), Vector2(x - half * 0.55, ground - height * 0.3), STRONG, 3.0, true)
+			canvas.draw_line(Vector2(x + half * 0.12, ground - height), Vector2(x + half * 0.5, ground - height * 0.4), STRONG, 3.0, true)
+		else:
+			canvas.draw_polyline(peak, GROUND, 1.5, true)

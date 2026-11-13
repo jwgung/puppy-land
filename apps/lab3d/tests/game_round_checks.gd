@@ -42,8 +42,8 @@ func check_round() -> void:
 	# The formula's answer is hidden before the throw (key card and sidebar both read "?": the card
 	# in a child's words, the sidebar with its unit).
 	screen._update_readouts(false)
-	var range_hidden: bool = screen._key_labels["range"].text == "? 미터" and screen._observation_labels["range"].text == "? m" \
-		and screen._observation_labels["flight_time"].text == "? s" and not screen._key_labels.has("flight_time")
+	var range_hidden: bool = screen._key_labels["range"].text == "? 미터" and screen._observation_labels["range"].text == Locale.t("screen.value_hidden") \
+		and screen._observation_labels["flight_time"].text == Locale.t("screen.value_hidden") and not screen._key_labels.has("flight_time")
 	expect.call(range_hidden, "round: before the throw the formula range and flight time read ?",
 		"%s, %s" % [screen._key_labels["range"].text, screen._observation_labels["flight_time"].text])
 	# Dugi asks in his own box (portrait, name tag), the two picture buttons over it.

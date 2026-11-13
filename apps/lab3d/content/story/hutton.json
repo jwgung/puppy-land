@@ -1,0 +1,37 @@
+{
+  "about": "이야기 \"멈춘 해시계\"(허턴섬, docs/islands/hutton.md·hutton-lines.md 확정 2026-11-06). voyage = 섬 고르기에서 허턴섬 출발!을 처음 누를 때 배를 타고 허턴섬으로 가는 짧은 3D 장면(VoyageScreen, #75): 쪽마다 who·face·shot(카메라와 배의 자리, Story.VOYAGE_SHOTS: depart 뉴턴섬 바닷가 출발, sea 바다 위, flicker 허턴섬만 어두워졌다 밝아짐, arrive 허턴섬 바닷가 도착·섬지기를 만남). prologue = 그 뒤 허턴섬 지도에서 잇는 첫 이야기(대사 7~18). fox = 섬지기(이름표는 speaker.fox \"섬지기\"; 배 장면에서 처음 만날 때만 fox_stranger, 이름표 speaker.fox_stranger \"여우친구\", #118). voyage는 뉴턴섬 끝 이야기 바로 뒤가 아니라 섬 고르기에서 허턴섬 출발!을 처음 누를 때 나온다(#118). 말은 content/locale/<언어>/story/hutton.json. finale = 화산 뒤 끝 이야기 \"해시계 다시 세우기\"(대사 문서 끝 이야기 1~9, 연출 2026-11-09 #106: StoryDirector가 PLANT_PAGE(5번째 줄) 뒤에 아이가 바늘을 꽂기를 기다림, 4번째 줄 뒤에 부채꼴이 판으로 모임). map_today = 사지 않은 섬에서 오늘 새 장소를 쓴 뒤 다음 장소를 누를 때 퍼피 말(#77, map_today_face 표정; 말풍선에 보호자 단추).",
+  "map_today_face": "explain",
+  "voyage": [
+    { "who": "dugi", "face": "happy", "shot": "depart" },
+    { "who": "cat", "face": "happy", "shot": "depart" },
+    { "who": "dugi", "face": "explain", "shot": "depart" },
+    { "who": "puppy", "face": "surprised", "shot": "sea" },
+    { "who": "puppy", "face": "thinking", "shot": "flicker" },
+    { "who": "fox_stranger", "face": "worried", "shot": "arrive" }
+  ],
+  "prologue": [
+    { "who": "cat", "face": "explain" },
+    { "who": "fox", "face": "thinking" },
+    { "who": "fox", "face": "worried" },
+    { "who": "fox", "face": "worried" },
+    { "who": "dugi", "face": "explain" },
+    { "who": "fox", "face": "worried" },
+    { "who": "cat", "face": "worried" },
+    { "who": "puppy", "face": "thinking" },
+    { "who": "fox", "face": "worried" },
+    { "who": "puppy", "face": "thinking" },
+    { "who": "cat", "face": "explain" },
+    { "who": "fox", "face": "happy" }
+  ],
+  "finale": [
+    { "who": "fox", "face": "surprised" },
+    { "who": "puppy", "face": "happy" },
+    { "who": "dugi", "face": "explain" },
+    { "who": "fox", "face": "thinking" },
+    { "who": "dugi", "face": "explain" },
+    { "who": "puppy", "face": "surprised" },
+    { "who": "fox", "face": "happy" },
+    { "who": "fox", "face": "happy" },
+    { "who": "cat", "face": "happy" }
+  ]
+}

@@ -29,6 +29,17 @@ const MEADOW := Color("7ad957")       # the meadow's lighter grass
 const POND := Color("4cb5f2")         # the pond's water
 const PLAZA := Color("eedfb8")        # the cat's home square
 const PLATE := Color("fbf4e2")        # the round stage under a spot's landmark
+# The hutton island's own ground and landforms (#72)
+const VALLEY := Color("9fce55")       # the valley's drier grass
+const VOLCANO := Color("a0704f")      # the volcano's lower slopes
+const VOLCANO_TOP := Color("7e5440")  # its upper slopes and rim
+const CRATER := Color("4c362c")       # inside the crater (asleep: no glow)
+const SMOKE := Color("e4e7ee")        # the thin smoke over the crater
+const RIVER := Color("4cb5f2")        # the river's middle (the pond's water)
+const RIVER_EDGE := Color("8fd3ff")   # its light edges
+const ROCK_TOP := Color("c4cad6")     # the broken sundial's empty plate (#106)
+const NEW_LAND := Color("6b5a52")     # the new land of cooled lava (#106): a dark grey-brown
+const NEW_LAND_TOP := Color("7d6b62")  # its lighter faces and the round rocks on its edge
 
 # Apparatus primaries (one colour per part; the lighter variant is its top face)
 const YELLOW := Color("ffc61a")
@@ -71,6 +82,7 @@ const LIGHT := Color("ffffff")        # lit side multiplier
 const SHADE := Color("7d8ed8")        # shaded side multiplier (cool blue, never grey)
 const OUTLINE := Color("6e4630")      # characters' storybook outline (Task 4g2, ArtKit.outline_material)
 const SHADOW := Color("14234d")       # blob shadow colour
+const CAST_SHADOW := Color("434a86")  # a stick's cast shadow, a deep blue-violet (shadow_clock props, its map model, its predict pictures)
 const SHADOW_ALPHA := 0.32
 const DUST := Color("e9f5d8")
 

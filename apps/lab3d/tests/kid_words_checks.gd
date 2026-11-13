@@ -33,12 +33,68 @@ func run() -> void:
 	check_shown_number()
 	check_content_lint()
 	check_term_content()
+	check_banmal()
 	await check_term_box()
 	await check_free_fall_card()
 	await check_spring_card()
 	await check_push_bar()
 	for definition in ExperimentRegistry.load_all():
 		await check_note(definition)
+
+
+## Friends talk in 반말 (2026-11-12 user: "친구끼리 반말해야지", "다 반말로 바꿔"): every line a character
+## says in Korean (Dugi's intro, stage says, question, reason and bridge, the picture buttons and the
+## bread cat's guesses, the lab question, the story pages) ends without 해요체 (…요, …까요?, …세요);
+## since 2026-11-12 ("다 바꿔야지") every Korean text of the app is 반말: ui.json too.
+func check_banmal() -> void:
+	var polite := RegEx.create_from_string("(요|세요)([.!?…,*\\s]|$)")
+	var found := []
+	var check := func(where: String, text: Variant) -> void:
+		if text is String and polite.search(text) != null:
+			found.append("%s: %s" % [where, text])
+	for d in ExperimentRegistry.load_all():
+		var id: String = d.id
+		check.call(id + " question", d.get("question"))
+		var kid: Dictionary = d.get("kid", {})
+		check.call(id + " kid.intro", kid.get("intro"))
+		check.call(id + " kid.say", kid.get("say"))
+		for more in kid.get("intro_more", []):
+			check.call(id + " kid.intro_more", more.get("text"))
+		for stage in MissionRound.missions(d).get("stages", []):
+			check.call(id + " stage say", stage.get("say"))
+		var predict := MissionRound.predict(d)
+		for key in ["question", "reason", "bridge"]:
+			check.call("%s predict.%s" % [id, key], predict.get(key))
+		for choice in predict.get("choices", []):
+			check.call(id + " choice", choice.get("label"))
+			check.call(id + " guess", choice.get("guess"))
+	for island in Island.ids():
+		var story: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://content/locale/ko/story/%s.json" % island))
+		if story is Dictionary:
+			for part in ["prologue", "finale", "finale_after", "voyage"]:
+				for page in story.get(part, []):
+					check.call("%s %s" % [island, part], page.get("text"))
+			for key in ["finale_retry", "finale_next", "map_wrong", "map_today"]:
+				check.call("%s %s" % [island, key], story.get(key))
+	var ui: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://content/locale/ko/ui.json"))
+	var walk := func(self_fn: Callable, key: String, value: Variant) -> void:
+		if value is Dictionary:
+			for k in value:
+				self_fn.call(self_fn, key + "." + str(k), value[k])
+		elif value is Array:
+			for v in value:
+				self_fn.call(self_fn, key, v)
+		else:
+			check.call("ui " + key, value)
+	walk.call(walk, "", ui)
+	for d in ExperimentRegistry.load_all():
+		check.call(d.id + " tip", d.get("tip"))
+		check.call(d.id + " tip_short", d.get("tip_short"))
+		check.call(d.id + " observe", d.get("observe"))
+		for step in d.get("steps", []):
+			check.call(d.id + " step", step)
+	expect.call(found.is_empty() and Locale.lang == "ko", "kid words: the app talks in 반말 (no 해요체 in Dugi's lines, the question, the buttons, the guesses, the story, ui.json, tips and steps)",
+		"; ".join(found.slice(0, 4)))
 
 
 func _open(id: String) -> Control:
@@ -189,7 +245,7 @@ func check_term_box() -> void:
 	if shown.any(func(l: String) -> bool: return l.count(TermMarks.MARK) % 2 == 1) or shown.filter(func(l: String) -> bool: return TermMarks.marked(l)).size() < 2:
 		problems.append("a term over a break is not closed and opened again: %s" % str(shown))
 	box.queue_free()
-	var intro: String = MissionRound.intro(ExperimentRegistry.find("incline-friction"))[0]
+	var intro: String = MissionRound.intro(ExperimentRegistry.find("incline-friction")).text
 	box = DialogueBox.new(intro)
 	host.add_child(box)
 	box.layout(Rect2(Vector2.ZERO, TABLET), TABLET.x - 200.0, 16.0)
@@ -224,7 +280,7 @@ func check_term_box() -> void:
 	box.queue_free()
 	# The science note's AI question takes the words without the marks.
 	var marked := ExperimentRegistry.find("incline-friction").duplicate(true)   # (find shares its cached definition)
-	marked.kid.say = "바닥이 붙잡는 힘을 **마찰력**이라고 해요."
+	marked.kid.say = "바닥이 붙잡는 힘을 **마찰력**이라고 해."
 	var lab := ExperimentRegistry.instantiate(marked)
 	host.add_child(lab)
 	await tree.process_frame
@@ -272,7 +328,7 @@ func check_content_lint() -> void:
 		"spring": [MissionRound.missions(ExperimentRegistry.find("spring")).stages.map(func(s: Dictionary) -> String: return s.text),
 			["가벼운 공을 당겨 가까운 종 치기!", "같은 공을 더 멀리 당겨서 먼 종 치기!", "무거운 공으로 바꿔서 같은 먼 종 치기!"]],
 		"free-fall": [MissionRound.missions(ExperimentRegistry.find("free-fall")).stages.map(func(s: Dictionary) -> String: return s.text),
-			["빨간 공과 분홍 공을 같이 떨어뜨려 버튼 누르기!", "달에서 두 공을 맨 위에서 같이 떨어뜨리기!", "목성에서 두 공을 같이 1초 안에 떨어뜨리기!"]],
+			["지구에서 두 공을 떨어뜨려 버튼 누르기!", "달로 바꿔서 두 공 떨어뜨리기!", "목성으로 바꿔서 두 공 떨어뜨리기!"]],
 		"collision": [MissionRound.missions(ExperimentRegistry.find("collision")).stages.map(func(s: Dictionary) -> String: return s.text),
 			["같은 무게 공을 세게 부딪혀 얼음에 금 내기!", "무거운 파란 공으로 더 세게 부딪히기!", "조금 무거운 주황 공을 세게 쳐서 얼음 깨기!"]],
 		# Batch B (2026-10-29) and the throw's angle game.
@@ -289,9 +345,9 @@ func check_content_lint() -> void:
 		if want[id][0] != want[id][1]:
 			found.append("%s: '%s' (want '%s')" % [id, str(want[id][0]), str(want[id][1])])
 	var fall := ExperimentRegistry.find("free-fall")
-	if not (ExperimentRegistry.kid_text(fall, "say").contains("같은 높이에서 놓으면 같이 닿아요") and fall.predict.reason.contains("같은 높이에서 놓으면 같이 닿아요")
-			and fall.predict.choices[0].label == "같이 닿아요"):
-		found.append("free-fall: the law 같은 높이에서 놓으면 같이 닿아요 (choice kept short)")
+	if not (ExperimentRegistry.kid_text(fall, "say").contains("같은 높이에서 놓으면 같이 닿아") and fall.predict.reason.contains("같은 높이에서 놓으면 같이 닿아")
+			and fall.predict.choices[0].label == "같이 닿아"):
+		found.append("free-fall: the law 같은 높이에서 놓으면 같이 닿아 (choice kept short)")
 	# The collision's balls by weight in words: one word per weight, the same word = the same weight.
 	var words := {}
 	for presets in ConditionPicks.picks(ExperimentRegistry.find("collision")).values():
@@ -329,7 +385,7 @@ func check_free_fall_card() -> void:
 
 
 ## The spring's card (2026-10-29, the bell game): every stage shows how far the first swing went
-## past the rest ("반대쪽으로 간 길이"), "흔들면 보여요" until the ball got there, then the length in words.
+## past the rest ("반대쪽으로 간 길이"), "흔들면 보여" until the ball got there, then the length in words.
 func check_spring_card() -> void:
 	var screen := await _open("spring")
 	screen.mission_round.end_question()
@@ -346,9 +402,9 @@ func check_spring_card() -> void:
 	screen._show_stamps(1)
 	await tree.process_frame
 	var second: Array = screen.key_card_ids()
-	expect.call(first == ["bell_reach"] and caption == "반대쪽으로 간 길이" and waiting == "흔들면 보여요" and reached == "1.5미터" and second == ["bell_reach"]
+	expect.call(first == ["bell_reach"] and caption == "반대쪽으로 간 길이" and waiting == "흔들면 보여" and reached == "1.5미터" and second == ["bell_reach"]
 		and screen._key_row.get_child_count() == 1,
-		"kid words: the spring's card is how far the first swing went past the rest (반대쪽으로 간 길이: 흔들면 보여요, then 1.5미터 from a 1.5 m pull), every stage",
+		"kid words: the spring's card is how far the first swing went past the rest (반대쪽으로 간 길이: 흔들면 보여, then 1.5미터 from a 1.5 m pull), every stage",
 		"%s '%s' '%s' '%s' -> %s" % [str(first), caption, waiting, reached, str(second)])
 	await _close(screen)
 
@@ -385,9 +441,12 @@ func check_push_bar() -> void:
 
 # --- the science note -----------------------------------------------------------------------------
 
-## 법칙 (one sentence, one formula), 이번 실험 숫자 (3-4 rows with every number in its unit), 조건
-## 바꾸기, 그래프 where the note keeps it, then 더 보기 (closed): every other observation, the graph
-## otherwise, the explanation. Every observation has its one label with the panel's text.
+## The note for a guardian (2026-11-11 user, plan A): 조건 바꾸기 (when the lab has conditions), 이번 실험
+## 숫자 (3-4 rows with every number in its unit), 그래프 where the note keeps it, 이 실험에서 배우는 것 (#126,
+## note.learn), 법칙 (one sentence, one formula), 실험하는 방법, 낱말 풀이 (when it has terms), 아이와 이야기해
+## 보기 (two questions, note.talk), then 더 보기 (closed): every other observation,
+## the graph otherwise, the deeper concept. Every observation has its one label with the note's text
+## (note_value: "실험하면 나와" before a value, "실험이 끝나면 보여" while a mission hides it).
 func check_note(definition: Dictionary) -> void:
 	var screen := await _open(definition.id)
 	screen.open_sidebar(false)
@@ -403,9 +462,21 @@ func check_note(definition: Dictionary) -> void:
 		for id in screen._sections:
 			if screen._sections[id] == child:
 				order.append(id)
-	var want := ["law", "numbers", "conditions"] + (["graph"] if note.graph else []) + ["more"] + (["ask"] if ScienceNote.enabled else [])
+	var parsed := ExperimentDefinition.new(definition)
+	var want := (["conditions"] if not parsed.controls().is_empty() else []) + ["numbers"] + (["graph"] if note.graph else []) \
+		+ ["learn", "law", "guide"] + (["terms"] if not parsed.terms().is_empty() else []) + ["talk", "more"] + (["ask"] if ScienceNote.enabled else ["copy"])
 	if order != want:
 		problems.append("order %s (want %s)" % [str(order), str(want)])
+	# 이 실험에서 배우는 것 and 아이와 이야기해 보기 (#126): the note's words as they are.
+	var texts := func(id: String) -> Array:
+		return screen._sections[id].find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text)
+	var learn_texts: Array = texts.call("learn")
+	if not (learn_texts.has("이 실험에서 배우는 것") and learn_texts.has(note.learn)):
+		problems.append("learn %s" % str(learn_texts))
+	var talk_texts: Array = texts.call("talk")
+	var talk_want: Array = ["아이와 이야기해 보기"] + (note.talk as Array).map(func(q: String) -> String: return "• " + q)
+	if talk_texts != talk_want or (note.talk as Array).size() != 2:
+		problems.append("talk %s" % str(talk_texts))
 	var law_texts: Array = screen._sections.law.find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text)
 	if not (law_texts.has("법칙") and law_texts.has(note.law) and law_texts.has(note.formula) and str(note.law).length() < 90):
 		problems.append("law %s" % str(law_texts))
@@ -420,7 +491,7 @@ func check_note(definition: Dictionary) -> void:
 			in_numbers[id] = true
 	for observation in definition.observations:
 		var label: Label = screen._observation_labels.get(observation.id)
-		var text := ExperimentScreen.hidden_observation(observation) if hidden.has(observation.id) else ExperimentScreen.format_observation(observation, values.get(observation.id))
+		var text := ExperimentScreen.note_value(observation, values.get(observation.id), hidden.has(observation.id))
 		if label == null or label.text != text:
 			problems.append("%s reads '%s' (want '%s')" % [observation.id, label.text if label != null else "-", text])
 			continue

@@ -31,8 +31,8 @@
   "predict": {
     "question": "If you push near the pivot, will the chest lift easily?",
     "choices": [
-      { "label": "It takes a lot of force" },
-      { "label": "It lifts easily" }
+      { "label": "It takes a lot of force", "guess": "I think it'll take a lot of force!" },
+      { "label": "It lifts easily", "guess": "I think it'll lift easily!" }
     ],
     "reason": "Pushing near the pivot, it's hard for the bar to lift the chest. So you must push very hard.",
     "bridge": "Press it and see for yourself!"
@@ -87,6 +87,8 @@
   },
   "note": {
     "law": "The farther from the pivot you push, the smaller the force that lifts the load. It lifts when force × distance (torque) is the same on both sides.",
+    "learn": "The farther from the pivot you press, the less force it takes to lift something heavy. It lifts when force times distance is the same on both sides.",
+    "talk": ["On a seesaw, where should a lighter child sit to lift a heavier one?", "Why is a door handle far from the hinges?"],
     "numbers": [
       { "label": "Load weight F₂ = mg" },
       { "label": "Pivot to load r₂" },

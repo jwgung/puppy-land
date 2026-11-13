@@ -2,7 +2,7 @@
 ## language is a folder of words, not a change of code). Under content/locale/<lang>/:
 ##   ui.json                the code's words: key -> text (or a list or a map of texts), `t()`
 ##   experiments/<id>.json  an experiment's words in the shape of its data file (content/experiments)
-##   story.json             the story's words in the shape of content/story.json
+##   story/<island>.json    an island's story words in the shape of content/story/<island>.json
 ## The data files keep everything else (numbers, ids, faces, notes `about`); `overlay()` puts the
 ## words back into them where they were (tools/split_text.py split them so). A text missing in the
 ## language is the DEFAULT language's (ui.json key by key; a content file's words laid over DEFAULT's).

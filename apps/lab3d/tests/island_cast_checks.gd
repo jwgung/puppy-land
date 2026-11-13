@@ -32,7 +32,8 @@
 ##    "퍼피가 울타리 밖에 있어서 잘 안 보임").
 ## 7. physics unchanged, every listed experiment: engine bodies (every step) and panel texts are the
 ##    same with and without the cast while Dugi explains (from its own trigger, or made to explain
-##    at step 120 when the run reaches no result status in 420 steps).
+##    at step 120 when the run reaches no result status in 420 steps), both runs with the lab's
+##    missions done, so no stamp moves the round on (#130).
 extends RefCounted
 
 const EXPERIMENT_SCREEN := "res://scripts/shell/experiment_screen.gd"
@@ -44,6 +45,7 @@ const UiScale := preload("res://tests/ui_scale_checks.gd")   # PHONE_ZOOMED (화
 const POINT_TOL_DEG := 1.0
 const DUGI_VERTS_MAX := 3300        # 3,050 model vertices + the shadow
 const PUPPY_VERTS_MAX := 3450       # 3,199 + the shadow
+const FOX_VERTS_MAX := 3150         # 2,866 (the island keeper, #71: no actor yet, the model only)
 const TRIS_MAX := 6000
 const CELL := 0.25                  # m: apparatus meshes are voxelised at this size
 const CLEARANCE := 0.2              # m: cast bounds grown by this must touch no apparatus cell
@@ -237,7 +239,8 @@ func _motion(screen: Control) -> Array:
 
 func check_models() -> void:
 	for spec in [["res://assets/characters/dugi.glb", "Dugi", ["Body", "Body/ArmL/HandL", "Body/ArmR/HandR", "Body/ArmR/Pointer/PointerTip", "Body/Head/EarL", "Body/Head/EarR"], DUGI_VERTS_MAX],
-			["res://assets/characters/puppy.glb", "Puppy", ["Body", "Body/ArmL/HandL", "Body/ArmR/HandR", "Body/ArmR/Flag/FlagCloth", "Body/Head/EarL", "Body/Head/EarR"], PUPPY_VERTS_MAX]]:
+			["res://assets/characters/puppy.glb", "Puppy", ["Body", "Body/ArmL/HandL", "Body/ArmR/HandR", "Body/ArmR/Flag/FlagCloth", "Body/Head/EarL", "Body/Head/EarR"], PUPPY_VERTS_MAX],
+			["res://assets/characters/fox.glb", "Fox", ["Body", "Body/ArmL/HandL", "Body/ArmR/HandR", "Body/Head/EarL", "Body/Head/EarR"], FOX_VERTS_MAX]]:
 		var model: Node = (load(spec[0]) as PackedScene).instantiate()
 		var root := model.get_node(spec[1])
 		var missing := []
@@ -292,7 +295,8 @@ func check_actors() -> void:
 	# Both face the front camera.
 	var eye: Vector3 = screen.view.rig.global_position
 	var facing_ok := true
-	for actor: Node3D in [cast.dugi, cast.puppy]:
+	var actors: Array = [cast.dugi, cast.puppy] + ([cast.fox] if cast.fox != null else [])
+	for actor: Node3D in actors:
 		var to_eye := Vector2(eye.x - actor.global_position.x, eye.z - actor.global_position.z).normalized()
 		var front := Vector2(actor.global_basis.z.x, actor.global_basis.z.z).normalized()
 		facing_ok = facing_ok and rad_to_deg(front.angle_to(to_eye)) < 1.0
@@ -425,7 +429,7 @@ func check_projectile_explains() -> void:
 	expect.call(cast.explain_count == 1 and status in ["landed", "fence"] and lab.explain_point().distance_to(landing) < 1e-4 and aim < POINT_TOL_DEG,
 		"cast (projectile): after the throw lands Dugi points at the formula landing point (the end of the formula path)",
 		"status %s, %d explanations, point %s vs %s, aim %.3f deg" % [status, cast.explain_count, lab.explain_point(), landing, aim])
-	expect.call(box.visible and box.active and box.joined() == str(screen.explain_say()[0]) and box.name_label.text == "두기두기"
+	expect.call(box.visible and box.active and box.joined() == str(screen.explain_say().text) and box.name_label.text == "두기두기"
 		and box.label.get_parsed_text() != "" and TermMarks.plain(box.page_text(0)).begins_with(box.label.get_parsed_text()),   # (typing: the shown part)
 		"cast (projectile): the dialogue opens with Dugi's say for the stage exactly (only split into pages)", box.label.get_parsed_text())
 	screen.experiment_action("reset")
@@ -446,6 +450,10 @@ func check_placement(id: String, entry := false) -> void:
 		expect.call(false, "cast (%s): the definition places Dugi and Puppy" % key, "")
 		await _close(screen)
 		return
+	# The hutton island's keeper stands in each of its labs, never in the first island's (it has none).
+	var keeper_island := id in Island.by_id("hutton").spots()
+	if (cast.fox != null) != keeper_island:
+		expect.call(false, "cast (%s): the fox in a hutton lab only" % key, "fox %s" % (cast.fox != null))
 	var cells := apparatus_cells(lab)
 	var island := lab.find_child("Island", true, false)
 	var center: Vector3 = island.get_meta("center")
@@ -455,7 +463,7 @@ func check_placement(id: String, entry := false) -> void:
 	await tree.physics_frame
 	var problems := []
 	var eye := IslandCast.front_eye(screen.definition.camera())
-	for actor: Node3D in [cast.dugi, cast.puppy]:
+	for actor: Node3D in [cast.dugi, cast.puppy] + ([cast.fox] if cast.fox != null else []):
 		var to_eye := Vector2(eye.x - actor.global_position.x, eye.z - actor.global_position.z).normalized()
 		var front := Vector2(actor.global_basis.z.x, actor.global_basis.z.z).normalized()
 		if rad_to_deg(front.angle_to(to_eye)) > 1.0:
@@ -467,6 +475,8 @@ func check_placement(id: String, entry := false) -> void:
 	var dugi := cast.dugi
 	dugi.set_process(false)
 	var boxes := {"Dugi": dugi.bounds(), "Puppy": cast.puppy.bounds()}
+	if cast.fox != null:   # the hutton island's keeper beside them (2026-11-11 user: "여우친구가 실험내내 ... 따라다니게")
+		boxes["Fox"] = IslandCast.drawn_bounds(cast.fox)
 	dugi.explain(func() -> Vector3: return target)
 	dugi.advance(DugiActor.RAISE_S + 0.1)
 	boxes["Dugi pointing"] = dugi.bounds()
@@ -480,7 +490,7 @@ func check_placement(id: String, entry := false) -> void:
 	dugi.set_process(true)
 	for who in boxes:
 		var box: AABB = boxes[who]
-		var actor: Node3D = cast.puppy if who == "Puppy" else dugi
+		var actor: Node3D = cast.puppy if who == "Puppy" else (cast.fox if who == "Fox" else dugi)
 		var at := Vector2(actor.global_position.x, actor.global_position.z)
 		if at.distance_to(Vector2(center.x, center.z)) > ArtKit.ISLAND_RADIUS - 1.3:
 			problems.append("%s off the island" % who)
@@ -525,7 +535,7 @@ func check_placement(id: String, entry := false) -> void:
 		var consts: Dictionary = (lab.get_script() as GDScript).get_script_constant_map()
 		if top + 0.012 >= consts.ORBIT_Y - consts.PLANET_RADIUS:
 			problems.append("the cast reaches the planet's plane")
-	expect.call(problems.is_empty(), "cast (%s): Dugi (also pointing) and Puppy on the island, clear of trees, rocks, every apparatus mesh, the bread cat and the bodies' motion (%d samples); a yard lab's Puppy inside its fence" % [key, motion.size()],
+	expect.call(problems.is_empty(), "cast (%s): Dugi (also pointing), Puppy (and a hutton lab's fox) on the island, clear of trees, rocks, every apparatus mesh, the bread cat and the bodies' motion (%d samples); a yard lab's Puppy inside its fence" % [key, motion.size()],
 		"; ".join(problems))
 	await _close(screen)
 
@@ -564,7 +574,8 @@ func check_layout(id: String, entry := false) -> void:
 		var eye: Vector3 = screen.view.rig.global_position
 		var dugi_r: Rect2 = screen.view_rect_of(cast.dugi.bounds())
 		var puppy_r: Rect2 = screen.view_rect_of(cast.puppy.bounds())
-		for pair in [["Dugi", dugi_r], ["Puppy", puppy_r]]:
+		var fox_r: Rect2 = screen.view_rect_of(IslandCast.drawn_bounds(cast.fox)) if cast.fox != null else Rect2()
+		for pair in [["Dugi", dugi_r], ["Puppy", puppy_r]] + ([["Fox", fox_r]] if cast.fox != null else []):
 			var r: Rect2 = pair[1]
 			if r.size.x < 8.0 or not view_rect.grow(-4.0).encloses(r):
 				problems.append("%s not in the view %s" % [pair[0], r])
@@ -589,6 +600,13 @@ func check_layout(id: String, entry := false) -> void:
 					kinds[k[2]] = true
 			if over > 0 or puppy_r.intersects(dugi_r):
 				problems.append("Puppy overlaps %d apparatus / motion / cat rects (%s)%s" % [over, ", ".join(kinds.keys()), ", Dugi" if puppy_r.intersects(dugi_r) else ""])
+			if cast.fox != null:   # the fox: the same as Puppy, and clear of both
+				var fox_over := 0
+				for k in keep:
+					if (k[0] as Rect2).intersects(fox_r.grow(4.0)):
+						fox_over += 1
+				if fox_over > 0 or fox_r.intersects(dugi_r) or fox_r.intersects(puppy_r):
+					problems.append("Fox overlaps %d apparatus / motion / cat rects%s%s" % [fox_over, ", Dugi" if fox_r.intersects(dugi_r) else "", ", Puppy" if fox_r.intersects(puppy_r) else ""])
 		# Explaining: the dialogue.
 		cast.dugi.explain(lab.explain_point)
 		for k in int(DugiActor.RAISE_S * 60.0) + 3:
@@ -618,7 +636,7 @@ func check_layout(id: String, entry := false) -> void:
 						break
 			if box.portrait.position.x > box.size.x * 0.5:
 				problems.append("portrait not on the left")
-		expect.call(problems.is_empty(), "cast (%s, %s): Dugi and Puppy in the front view clear of the overlays; Dugi hides no apparatus, motion or cat; Puppy over none of them nor Dugi; the dialogue clear of the controls, cards and what Dugi points at (none beside the open sidebar)" % [key, setup[2]],
+		expect.call(problems.is_empty(), "cast (%s, %s): Dugi and Puppy (and a hutton lab's fox) in the front view clear of the overlays; Dugi hides no apparatus, motion or cat; Puppy and the fox over none of them nor Dugi nor each other; the dialogue clear of the controls, cards and what Dugi points at (none beside the open sidebar)" % [key, setup[2]],
 			"; ".join(problems))
 		await _close(screen)
 
@@ -774,6 +792,21 @@ static func _page_problems(box: DialogueBox, id: String, text: String) -> Array:
 
 # --- 7. physics unchanged ---------------------------------------------------------------------
 
+## The progress file's bytes (null when there is none), to put back with _restore_progress.
+func _saved_progress() -> Variant:
+	return FileAccess.get_file_as_bytes(ProgressStore.path) if FileAccess.file_exists(ProgressStore.path) else null
+
+
+func _restore_progress(saved: Variant) -> void:
+	if saved == null:
+		if FileAccess.file_exists(ProgressStore.path):
+			DirAccess.remove_absolute(ProgressStore.path)
+		return
+	var f := FileAccess.open(ProgressStore.path, FileAccess.WRITE)
+	f.store_buffer(saved)
+	f.close()
+
+
 func _record(id: String, with_cast: bool) -> Array:
 	var screen := await _open(id, TABLET, false, with_cast)
 	var lab: Experiment = screen.experiment
@@ -808,7 +841,7 @@ func _record(id: String, with_cast: bool) -> Array:
 ## joined back are the words exactly; "…" in a sentence does not break it.
 func check_sentence_lines() -> void:
 	var font: Font = load(UI_THEME).build().default_font
-	var words := "조각을 다시 맞추면 별이 빛을 낼 수 있어요. 하늘로 돌려보내요! 들판, 언덕… 섬 곳곳이야?"
+	var words := "조각을 다시 맞추면 별이 빛을 낼 수 있어. 하늘로 돌려보내! 들판, 언덕… 섬 곳곳이야?"
 	var pages := DialogueBox.paginate(words, font, 28, 1200.0)
 	var lines: Array = []
 	var joined := ""
@@ -816,7 +849,7 @@ func check_sentence_lines() -> void:
 		lines.append_array(pg.lines)
 		for j in pg.lines.size():
 			joined += pg.lines[j] + pg.seps[j]
-	var ok := lines == ["조각을 다시 맞추면 별이 빛을 낼 수 있어요.", "하늘로 돌려보내요!", "들판, 언덕… 섬 곳곳이야?"] \
+	var ok := lines == ["조각을 다시 맞추면 별이 빛을 낼 수 있어.", "하늘로 돌려보내!", "들판, 언덕… 섬 곳곳이야?"] \
 		and pages.size() == 2 and joined == words
 	expect.call(ok, "dialogue: each sentence starts its own line (two short ones share a page), the pages join back to the words", str(lines))
 
@@ -824,8 +857,19 @@ func check_sentence_lines() -> void:
 func check_physics_unchanged() -> void:
 	for definition in ExperimentRegistry.load_all():
 		var id: String = definition.id
+		# Both runs with this lab's missions already done (#130): a stamp would start the next stage,
+		# which resets the lab, and without the cast that comes NEXT_WAIT_MIN_S after the stamp while
+		# with the cast it waits for Dugi's words (ExperimentScreen._run_next_wait, by design). That is
+		# the screen's flow, not physics: spring's run earned stage 1's stamp and the run without the
+		# cast reset at step 216. Before, the runs used whatever progress the earlier checks left.
+		var saved: Variant = _saved_progress()
+		var done := ProgressStore.load()
+		done[id] = (MissionRound.missions(definition).get("stages", []) as Array).size()
+		ProgressStore.save(done)
 		var without: Array = await _record(id, false)
+		ProgressStore.save(done)
 		var with_cast: Array = await _record(id, true)
+		_restore_progress(saved)
 		var same: bool = without[0] == with_cast[0]
 		var first := -1
 		if not same:

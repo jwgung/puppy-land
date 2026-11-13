@@ -3,7 +3,7 @@
 ## --demo-story screenshot or the settings' renderer restart (--demo-title forces it); 시작하기 opens
 ## the prologue the first time and the map afterwards; 이야기 다시 보기 replays the prologue; 설정 opens
 ## the settings and back returns to the title; back on the map goes to the title, back on the title quits. The island behind turns by
-## itself and takes no input; no spot names; the logo and the buttons fit phone and tablet.
+## itself and takes no input; no spot names (the one label is the app's name on the ribbon, #128); the logo and the buttons fit phone and tablet.
 extends RefCounted
 
 var tree: SceneTree
@@ -273,8 +273,13 @@ func check_layout() -> void:
 			problems.append("the logo does not bob")
 		if title.view.mouse_filter != Control.MOUSE_FILTER_IGNORE:
 			problems.append("the island takes input")
-		if not title.find_children("*", "Label", true, false).is_empty():
-			problems.append("labels on the title")
+		# No spot names: the one label is the app's name on the ribbon (#128), in the language, inside the logo.
+		var labels: Array = title.find_children("*", "Label", true, false)
+		if labels != [title.title_label] or title.title_label.text != Locale.t("app.title") or title.title_label.text == "app.title":
+			problems.append("labels on the title %s" % str(labels.map(func(l: Label) -> String: return l.text)))
+		elif not Rect2(Vector2.ZERO, title.logo.size).encloses(title.title_label.get_rect()) \
+				or title.title_label.get_minimum_size().x > title.title_label.size.x + 1.0:
+			problems.append("the name off the ribbon")
 		expect.call(problems.is_empty(), "title (%s): the logo over 시작하기 and the small buttons, all on screen; the island turns by itself, no input, no names; the logo bobs"
 			% ("phone" if size == PHONE else "tablet"), "; ".join(problems))
 		host.queue_free()

@@ -11,8 +11,7 @@ var tree: SceneTree
 var expect: Callable
 const HANGUL := "[\\x{AC00}-\\x{D7A3}]"
 ## Data files with their words apart (their `about` notes may be in Korean: they are not shown).
-const DATA_DIRS := ["res://content/experiments", "res://content/islands"]
-const DATA_FILES := ["res://content/story.json"]
+const DATA_DIRS := ["res://content/story", "res://content/experiments", "res://content/islands"]
 
 
 func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:
@@ -23,7 +22,8 @@ func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:
 func run() -> void:
 	# The checks switch languages (the content is read again): the other checks' loaded definitions
 	# and story stay the very objects they were (some checks hold or adjust them).
-	var kept := [Locale.lang, ExperimentRegistry._cache, ExperimentRegistry._hidden, ExperimentRegistry._loaded, Story._content]
+	var kept := [Locale.lang, ExperimentRegistry._cache, ExperimentRegistry._hidden, ExperimentRegistry._loaded, Story._content,
+		ExperimentRegistry._island, ExperimentRegistry._island_ids]
 	check_switch_keeps_state()
 	check_keys()
 	check_no_words_in_code()
@@ -38,6 +38,8 @@ func run() -> void:
 	ExperimentRegistry._hidden = kept[2]
 	ExperimentRegistry._loaded = kept[3]
 	Story._content = kept[4]
+	ExperimentRegistry._island = kept[5]
+	ExperimentRegistry._island_ids = kept[6]
 
 
 func _gd_files(dir: String, out: Array) -> void:
@@ -72,7 +74,7 @@ static func _code(line: String) -> String:
 	return line
 
 
-## Every Locale.t / map / list key named in the code (and the keys named through data: the
+## Every Locale.t / map / list key named in the code (and the keys named through data: the islands' names and fields, the
 ## speakers' names, the free-fall balls' names) is in every language's ui.json, of its kind.
 func check_keys() -> void:
 	var call := RegEx.create_from_string("Locale\\.(t|map|list)\\(\"([^\"]+)\"\\)")
@@ -88,6 +90,51 @@ func check_keys() -> void:
 	var balls: Dictionary = (load("res://experiments/free_fall/free_fall.gd") as GDScript).get_script_constant_map().BALLS
 	for id in balls:
 		named["free-fall.ball." + id] = "t"
+	for id in ["winter", "spring", "summer", "autumn", "upright", "loop"]:   # the season card's words (SeasonsLab.observations)
+		named["seasons.status." + id] = "t"
+	for word in ["high", "middle", "low"]:   # the window's sun height words
+		named["seasons.sun." + word] = "t"
+	for word in ["long", "middle", "short"]:   # the window's day length words
+		named["seasons.day." + word] = "t"
+	for id in ["ready", "clear", "dew", "rising", "cloud"]:   # the dew-cloud card's words (DewCloudLab.observations)
+		named["dew_cloud.status." + id] = "t"
+	for word in ["warm", "cool", "cold", "icy"]:   # the cup's cold
+		named["dew_cloud.cup." + word] = "t"
+	for word in ["low", "middle", "top"]:   # the air parcel's height
+		named["dew_cloud.height." + word] = "t"
+	for word in ["small", "rain", "typhoon", "weak"]:   # the typhoon lab's cloud words (TyphoonLab.observations)
+		named["typhoon.cloud." + word] = "t"
+	for word in ["cold", "warm", "hot", "land"]:   # what is under the cloud
+		named["typhoon.under." + word] = "t"
+	for word in ["lots", "some", "none"]:   # the water vapour rising there
+		named["typhoon.vapor." + word] = "t"
+	for id in ["ready", "little", "valley", "bar", "bank"]:   # the river card's words (RiverLab.observations)
+		named["river.status." + id] = "t"
+	for word in ["none", "some", "much"]:   # how much was cut, how much sand
+		named["river.amount." + word] = "t"
+	for id in ["ready", "stacking", "layered", "fossil", "copied", "mixed", "shell_off"]:   # the strata card's words (StrataLab.observations, #96)
+		named["strata.status." + id] = "t"
+	for id in StrataModel.MATERIALS + ["none"]:   # the strata's bottom and top layer words
+		named["strata.layer." + id] = "t"
+	for id in ["ready", "shaking", "stood", "held", "strongest", "toppled", "fell"]:   # the house card's words (EarthquakeLab.observations)
+		named["earthquake.status." + id] = "t"
+	for word in ["small", "medium", "big", "biggest"]:   # the shake's words and the pull's readout (EarthquakeLab.shake_word)
+		named["earthquake.shake." + word] = "t"
+		named["earthquake.pull." + word] = "t"
+	named["earthquake.shake.none"] = "t"
+	for id in ["rock", "sand"]:   # the ground's words
+		named["earthquake.ground." + id] = "t"
+	for id in ["ready", "small", "wide", "tall", "plugged", "thin", "short", "sea"]:   # the volcano's card words (VolcanoLab.observations)
+		named["volcano.status." + id] = "t"
+	for word in ["none", "little", "middle", "lots"]:   # how much magma came up
+		named["volcano.amount." + word] = "t"
+	for kind in VolcanoModel.KINDS:   # the magma's words
+		named["volcano.magma." + kind] = "t"
+	for id in Island.ids():   # the islands' names and fields (섬 고르기, IslandCards, #75)
+		named["island.%s.name" % id] = "t"
+		named["island.%s.about" % id] = "t"
+		if IslandStore.product_of(id) != "":   # an island for sale: its offer's line to the guardian (IslandOffer, #77)
+			named["island.%s.offer" % id] = "t"
 	var problems := []
 	var langs := DirAccess.get_directories_at(Locale.ROOT)
 	for code in langs:
@@ -136,7 +183,7 @@ func check_no_words_in_code() -> void:
 ## The data files hold no words (their `about` notes aside): the words are in content/locale.
 func check_no_words_in_data() -> void:
 	var hangul := RegEx.create_from_string(HANGUL)
-	var files: Array = DATA_FILES.duplicate()
+	var files: Array = []
 	for dir in DATA_DIRS:
 		for name in DirAccess.get_files_at(dir):
 			if name.ends_with(".json"):
@@ -157,7 +204,7 @@ func check_no_words_in_data() -> void:
 			found.append(path)
 	for file in files:
 		walk.call(walk, JSON.parse_string(FileAccess.get_file_as_string(file)), file)
-	expect.call(found.is_empty() and files.size() > 12, "locale: no words in the data files (content/experiments, content/islands, content/story.json)",
+	expect.call(found.is_empty() and files.size() > 12, "locale: no words in the data files (content/experiments, content/islands, content/story)",
 		", ".join(found.slice(0, 8)) if not found.is_empty() else "%d files" % files.size())
 
 
@@ -195,10 +242,11 @@ static func _paths(value: Variant, path: String, out: Dictionary) -> void:
 
 static func _words_files(code: String) -> Array:
 	var root := Locale.ROOT.path_join(code)
-	var out := ["story.json"]
-	for name in DirAccess.get_files_at(root.path_join("experiments")):
-		if name.ends_with(".json"):
-			out.append("experiments".path_join(name))
+	var out := []
+	for dir in ["experiments", "story"]:
+		for name in DirAccess.get_files_at(root.path_join(dir)):
+			if name.ends_with(".json"):
+				out.append(dir.path_join(name))
 	out.sort()
 	return out
 

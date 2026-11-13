@@ -1,0 +1,144 @@
+{
+  "id": "earthquake",
+  "version": 1,
+  "icon": "⌂",
+  "law": {},
+  "scene": "res://experiments/earthquake/earthquake.gd",
+  "bench_id": "EQ",
+  "camera": {
+    "target": [-0.6, 1.6, -1.6],
+    "distance": 13.0,
+    "distance_range": [1.5, 26.0],
+    "yaw_range_deg": [-100.0, 100.0],
+    "pitch_range_deg": [-89.0, -2.0],
+    "pan_radius": 6.0,
+    "default_mode": "front",
+    "views": {
+      "front": { "yaw_deg": 0.0, "pitch_deg": -14.0 },
+      "three_quarter": { "yaw_deg": 26.0, "pitch_deg": -22.0 },
+      "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 20.0 },
+      "side": { "yaw_deg": 90.0, "pitch_deg": -12.0, "distance": 15.0 },
+      "follow": { "yaw_deg": 0.0, "pitch_deg": -16.0, "distance": 10.0, "target": [0.0, 1.8, -1.0] }
+    }
+  },
+  "controls": [
+    {
+      "id": "ground",
+      "type": "choice",
+      "default": "rock",
+      "options": [{ "id": "rock" }, { "id": "sand" }]
+    },
+    {
+      "id": "brace",
+      "type": "choice",
+      "default": "none",
+      "options": [{ "id": "none" }, { "id": "brace" }]
+    }
+  ],
+  "actions": [
+    { "id": "reset", "style": "primary" }
+  ],
+  "key_observations": ["state", "shake", "ground"],
+  "predict": {
+    "question_face": "thinking",
+    "choices": [
+      { "id": "rock", "picture": "quake_rock" },
+      { "id": "sand", "picture": "quake_sand" }
+    ],
+    "answer": "sand",
+    "bridge_face": "happy"
+  },
+  "missions": {
+    "judge_on": ["stood", "toppled", "strongest"],
+    "stages": [
+      {
+        "observe": "",
+        "judge_on": ["stood"],
+        "miss_on": ["stood", "held", "strongest", "toppled", "fell"],
+        "conditions": { "ground": "rock", "brace": "none" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["toppled"],
+        "miss_on": ["stood", "held", "strongest", "toppled", "fell"],
+        "conditions": { "ground": "sand", "brace": "none" },
+        "say_face": "explain",
+        "win_face": "surprised",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["strongest"],
+        "miss_on": ["stood", "held", "strongest", "toppled", "fell"],
+        "conditions": { "ground": "sand", "brace": "brace" },
+        "say_face": "explain",
+        "win_face": "surprised",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      }
+    ]
+  },
+  "story": { "keeper_face": "worried", "clue_face": "worried", "more": [{ "speaker": "puppy", "face": "thinking" }], "map_clue_face": "explain" },
+  "kid": {
+    "intro_face": "explain",
+    "intro_more": [
+      { "face": "explain" }
+    ],
+    "card": "state",
+    "say_face": "explain",
+    "picks": {
+      "ground": [
+        { "value": "rock", "picture": "ground_rock" },
+        { "value": "sand", "picture": "ground_sand" }
+      ],
+      "brace": [
+        { "value": "none", "picture": "house_plain" },
+        { "value": "brace", "picture": "house_brace" }
+      ]
+    }
+  },
+  "note": {
+    "numbers": [
+      { "ids": ["state"] },
+      { "ids": ["shake"] },
+      { "ids": ["ground"] }
+    ],
+    "graph": true
+  },
+  "cast": {
+    "dugi": {
+      "at": [5.6, 1.2],
+      "explain_on": ["stood", "held", "strongest", "toppled", "fell"],
+      "delay_s": 0.6
+    },
+    "puppy": {
+      "at": [-5.8, 0.4]
+    },
+    "fox": { "at": [-4.0, 0.4] }
+  },
+  "observations": [
+    { "id": "state" },
+    { "id": "shake" },
+    { "id": "ground" }
+  ],
+  "manipulation": {
+    "grab_radius": 80.0,
+    "objects": [
+      { "id": "table", "surface": "pull", "snap": 0.0, "height": false, "marker": false }
+    ],
+    "slingshot": { "object": "table" }
+  },
+  "graph": {
+    "x": { "unit": "s", "max": 4.0 },
+    "y": { "unit": "cm", "min_max": 60.0, "signed": true },
+    "series": [
+      { "id": "ground", "color": "#c98d4f", "style": "line" },
+      { "id": "house", "color": "#ff3b3b", "style": "line" }
+    ]
+  }
+}

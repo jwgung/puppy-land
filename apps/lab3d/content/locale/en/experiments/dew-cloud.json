@@ -1,0 +1,98 @@
+{
+  "title": "Why do drops form on a cold cup?",
+  "category": "Earth and sky",
+  "question": "Where do the drops on the outside of a cold cup come from?",
+  "steps": [
+    "Drag ice with your finger into the cup.",
+    "Watch for drops on the outside of the cup.",
+    "Use the button at the bottom left to pick a humid day or a dry day.",
+    "At the end, drag the air up the mountain."
+  ],
+  "observe": "When ice makes the cup cold, the air around the cup gets cold too, and the water vapor in the air forms drops on the outside of the cup. On a humid day it takes only a little cold; on a dry day the cup must get much colder. Air that climbs a mountain gets cold too, and a cloud forms.",
+  "terms": [
+    { "name": "Water vapor", "description": "Water mixed into the air that you cannot see." },
+    { "name": "Condensation", "description": "When air gets cold, its water vapor turns into tiny drops of water." },
+    { "name": "Dew", "description": "Drops on a cold leaf or a cold cup: water vapor from the air." },
+    { "name": "Cloud", "description": "Tiny drops of water made when air rises high and gets cold." }
+  ],
+  "law": {
+    "equation": "air gets cold → water vapor turns into drops (condensation)",
+    "title": "Dew and clouds",
+    "description": "When air gets cold, its water vapor turns into tiny drops of water (condensation). On a cold cup it makes dew; in air that rises high and gets cold it makes clouds. On a humid day, with lots of water vapor, a little cold is enough."
+  },
+  "tip": "Drag the top ice cube from the bowl with one finger and let go over the cup: it drops in. In the last stage, drag the air at the foot of the mountain up along the mountain.",
+  "tip_short": "Drag ice into the cup",
+  "controls": [{ "label": "Air", "options": [{ "label": "Humid day" }, { "label": "Dry day" }] }],
+  "actions": [{ "label": "Start over" }],
+  "predict": {
+    "question": "Where do the drops on the outside of a cold cup come from?",
+    "choices": [{ "label": "From the air", "guess": "I think they came from the air!" }, { "label": "They leaked out of the cup", "guess": "I think they leaked out of the cup!" }],
+    "reason": "The air around the cup got cold, so the water vapor in the air turned into drops. The water in the cup does not leak.",
+    "bridge": "Put some ice in and see!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Put in ice and make drops form on the cup!",
+        "say": "On a humid day the air has lots of water vapor. The cup only has to get a little cold for drops to form.",
+        "win": "Look at all the drops!",
+        "miss": "Put in more ice!",
+        "miss_conditions": "Pick the humid day!"
+      },
+      {
+        "text": "Make drops form on a dry day too!",
+        "say": "On a dry day the air has little water vapor. So the cup must get much colder for drops to form.",
+        "win": "Drops on a dry day too!",
+        "miss": "Put in lots more ice!",
+        "miss_conditions": "Pick the dry day!"
+      },
+      {
+        "text": "Drag the air up the mountain and make a cloud!",
+        "say": "The higher air goes, the colder it gets. When air climbing the mountain gets cold, its water vapor condenses and a cloud forms.",
+        "win": "A cloud hat! It's raining!",
+        "miss": "Drag it up higher!",
+        "miss_conditions": "Pick the humid day!"
+      }
+    ]
+  },
+  "story": {
+    "keeper": "That mountaintop always wore a cloud hat. But no clouds form these days, and the flowers up there are wilting…",
+    "clue": "I see a piece on the rock at the top! But it's covered in grey ash.",
+    "map_clue": "A hill by the sea, where a glass cup stands!"
+  },
+  "kid": {
+    "intro": "This is the cloud and dew lab. The air has water vapor in it that you cannot see.",
+    "intro_more": [
+      { "text": "When air gets cold, water vapor turns into tiny drops of water. This is called **condensation**. Dew on the grass and clouds in the sky both come from condensation. Let's try it with a cup first." }
+    ],
+    "title": "Make a cup cold and make drops form!",
+    "place": "Clouds and dew",
+    "say": "When air gets cold, its water vapor turns into tiny drops. On a humid day a little cold is enough.",
+    "tip": "Drag ice into the cup.",
+    "cards": { "state": "Drops and clouds", "cup": "Cup", "height": "Air height" },
+    "picks": {
+      "air": [
+        { "label": "Humid day" },
+        { "label": "Dry day" }
+      ]
+    }
+  },
+  "note": {
+    "law": "When air gets cold, its water vapor turns into tiny drops (condensation). So dew forms on a cold cup, and clouds form in air that climbs a mountain.",
+    "learn": "The drops on a cold cup do not come from inside it. Water vapour in the air turns into drops when it cools. Air that cools as it climbs a mountain makes clouds.",
+    "talk": ["Why does the outside of a cold drink get wet?", "Why does a window fog up when you breathe on it in winter?"],
+    "formula": "air gets cold → water vapor turns into drops (condensation)",
+    "numbers": [{ "label": "Drops and clouds" }, { "label": "Cup" }, { "label": "Air height" }]
+  },
+  "observations": [{ "label": "Drops and clouds" }, { "label": "Cup" }, { "label": "Air height" }],
+  "graph": {
+    "title": "The cup's temperature and the dew point by the ice",
+    "x": { "label": "Ice cubes in the cup" },
+    "y": { "label": "Temperature" },
+    "series": [
+      { "label": "Cup" },
+      { "label": "Dew point" },
+      { "label": "Now" }
+    ]
+  }
+}

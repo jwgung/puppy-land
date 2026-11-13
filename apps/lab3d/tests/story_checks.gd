@@ -3,7 +3,8 @@
 ## afterwards), Puppy's clue (once per spot, before Dugi's question, never again), the found piece
 ## (only on the round's completion: the cat lifts it, the card shows it), its flight to the lookout
 ## on the map (once; the emblem counts the pieces), old progress files (a finished spot is a found
-## piece, no flight), the finale (once, at 11; the star stays in the sky) and measurements (no story).
+## piece, no flight), the finale (once, at 11, seen only at its end: left half way it plays again; after 3 misses a weak
+## pull reaches the sky, #108; the star stays in the sky) and measurements (no story).
 ## Story.enabled is on only inside these checks (and restored).
 extends RefCounted
 
@@ -29,17 +30,18 @@ const CLUES := {
 	"orbit": "조각 하나가 저 멀리 우주에 떠 있어! 행성을 쏴서 데려오자!",
 }
 const PROLOGUE := [
-	["dugi", "여기는 바다 위 나라, 퍼피랜드예요."],
-	["dugi", "퍼피랜드에는 섬이 많아요. 그중 하나가 우리 뉴턴섬이에요."],
+	["dugi", "여기는 바다 위 나라, 퍼피랜드야."],
+	["dugi", "퍼피랜드에는 섬이 많아. 그중 하나가 우리 뉴턴섬이야."],
 	["puppy", "밤마다 길잡이 별이 바다를 비춰 줘. 배들이 길을 잃지 않게!"],
 	["puppy", "어? 길잡이 별이 깨졌어!"],
-	["dugi", "별빛이 없으면 밤바다에서는 아무것도 안 보여요. 배가 길을 찾을 수 없어요."],
+	["dugi", "별빛이 없으면 밤바다에서는 아무것도 안 보여. 배가 길을 찾을 수 없어."],
 	["puppy", "조각이 떨어지는 걸 봤어. 들판, 언덕, 놀이터, 연못… 섬 곳곳이야!"],
-	["dugi", "조각마다 숨은 곳이 달라요. 공을 던지고, 상자를 밀고, 통을 띄워 봐야 꺼낼 수 있어요."],
+	["dugi", "조각마다 숨은 곳이 달라. 공을 던지고, 상자를 밀고, 통을 띄워 봐야 꺼낼 수 있어."],
 	["puppy", "빵고양이, 같이 가자!"],
+	["cat", "좋아! 조각, 내가 다 찾아 줄게!"],   # (#132: the bread cat speaks)
 ]
-const FINALE := [["puppy", "조각을 모두 찾았어!"], ["dugi", "조각을 다시 맞추면 별이 빛을 낼 수 있어요. 하늘로 돌려보내요."],
-	["dugi", "새총처럼 별을 아래로 당겼다가 놓아 봐요! 세게 당길수록 더 빨리, 더 높이 날아가요."]]
+const FINALE := [["cat", "해냈다! 조각을 모두 찾았어!"], ["dugi", "조각을 다시 맞추면 별이 빛을 낼 수 있어. 하늘로 돌려보내."],
+	["dugi", "새총처럼 별을 아래로 당겼다가 놓아 봐! 세게 당길수록 더 빨리, 더 높이 날아가."]]
 
 
 func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:
@@ -59,6 +61,7 @@ func run() -> void:
 	await check_piece_found()
 	await check_flight()
 	await check_finale()
+	await check_finale_leave_and_help()
 	await check_one_tap()
 	Story.enabled = was
 	await check_measurements()
@@ -76,7 +79,7 @@ func check_content() -> void:
 	var finale := Story.pages("finale").map(func(p: Dictionary) -> Array: return [p.who, p.text])
 	expect.call(wrong.is_empty() and Story.spots().size() == 11 and CLUES.keys().all(func(id: String) -> bool: return id in Story.spots()),
 		"story: every one of the 11 spots has Puppy's clue, word for word", str(wrong))
-	expect.call(str(pages) == str(PROLOGUE) and str(finale) == str(FINALE), "story: the prologue (8 pages) and the finale words, speakers and order",
+	expect.call(str(pages) == str(PROLOGUE) and str(finale) == str(FINALE), "story: the prologue (9 pages) and the finale words, speakers and order",
 		str(pages.size()))
 
 
@@ -106,7 +109,7 @@ func check_old_files() -> void:
 	DirAccess.remove_absolute(ProgressStore.path)
 
 
-## The prologue: 8 pages with their speakers, the camera from the far sea in to the island, up to the
+## The prologue: 9 pages with their speakers, the camera from the far sea in to the island, up to the
 ## star, the night and the darker night, the 11 pieces at the spots, the cat on the square, then the
 ## day, a clean map and the child's camera exactly, which the child can turn again.
 func check_prologue() -> void:
@@ -149,7 +152,7 @@ func check_prologue() -> void:
 				and story._star != null and story.sea.lanterns.all(func(l: Node3D) -> bool: return l.visible),
 				"prologue: page 3 brings the night (tint, a darker sea) and the guiding star; the boats' lanterns show", "night %.2f" % story.night)
 		_tap_through(story.dialogue)
-	expect.call(str(speakers) == str(PROLOGUE), "prologue: the 8 pages in order with their speakers' portraits (Dugi / Puppy)", str(speakers))
+	expect.call(str(speakers) == str(PROLOGUE), "prologue: the 9 pages in order with their speakers' portraits (Dugi / Puppy / the bread cat)", str(speakers))
 	expect.call(max_pitch > 15.0 and min_dist < 10.0 and eye_moves > 400 and max_night > 1.9,
 		"prologue: the camera moves on every page (tilts up to the star, comes close to the square) and the night darkens after the break",
 		"pitch %.0f dist %.1f moves %d night %.2f" % [max_pitch, min_dist, eye_moves, max_night])
@@ -239,7 +242,7 @@ func check_clue() -> void:
 	await tree.process_frame
 	await tree.process_frame
 	# Dugi tells what the lab is and which force it shows (kid.intro, 2026-10-31), then asks.
-	var intro: String = MissionRound.intro(screen.definition.raw)[0]
+	var intro: String = MissionRound.intro(screen.definition.raw).text
 	var introduced: bool = box.active and box.speaker == "dugi" and not box.hold and box.text == intro and not screen._choices.visible
 	_tap_through(box)
 	await tree.process_frame
@@ -364,7 +367,11 @@ func check_finale() -> void:
 	await tree.process_frame
 	var story: StoryDirector = home.story
 	var rig: CameraRig = home.view.rig
-	expect.call(story.cinematic() and story.part == "finale" and Story.finale_seen(), "finale: 11 pieces at the lookout start it (marked once)", story.part)
+	expect.call(story.cinematic() and story.part == "finale" and not Story.finale_seen(), "finale: 11 pieces at the lookout start it (marked seen only at its end, #108)", story.part)
+	var seen_at_end := []   # Story.finale_seen() when "ended" fires (App's voyage check reads it then)
+	story.ended.connect(func(part: String) -> void:
+		if part == "finale":
+			seen_at_end.append(Story.finale_seen()))
 	var gathered := false
 	for i in 70:
 		story.advance(0.05)
@@ -410,11 +417,22 @@ func check_finale() -> void:
 		if story._star != null:
 			rose = maxf(rose, story._star.position.y)
 		sparkled = sparkled or story._sparkles.size() > 10
-	expect.call(gathered and str(words) == str(FINALE), "finale: the pieces gather into the star, then Puppy and Dugi speak", str(words))
+	expect.call(gathered and str(words) == str(FINALE), "finale: the pieces gather into the star, then the bread cat and Dugi speak", str(words))
 	expect.call(lifted and waits and no_throw and came_back and story.launches == 2,
 		"finale: the cat lifts the star and it waits for the child's pull (the paw shows it; a tap or an upward pull throws nothing); a weak pull rises to y0 + v^2 / 2g and comes back down, Dugi says pull harder",
 		"lifted %s, waits %s, no throw %s, back %s (top %.2f, want %.2f), launches %d" % [lifted, waits, no_throw, came_back, weak_top, want_top, story.launches])
 	expect.call(rose >= StoryDirector.SKY_HIGH.y - 1e-3 and sparkled, "finale: a strong pull sends the star up to the sky, the sea sparkles", "rose %.1f" % rose)
+	# The island's mission complete (#118): fireworks, confetti and the "뉴턴섬 완성!" ribbon came; then
+	# on the square the words after the sky (and Puppy's 'a new island opened' once the next is open).
+	var celebrated: bool = home.find_child("Fireworks", true, false) != null and home.find_child("Confetti", true, false) != null \
+		and story.ribbon != null and (story.ribbon.get_child(0) as Label).text == Locale.t("story.island_done") % IslandCards.island_name(home.island.id)
+	var want_after: Array = story._after_lines().map(func(e: Dictionary) -> String: return str(e.text))
+	var after := await _words_after(story)
+	# (The next island opens with the first one complete: Puppy's 'a new island opened' is the last line.)
+	var next_open := Story.voyage_due(ProgressStore.load(), true) != ""
+	expect.call(celebrated and after == want_after and next_open and want_after.size() == Story.finale_after().size() + 1
+		and want_after[0] == Story.finale_after()[0].text and want_after[-1] == Story.finale_next_line(),
+		"finale: the island's mission complete: fireworks, confetti, the '<island> 완성!' ribbon, then the words after the sky on the square (#118)", "celebrated %s, words %s (want %s)" % [celebrated, str(after), str(want_after)])
 	for i in 40:
 		story.advance(0.05)
 	await tree.process_frame
@@ -425,12 +443,89 @@ func check_finale() -> void:
 		and story.sea.lanterns.all(func(l: Node3D) -> bool: return l.visible) and story.night == 0.0
 		and str(rig.get_state()) == str(_default_state(rig)) and rig.is_processing(),
 		"finale: afterwards the star stays in the map's sky (in the child's default view), the lanterns lit, the child's camera", str(on_view))
+	expect.call(seen_at_end == [true], "finale: already marked seen when it ends (the voyage to the next island checks it then, #108)", str(seen_at_end))
 	await _free(home)
 	home = await _home(TABLET, false)
 	await tree.process_frame
 	expect.call(not home.story.busy() and home.story.sky_star != null and almost == ProgressStore.load(), "finale: once (the next map has the star in the sky)", "")
 	await _free(home)
 	DirAccess.remove_absolute(ProgressStore.path)
+
+
+## #108 (2026-11-09 user): left half way (the map freed while it waits for the pull), the finale is not
+## seen and plays again on the next map; there, 3 weak pulls whose star comes back down help the
+## child: the same weak pull then reaches the sky. Before, a weak pull never does.
+func check_finale_leave_and_help() -> void:
+	DirAccess.remove_absolute(ProgressStore.path)
+	ProgressStore.set_mark(ProgressStore.STORY, "prologue", true)
+	var store := {}
+	for id in Story.spots():
+		store[id] = MissionRound.missions(ExperimentRegistry.find(id)).stages.size()
+	ProgressStore.save(store)
+	var home := await _home(TABLET, false)
+	await tree.process_frame
+	await _until_pull(home.story)
+	var left_unseen: bool = home.story.launch_waits and not Story.finale_seen()
+	await _free(home)
+	home = await _home(TABLET, false)
+	await tree.process_frame
+	var story: StoryDirector = home.story
+	var again := story.cinematic() and story.part == "finale" and not Story.finale_seen()
+	if not again:
+		expect.call(false, "finale: left half way it plays again on the next map (#108)", "left %s, part %s" % [left_unseen, story.part])
+		await _free(home)
+		return
+	await _until_pull(story)
+	var weak := 60.0
+	var backs := 0
+	for k in StoryDirector.HELP_AFTER_MISSES:
+		_pull(story, home._world_to_screen(story._star.global_position), weak)
+		for i in 80:
+			story.advance(0.05)
+			if story._retry_open:
+				break
+		backs += 1 if story._retry_open else 0
+		_tap_through(story.dialogue)
+		story.advance(0.05)
+	var helped := story.helped() and backs == StoryDirector.HELP_AFTER_MISSES
+	_pull(story, home._world_to_screen(story._star.global_position), weak)
+	var rose := 0.0
+	for i in 200:
+		story.advance(0.05)
+		if story._star != null:
+			rose = maxf(rose, story._star.position.y)
+	await _words_after(story)
+	for i in 60:
+		story.advance(0.05)
+	var end_seen := Story.finale_seen()
+	await _free(home)
+	# 건너뛰기 half way marks it seen too (the next map plays nothing).
+	DirAccess.remove_absolute(ProgressStore.path)
+	ProgressStore.set_mark(ProgressStore.STORY, "prologue", true)
+	ProgressStore.save(store)
+	home = await _home(TABLET, false)
+	await tree.process_frame
+	await _until_pull(home.story)
+	home.story.skip()
+	var skipped_seen := Story.finale_seen()
+	await _free(home)
+	home = await _home(TABLET, false)
+	await tree.process_frame
+	expect.call(skipped_seen and not home.story.busy(), "finale: 건너뛰기 half way marks it seen; the next map plays nothing (#108)", "seen %s, busy %s" % [skipped_seen, home.story.busy()])
+	expect.call(left_unseen and again and helped and rose >= StoryDirector.SKY_HIGH.y - 1e-3 and end_seen,
+		"finale: left half way it is not seen and plays again; after 3 weak pulls came back down, the same weak pull reaches the sky; seen at its end (#108)",
+		"left %s, again %s, backs %d, rose %.1f, seen %s" % [left_unseen, again, backs, rose, end_seen])
+	await _free(home)
+	DirAccess.remove_absolute(ProgressStore.path)
+
+
+func _until_pull(story: StoryDirector) -> void:
+	for i in 400:
+		if story.launch_waits and not (story.dialogue != null and story.dialogue.active):
+			return
+		story.advance(0.05)
+		if story.dialogue != null and story.dialogue.active:
+			_tap_through(story.dialogue)
 
 
 ## Measurements never play the story: their launch args turn it off; with it off the map has no
@@ -467,6 +562,20 @@ func _pull(story: StoryDirector, at: Vector2, down: float) -> void:
 
 
 ## Taps until this page is gone (the next page may open at once: it is not tapped).
+## The star finale's words after the sky (#118), tapped through one by one: their texts.
+func _words_after(story: StoryDirector) -> Array:
+	var said := []
+	for i in 400:
+		if not story.cinematic():
+			break
+		story.advance(0.05)
+		if story._after >= 0 and story.dialogue.active and (said.is_empty() or said[-1] != story.dialogue.text):
+			said.append(story.dialogue.text)
+			_tap_through(story.dialogue)
+	await tree.process_frame
+	return said
+
+
 func _tap_through(box: DialogueBox) -> void:
 	var words := box.text
 	for i in 6:
@@ -532,7 +641,7 @@ func _free(screen: Control) -> void:
 ## (emulate_mouse_from_touch). The dialogue box takes one step for it: the next page, not the next
 ## page already typed out (2026-10-28, SM-X115 prologue check).
 func check_one_tap() -> void:
-	var words := "퍼피랜드에는 섬이 많아요. 그중 하나가 우리 뉴턴섬이에요."
+	var words := "퍼피랜드에는 섬이 많아. 그중 하나가 우리 뉴턴섬이야."
 	for i in 16:
 		words += " 밤마다 길잡이 별이 바다를 비춰 줘. 배들이 길을 잃지 않게!"
 	var box := DialogueBox.new(words)

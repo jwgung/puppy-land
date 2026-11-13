@@ -9,12 +9,9 @@
 class_name PuppyActor
 extends Node3D
 
-## The model by language: his flag reads 과학섬 or SCIENCE (2026-11-02, art_src/characters/puppy.py --lang).
-const SCENES := {"ko": "res://assets/characters/puppy.glb", "en": "res://assets/characters/puppy_en.glb"}
-
-
-static func scene() -> PackedScene:
-	return load(SCENES.get(Locale.lang, SCENES[Locale.DEFAULT]))
+## One model for every language: his flag is Puppy Land's, a cream cloth with a paw print, no letters
+## (#128; until then 과학섬 / SCIENCE, one model per language).
+const SCENE := preload("res://assets/characters/puppy.glb")
 const WAVE_DEG := 7.0               # banner swing about the pole (deg) and its rate
 const WAVE_HZ := 0.45
 const FLUTTER := 0.3                # share of a faster second wave on top
@@ -30,6 +27,7 @@ var _clock := 0.0
 ## hops of HOP_HEIGHT) and the banner waves CELEBRATE_RATE times as fast and a little wider.
 var _celebrate_left := 0.0
 var _rest_y := 0.0
+var _hops := true
 const CELEBRATE_S := 2.0
 const CELEBRATE_HOPS := 4
 const HOP_HEIGHT := 0.35
@@ -37,11 +35,13 @@ const CELEBRATE_RATE := 4.0
 const CELEBRATE_SWING := 1.6
 
 
-## He hops and waves the flag fast for a moment (the puppy celebrates a cleared round).
-func celebrate() -> void:
+## He hops and waves the flag fast for a moment (the puppy celebrates a cleared round). `hop` false:
+## only the flag (on the voyage's boat he stays on the deck, 2026-11-11 user: "왜 공중에 떠있어 퍼피").
+func celebrate(hop := true) -> void:
 	if _celebrate_left <= 0.0:
 		_rest_y = position.y
 	_celebrate_left = CELEBRATE_S
+	_hops = hop
 
 
 func celebrating() -> bool:
@@ -50,7 +50,7 @@ func celebrating() -> bool:
 
 func _init() -> void:
 	name = "Puppy"
-	var model: Node3D = scene().instantiate()
+	var model: Node3D = SCENE.instantiate()
 	var root := model.get_node("Puppy") as Node3D
 	var body := root.get_node("Body") as MeshInstance3D
 	var material := ArtKit.toon_material((body.mesh.surface_get_material(0) as BaseMaterial3D).albedo_texture)
@@ -114,5 +114,6 @@ func advance(delta: float) -> void:
 	if celebrating():
 		_celebrate_left = maxf(0.0, _celebrate_left - delta)
 		var k := 1.0 - _celebrate_left / CELEBRATE_S   # 0..1 over the celebration: whole hops, back down at the end
-		position.y = _rest_y + HOP_HEIGHT * absf(sin(k * PI * CELEBRATE_HOPS))
+		if _hops:
+			position.y = _rest_y + HOP_HEIGHT * absf(sin(k * PI * CELEBRATE_HOPS))
 	cloth.transform = Transform3D(Basis(pole_axis, wave_angle()) * _cloth_rest.basis, _cloth_rest.origin)

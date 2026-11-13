@@ -1,0 +1,144 @@
+{
+  "id": "volcano",
+  "version": 1,
+  "icon": "▲",
+  "law": {},
+  "scene": "res://experiments/volcano/volcano.gd",
+  "bench_id": "VO",
+  "camera": {
+    "target": [2.6, 2.0, -2.0],
+    "distance": 16.5,
+    "distance_range": [1.5, 32.0],
+    "yaw_range_deg": [-100.0, 100.0],
+    "pitch_range_deg": [-89.0, -2.0],
+    "pan_radius": 8.0,
+    "default_mode": "front",
+    "views": {
+      "front": { "yaw_deg": 0.0, "pitch_deg": -12.0 },
+      "three_quarter": { "yaw_deg": 24.0, "pitch_deg": -22.0 },
+      "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 28.0 },
+      "side": { "yaw_deg": 90.0, "pitch_deg": -12.0, "distance": 24.0 },
+      "follow": { "yaw_deg": 0.0, "pitch_deg": -20.0, "distance": 13.0, "target": [0.0, 1.4, 0.0] }
+    }
+  },
+  "controls": [
+    {
+      "id": "magma",
+      "type": "choice",
+      "default": "runny",
+      "options": [{ "id": "runny" }, { "id": "normal" }, { "id": "sticky" }]
+    }
+  ],
+  "actions": [
+    { "id": "reset", "style": "primary" }
+  ],
+  "key_observations": ["state", "amount", "magma"],
+  "predict": {
+    "question_face": "thinking",
+    "choices": [
+      { "id": "tall", "picture": "mountain_tall" },
+      { "id": "wide", "picture": "mountain_wide" }
+    ],
+    "answer": "tall",
+    "bridge_face": "happy"
+  },
+  "missions": {
+    "judge_on": ["wide", "tall", "sea"],
+    "stages": [
+      {
+        "observe": "",
+        "judge_on": ["wide"],
+        "miss_on": ["small", "tall"],
+        "conditions": { "magma": "runny" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["tall"],
+        "miss_on": ["small", "wide"],
+        "conditions": { "magma": "sticky" },
+        "say_face": "explain",
+        "win_face": "surprised",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["sea"],
+        "miss_on": ["short", "thin", "plugged"],
+        "conditions": { "magma": "normal" },
+        "say_face": "explain",
+        "win_face": "surprised",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      }
+    ]
+  },
+  "story": {
+    "keeper_face": "worried",
+    "clue_face": "thinking",
+    "more": [
+      { "speaker": "puppy", "face": "surprised" },
+      { "speaker": "fox", "face": "surprised" },
+      { "speaker": "puppy", "face": "thinking" }
+    ],
+    "map_clue_face": "explain"
+  },
+  "kid": {
+    "intro_face": "explain",
+    "intro_more": [
+      { "face": "explain" }
+    ],
+    "card": "state",
+    "say_face": "explain",
+    "picks": {
+      "magma": [
+        { "value": "runny", "picture": "magma_runny" },
+        { "value": "normal", "picture": "magma_normal" },
+        { "value": "sticky", "picture": "magma_sticky" }
+      ]
+    }
+  },
+  "note": {
+    "numbers": [
+      { "ids": ["state"] },
+      { "ids": ["amount"] },
+      { "ids": ["magma"] }
+    ],
+    "graph": false
+  },
+  "cast": {
+    "dugi": {
+      "at": [9.6, 4.8],
+      "explain_on": ["wide", "tall", "sea"],
+      "delay_s": 0.6
+    },
+    "puppy": {
+      "at": [-8.4, 3.2]
+    },
+    "fox": { "at": [7.6, 3.6] }
+  },
+  "observations": [
+    { "id": "state" },
+    { "id": "amount" },
+    { "id": "magma" }
+  ],
+  "manipulation": {
+    "grab_radius": 72.0,
+    "objects": [
+      { "id": "pump", "hold": true }
+    ]
+  },
+  "graph": {
+    "x": { "unit": "m³", "max": 3.0 },
+    "y": { "unit": "m", "max": 3.2 },
+    "series": [
+      { "id": "height", "color": "#ff7a1a", "style": "line" },
+      { "id": "reach", "color": "#434a86", "style": "line" },
+      { "id": "now", "color": "#ff3b3b", "style": "points" }
+    ]
+  }
+}

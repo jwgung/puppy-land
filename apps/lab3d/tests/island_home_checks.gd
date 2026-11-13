@@ -1,6 +1,6 @@
 ## Plan G2: the island home — the 3D island seen from above, the 5 zones and 11 spots, a tap (on a
 ## landmark or its name label) that hops the bread cat over and opens the experiment, a drag that
-## turns the map, the flag display, and the settings button on the map (phone and tablet). The map
+## turns the map, the flag display, and the map's 단서 button, no 설정 (phone and tablet). The map
 ## island (2026-10-27 "지도 전체 손보기", MapIsland): sea, coast, zone ground, landmarks, paths.
 extends RefCounted
 
@@ -57,7 +57,7 @@ func check_island_data() -> void:
 
 ## The home renders: the map island as one static opaque mesh (landmarks, water, land with its baked
 ## blob shadows: the draw and fill budget of the map on SM-P200), the cat, the 5 zones and 11 spots, the map buttons (no top bar) and
-## the settings button (no list button, 2026-10-27).
+## no settings button (설정 on the title only since 2026-11-11) and no list button (2026-10-27).
 func check_home_builds() -> void:
 	var screen := await _home(PHONE)
 	var problems := []
@@ -87,12 +87,12 @@ func check_home_builds() -> void:
 	if screen.find_child("TopBar", true, false) != null or screen.find_child("MapButtons", true, false) == null:
 		problems.append("a top bar, or no map buttons")
 	for label in screen.find_children("*", "Label", true, false):
-		if (label as Label).text in ["빵고양이 과학섬", "가고 싶은 곳을 눌러 봐요"]:
+		if (label as Label).text in ["빵고양이 과학섬", "가고 싶은 곳을 눌러 봐"]:
 			problems.append("the app's name or the bar's line still shows")
 	var buttons: Array = screen.find_children("ListButton", "", true, false)
 	var settings: Array = screen.find_children("SettingsButton", "", true, false)
-	if buttons.size() != 0 or settings.size() != 1:
-		problems.append("list/settings buttons %d/%d (want 0/1)" % [buttons.size(), settings.size()])
+	if buttons.size() != 0 or settings.size() != 0:   # (설정 on the title only, 2026-11-11 user: "지도에 설정 안보여주기로 했잖아")
+		problems.append("list/settings buttons %d/%d (want 0/0)" % [buttons.size(), settings.size()])
 	# The camera looks down at 3/4 and the island is on screen.
 	var cam_mode: String = screen.view.rig.mode
 	if cam_mode != "three_quarter":
@@ -505,17 +505,20 @@ func check_stamp_display() -> void:
 	await _free(screen)
 
 
-## The settings button is on the map and reachable (phone and tablet); there is no list button.
+## The map's top right row (단서; 설정 is on the title only since 2026-11-11) is clear of the edges in the top right corner (phone and tablet); there is no list button.
 func check_buttons_and_layout() -> void:
 	for setup in [[PHONE, "phone"], [TABLET, "tablet"], [UiScale.PHONE_ZOOMED, "phone zoomed"]]:
 		var screen := await _home(setup[0])
 		await tree.process_frame
 		await tree.process_frame
 		var row: Control = screen.find_child("MapButtons", true, false)
-		var settings: Button = screen.find_child("SettingsButton", true, false)
+		var settings: Button = screen.clue_button   # (the row's one button since 설정 left the map: 단서, shown here)
+		settings.visible = true
+		await tree.process_frame
+		await tree.process_frame
 		var problems := []
-		if row == null or settings == null:
-			problems.append("map buttons / settings missing")
+		if row == null or screen.find_child("SettingsButton", true, false) != null:
+			problems.append("map buttons missing or 설정 on the map")
 		else:
 			# Clear of every edge by MAP_EDGE (a phone's rounded corners), in the top right corner.
 			var inner := Rect2(Vector2.ZERO, screen.size).grow(-IslandHomeScreen.MAP_EDGE + 0.5)
@@ -526,7 +529,7 @@ func check_buttons_and_layout() -> void:
 		# The 3D view fills the screen under the bar.
 		if screen.view.size != setup[0]:
 			problems.append("view size %s (want full %s)" % [str(screen.view.size), str(setup[0])])
-		expect.call(problems.is_empty(), "island home (%s): 단서 and 설정 float in the map's top right corner, clear of the edges; the 3D view full" % setup[1], "; ".join(problems))
+		expect.call(problems.is_empty(), "island home (%s): 단서 floats in the map's top right corner, clear of the edges, no 설정 (the title has it); the 3D view full" % setup[1], "; ".join(problems))
 		await _free(screen)
 
 

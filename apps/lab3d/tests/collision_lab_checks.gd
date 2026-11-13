@@ -397,8 +397,8 @@ func check_first_collision_screen() -> void:
 			break
 	await _until(lab, int(sample.step))
 	var dx: float = maxf(absf(lab.ball_a.global_position.x - float(sample.x[0])), absf(lab.ball_b.global_position.x - float(sample.x[1])))
-	expect.call(before_hit and lab.model.first_step == hit and _first_error(shown, first) <= tolerance and shown.state == "충돌! 충격량이 전달됐어요" and dx <= ENGINE_TOLERANCE
-		and waiting.state == "출발 전 · 파란 공을 당겨 속도를 정해요" and float(waiting.before_a) == 3.4,
+	expect.call(before_hit and lab.model.first_step == hit and _first_error(shown, first) <= tolerance and shown.state == "충돌! 충격량이 전달됐어" and dx <= ENGINE_TOLERANCE
+		and waiting.state == "출발 전 · 파란 공을 당겨 속도를 정해" and float(waiting.before_a) == 3.4,
 		"collision (fresh screen): 출발 → the first collision on the TS step %d with the TS outcome, engine balls on the TS positions" % hit,
 		"after %.4f / %.4f m/s, |dx| %s m" % [float(shown.after_a), float(shown.after_b), String.num_scientific(dx)])
 	await _until(lab, 240)

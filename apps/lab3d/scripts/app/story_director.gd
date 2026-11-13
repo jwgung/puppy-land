@@ -5,6 +5,8 @@
 ##   11 pieces that land at the 11 spots, the dark sea and the lost boats' lanterns, a sweep over the
 ##   island, then the bread cat on the square as the day comes back. A tap turns the page; 건너뛰기
 ##   skips it all. Afterwards the map is as it was (no piece on it, the day, the child's camera).
+##   Another island's prologue (#75: the hutton island's lines after the voyage) is its words over its
+##   square by day, the camera easing between a few views of it; the map's night comes on the last page.
 ## - a found piece's flight (a round completed in a lab): after the spot's flag rises, a star piece
 ##   flies from the spot to the lookout (전망대) and the corner emblem (StarEmblem) fills a wedge.
 ## - the finale (the 11th piece at the lookout, once): the pieces gather into the whole star, Puppy and
@@ -12,8 +14,15 @@
 ##   (2026-11-01 user: "여기서 배운 물리 실험을 이용해서 올려보내면 좋겟다"): pull the star down and let
 ##   go; it flies straight up at the pull's speed under gravity (y = y0 + v t - g t^2 / 2). A weak pull
 ##   rises and comes back down (Dugi: gravity pulled it back, pull harder); one that reaches the sky
-##   (its top y0 + v^2 / 2g reaches SKY_HIGH.y) stays there: the sea sparkles, the boats light their lanterns and sail.
-##   The star then stays in the map's sky.
+##   (its top y0 + v^2 / 2g reaches SKY_HIGH.y) stays there: the sea sparkles, the boats light their lanterns and sail,
+##   and the island's mission is complete (#118): fireworks, confetti, the "<island> 완성!" ribbon, the trio
+##   cheer; then the words after the sky on the square (Story.finale_after, and Puppy's finale_next once
+##   the next island opened). The star then stays in the map's sky and the trio stay on the island
+##   (← 돌아가기 nudges while the next island waits on 섬 고르기).
+##
+## The finale is saved as seen only at its end or 건너뛰기 (#108, 2026-11-09 user): left half way (back,
+## the app closed) it plays again the next time the map opens. After HELP_AFTER_MISSES misses in it the
+## child is helped (an easier pull or drag, helped).
 ##
 ## The camera: while a prologue or the finale plays the director draws the rig itself (the rig's own
 ## easing is paused; the child's view, goal_* and pan, is never touched) with eased moves between
@@ -30,6 +39,16 @@
 ## on a tap on him or 단서; a tapped locked spot gets "음… 여긴 아닌 것 같아." and a small shake; after
 ## HINT_DELAY_S without finding it the next spot glints (a small star twinkling, again and again).
 ##
+## The sundial's finale (#106, 2026-11-09 user decisions; the hutton island, home.dial): the pages are
+## its story file's 9 lines. The camera starts at the volcano where the gnomon stands on the new land
+## (lines 1-2), glides over the new land, whose grass sprouts (3-4), to the square, where the dial the
+## found wedges filled one by one (each in its own sector as it flew in, #114) glints; Dugi says to
+## plant the gnomon (5)
+## and the child drags it from over the cat's paws into the dial's middle (a short drag back: it goes
+## back to the paws, the paw shows it again). Then the day comes, the gnomon's shadow grows on the dial
+## and the emblem gets its gnomon and face (6-9). No star: the hutton sky stays empty. The gnomon's own
+## piece (the volcano's) never flies on the map: it is the gnomon of this scene.
+##
 ## Pictures and words only: the director never opens a lab, sets a control or reads a body (the
 ## finale's launch is its own formula, no physics body). Its 3D nodes are outside the map's default
 ## view or gone after the story (the map stays clean), apart from the sky star after the finale.
@@ -37,8 +56,11 @@ class_name StoryDirector
 extends Node
 
 signal ended(part: String)
+## 보호자 on Puppy's "today's new spot is used" box was pressed (#77): the map opens the guardian's check.
+signal guardian_requested
 
 const NIGHT_TINT := Vector3(0.42, 0.5, 0.82)
+## The 보호자 button's height on Puppy's box (#77): small, the words stay the box's.
 const DARK_TINT := Vector3(0.26, 0.31, 0.6)
 const NIGHT_SEA := Color("1b4478")
 const DARK_SEA := Color("0e2649")
@@ -65,6 +87,17 @@ const LAUNCH_DIP_M := 1.2          # m the star comes down under the paws at a f
 const LAUNCH_GUIDE_SHARE := 0.8    # of a full pull the paw shows
 const AIM_DOT_SCALE := 3.0         # the aim dots: three times the pull dots' size and spacing
 const PIECE_SIZE := 0.42
+## The star finale's end (#118): when the celebration starts after the star reached the sky (s), the
+## ribbon's pop in (from RIBBON_FROM of its size over RIBBON_IN_S), stay and fade (s), font and height
+## (share of the view from the top), and when the words after the sky start once the cat hopped home (s).
+const CELEBRATE_AT_S := 0.5
+const RIBBON_FROM := 0.3
+const RIBBON_IN_S := 0.35
+const RIBBON_S := 2.4
+const RIBBON_OUT_S := 0.5
+const RIBBON_FONT := 46
+const RIBBON_Y := 0.18
+const AFTER_WORDS_S := 1.2
 const FLIGHT_IN_S := 0.6
 const FLIGHT_S := 1.3
 const FLIGHT_OUT_S := 0.6
@@ -72,18 +105,45 @@ const RETURN_S := 1.4
 const FIRST_SHOT := {"yaw": 0.0, "pitch": -8.0, "dist": 150.0, "target": Vector3(0.0, 6.0, -55.0)}
 const DIALOGUE_MARGIN := 12.0
 const DIALOGUE_SHARE := 0.8        # of the view width the box may take (the scene stays in view)
+## Another island's prologue (#75): its square seen from these [yaw deg, pitch deg, distance m] in turn.
+const SQUARE_SHOTS := [[15.0, -20.0, 9.0], [-25.0, -24.0, 8.0], [40.0, -30.0, 11.0], [-5.0, -16.0, 7.5]]
+## Another island's prologue starts on the beach (BEACH_YAW: looking in from the sea, the voyage's
+## landing view) and the three walk up to the square over STROLL_S (IslandHomeScreen.stroll_home).
+const BEACH_YAW := 20.0
+const STROLL_S := 7.0
 ## The night map's hint: the next spot glints this long after the riddle, a twinkle every period.
 const HINT_DELAY_S := 20.0
 const HINT_PERIOD_S := 2.4
 const HINT_TWINKLE_S := 1.1
 const HINT_SIZE := 0.42
 const GLOW_MARGIN := 0.35          # the riddle's ring reaches this far past the spot's stage (m)
+## The sundial's finale (#106, the header).
+const NEEDLE_LAND_AT := 0.4       # where on the new land the gnomon stands (share along it)
+const NEEDLE_LAND_SCALE := 2.4     # it stands big there (the volcano lab pushed it up)
+const NEEDLE_HELD_SCALE := 1.3     # held up by the cat
+const NEEDLE_HOLD_Y := 0.95        # m over the cat's feet where it holds the gnomon's middle
+const PLANT_SHARE := 0.6           # of the way from the paws to the dial a drag must reach to plant
+## The child is helped after this many misses in a finale (#108, 2026-11-09 user): the star that came
+## back down, the gnomon let go short of the dial. Then the star reaches the sky with any pull past a tap
+## and the gnomon goes in from PLANT_SHARE_HELPED of the way.
+const HELP_AFTER_MISSES := 3
+const PLANT_SHARE_HELPED := 0.2
+const HELP_SKY_MARGIN := 1.02     # the helped star's speed this much over the one that just reaches the sky (float error)
+const PLANT_PAGE := 4              # the page after which the child plants the gnomon (Dugi: 이제 바늘을 꽂아 봐요)
+## The filled dial's glint before Dugi's "plant it" (#114: the wedges are in their places already):
+## the camera's glide to it, the swell of the glint and how long it lasts.
+const DIAL_GLINT_IN_S := 1.4
+const DIAL_GLINT_SWELL := 0.08
+const DIAL_GLINT_S := 0.6
+const NEEDLE_MOVE_S := 0.35        # the gnomon easing into the dial (or back to the paws)
+const SHADOW_GROW_S := 1.6
+const GRASS_GROW_S := 0.8
 
 var home: IslandHomeScreen
 var part := ""                     # "", "prologue", "flight", "finale"
 var page := -1                     # the prologue / finale page now (-1: none)
 var sea: MapSea
-var emblem: StarEmblem
+var emblem: PieceEmblem
 var sky_star: Node3D
 var dialogue: DialogueBox
 var shield: Control
@@ -94,6 +154,7 @@ var _sky_t := 0.0     # the sky star's and the guiding star's sway clocks (StarA
 var _star_t := 0.0
 var tint := Vector3.ONE
 var placed_count := 0              # pieces at the lookout shown on the emblem
+var _glint_t := -1.0               # the filled dial's glint before the plant (s; -1: none)
 var flights_played := 0            # (tests)
 var _night_from := 0.0
 var _night_to := 0.0
@@ -119,10 +180,11 @@ var _cat_hop: Dictionary = {}      # {from, to, t, s, height}
 var _boats_wander := false
 var _boats_sail := -1.0
 var _flight_queue: Array = []
-var _flight: Dictionary = {}       # {id, node, from, to, t}
+var _flight: Dictionary = {}       # {id, node, from, to, slot (the sundial's sector), spin, t}
 var _lift := false                 # the finale's star rides above the cat's paws
 var launch_waits := false          # the finale waits for the child's pull on the star
 var launches := 0                  # pulls let go (tests)
+var misses := 0                    # this finale's misses: the star came back down, the gnomon let go short (HELP_AFTER_MISSES)
 var _pull: Dictionary = {}         # {press, now} the finger pulling the star (screen, UI units)
 var _launch: Dictionary = {}       # {from, v, t} the star flying up
 var _retry_open := false           # Dugi's "pull harder" line is in the box
@@ -131,6 +193,18 @@ var _aim_dots: PullDots = null     # how high this pull sends it (larger dots, u
 var launch_guide: HandGuide = null  # the paw showing the pull on the star (its own: the map's guide stops in a story)
 var _finale_due := false           # all pieces found, the finale not played: after the flights
 var _finale_done := false          # the star is back in the sky: the map is day
+var _after := -1                   # the line of the star finale's words after the sky (_after_lines), -1: none
+var ribbon: Control                # the island's "<island> 완성!" ribbon (#118), while it shows
+## The sundial's finale (#106, the hutton island: home.dial): the gnomon (해시계 바늘) node while it
+## stands on the new land, rides over the cat's paws and is planted; the wedges flying to their places.
+var needle: Node3D = null
+var plant_waits := false           # the finale waits for the child to drag the gnomon into the dial
+var plants := 0                    # the gnomon planted (tests)
+var _plant: Dictionary = {}        # {press, now} the finger dragging the gnomon (screen, UI units)
+var _needle_motion: Dictionary = {}   # {from, to, t, s, then} an eased move of the needle, `then` called at its end
+var _held := false                 # the needle rides over the cat's paws
+var _shadow_t := -1.0              # the gnomon's shadow growing (s since the sun came back; -1: not)
+var _grass_t := -1.0               # the new land's grass sprouting (s; -1: not)
 ## The night map's exploration (refresh): the next spot ("" when all are found) and the found ones.
 var next_id := ""
 var found_ids: Array = []
@@ -162,17 +236,23 @@ func _ready() -> void:
 	sea = MapSea.new()
 	sea.build(home.world)
 	sea.set_lanterns(Story.finale_seen())
-	emblem = StarEmblem.new(Story.spots().size())
+	emblem = PieceArt.emblem(home.island.piece, Story.spots().size())
 	home.add_child(emblem)
 	placed_count = Story.placed(ProgressStore.load()).size()
 	emblem.set_filled(placed_count)
 	_finale_done = Story.finale_seen()
 	if _finale_done:
-		_place_sky_star()
+		if _sundial():
+			(emblem as SundialEmblem).set_whole(true)
+		else:
+			_place_sky_star()
 	if not home.play_prologue_on_open:   # the prologue starts by day and ends on the map's night
 		_set_night(map_night())
 	_layout()
 	home.resized.connect(_layout)
+	var back: Control = home.find_child("MapBackButton", true, false)
+	if back != null:
+		back.minimum_size_changed.connect(_layout)   # the emblem keeps under the map's ← (#114)
 
 
 func _exit_tree() -> void:
@@ -221,6 +301,11 @@ func locked(id: String) -> bool:
 	return next_id != "" and id != next_id and id not in found_ids
 
 
+## The next spot waits for tomorrow: an island not bought whose new spot of today is used (#77).
+func waits_for_tomorrow(id: String) -> bool:
+	return id == next_id and next_id != "" and not DailyLimit.allows(Island.current_id(), id)
+
+
 ## The spot's name shows on the map: its piece is found (an unfound spot's name stays a secret).
 func label_shown(id: String) -> bool:
 	return id in found_ids
@@ -236,6 +321,8 @@ func say_riddle() -> void:
 	if map_guide != null:
 		map_guide.stop()
 	var spot := ExperimentRegistry.find(next_id)
+	if Story.map_clue(spot) == "":
+		return   # a spot with no riddle (an island in the making, #72)
 	_say(Story.map_clue(spot), Story.map_clue_face(spot))
 	_riddle_open = true
 	riddles_told += 1
@@ -247,8 +334,27 @@ func say_wrong() -> void:
 		return
 	_riddle_due = false
 	_riddle_open = false
+	if Story.wrong_line() == "":
+		return   # an island whose story has no such line yet
 	_say(Story.wrong_line(), Story.wrong_face())
 	wrongs_told += 1
+
+
+## The next spot waits for tomorrow (#77): Puppy's calm "that's all for today" with the small 보호자
+## button at his box's right end (the guardian's check, then the island's offer). Nothing urges buying.
+func say_today() -> void:
+	if cinematic():
+		return
+	_riddle_due = false
+	_riddle_open = false
+	if Story.today_line() == "":
+		return
+	_say(Story.today_line(), Story.today_face())
+	var guardian := GuardianModal.guardian_button()
+	guardian.name = "GuardianButton"
+	guardian.pressed.connect(guardian_requested.emit)
+	riddle.set_side_button(guardian)
+	_layout()
 
 
 ## The child is on the way to a spot: Puppy's box closes.
@@ -390,8 +496,32 @@ func play_prologue() -> void:
 		return
 	_begin("prologue")
 	home.trio_home()   # the story starts on the square (its last page shows the cat there)
-	_set_camera(FIRST_SHOT)
+	if _first_island():
+		_set_camera(FIRST_SHOT)
+	else:
+		# Another island: on the beach where the voyage's boat landed (the keeper waited there), then
+		# the three walk up to the square while they talk (2026-11-10 user: no jump to the middle).
+		var beach := VoyageScreen.keeper_spot(home.map)
+		home.stroll_home(beach, STROLL_S)
+		_set_camera(_beach_shot(beach))
 	_open_page(0)
+
+
+## The story is the first island's (its prologue's star and boats); another island's is words over its square.
+func _first_island() -> bool:
+	return home.island.id == "" or home.island.id == ProgressStore.FIRST_ISLAND
+
+
+## Another island's first prologue view: the beach where the boat landed, from the sea's side.
+func _beach_shot(beach: Vector2) -> Dictionary:
+	return {"yaw": BEACH_YAW, "pitch": -18.0, "dist": 9.0, "target": Vector3(beach.x, 0.6, beach.y)}
+
+
+## Another island's prologue view `i` of its square (SQUARE_SHOTS), `far` times the distance.
+func _square_shot(i: int, far := 1.0) -> Dictionary:
+	var home_at := Vector3(home.island.home.x, 0.5, home.island.home.y)
+	var s: Array = SQUARE_SHOTS[i % SQUARE_SHOTS.size()]
+	return {"yaw": s[0], "pitch": s[1], "dist": float(s[2]) * far, "target": home_at}
 
 
 ## The page `i` of the current part: its words (if any) and its camera, night and beats.
@@ -401,16 +531,26 @@ func _open_page(i: int) -> void:
 	var pages := Story.pages(part)
 	if part == "prologue":
 		_prologue_page(i)
+	elif _sundial():
+		_dial_page(i)
 	else:
 		_finale_page(i)
 	if i < pages.size():
 		var entry: Dictionary = pages[i]
 		dialogue.set_speaker(str(entry.get("who", "dugi")), Story.face_or_default(entry.get("face")))
-		dialogue.open(str(entry.get("text", "")))
+		dialogue.open(str(entry.get("text", "")), "", Story.page_picture(entry))
 		_layout()
 
 
 func _prologue_page(i: int) -> void:
+	if not _first_island():
+		if i == 0:   # the camera follows the three up from the beach to the square over STROLL_S
+			_move(_square_shot(0), STROLL_S)
+		elif i > 1 or not home.strolling():
+			_move(_square_shot(i), 2.2)
+		if i == Story.pages("prologue").size() - 1:
+			_beat(1.2, func() -> void: _night(map_night(), 2.0))
+		return
 	var home_at := Vector3(home.island.home.x, 0.0, home.island.home.y)
 	match i:
 		0:   # the far sea of 퍼피랜드: islands, boats; a slow drift
@@ -444,6 +584,8 @@ func _prologue_page(i: int) -> void:
 				SoundBoard.play(&"hop"))
 			_beat(2.1, func() -> void: home.cat.cheer(true, 2))
 			_beat(2.0, _fade_pieces)
+		8:   # the bread cat answers (#132: "좋아! 조각, 내가 다 찾아 줄게!") and cheers on the square
+			_beat(0.3, func() -> void: home.cat.cheer(true, 2))
 
 
 ## The words of the page closed (a tap past it, or its read timer): the next page, or the end.
@@ -457,7 +599,11 @@ func _on_dialogue_closed() -> void:
 		else:
 			_end_cinematic()
 	elif part == "finale":
-		if _retry_open:
+		if _after >= 0:
+			_open_after(_after + 1)
+		elif _sundial():
+			_dial_page_closed()
+		elif _retry_open:
 			_retry_open = false
 			_wait_launch()
 		elif page < pages.size() - 1:
@@ -471,12 +617,23 @@ func _on_dialogue_closed() -> void:
 func play_finale() -> void:
 	if cinematic():
 		return
-	ProgressStore.set_mark(ProgressStore.STORY, "finale", true)   # once, even if the app closes during it
-	_begin("finale")
-	_finale_intro()
+	misses = 0
+	_begin("finale")   # (seen once it ends or is skipped, _finish: left half way, it plays again, #108)
+	if _sundial():
+		_dial_intro()
+	else:
+		_finale_intro()
+
+
+## The island's finale is the sundial's (#106: the hutton island's dial on the map and its sundial
+## pieces, so its emblem is the dial), not the star's.
+func _sundial() -> bool:
+	return home.dial != null and emblem is SundialEmblem
 
 
 func _lookout() -> Dictionary:
+	if home.island.lookout == Island.HOME:   # the square's sundial (the hutton island, #72)
+		return home.map.home_lookout()
 	for spot in home._spots:
 		if spot.id == home.island.lookout:
 			return spot
@@ -532,7 +689,7 @@ func _wait_launch() -> void:
 		home.cat.cheer(true, 3)
 	_lift = true
 	launch_waits = true
-	if Quality.cmdline_value("demo-story") == "finale":
+	if Quality.cmdline_value("demo-story").get_slice(":", 0) == "finale":
 		_beat(2.0, func() -> void: launch_star(LAUNCH_V_MAX))   # the screenshot run: a full pull by itself
 	_pull = {}
 	_move(_launch_shot(), 1.0)
@@ -555,6 +712,22 @@ static func launch_speed(pixels: float) -> float:
 	if pixels <= LAUNCH_DEAD_ZONE:
 		return 0.0
 	return LAUNCH_V_MAX * clampf(pixels / LAUNCH_PULL_FULL, 0.0, 1.0)
+
+
+## The speed this finale's pull of `pixels` gives: launch_speed, and once the child was helped
+## (HELP_AFTER_MISSES) at least the speed that reaches the sky from the paws, sqrt(2 g (sky - y0))
+## (times HELP_SKY_MARGIN).
+func pull_speed(pixels: float) -> float:
+	var speed := launch_speed(pixels)
+	if speed > 0.0 and helped():
+		speed = maxf(speed, sqrt(2.0 * LAUNCH_G * maxf(SKY_HIGH.y - _paws_top().y, 0.0)) * HELP_SKY_MARGIN)
+	return speed
+
+
+## The child missed HELP_AFTER_MISSES times in this finale: the easier rule (any pull past a tap reaches
+## the sky, pull_speed; the gnomon goes in from PLANT_SHARE_HELPED of the way).
+func helped() -> bool:
+	return misses >= HELP_AFTER_MISSES
 
 
 ## The star's highest point (y) when it leaves `from_y` at `speed` up: y0 + v^2 / 2g.
@@ -580,7 +753,7 @@ func _launch_input(kind: String, position: Vector2) -> void:
 			var pixels: float = maxf(0.0, (_pull.now as Vector2).y - (_pull.press as Vector2).y)
 			_pull = {}
 			_hide_pull()
-			var speed := launch_speed(pixels)
+			var speed := pull_speed(pixels)
 			if speed > 0.0:
 				launch_star(speed)
 			elif launch_guide != null:
@@ -612,7 +785,7 @@ func _step_launch(delta: float) -> void:
 		var share := clampf(pixels / LAUNCH_PULL_FULL, 0.0, 1.0)
 		var cradle := _paws_top()
 		_star.position = cradle + Vector3.DOWN * LAUNCH_DIP_M * share   # (after _step_star: no lift lerp while pulling)
-		_show_pull(cradle, _star.position, launch_speed(pixels))
+		_show_pull(cradle, _star.position, pull_speed(pixels))
 	if _launch.is_empty() or _star == null:
 		return
 	_launch.t += delta
@@ -627,6 +800,7 @@ func _step_launch(delta: float) -> void:
 	elif t > v / LAUNCH_G and y <= from.y:
 		# It came back down (gravity): to the paws again, and Dugi says pull harder.
 		_launch = {}
+		misses += 1
 		_star.position.y = from.y
 		_lift = true
 		SoundBoard.play(&"land")
@@ -637,8 +811,11 @@ func _step_launch(delta: float) -> void:
 		_layout()
 
 
-## The star got to the sky: the day comes back, the sea sparkles, the boats sail; then it settles in
-## the map's sky and the cat hops home.
+## The star got to the sky: the day comes back, the sea sparkles, the boats sail, and the island's
+## mission is complete (#118, 2026-11-11 user: "섬 미션 완성을 알리는 좀 더 이펙트도 추가해주고"):
+## fireworks, confetti and the "<island> 완성!" ribbon (RIBBON_S), the trio cheer; then the star settles
+## in the map's sky, the cat hops home and the three say the words after the sky (_after_lines) on
+## the square.
 func _reach_sky() -> void:
 	SoundBoard.play(&"finale")
 	_night(0.0, 2.6)
@@ -647,10 +824,61 @@ func _reach_sky() -> void:
 	_boats_sail = 0.0
 	_move_star(Vector3(_star.position.x, SKY_HIGH.y, _star.position.z), 0.4)
 	_move({"yaw": 15.0, "pitch": -14.0, "dist": 62.0, "target": Vector3(0.0, 4.0, -4.0)}, 2.6)
+	_beat(CELEBRATE_AT_S, _celebrate_island)
 	_beat(3.7, func() -> void:
 		_move_star(SKY_STAR_AT, RETURN_S)
-		_hop_cat(home.cat.position, home.trio_spot(home.cat), 1.0, 1.0)
-		_end_cinematic())
+		_hop_cat(home.cat.position, home.trio_spot(home.cat), 1.0, 1.0))
+	_beat(3.7 + AFTER_WORDS_S, func() -> void: _open_after(0))
+
+
+## Fireworks and confetti over the view, the island's ribbon, the trio cheering (#118).
+func _celebrate_island() -> void:
+	SoundBoard.play(&"fanfare")
+	home.add_child(Fireworks.new())
+	home.add_child(Confetti.new())
+	if ribbon != null:
+		ribbon.queue_free()
+	ribbon = IslandCards.ribbon(Locale.t("story.island_done") % IslandCards.island_name(home.island.id), RIBBON_FONT)
+	ribbon.name = "IslandDone"
+	home.add_child(ribbon)
+	ribbon.size = ribbon.get_combined_minimum_size()
+	ribbon.position = Vector2((home.size.x - ribbon.size.x) * 0.5, home.size.y * RIBBON_Y)
+	ribbon.pivot_offset = ribbon.size * 0.5
+	ribbon.scale = Vector2.ONE * RIBBON_FROM
+	var tween := ribbon.create_tween()
+	tween.tween_property(ribbon, "scale", Vector2.ONE, RIBBON_IN_S).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_interval(RIBBON_S)
+	tween.tween_property(ribbon, "modulate:a", 0.0, RIBBON_OUT_S)
+	tween.tween_callback(ribbon.queue_free)
+	home.cat.cheer(true, 3)
+	home.puppy.celebrate()
+	home.dugi.celebrate()
+
+
+## The words after the sky: the island's finale_after pages, then (when the next island opened)
+## Puppy's finale_next (#118: back to 섬 고르기, the voyage plays there).
+func _after_lines() -> Array:
+	var lines: Array = Story.finale_after().duplicate()
+	if Story.voyage_due(ProgressStore.load(), true) != "" and Story.finale_next_line() != "":   # (marked seen only at its end)
+		lines.append({"who": "puppy", "face": Story.finale_next_face(), "text": Story.finale_next_line()})
+	return lines
+
+
+## The line `i` of the words after the sky on the square (the three there); past the last, the end.
+func _open_after(i: int) -> void:
+	var lines := _after_lines()
+	if i >= lines.size():
+		_after = -1
+		_end_cinematic()
+		return
+	_after = i
+	if i == 0:
+		var home_at := Vector3(home.island.home.x, 0.5, home.island.home.y)
+		_move({"yaw": 0.0, "pitch": -22.0, "dist": 8.0, "target": home_at}, 1.6)
+	var entry: Dictionary = lines[i]
+	dialogue.set_speaker(str(entry.get("who", "dugi")), Story.face_or_default(entry.get("face")))
+	dialogue.open(str(entry.get("text", "")))
+	_layout()
 
 
 func _paws_top() -> Vector3:
@@ -679,6 +907,314 @@ func _hide_pull() -> void:
 		_aim_dots.hide_line()
 
 
+# --- the sundial's finale (#106: the hutton island) -------------------------------------------------
+
+## The gnomon's foot in its own frame (SundialDial.needle_node draws it at the sundial's foot).
+func _needle_base() -> Vector3:
+	return Vector3(MapLandmarks.GNOMON_AT.x, MapLandmarks.DIAL_Y, MapLandmarks.GNOMON_AT.z)
+
+
+## The gnomon standing on the new land (big: the volcano pushed it up there).
+func _needle_land_xf() -> Transform3D:
+	var at := home.map.new_land_point(NEEDLE_LAND_AT, 0.0) if home.map.new_land else Vector3.ZERO
+	if at == Vector3.ZERO and home.island.features.has("volcano"):   # (a map built before the volcano was found)
+		var v: Array = home.island.features.volcano.at
+		at = Vector3(float(v[0]) - 2.0, 0.0, float(v[1]) + 0.5)
+		at.y = home.map.height_at(at.x, at.z)
+	return Transform3D(Basis().scaled(Vector3.ONE * NEEDLE_LAND_SCALE), at - _needle_base() * NEEDLE_LAND_SCALE)
+
+
+## The gnomon held up by the cat, standing upright in front of its chest (its long edge up).
+func _needle_held_xf() -> Transform3D:
+	var basis := Basis(Vector3.RIGHT, -PI * 0.5).scaled(Vector3.ONE * NEEDLE_HELD_SCALE)
+	var hold := home.cat.position + Vector3(0.4, NEEDLE_HOLD_Y, 0.25)   # beside it, on the camera side
+	return Transform3D(basis, hold - basis * SundialDial.needle_middle())
+
+
+## The gnomon in the dial (where the whole dial draws it).
+func _needle_planted_xf() -> Transform3D:
+	return home.dial.transform * SundialDial.gnomon_transform()
+
+
+## The gnomon `k` of the way from the cat's paws into the dial (the child's drag).
+func _needle_between(k: float) -> Transform3D:
+	return _blend(_needle_held_xf(), _needle_planted_xf(), k)
+
+
+## A transform `k` of the way from `a` to `b` (turn, uniform scale, place).
+static func _blend(a: Transform3D, b: Transform3D, k: float) -> Transform3D:
+	var q := a.basis.get_rotation_quaternion().slerp(b.basis.get_rotation_quaternion(), k)
+	var s := lerpf(a.basis.get_scale().x, b.basis.get_scale().x, k)
+	return Transform3D(Basis(q).scaled(Vector3.ONE * s), a.origin.lerp(b.origin, k))
+
+
+## Where the gnomon is held by (its middle; the dial's top before it exists).
+func _needle_point() -> Vector3:
+	return needle.transform * SundialDial.needle_middle() if needle != null else _dial_top()
+
+
+## The top of the sundial (the plate's middle, where the gnomon rises).
+func _dial_top() -> Vector3:
+	return home.dial.position + Vector3.UP * MapLandmarks.SUNDIAL_HEIGHT
+
+
+## A view of `target` from [yaw deg, pitch deg, distance m].
+static func _shot(target: Vector3, yaw: float, pitch: float, dist: float) -> Dictionary:
+	return {"yaw": yaw, "pitch": pitch, "dist": dist, "target": target}
+
+
+## Before the words: the three on the square (the scene ends there), the gnomon on the new land, the
+## camera goes to it at the volcano.
+func _dial_intro() -> void:
+	page = -1
+	home.trio_home()
+	home.dial.show_plate()   # (every wedge is in its place by now)
+	needle = SundialDial.needle_node()
+	home.world.add_child(needle)
+	needle.transform = _needle_land_xf()
+	_move(_shot(_needle_point(), -35.0, -38.0, 8.0), 2.2)
+	_beat(1.4, func() -> void: SoundBoard.play(&"glint"))
+	_beat(2.4, func() -> void: _open_page(0))
+
+
+## Page `i` of the sundial's finale: its camera and beats (the lines: content/story/hutton.json).
+func _dial_page(i: int) -> void:
+	var land_mid := home.map.new_land_point(0.55, 0.0) if home.map.new_land else _needle_point()
+	match i:
+		0:   # the fox: the gnomon came up
+			_move(_shot(_needle_point(), -20.0, -34.0, 7.0), 2.0)
+		1:   # Puppy: to the sundial
+			_move(_shot(_needle_point(), -50.0, -40.0, 9.0), 1.8)
+		2:   # Dugi: the lava made new land: over the new land
+			_move(_shot(land_mid, -60.0, -38.0, 9.5), 3.0)
+		3:   # the fox: volcanoes help the island grow: the grass sprouts, the camera turns to the square
+			_beat(0.6, _sprout_grass)
+			_move(_shot(land_mid.lerp(_dial_top(), 0.3), -40.0, -40.0, 12.0), 3.4)
+		PLANT_PAGE:   # Dugi: plant the gnomon: the cat holds it over its paws
+			needle.transform = _needle_held_xf()
+			_held = true
+			home.cat.cheer(true, 2)
+			_move(_plant_shot(), 1.2)
+		5:   # Puppy: a shadow!
+			_move(_shot(_dial_top(), -15.0, -42.0, 4.2), 1.6)
+		6:   # the fox: the sun is back, the time flows: the island's mission is complete (#118)
+			_move(_shot(_dial_top(), 25.0, -30.0, 6.5), 2.4)
+			_beat(0.3, _celebrate_island)
+		7:   # the fox: thank you
+			_move(_shot(_dial_top() + Vector3(0.0, 0.0, 0.6), 0.0, -24.0, 7.0), 2.0)
+		8:   # Puppy: we'll come again: the square and the island round it
+			_move(_shot(_dial_top() + Vector3(0.0, -0.4, 0.5), 10.0, -30.0, 11.0), 2.4)
+
+
+## The view while the child plants the gnomon: the cat holding it, the dial behind.
+func _plant_shot() -> Dictionary:
+	return _shot(home.cat.position.lerp(_dial_top(), 0.5) + Vector3.UP * 0.3, -20.0, -28.0, 5.0)
+
+
+## The words of a page of the sundial's finale closed: the dial glints before Dugi's "plant it", the
+## child's drag after it, the end after the last.
+func _dial_page_closed() -> void:
+	if page == PLANT_PAGE - 1:
+		_glint_dial()
+	elif page == PLANT_PAGE:
+		_wait_plant()
+	elif page < Story.pages("finale").size() - 1:
+		_open_page(page + 1)
+	else:
+		_end_cinematic()
+
+
+## The camera to the dial the wedges filled; it glints (a short swell); then Dugi's "plant it" page.
+func _glint_dial() -> void:
+	_move(_shot(_dial_top(), -20.0, -38.0, 5.0), DIAL_GLINT_IN_S)
+	_beat(DIAL_GLINT_IN_S, func() -> void:
+		SoundBoard.play(&"glint")
+		_glint_t = 0.0)
+	_beat(DIAL_GLINT_IN_S + DIAL_GLINT_S + 0.2, func() -> void: _open_page(PLANT_PAGE))
+
+
+func _step_dial_glint(delta: float) -> void:
+	if _glint_t < 0.0 or home.dial == null:
+		return
+	_glint_t += delta
+	var k := _glint_t / DIAL_GLINT_S
+	home.dial.plate.scale = Vector3.ONE * (1.0 + DIAL_GLINT_SWELL * sin(PI * minf(k, 1.0)))
+	if k >= 1.0:
+		home.dial.plate.scale = Vector3.ONE
+		_glint_t = -1.0
+
+
+## The new land's grass sprouts (a short pop).
+func _sprout_grass() -> void:
+	if home.new_land_grass == null:
+		return
+	home.new_land_grass.visible = true
+	home.new_land_grass.scale = Vector3.ONE * 0.01
+	_grass_t = 0.0
+	SoundBoard.play(&"glint")
+
+
+func _step_grass(delta: float) -> void:
+	if _grass_t < 0.0 or home.new_land_grass == null:
+		return
+	_grass_t += delta
+	var k := clampf(_grass_t / GRASS_GROW_S, 0.0, 1.0)
+	home.new_land_grass.scale = Vector3(1.0, maxf(0.01, k * k * (3.0 - 2.0 * k)), 1.0)
+	if k >= 1.0:
+		_grass_t = -1.0
+
+
+## Waits for the child's drag (the paw shows it: from the gnomon over the paws into the dial).
+func _wait_plant() -> void:
+	plant_waits = true
+	_plant = {}
+	_held = true
+	_needle_motion = {}
+	_move(_plant_shot(), 0.8)
+	if Quality.cmdline_value("demo-story").get_slice(":", 0) == "finale":   # (finale:<island> too)
+		_beat(2.0, plant_needle)   # the screenshot run: it plants by itself
+	if launch_guide == null:
+		launch_guide = HandGuide.new()
+		home.add_child(launch_guide)
+	home.move_child(launch_guide, shield.get_index() + 1)   # over the shield (the paw takes no touch)
+	_show_plant_guide()
+
+
+func _show_plant_guide() -> void:
+	var from := func() -> Vector2:
+		var at := home._world_to_screen(_needle_point())
+		return at if at != Vector2.INF else HandGuide.OFF_VIEW
+	var to := func() -> Vector2:
+		var at := home._world_to_screen(_dial_top())
+		return at if at != Vector2.INF else HandGuide.OFF_VIEW
+	launch_guide.play("drag", from, to, 3)
+
+
+## How far a drag from `press` to `now` (screen) took the gnomon from the paws to the dial (0..1):
+## along the screen line between them.
+func plant_share(press: Vector2, now: Vector2) -> float:
+	var a := home._world_to_screen(_needle_held_xf() * SundialDial.needle_middle())
+	var b := home._world_to_screen(_dial_top())
+	if a == Vector2.INF or b == Vector2.INF:
+		return 0.0
+	var dir := b - a
+	if dir.length_squared() < 1.0:
+		return 1.0
+	return clampf((now - press).dot(dir) / dir.length_squared(), 0.0, 1.0)
+
+
+## The finger while the finale waits for the plant: press anywhere, drag towards the dial (the
+## gnomon follows along the way), let go far enough: it is planted; short: back to the paws.
+func _plant_input(kind: String, position: Vector2) -> void:
+	match kind:
+		"press":
+			_plant = {"press": position, "now": position}
+			_needle_motion = {}
+			if launch_guide != null:
+				launch_guide.stop()
+		"move":
+			if not _plant.is_empty():
+				_plant.now = position
+		"release", "cancel":
+			if _plant.is_empty():
+				return
+			var k := plant_share(_plant.press, _plant.now) if kind == "release" else 0.0
+			_plant = {}
+			if k >= (PLANT_SHARE_HELPED if helped() else PLANT_SHARE):
+				plant_needle()
+			else:
+				if kind == "release":   # (a cancelled touch is not the child's miss)
+					misses += 1
+				_ease_needle(_needle_held_xf(), Callable())
+				_show_plant_guide()
+
+
+## The gnomon goes into the dial (the drag's end; tests call it too).
+func plant_needle() -> void:
+	if not plant_waits or needle == null:
+		return
+	plant_waits = false
+	plants += 1
+	_held = false
+	_plant = {}
+	if launch_guide != null:
+		launch_guide.stop()
+	_ease_needle(_needle_planted_xf(), _planted)
+
+
+func _ease_needle(to: Transform3D, then: Callable) -> void:
+	_needle_motion = {"from": needle.transform, "to": to, "t": 0.0, "s": NEEDLE_MOVE_S, "then": then}
+
+
+## The gnomon is in: the sundial is whole; the sun comes back and its shadow grows; the emblem gets
+## the gnomon and the face; then Puppy's "a shadow!".
+func _planted() -> void:
+	if needle != null:
+		needle.queue_free()
+		needle = null
+	home.dial.show_whole(false)
+	SoundBoard.play(&"land")
+	home.cat.cheer(true, 3)
+	_move(_shot(_dial_top(), -15.0, -42.0, 4.2), 1.4)
+	_beat(0.3, func() -> void:
+		SoundBoard.play(&"finale")
+		_night(0.0, 2.6)
+		_shadow_t = 0.0
+		(emblem as SundialEmblem).set_whole(true)
+		emblem.set_filled(emblem.total, true))   # (the pop)
+	_beat(2.2, func() -> void: _open_page(PLANT_PAGE + 1))
+
+
+func _step_needle(delta: float) -> void:
+	if needle == null:
+		return
+	if not _plant.is_empty():
+		needle.transform = _needle_between(plant_share(_plant.press, _plant.now))
+	elif not _needle_motion.is_empty():
+		_needle_motion.t += delta
+		var k := clampf(float(_needle_motion.t) / float(_needle_motion.s), 0.0, 1.0)
+		var e := k * k * (3.0 - 2.0 * k)
+		needle.transform = _blend(_needle_motion.from, _needle_motion.to, e)
+		if k >= 1.0:
+			var then: Callable = _needle_motion.then
+			_needle_motion = {}
+			if then.is_valid():
+				then.call()
+	elif _held:
+		needle.transform = _needle_held_xf()
+
+
+func _step_shadow(delta: float) -> void:
+	if _shadow_t < 0.0 or home.dial == null:
+		return
+	_shadow_t += delta
+	home.dial.grow_shadow(_shadow_t / SHADOW_GROW_S)
+	if _shadow_t >= SHADOW_GROW_S:
+		_shadow_t = -1.0
+
+
+## The sundial's finale is over (its end or 건너뛰기): its own nodes gone, the map in its end state.
+func _end_dial() -> void:
+	if needle != null:
+		needle.queue_free()
+		needle = null
+	_glint_t = -1.0
+	if home.dial != null:
+		home.dial.plate.scale = Vector3.ONE
+	plant_waits = false
+	_plant = {}
+	_held = false
+	_needle_motion = {}
+	_shadow_t = -1.0
+	_grass_t = -1.0
+	home.dial.show_whole()
+	if home.new_land_grass != null:
+		home.new_land_grass.visible = true
+		home.new_land_grass.scale = Vector3.ONE
+	(emblem as SundialEmblem).set_whole(true)
+	sea.set_lanterns(true)   # (as the map opens after any finale)
+
+
 # --- flights -----------------------------------------------------------------------------------
 
 ## Starts the next found piece's flight (after the flag raises): the camera frames the spot and the
@@ -688,6 +1224,18 @@ func _next_flight() -> void:
 	if not _flight_queue.is_empty():
 		var id: String = _flight_queue.pop_front()
 		ProgressStore.set_mark(ProgressStore.PIECES, id, true)
+		if id == home.island.gnomon_spot():
+			# The gnomon (#106) never flies: it stands on the new land until the finale.
+			placed_count += 1
+			emblem.set_filled(placed_count)
+			_night(map_night(), 1.2)
+			# The next flight or the finale in this same frame: the map takes no tap in between.
+			if not _flight_queue.is_empty():
+				_next_flight()
+			elif _finale_due:
+				_finale_due = false
+				play_finale()
+			return
 		var spot: Dictionary = {}
 		for s in home._spots:
 			if s.id == id:
@@ -697,10 +1245,14 @@ func _next_flight() -> void:
 		part = "flight"
 		var from: Vector3 = spot.at + Vector3.UP * (float(spot.top) + 0.6)
 		var to := _lookout_point()
-		var node := StarArt.make(true, PIECE_SIZE)
+		var slot := Transform3D()
+		if _sundial():   # to its own sector of the dial (#114)
+			slot = home.dial.transform * SundialDial.slot_transform(home.dial.filled)
+			to = slot.origin
+		var node := PieceArt.make(home.island.piece, PIECE_SIZE)
 		home.world.add_child(node)
 		node.position = from
-		_flight = {"id": id, "node": node, "from": from, "to": to, "t": -FLIGHT_IN_S}
+		_flight = {"id": id, "node": node, "from": from, "to": to, "slot": slot, "spin": 0.0, "t": -FLIGHT_IN_S}
 		var box := AABB(from, Vector3.ZERO).expand(to).expand(spot.at).grow(1.5)
 		home.view.rig.focus({"box": box, "fill": 0.55, "anchor": Vector2(0.5, 0.55),
 			"in_s": FLIGHT_IN_S, "hold_s": FLIGHT_S + 0.2, "out_s": FLIGHT_OUT_S})
@@ -721,11 +1273,20 @@ func _step_flight(delta: float) -> void:
 	var k := clampf(_flight.t / FLIGHT_S, 0.0, 1.0)
 	var node: Node3D = _flight.node
 	node.position = _arc(_flight.from, _flight.to, 4.0, k * k * (3.0 - 2.0 * k))
-	node.rotation.y += delta * 6.0
+	if not _sundial():
+		node.rotation.y += delta * 6.0
+	else:   # it turns and shrinks into its sector over the last part of the way
+		_flight.spin += delta * 6.0
+		var spin := Transform3D(Basis(Vector3.UP, _flight.spin).scaled(Vector3.ONE * PIECE_SIZE), node.position)
+		var slot: Transform3D = _flight.slot
+		var settle := _blend(spin, slot, smoothstep(0.65, 1.0, k))
+		node.transform = Transform3D(settle.basis.scaled(Vector3.ONE / PIECE_SIZE), node.position)
 	if k >= 1.0:
 		node.queue_free()
 		_flight = {}
 		placed_count += 1
+		if _sundial():
+			home.dial.show_filled(home.dial.filled + 1)
 		emblem.set_filled(placed_count, true)
 		_night(map_night(), 1.2)   # the night lifts a step
 		SoundBoard.play(&"glint")
@@ -743,6 +1304,8 @@ func skip_flights() -> void:
 	if any or part == "flight":
 		placed_count = Story.placed(ProgressStore.load()).size()
 		emblem.set_filled(placed_count)
+		if _sundial() and not home.dial.whole:
+			home.dial.show_filled(home.placed_wedges(ProgressStore.load()))
 		_night_s = 0.0
 		_set_night(map_night())
 		home.view.rig.cut_focus()
@@ -779,6 +1342,10 @@ func advance(delta: float) -> void:
 	_step_night(delta)
 	_step_star(delta)
 	_step_launch(delta)
+	_step_needle(delta)
+	_step_dial_glint(delta)
+	_step_shadow(delta)
+	_step_grass(delta)
 	_step_pieces(delta)
 	_step_cat(delta)
 	_step_boats(delta)
@@ -863,7 +1430,12 @@ func _finish() -> void:
 		shield.visible = false
 		skip_button.visible = false
 	if which == "finale":
+		Story.mark_seen("finale")   # at its end or 건너뛰기 (#108: left half way, it plays again)
 		_finale_done = true
+	_after = -1
+	if ribbon != null:
+		ribbon.queue_free()
+		ribbon = null
 	_night_s = 0.0
 	_set_night(map_night())   # prologue: the map's night; finale: day
 	_riddle_due = next_id != ""   # then Puppy's riddle for the next spot
@@ -893,8 +1465,10 @@ func _finish() -> void:
 	_cat_hop = {}
 	home.reset_trio()
 	if which == "prologue":
-		ProgressStore.set_mark(ProgressStore.STORY, "prologue", true)
+		Story.mark_seen("prologue")
 		sea.set_lanterns(Story.finale_seen())
+	elif _sundial():
+		_end_dial()   # the sundial whole, the grass, the emblem's gnomon and face; no star (#106)
 	else:
 		sea.set_lanterns(true)
 		_place_sky_star()
@@ -906,13 +1480,14 @@ func _finish() -> void:
 	page = -1
 	emblem.visible = true
 	home.set_cinematic(false)
-	_layout()   # the map buttons are back: the emblem goes beside them
+	_layout()   # the map buttons are back: the emblem goes under ←
+	home.nudge_back(home.next_island_waits())   # (#118: a new island opened, ← leads to it)
 	ended.emit(which)
 
 
 ## A tap anywhere but the box and 건너뛰기: the same as a tap on the box (the whole page, the next).
 func _on_shield_input(event: InputEvent) -> void:
-	if launch_waits and not (dialogue != null and dialogue.active):
+	if (launch_waits or plant_waits) and not (dialogue != null and dialogue.active):
 		_launch_event(event)
 		shield.accept_event()
 		return
@@ -924,21 +1499,23 @@ func _on_shield_input(event: InputEvent) -> void:
 		shield.accept_event()
 
 
-## A pointer event on the shield while the finale waits for the pull (a touch, or the mouse that is
-## not a touch's emulated click): press / move / release for _launch_input.
+## A pointer event on the shield while the finale waits for the pull (or the sundial's plant, #106: a
+## touch, or the mouse that is not a touch's emulated click): press / move / release for _launch_input
+## (_plant_input).
 func _launch_event(event: InputEvent) -> void:
+	var input := _plant_input if plant_waits else _launch_input
 	if event is InputEventScreenTouch:
 		if event.index == 0:
-			_launch_input("press" if event.pressed else ("cancel" if event.canceled else "release"), event.position)
+			input.call("press" if event.pressed else ("cancel" if event.canceled else "release"), event.position)
 		elif event.pressed:
-			_launch_input("cancel", event.position)   # a second finger: no throw
+			input.call("cancel", event.position)   # a second finger: no throw
 	elif event is InputEventScreenDrag:
 		if event.index == 0:
-			_launch_input("move", event.position)
+			input.call("move", event.position)
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.device != InputEvent.DEVICE_ID_EMULATION:
-		_launch_input("press" if event.pressed else "release", event.position)
+		input.call("press" if event.pressed else "release", event.position)
 	elif event is InputEventMouseMotion and event.device != InputEvent.DEVICE_ID_EMULATION:
-		_launch_input("move", event.position)
+		input.call("move", event.position)
 
 
 func tap_page() -> void:
@@ -949,15 +1526,15 @@ func tap_page() -> void:
 func _layout() -> void:
 	var view_size := home.view.size if home.view != null else home.size
 	if emblem != null:
-		# Top left (2026-10-30 user), as far from the edges as the map's buttons (no top bar since
-		# 2026-10-31); the finale's 건너뛰기 is top right.
-		var inset := Ui.safe_insets(home)
-		emblem.position = Vector2(IslandHomeScreen.MAP_EDGE + inset.left, IslandHomeScreen.MAP_EDGE + inset.top)
+		# Top left (2026-10-30 user), under the map's ← (#114; 2026-11-11 user: "돌아가기 아래로 두자");
+		# the finale's 건너뛰기 is top right.
+		emblem.position = home.emblem_at()
 	if skip_button != null:
 		skip_button.size = skip_button.get_combined_minimum_size()
 		skip_button.position = Vector2(view_size.x - skip_button.size.x - DIALOGUE_MARGIN, DIALOGUE_MARGIN)
 	var right := view_size.x - DIALOGUE_MARGIN   # the whole width (2026-10-29 user)
 	if dialogue != null and dialogue.active:
+		dialogue.set_card_avoid([emblem, skip_button])   # the explanation picture's card keeps clear of them
 		dialogue.visible = dialogue.layout(Rect2(Vector2.ZERO, view_size), right, DIALOGUE_MARGIN)
 	if riddle != null and riddle.active:
 		riddle.visible = riddle.layout(Rect2(Vector2.ZERO, view_size), right, DIALOGUE_MARGIN)
@@ -1089,7 +1666,7 @@ func _break_star() -> void:
 
 
 func _add_piece(from: Vector3, ctrl: Vector3, to: Vector3, seconds: float, start: float) -> void:
-	var node := StarArt.make(true, PIECE_SIZE)
+	var node := PieceArt.make(home.island.piece, PIECE_SIZE)
 	node.position = from
 	node.visible = start >= 0.0
 	home.world.add_child(node)

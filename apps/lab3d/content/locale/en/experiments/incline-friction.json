@@ -33,8 +33,8 @@
   "predict": {
     "question": "If you tilt the wooden slide a little, will the box go down?",
     "choices": [
-      { "label": "It slides down" },
-      { "label": "It won't budge" }
+      { "label": "It slides down", "guess": "I think it'll slide down!" },
+      { "label": "It won't budge", "guess": "I think it won't budge!" }
     ],
     "reason": "Even a little tilt lets gravity pull the box hard. Once that is bigger than friction, the box slides down.",
     "bridge": "Tilt it, let go and see for yourself!"
@@ -87,6 +87,8 @@
   },
   "note": {
     "law": "The steeper the slope, the bigger the force pulling the box down, so it gains speed faster as it slides.",
+    "learn": "The steeper the slope, the harder the box is pulled down it. It starts to slide at the angle where that pull beats the grip of the surface, and a slippery surface lets go at a lower angle.",
+    "talk": ["Where on a playground slide do you go fastest?", "Why is a slide more slippery after rain?"],
     "numbers": [
       { "label": "Acceleration a" },
       { "label": "Angle where it starts to slide θc" },

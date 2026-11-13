@@ -5,12 +5,14 @@
 ## north coast, the island's lab_facing). Seen from the lab:
 ## - a flat clearing of radius CLEAR at y = 0 in the zone's ground (the meadow's lighter grass,
 ##   the hill's grass, the play yard's sand inside its white picket fence, the pond's grass with
-##   the pond just behind the apparatus, the lookout's railing over the sea), where
+##   the pond just behind the apparatus, the lookout's railing over the sea; on the hutton island
+##   (#72) the coast's sand and the valley's drier grass on its slope), where
 ##   the apparatus, the cast and the old decoration (ArtKit.TREES / ROCKS / FLOWERS) stand;
 ## - beyond it the map's land: its hills (the hill labs stand on top, the far ground falls away),
 ##   zone ground, the pond, the yard fence, the other zones' landmarks (MapLandmarks, LANDMARK_SCALE)
 ##   on their stages, trees and rocks, down to the beach and the sea at the map's coast (never
-##   nearer than COAST_MIN);
+##   nearer than COAST_MIN); the island's features (Island.features: the volcano, the river, the
+##   lighthouse, the square's sundial) where the map has them;
 ## - the sea to the horizon (shallows, surf, deep sea fading into haze), a haze band at the horizon
 ##   rising into the sky colour (the clear colour, ArtKit.make_environment) and clouds.
 ## A physics edge gets the coast: `edge_x` (the projectile's "섬 밖으로 날아감" box) puts the shore
@@ -59,8 +61,18 @@ const FENCE_HEIGHT := 0.9
 const FENCE_CLEAR := CLEAR + 1.5     # the own yard's fence never comes nearer
 const RAILING_STEP := 2.0            # m between the lookout railing's posts
 const RAILING_COAST := COAST_MIN + 6.0
-## The zone's look in the lab is the island's (Island.look_of: meadow, hill, yard, pond, lookout). Where a
-## lab looks (map angle of its -z, deg, atan2(z, x)) when not towards the square is the island's
+## The hutton island's features in the lab (#72): the volcano's foot sinks VOLCANO_SINK m under the
+## lowest ground round it (more than the map's: the lab's ground faces stray further from ground_y);
+## the lighthouse and the sundial stand at least MARK_CLEAR m outside the clearing; the river lies
+## RIVER_LIFT m over ground_y (MapIsland.RIVER_LIFT is 0.04 map m: here the far ground's jittered faces
+## run up to a decimetre over the smooth surface); the coast's sand runs into the map's beach within
+## COAST_BEACH_REACH x the coast zone's radius.
+const VOLCANO_SINK := 0.6
+const MARK_CLEAR := 3.0
+const RIVER_LIFT := 0.12
+const COAST_BEACH_REACH := 1.6
+## The zone's look in the lab is the island's (Island.look_of: meadow, hill, yard, pond, lookout, coast,
+## valley). Where a lab looks (map angle of its -z, deg, atan2(z, x)) when not towards the square is the island's
 ## `lab_facing` (the lookout along the north coast: the sea on its right, the island on its left).
 ## Clouds in the lab's sky [angle from the front view deg, distance, height above the sea, size]:
 ## over the far land and sea within the camera's turn (+-100 deg) and a few far ones.
@@ -86,6 +98,12 @@ var _ponds: Array = []               # [lab centre Vector2, lab radius, map spec
 var _yards: Array = []               # map specs of the yards (their fences are drawn)
 ## Built pieces, for tests: [kind, lab x, z, radius] of the far landmarks and trees.
 var far_things: Array = []
+## The lab's own say on the other zones' landmarks (its `hides_far_landmark(at: Vector2) -> bool`, lab
+## x/z): one standing right behind the lab's own big prop is left out (#98: the volcano's).
+var _hides := Callable()
+## And on its own trees (its `near_tree_at(at: Vector2) -> Vector2`): one standing in its big prop is
+## moved off it (#98: the volcano's slope).
+var _moves := Callable()
 
 
 ## The world of lab `lab_id` around `lab_center`; an unknown id stands in the meadow.
@@ -253,7 +271,7 @@ func ground_color(l: Vector2, s := -1.0) -> Color:
 	if theme == "yard" and (s < CLEAR or Geometry2D.is_point_in_polygon(l, _fence)):
 		return ArtPalette.YARD_SAND
 	if s < CLEAR:
-		return ArtPalette.MEADOW if theme == "meadow" else ArtPalette.GRASS_TOP
+		return MapIsland.GROUND_COLORS.get(theme, ArtPalette.GRASS_TOP)
 	var m := to_map(l)
 	for name in map.zones:
 		var spec: Dictionary = map.zones[name]
@@ -261,6 +279,13 @@ func ground_color(l: Vector2, s := -1.0) -> Color:
 			"meadow":
 				if m.distance_to(_v2(spec.at)) < float(spec.radius):
 					return ArtPalette.MEADOW
+			"coast", "valley":
+				if MapIsland.in_ground(m, _v2(spec.at), float(spec.radius), spec.ground):
+					return MapIsland.GROUND_COLORS[spec.ground]
+				# The coast's sand runs on into the map's beach (wider than the lab's BEACH strip).
+				if spec.ground == "coast" and map.coast_fraction(m.x, m.y) > MapIsland.grass_edge() - 0.04 \
+						and m.distance_to(_v2(spec.at)) < float(spec.radius) * COAST_BEACH_REACH:
+					return ArtPalette.SAND
 			"yard":
 				var c := _v2(spec.at)
 				if absf(m.x - c.x) < float(spec.size[0]) * 0.5 and absf(m.y - c.y) < float(spec.size[1]) * 0.5:
@@ -296,11 +321,16 @@ static func _under_fill(target: Color) -> Color:
 ## Builds the world under `parent`: "Island" (one mesh, MapIsland's material) and, when
 ## `extra_shadows` adds any, "IslandShadows" (the lab's own alpha blob shadows).
 func build(parent: Node3D, extra_shadows: Callable = Callable()) -> void:
+	if parent.has_method("hides_far_landmark"):
+		_hides = Callable(parent, "hides_far_landmark")
+	if parent.has_method("near_tree_at"):
+		_moves = Callable(parent, "near_tree_at")
 	var b := ArtKit.builder()
 	# What stands on the ground first, the ground, then the sea and the haze: the covered ground and
 	# sea fail the depth test before they are shaded (MapIsland.build).
 	_add_near_decor(b)
 	_add_landmarks(b)
+	_add_features(b)
 	_add_far_trees(b)
 	_add_fences(b)
 	_add_railing(b)
@@ -324,15 +354,17 @@ func build(parent: Node3D, extra_shadows: Callable = Callable()) -> void:
 
 
 ## The lab's own trees, rocks and flowers (ArtKit.TREES / ROCKS / FLOWERS around the centre, as on
-## the old island: ArtKit.island_obstacles keeps the cast clear of them); flowers not in the sand yard.
+## the old island: ArtKit.island_obstacles keeps the cast clear of them); flowers not in the sand yard
+## or on the coast's sand.
 func _add_near_decor(b: ArtMeshBuilder) -> void:
 	for t in ArtKit.TREES:
-		_tree(b, Vector2(_c.x + t[0], _c.y + t[1]), t[2])
+		var at := Vector2(_c.x + t[0], _c.y + t[1])
+		_tree(b, _moves.call(at) if _moves.is_valid() else at, t[2])
 	b.ao_min = 0.75
 	b.ao_height = 0.3
 	for r in ArtKit.ROCKS:
 		_rock(b, Vector2(_c.x + r[0], _c.y + r[1]), r[2])
-	if theme == "yard":
+	if theme in ["yard", "coast"]:   # no flowers in the sand
 		return
 	b.ao_min = 1.0
 	for i in ArtKit.FLOWERS.size():
@@ -393,7 +425,8 @@ func _add_landmarks(b: ArtMeshBuilder) -> void:
 			var at := to_lab(_v2(s[1]))
 			var radius := MapLandmarks.stage_radius(s[0]) * LANDMARK_SCALE
 			if at.distance_to(_c) < CLEAR + radius + 2.0 or at.distance_to(_c) > coast_at((at - _c).angle()) - BEACH \
-					or absf(Vector2(0.0, -1.0).angle_to(at - _c)) > deg_to_rad(BEHIND_DEG):
+					or absf(Vector2(0.0, -1.0).angle_to(at - _c)) > deg_to_rad(BEHIND_DEG) \
+					or (_hides.is_valid() and _hides.call(at)):
 				continue
 			var y := ground_y(at)
 			if radius > 0.0:
@@ -437,7 +470,9 @@ func _far_clear(at: Vector2, radius: float) -> bool:
 	var s := at.distance_to(_c)
 	if s < CLEAR + radius + 1.0 or s > coast_at((at - _c).angle()) - BEACH - radius:
 		return false
-	if _in_pond(at, radius + 2.0) or ground_color(at) == ArtPalette.YARD_SAND:
+	if _in_pond(at, radius + 2.0) or ground_color(at) in [ArtPalette.YARD_SAND, ArtPalette.SAND]:
+		return false
+	if not map.features_clear(to_map(at), radius / K):
 		return false
 	for f in far_things:
 		if at.distance_to(Vector2(f[1], f[2])) < f[3] + radius:
@@ -457,6 +492,80 @@ func _pond_y(at: Vector2) -> float:
 		if at.distance_to(p[0]) < p[1] + 3.0:
 			return ground_y(p[0]) + 0.08
 	return ground_y(at)
+
+
+## The island's features (#72), LANDMARK_SCALE x where the map has them: the volcano, the lighthouse
+## and the square's sundial, and the river on the far ground.
+func _add_features(b: ArtMeshBuilder) -> void:
+	_add_volcano(b)
+	_add_marks(b)
+	if not map.river_points.is_empty():
+		_add_river(b)
+
+
+## True when lab point `at` is within BEHIND_DEG of the front view (the camera turns +-100 deg).
+func _ahead(at: Vector2) -> bool:
+	return absf(Vector2(0.0, -1.0).angle_to(at - _c)) <= deg_to_rad(BEHIND_DEG)
+
+
+## The volcano: pushed out of the clearing and the ground's blend (the lab at its foot), built when
+## in front or within the camera's reach.
+func _add_volcano(b: ArtMeshBuilder) -> void:
+	if not map.island.features.has("volcano"):
+		return
+	var v: Dictionary = map.island.features.volcano
+	var at := to_lab(_v2(v.at))
+	var radius := float(v.radius) * LANDMARK_SCALE
+	var keep := CLEAR + BLEND + radius
+	if at.distance_to(_c) < keep:
+		at = _c + ((at - _c).normalized() if at.distance_to(_c) > 0.01 else Vector2(0.0, -1.0)) * keep
+	if not _ahead(at) and at.distance_to(_c) >= CAMERA_REACH + radius:
+		return
+	var y := ground_y(at)
+	var low := y
+	for k in 16:
+		low = minf(low, ground_y(at + Vector2.from_angle(TAU * k / 16.0) * radius))
+	MapLandmarks.volcano(b, Transform3D(lab_basis(), Vector3(at.x, y, at.y)), radius, float(v.height) * LANDMARK_SCALE, y - low + VOLCANO_SINK)
+	far_things.append(["volcano", at.x, at.y, radius])
+
+
+## The lighthouse and the square's sundial, in front of the lab and outside the clearing, on land.
+func _add_marks(b: ArtMeshBuilder) -> void:
+	var marks: Array = []
+	if map.island.features.has("lighthouse"):
+		marks.append(["lighthouse", to_lab(_v2(map.island.features.lighthouse))])
+	if map.island.has_sundial():
+		marks.append(["sundial", to_lab(map.home)])
+	for mark in marks:
+		var at: Vector2 = mark[1]
+		if at.distance_to(_c) < CLEAR + MARK_CLEAR or at.distance_to(_c) > coast_at((at - _c).angle()) - SHORE_W or not _ahead(at):
+			continue
+		var xf := Transform3D(lab_basis().scaled(Vector3.ONE * LANDMARK_SCALE), Vector3(at.x, ground_y(at), at.y))
+		if mark[0] == "lighthouse":
+			MapLandmarks.lighthouse(b, xf)
+		else:
+			# Broken until the island's finale put it back together (#106), as on the map.
+			MapLandmarks.sundial(b, xf, ProgressStore.mark(ProgressStore.STORY, ProgressStore.island_key(map.island.id, "finale")))
+		far_things.append([mark[0], at.x, at.y, 2.0])
+
+
+## The river (MapIsland's, K x, MapIsland.ribbon_rows / add_ribbon): its runs outside the clearing,
+## down to the sea.
+func _add_river(b: ArtMeshBuilder) -> void:
+	var points := PackedVector2Array()
+	var widths := PackedFloat32Array()
+	for k in map.river_points.size():
+		points.append(to_lab(map.river_points[k]))
+		widths.append(map.river_widths[k] * K)
+	var rows := MapIsland.ribbon_rows(points, widths, func(q: Vector2) -> float: return ground_y(q) + RIVER_LIFT)
+	var run: Array = []
+	for k in rows.size():
+		if points[k].distance_to(_c) > CLEAR + BLEND * 0.5:
+			run.append(rows[k])
+		else:
+			MapIsland.add_ribbon(b, run)
+			run = []
+	MapIsland.add_ribbon(b, run)
 
 
 ## The yards' white picket fences (lab size, FENCE_HEIGHT: posts and one board between them),
@@ -640,18 +749,15 @@ func _add_haze(b: ArtMeshBuilder) -> void:
 
 ## Clouds in the lab's sky (CLOUDS: around its front view, where the camera turns).
 func _add_clouds(b: ArtMeshBuilder) -> void:
-	b.ao_min = 0.85
+	b.ao_min = MapIsland.CLOUD_AO
 	b.ao_height = 0.6
 	var was_flat := b.flat
 	b.flat = false   # smooth shading: soft round puffs, not facets (2026-10-31 user)
 	for c in CLOUDS:
 		var d := Vector2(0.0, -1.0).rotated(deg_to_rad(c[0]))
 		var at := Vector3(_c.x + d.x * c[1], sea_y + c[2], _c.y + d.y * c[1])
-		var side := Vector3(-d.y, 0.0, d.x)
-		var k: float = c[3]
-		for puff in MapIsland.CLOUD_PUFFS:   # round puffs like the map's (2026-10-31 user)
-			b.add_sphere(Transform3D(Basis().scaled(Vector3(1.0, 0.8, 1.0)), at + side * puff[0] * k + Vector3.UP * puff[1] * k), puff[2] * k,
-				MapIsland.LAB_CLOUD_RINGS, MapIsland.LAB_CLOUD_SIDES, ArtPalette.CLOUD)
+		# Round puffs like the map's (2026-10-31 user), the spots' clouds' shape too (MapIsland.cloud_mesh).
+		MapIsland.add_cloud(b, at, Vector3(-d.y, 0.0, d.x), c[3], ArtPalette.CLOUD)
 	b.flat = was_flat
 
 

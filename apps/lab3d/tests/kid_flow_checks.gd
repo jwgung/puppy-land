@@ -98,7 +98,7 @@ func check_clue_tap_anywhere() -> void:
 			break
 		await _tap(_empty(screen))
 	await _frames(3)
-	var intro_up: bool = box.active and box.speaker == "dugi" and box.text == MissionRound.intro(screen.definition.raw)[0]
+	var intro_up: bool = box.active and box.speaker == "dugi" and box.text == MissionRound.intro(screen.definition.raw).text
 	for i in 6:
 		if r.phase() == MissionRound.Phase.ASKING:
 			break
@@ -134,6 +134,7 @@ func check_question_nudge() -> void:
 			break
 	var picked_none: bool = r.asking() and r.pick == ""
 	screen._predict_pick_choice(str(MissionRound.predict(screen.definition.raw).get("answer", "")))
+	await _read_cat_guess(screen)   # (#132: the bread cat says the pick first)
 	await _frames(2)
 	var back: bool = not screen._nudging and screen.hand_guide.get_index() < screen._tip.get_index() + 3
 	expect.call(tapped and on_button and over and waited > 0 and picked_none and back,
@@ -146,6 +147,7 @@ func check_box_tap_on_view() -> void:
 	var screen := await _open("spring")
 	var box: DialogueBox = screen.dialogue
 	screen._predict_pick_choice(str(MissionRound.predict(screen.definition.raw).get("answer", "")))
+	await _read_cat_guess(screen)   # (#132: the bread cat says the pick first)
 	for i in 60:
 		await tree.process_frame
 		if box.active and box.visible:
@@ -191,7 +193,7 @@ func check_map_riddle_tap() -> void:
 	Story.enabled = was
 
 
-## The name each lab's introduction teaches ("이 힘을 마찰력이라고 해요", 2026-10-31 user: "용어를
+## The name each lab's introduction teaches ("이 힘을 마찰력이라고 해", 2026-10-31 user: "용어를
 ## 알려는 줘야지").
 const INTRO_TERMS := {"buoyancy": "부력", "collision": "작용 반작용", "constraints": "진자",
 	"free-fall": "중력", "friction": "마찰력", "incline-friction": "마찰력", "orbit": "중력",
@@ -203,7 +205,7 @@ const INTRO_TERMS := {"buoyancy": "부력", "collision": "작용 반작용", "co
 func check_intro() -> void:
 	var missing := []
 	for definition in ExperimentRegistry.load_all():
-		var text: String = MissionRound.intro(definition)[0]
+		var text: String = MissionRound.intro(definition).text
 		if definition.has("missions") and (text.length() < 40 or not INTRO_TERMS.get(definition.id, "\n") in text):
 			missing.append(definition.id)
 	var was := Story.enabled
@@ -213,7 +215,7 @@ func check_intro() -> void:
 	var screen := await _open("spring", true)
 	await _frames(4)
 	var box: DialogueBox = screen.dialogue
-	var first: bool = box.active and box.speaker == "dugi" and box.text == MissionRound.intro(screen.definition.raw)[0] \
+	var first: bool = box.active and box.speaker == "dugi" and box.text == MissionRound.intro(screen.definition.raw).text \
 		and screen.mission_round.phase() == MissionRound.Phase.CLUE
 	var seen := "%s %s '%s' %s" % [box.active, box.speaker, box.text.left(20), screen.mission_round.phase()]
 	await _close(screen)
@@ -454,3 +456,19 @@ func check_bubble_tail() -> void:
 		await _close(screen)
 	expect.call(problems.is_empty(), "kid flow: Puppy's bubble tail leaves the edge facing him (above, beside, below) and the bubble stays off him, every game lab",
 		"; ".join(problems) + " sides used %s" % str(sides.keys()))
+
+
+## The bread cat says the child's pick first (#132): wait for his box and read it (close), so Dugi's
+## bridge comes next. Returns [speaker, text, face] of the box it closed ([] when none came).
+func _read_cat_guess(screen: Control) -> Array:
+	for i in 30:
+		await tree.process_frame
+		if not screen.cat_guess_pending():
+			return []
+		var box: DialogueBox = screen.dialogue
+		if box.active and box.speaker == "cat":
+			var seen := [box.speaker, box.text, box.face]
+			box.close()
+			await tree.process_frame
+			return seen
+	return []

@@ -1,0 +1,106 @@
+{
+  "title": "When does a shadow get short?",
+  "category": "Earth and sky",
+  "question": "When the sun is high, what happens to the shadow?",
+  "steps": [
+    "Drag the sun in the sky with your finger, along its path.",
+    "See which way the stick's shadow points, and how long it is.",
+    "Use the button at the bottom left to switch between the short and the long stick."
+  ],
+  "observe": "A shadow is always on the side away from the sun. The higher the sun, the shorter the shadow; the lower the sun, the longer it is. A longer stick makes a longer shadow.",
+  "terms": [
+    { "name": "Shadow", "description": "The place the stick keeps the light from. It is always on the side away from the sun." },
+    {
+      "name": "The sun's path",
+      "description": "The sun seems to rise in the east, cross the south sky and set in the west, because the Earth turns from west to east."
+    },
+    { "name": "Sun's height", "description": "How high the sun is above the ground. It is highest at noon." }
+  ],
+  "law": {
+    "equation": "higher sun = shorter shadow",
+    "title": "The sun's height and shadows",
+    "description": "A shadow is always on the side away from the sun. A high sun shines from above, so the shadow is short; a low sun makes a long shadow. With the sun at the same height, a longer stick makes a longer shadow."
+  },
+  "tip": "Drag the sun with one finger: it moves along its path in the sky. It stays where you let go. The button at the bottom left switches the stick.",
+  "tip_short": "Drag the sun along its path",
+  "controls": [
+    {
+      "label": "Stick",
+      "options": [{ "label": "Short stick" }, { "label": "Long stick" }]
+    }
+  ],
+  "actions": [{ "label": "Start over" }],
+  "predict": {
+    "question": "When the sun is high, what happens to the shadow?",
+    "choices": [{ "label": "It gets shorter", "guess": "I think it'll get shorter!" }, { "label": "It gets longer", "guess": "I think it'll get longer!" }],
+    "reason": "A high sun shines from above. So the shadow gets shorter.",
+    "bridge": "Move the sun and see for yourself!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Move the sun to make the stick's shadow as short as you can!",
+        "say": "When the sun is highest in the south sky, the shadow is shortest. That is noon.",
+        "win": "The shadow shrank!",
+        "miss": "Lift the sun higher!",
+        "miss_conditions": "Pick the short stick!"
+      },
+      {
+        "text": "Make the shadow's tip touch the flower bed in the west!",
+        "say": "A shadow is always on the side away from the sun. For a shadow in the west, the sun must be in the east. That's the morning sun.",
+        "win": "The shadow reached the flowers!",
+        "miss": "Move the sun to the other side!",
+        "miss_conditions": "Pick the short stick!"
+      },
+      {
+        "text": "Switch to the long stick and put the shadow's tip on the piece's far stone!",
+        "say": "A long stick makes a long shadow. A short stick can't reach that far. Switch to the long stick and change the sun's height.",
+        "win": "Right on! The lid opened!",
+        "miss": "Change the sun's height a little!",
+        "miss_conditions": "Pick the long stick!"
+      }
+    ]
+  },
+  "story": {
+    "keeper": "We used to tell the time by shadows in this yard. Now the shadows are all mixed up. Nobody knows the time…",
+    "clue": "There's a piece on that far stone! But its lid is shut tight.",
+    "keeper_reply": "I heard the lid opens when a shadow's tip touches that stone.",
+    "map_clue": "On the hill yard, where a stick stands!"
+  },
+  "kid": {
+    "intro": "This is the shadow clock lab. When the sun shines, a shadow forms on the other side of the stick.",
+    "intro_more": [
+      {
+        "text": "The Earth turns from west to east. So to us, the sun seems to rise in the east, cross the south sky and set in the west. Here, you get to move the sun yourself."
+      }
+    ],
+    "title": "Move the sun and change the shadow!",
+    "place": "Shadow clock",
+    "say": "A shadow is on the side away from the sun. The higher the sun, the shorter the shadow.",
+    "tip": "Drag the sun along its path.",
+    "picks": { "stick": [{ "label": "Short stick" }, { "label": "Long stick" }] },
+    "cards": { "state": "Stick's shadow", "altitude": "Sun's height" }
+  },
+  "note": {
+    "law": "A shadow is on the side away from the sun. The higher the sun and the shorter the stick, the shorter the shadow.",
+    "learn": "A shadow falls on the side away from the Sun. The higher the Sun, the shorter the shadow; it is long in the morning and evening when the Sun is low.",
+    "talk": ["How long is your shadow at lunchtime, and in the evening?", "Could you tell the time from a shadow?"],
+    "formula": "higher sun = shorter shadow",
+    "numbers": [
+      { "label": "Stick's shadow" },
+      { "label": "Sun's height (above the horizon)" },
+      { "label": "Shadow's length" }
+    ]
+  },
+  "observations": [
+    { "label": "Stick's shadow" },
+    { "label": "Sun's height (above the horizon)" },
+    { "label": "Shadow's length" }
+  ],
+  "graph": {
+    "title": "The sun's height and the shadow's length",
+    "x": { "label": "Sun's height" },
+    "y": { "label": "Shadow's length" },
+    "series": [{ "label": "Short stick" }, { "label": "Long stick" }, { "label": "Now" }]
+  }
+}

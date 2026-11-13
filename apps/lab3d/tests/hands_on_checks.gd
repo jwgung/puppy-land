@@ -73,7 +73,7 @@ func check_no_action_buttons() -> void:
 ## The real touch path: press on the object, drag, lift.
 func check_release_on_lift() -> void:
 	var problems := []
-	# Free fall: the red ball up to 8 m and let go: both balls drop together from their own heights.
+	# Free fall: the red ball dragged up to 8 m and let go: the heights stay (2026-11-12), both drop together.
 	var screen := await _open(ExperimentRegistry.find("free-fall"), TABLET)
 	screen.mission_round.end_question()
 	var lab: Experiment = screen.experiment
@@ -81,7 +81,7 @@ func check_release_on_lift() -> void:
 	await _drag_to(screen, lab.balls.red.global_position, Vector3(lab.starts.red.x, 8.0 + r, lab.starts.red.z))
 	for i in 3:
 		await tree.physics_frame
-	if not (lab.released and lab.status() == "falling" and is_equal_approx(lab.starts.red.y, 8.0) and is_equal_approx(lab.starts.yellow.y, 3.0)):
+	if not (lab.released and lab.status() == "falling" and is_equal_approx(lab.starts.red.y, lab.DROP_HEIGHT) and is_equal_approx(lab.starts.yellow.y, lab.DROP_HEIGHT)):
 		problems.append("free fall: let go at 8 m: released %s, %s, red %.1f, yellow %.1f" % [lab.released, lab.status(), lab.starts.red.y, lab.starts.yellow.y])
 	for i in 120:
 		await tree.physics_frame
@@ -92,15 +92,16 @@ func check_release_on_lift() -> void:
 	var fresh: bool = lab.status() == "ready" and not lab.released
 	_touch(screen, _at(screen, lab.balls.yellow.global_position), false)   # a tap: let go at its start, both drop
 	await tree.physics_frame
-	var tapped: bool = lab.released and is_equal_approx(lab.starts.yellow.y, 3.0)
+	var tapped: bool = lab.released and is_equal_approx(lab.starts.yellow.y, lab.DROP_HEIGHT)
 	for i in 120:
 		await tree.physics_frame
 	await _drop_drag(screen, "yellow", 8.0)
 	await tree.physics_frame
-	var together: bool = lab.released and is_equal_approx(lab.starts.yellow.y, 8.0) and is_equal_approx(lab.starts.red.y, 8.0)
+	var together: bool = lab.released and is_equal_approx(lab.starts.yellow.y, lab.DROP_HEIGHT) and is_equal_approx(lab.starts.red.y, lab.DROP_HEIGHT)
 	if not (landed and fresh and tapped and together):
-		problems.append("free fall: landed %s, a new press waits %s, a tap drops both %s, the yellow lifted to 8 m drops both %s" % [landed, fresh, tapped, together])
+		problems.append("free fall: landed %s, a new press waits %s, a tap drops both %s, the yellow dragged to 8 m stays and drops both %s" % [landed, fresh, tapped, together])
 	await _free(screen)
+	DirAccess.remove_absolute(ProgressStore.path)   # (the level drops earned stamps)
 	# The slide: the box dragged up the slide and let go slides from there.
 	screen = await _open(ExperimentRegistry.find("incline-friction"), TABLET)
 	screen.mission_round.end_question()
@@ -210,15 +211,18 @@ func _kid_symbols(text: String) -> bool:
 
 func check_result_bubbles() -> void:
 	var problems := []
-	# Free fall: different heights miss stage 1 (the buttons apart), the same height wins it.
+	# Free fall (2026-11-12: the heights stay level, only the world counts): the Moon on stage 1 misses
+	# (the conditions' line), the earth wins it. (A fresh progress: the lift check's level drop earned a stamp.)
+	DirAccess.remove_absolute(ProgressStore.path)
 	var screen := await _open(ExperimentRegistry.find("free-fall"), TABLET)
 	screen.mission_round.end_question()
 	var lab: Experiment = screen.experiment
 	var r: float = lab.BALL_RADIUS
+	screen._set_control("gravity", "moon")
 	await _drag_to(screen, lab.balls.red.global_position, Vector3(lab.starts.red.x, 6.0 + r, lab.starts.red.z))
 	var bubble: ResultBubble = await _wait_bubble(screen, 300)
 	var stage0: Dictionary = MissionRound.missions(lab.definition.raw).stages[0]
-	if bubble == null or bubble.text != str(stage0.miss) or bubble.won or screen.result_count.miss != 1:
+	if bubble == null or bubble.text != str(stage0.miss_conditions) or bubble.won or screen.result_count.miss != 1:
 		problems.append("free fall: the miss line after the first drop (%s)" % (bubble.text if bubble != null else "none"))
 	else:
 		problems.append_array(_bubble_place(screen, bubble, "free fall miss"))
@@ -236,6 +240,7 @@ func check_result_bubbles() -> void:
 		problems.append("free fall: the bubble jumped %.1f units in one frame (at most %.1f)" % [jump, ResultBubble.MAX_STEP])
 	if screen.result_bubble() != null or screen.result_count.miss != 1:
 		problems.append("free fall: the bubble stays or a second line came (%s)" % str(screen.result_count))
+	screen._set_control("gravity", "earth")
 	await _drop_drag(screen, "yellow", 6.0)
 	bubble = await _wait_bubble(screen, 300, true)
 	if bubble == null or bubble.text != str(stage0.win) or not bubble.won or screen.mission_round.stamps != 1:
@@ -372,6 +377,23 @@ func check_bridge_and_reason() -> void:
 	var lab: Experiment = screen.experiment
 	var box: DialogueBox = screen.dialogue
 	screen._predict_pick_choice(str(predict.answer))
+	# The bread cat says the pick first (#132), in his own box; his box read, Dugi's bridge follows.
+	var cat_said := ""
+	for i in 10:
+		await tree.process_frame
+		if box.active and box.visible and box.speaker == "cat":
+			cat_said = box.joined()
+			break
+	var picked_guess := ""
+	for choice in predict.choices:
+		if str(choice.id) == str(predict.answer):
+			picked_guess = str(choice.guess)
+	if cat_said != picked_guess or picked_guess != "내 생각엔 같이 닿을 것 같아!" or box.face != ExperimentScreen.CAT_GUESS_FACE \
+			or screen.cast.dugi.speaking() or box.portrait.texture != DialogueBox.portrait_texture("cat", box.face):
+		problems.append("cat: said '%s' (want '%s'), face %s, Dugi speaking %s" % [cat_said,
+			picked_guess, box.face, screen.cast.dugi.speaking()])
+	box.advance()
+	box.advance()   # (the first tap shows the whole page, the next closes it)
 	var said := ""
 	for i in 30:
 		await tree.process_frame
@@ -419,7 +441,7 @@ func check_bridge_and_reason() -> void:
 		problems.append("bridge at stage 2: '%s'" % screen.mission_round.bridge_line())
 	await _free(screen)
 	DirAccess.remove_absolute(ProgressStore.path)
-	expect.call(problems.is_empty(), "bridge: after the answer Dugi says the lab's bridge (첫 번째 미션 / 다음 미션) and the strip pulses once; the prediction's reason only after the first attempt's line", "; ".join(problems))
+	expect.call(problems.is_empty(), "bridge: after the answer the bread cat says the pick (the choice's guess, 반말, his portrait), then Dugi says the lab's bridge (첫 번째 미션 / 다음 미션) and the strip pulses once; the prediction's reason only after the first attempt's line", "; ".join(problems))
 
 
 ## Every lab's prediction is answered by its first stage: the formula of a run that clears stage 1
@@ -768,7 +790,8 @@ func _drag(screen: Control, position: Vector2) -> void:
 
 ## A finger presses free-fall ball `id` where it lies (after a drop: on the floor; the press starts a
 ## fresh run and the ball waits at its start again), drags it to the height `h` (m) on its drop line
-## (the finger moves as far as the ball must) and lifts there.
+## (the finger moves as far as the ball must) and lifts there (since 2026-11-12 the ball keeps its
+## height: the lift only drops both).
 func _drop_drag(screen: Control, id: String, h: float) -> void:
 	var lab: Experiment = screen.experiment
 	var a := _at(screen, lab.balls[id].global_position)

@@ -170,6 +170,13 @@ func _restart() -> void:
 		reset_run()
 
 
+## The round's next stage starts from the lab as it is (true), not from a reset run (default: the
+## screen runs "reset" before the next mission, as 다시 does). #74: the 낮과 밤 Earth stays turned where
+## the child left it (noon, then on to midnight), only 다시 turns it back to its start.
+func keeps_run_between_stages() -> bool:
+	return false
+
+
 ## Starts the run over from its conditions (experiments with a restartable run).
 func reset_run() -> void:
 	pass
@@ -224,6 +231,13 @@ func follow_point() -> Vector3:
 ## buoyancy's bread cat riding the drum). Default: none. Read only (visual).
 func keep_in_sight() -> Array[AABB]:
 	return []
+
+
+## Where Dugi's explanation picture card stands in the view (DialogueBox.card_align: shares of the room
+## left and down, (0.5, 0.5) the middle). A lab whose object sits in the middle of the view moves it
+## aside (the river's bend, #95 review). Read only (visual).
+func picture_card_align() -> Vector2:
+	return Vector2(0.5, 0.5)
 
 
 ## World point Dugi points at when he explains the run (IslandCast, Task 4h): what the lab's
@@ -297,6 +311,13 @@ func manipulation_cancelled(_id: String) -> void:
 func manipulation_pick_point(id: String) -> Vector3:
 	var body := manipulation_body(id)
 	return body.global_position if body != null else global_position
+
+
+## The screen says whether the child can play now (#93): false while the round's clue, question or
+## Dugi's box is up (the mission not yet told), true once the hand is free. A lab whose run goes on by
+## itself (the 바닷바람 night) waits for it before it starts; the others ignore it.
+func set_play_open(_open: bool) -> void:
+	pass
 
 
 ## A finger presses and holds the hold object `id` (rule `"hold": true`, 2026-10-28): the lab ramps

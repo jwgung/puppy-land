@@ -1,0 +1,116 @@
+{
+  "id": "day-night",
+  "version": 1,
+  "icon": "☀",
+  "law": {},
+  "scene": "res://experiments/day_night/day_night.gd",
+  "bench_id": "DN",
+  "camera": {
+    "target": [0.4, 2.4, 0.2],
+    "distance": 10.8,
+    "distance_range": [1.5, 26.0],
+    "yaw_range_deg": [-100.0, 100.0],
+    "pitch_range_deg": [-89.0, -2.0],
+    "pan_radius": 6.0,
+    "default_mode": "front",
+    "views": {
+      "front": { "yaw_deg": 0.0, "pitch_deg": -27.0 },
+      "three_quarter": { "yaw_deg": 24.0, "pitch_deg": -24.0 },
+      "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 16.0 },
+      "side": { "yaw_deg": 90.0, "pitch_deg": -12.0, "distance": 13.0 },
+      "follow": { "yaw_deg": 0.0, "pitch_deg": -27.0, "distance": 9.5, "target": [-0.5, 3.3, -0.6] }
+    }
+  },
+  "controls": [],
+  "actions": [
+    { "id": "reset", "style": "primary" }
+  ],
+  "key_observations": ["state", "altitude"],
+  "predict": {
+    "question_face": "thinking",
+    "choices": [
+      { "id": "sun", "picture": "sun_moves" },
+      { "id": "earth", "picture": "earth_spins" }
+    ],
+    "answer": "earth",
+    "bridge_face": "happy"
+  },
+  "missions": {
+    "judge_on": ["noon", "midnight", "sunrise"],
+    "stages": [
+      {
+        "observe": "",
+        "judge_on": ["noon"],
+        "miss_on": ["day", "sunrise", "sunset", "night", "midnight"],
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["midnight"],
+        "miss_on": ["noon", "day", "sunrise", "sunset", "night"],
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["sunrise"],
+        "miss_on": ["sunset"],
+        "say_face": "explain",
+        "say_picture": "morning_evening",
+        "win_face": "surprised",
+        "miss_face": "surprised"
+      }
+    ]
+  },
+  "story": { "keeper_face": "worried", "clue_face": "thinking", "map_clue_face": "explain" },
+  "kid": {
+    "intro_face": "explain",
+    "intro_more": [
+      { "face": "explain", "picture": "axis" },
+      { "face": "explain" }
+    ],
+    "card": "state",
+    "say_face": "explain"
+  },
+  "note": {
+    "numbers": [
+      { "ids": ["state"] },
+      { "ids": ["altitude"] },
+      { "ids": ["azimuth"] }
+    ],
+    "graph": true
+  },
+  "cast": {
+    "dugi": {
+      "at": [4.7, 2.4],
+      "explain_on": ["noon", "midnight", "sunrise", "sunset"],
+      "delay_s": 0.6
+    },
+    "puppy": {
+      "at": [-4.4, 0.4]
+    },
+    "fox": { "at": [-2.6, 0.4] }
+  },
+  "observations": [
+    { "id": "state" },
+    { "id": "altitude", "unit": "°", "digits": 0 },
+    { "id": "azimuth", "unit": "°", "digits": 0 }
+  ],
+  "manipulation": {
+    "grab_radius": 72.0,
+    "objects": [
+      { "id": "earth", "surface": "turn", "snap": 0.0, "height": false, "marker": false, "guide_to": "max" }
+    ]
+  },
+  "graph": {
+    "x": { "unit": "°", "max": 360.0 },
+    "y": { "unit": "°", "min_max": 60.0, "signed": true },
+    "series": [
+      { "id": "altitude", "color": "#ffb31a", "style": "line" },
+      { "id": "now", "color": "#ff3b3b", "style": "points" }
+    ]
+  }
+}

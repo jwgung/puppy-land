@@ -1,0 +1,133 @@
+{
+  "id": "sea-breeze",
+  "version": 1,
+  "icon": "≋",
+  "law": {},
+  "scene": "res://experiments/sea_breeze/sea_breeze.gd",
+  "bench_id": "SB",
+  "camera": {
+    "target": [0.8, 2.6, 0.0],
+    "distance": 19.0,
+    "distance_range": [1.5, 30.0],
+    "yaw_range_deg": [-100.0, 100.0],
+    "pitch_range_deg": [-89.0, -2.0],
+    "pan_radius": 7.0,
+    "default_mode": "front",
+    "views": {
+      "front": { "yaw_deg": 0.0, "pitch_deg": -12.0 },
+      "three_quarter": { "yaw_deg": 24.0, "pitch_deg": -20.0 },
+      "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 26.0 },
+      "side": { "yaw_deg": 90.0, "pitch_deg": -12.0, "distance": 22.0 },
+      "follow": { "yaw_deg": 0.0, "pitch_deg": -14.0, "distance": 17.0, "target": [0.8, 3.0, 0.0] }
+    }
+  },
+  "controls": [
+    {
+      "id": "time",
+      "type": "choice",
+      "default": "day",
+      "options": [{ "id": "day" }, { "id": "night" }]
+    }
+  ],
+  "actions": [
+    { "id": "reset", "style": "primary" }
+  ],
+  "key_observations": ["state", "land", "sea"],
+  "predict": {
+    "question_face": "thinking",
+    "choices": [
+      { "id": "sea", "picture": "breeze_from_sea" },
+      { "id": "land", "picture": "breeze_from_land" }
+    ],
+    "answer": "sea",
+    "bridge_face": "happy"
+  },
+  "missions": {
+    "judge_on": ["sea_breeze", "strong", "land_breeze"],
+    "stages": [
+      {
+        "observe": "",
+        "judge_on": ["sea_breeze", "strong"],
+        "miss_on": ["calm", "land_breeze"],
+        "conditions": { "time": "day" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["land_breeze"],
+        "miss_on": ["calm", "sea_breeze", "strong"],
+        "conditions": { "time": "night" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["strong"],
+        "miss_on": ["sea_breeze", "calm", "land_breeze"],
+        "conditions": { "time": "day" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      }
+    ]
+  },
+  "story": { "keeper_face": "worried", "clue_face": "worried", "more": [{ "speaker": "puppy", "face": "thinking" }], "map_clue_face": "explain" },
+  "kid": {
+    "intro_face": "explain",
+    "intro_more": [
+      { "face": "explain", "picture": "sea_breeze" }
+    ],
+    "card": "state",
+    "say_face": "explain",
+    "picks": {
+      "time": [
+        { "value": "day", "picture": "coast_day" },
+        { "value": "night", "picture": "coast_night" }
+      ]
+    }
+  },
+  "note": {
+    "numbers": [
+      { "ids": ["state"] },
+      { "ids": ["land"] },
+      { "ids": ["sea"] }
+    ],
+    "graph": true
+  },
+  "cast": {
+    "dugi": {
+      "at": [-9.0, 2.2],
+      "explain_on": ["sea_breeze", "strong", "land_breeze"],
+      "delay_s": 0.6
+    },
+    "puppy": {
+      "at": [-8.0, -1.6]
+    },
+    "fox": { "at": [-6.8, -2.4] }
+  },
+  "observations": [
+    { "id": "state" },
+    { "id": "land" },
+    { "id": "sea" }
+  ],
+  "manipulation": {
+    "grab_radius": 72.0,
+    "objects": [
+      { "id": "sun", "hold": true }
+    ]
+  },
+  "graph": {
+    "x": { "unit": "°C", "max": 16.0 },
+    "y": { "unit": "m/s", "min_max": 10.0 },
+    "series": [
+      { "id": "wind", "color": "#4aa8f5", "style": "line" },
+      { "id": "now", "color": "#ff3b3b", "style": "points" }
+    ]
+  }
+}

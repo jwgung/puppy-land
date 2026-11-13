@@ -1,6 +1,8 @@
 ## App root: theme, screen navigation (the title on launch -> island map -> experiment, settings from
 ## the title or the map; back returns to the map, or to the title from settings opened there and from
-## the map; back on the title quits) and the fps overlay.
+## the map; back on the title quits) and the fps overlay. 섬 고르기 on the title picks the island in use
+## (TitleScreen, IslandCards); the first trip to the next island is its voyage (#75, VoyageScreen),
+## from 섬 고르기's first 출발! after the first island's finale (#118).
 ## Landscape only (Task 2d): project.godot locks the screen to sensor landscape on Android and iOS.
 ## Launch args (command line or Android `opargs`, see Quality.all_args):
 ##   --experiment=<id>   open that experiment directly (measurements, screenshots)
@@ -10,10 +12,20 @@
 ##   --demo-title        the title screen even in a measurement (screenshots, its fps): the bench store,
 ##                       never the child's progress
 ##   --demo-story=<part> screenshots of the story in the bench store only (never the child's progress):
-##                       prologue | clue:<id> | found:<id> | flight:<id> | finale | map[:<n>] (Story, _demo_story)
+##                       prologue | clue:<id> | found:<id> | flight:<id> | finale | finale:<island> | map[:<n>]
+##                       | voyage | islands
+##                       (Story, _demo_story; finale:hutton: the sundial finale, #106)
 ##   --progress=complete  writes the child's progress as all done, once (2026-11-02 user: "apk 다 깬걸로
 ##                       해줘. 보기 어렵다"): every stamp, the story's prologue, clues and finale seen, every
 ##                       piece flown and flag up, so every spot opens on a day map. For looking at the app.
+##                       Not in the Play build (Quality.DEV_KEYS, like --island and --ask=show).
+##   --island=<id>      the map of island <id> for this run only (an island in the making, #72: its spots
+##                       need not be experiments yet): nothing saved, no story, the bench store; not in
+##                       the Play build
+##   --islands=open     every island of the list open for this run (an island in the making too, #75):
+##                       its voyage, its tag on 섬 고르기's map, its map, no day limit (#77); not in the Play build
+##   --store=owned|none|pending|fail  the stand-in store (#77, IslandStore.FakeStore); not in the Play build
+## The Play build reads only --quality=, --q-*, --fps= and --ui-size= (Quality.PLAY_ARGS, #77).
 ## plus the experiment screen's --camera / --ctl-<id> / --sidebar / --scroll-to / --auto-release / --auto-drag.
 class_name App
 extends Control
@@ -59,12 +71,19 @@ func _ready() -> void:
 	_set_fps(Quality.cmdline_value("fps") == "1")   # measurements only (no setting since 2026-10-31)
 	Locale.start()   # the child's language (saved), else the device's, else English
 	_definitions = ExperimentRegistry.load_all()
-	if Quality.cmdline_value("progress") == "complete":
+	Island.set_dev_open(Quality.dev_value("islands") == "open")   # a developer switch: never in the Play build
+	add_child(IslandStore.make())   # #77: the islands bought (Play's billing, --store=, or none)
+	add_child(CloudSync.make())     # #103: 기기 사이 기록 맞추기 (off until a guardian turns it on)
+	var dev_island := dev_island_of(Quality.all_args(), OS.has_feature("play"))
+	if dev_island != "":
+		Island.use_for_run(dev_island)
+	# A measured map never raises the child's flags; another island's map never touches its progress.
+	if Quality.cmdline_value("progress") == "bench" or demo_title(Quality.all_args()) or dev_island != "":
+		ProgressStore.path = ProgressStore.BENCH_PATH
+	if Quality.dev_value("progress") == "complete":   # a developer switch: never in the Play build
 		complete_progress()
-	if Quality.cmdline_value("progress") == "bench" or demo_title(Quality.all_args()):
-		ProgressStore.path = ProgressStore.BENCH_PATH   # a measured map never raises the child's flags
 	# The story plays in the child's app only: never in a measurement (bench store, auto runs, silent).
-	Story.enabled = Story.app_may_enable and not Story.measurement_run(Quality.all_args())
+	Story.enabled = Story.app_may_enable and not Story.measurement_run(Quality.all_args()) and dev_island == ""
 	var demo := _demo_story(Quality.cmdline_value("demo-story"))
 
 	var resume := ""
@@ -78,6 +97,11 @@ func _ready() -> void:
 		show_settings()
 	elif not requested.is_empty():
 		show_experiment(requested, {}, true)  # the launch args (--ctl-*, --camera) apply to this screen
+	elif str(demo.get("voyage", "")) != "":
+		show_voyage(str(demo.voyage))
+	elif demo.has("islands"):
+		show_title()
+		(_screen as TitleScreen).show_islands()
 	elif title_on_launch(Quality.all_args()):
 		show_title()
 	else:
@@ -100,18 +124,39 @@ static func title_on_launch(args: PackedStringArray) -> bool:
 	return not Story.measurement_run(args)
 
 
+## The island of --island=<id> when it is in the list ("" otherwise, and always in the Play build:
+## `play`, Quality.dev_arg).
+static func dev_island_of(args: PackedStringArray, play: bool) -> String:
+	var id := Quality.dev_arg(args, "island", play)
+	return id if id != "" and not Island.entry(id).is_empty() else ""
+
+
 static func demo_title(args: PackedStringArray) -> bool:
 	return Array(args).any(func(arg: String) -> bool: return arg.begins_with("--demo-title"))
 
 
 ## The title (on launch): 시작하기 = the prologue the first time (the map plays it), else the map;
 ## 이야기 다시 보기 = the prologue again (as the settings' entry); 설정 = the settings, back to the title.
-func show_title() -> void:
+## `islands`: with its islands' map open (the map's back, #114).
+func show_title(islands := false) -> void:
 	var screen := TitleScreen.new()
 	screen.start_requested.connect(func() -> void: show_list())
 	screen.story_requested.connect(func() -> void: show_list(true))
 	screen.settings_requested.connect(func() -> void: show_settings(true))
+	screen.island_chosen.connect(func(island: String) -> void:
+		# The first trip to an island with a voyage: the voyage (it makes that island the one in use,
+		# #118); after it the islands' map sailed there first (#116).
+		if island == Story.voyage_due(ProgressStore.load()):
+			show_voyage(island)
+			return
+		Island.set_current(island)
+		show_list())
+	screen.island_story_chosen.connect(func(island: String) -> void:   # its story again (2026-11-09)
+		Island.set_current(island)
+		show_list(true))
 	_swap(screen, "title")
+	if islands:
+		screen.show_islands()
 
 
 func _notification(what: int) -> void:
@@ -130,9 +175,15 @@ func go_back_requested() -> void:
 
 
 func _go_back() -> void:
+	if GuardianModal.close_top(self):
+		return   # the guardian's check or the island's offer closes first (#77)
 	if _screen is ExperimentScreen:
 		if not (_screen as ExperimentScreen).handle_back():   # an open box, card or sidebar closes first
 			show_list()
+	elif _screen is VoyageScreen:
+		(_screen as VoyageScreen).skip()   # back skips the voyage (to the next island's map)
+	elif _screen is TitleScreen and (_screen as TitleScreen).hide_islands():
+		pass   # 섬 고르기's map closes first
 	elif _screen is SettingsScreen:
 		if _settings_from_title:
 			show_title()
@@ -141,20 +192,46 @@ func _go_back() -> void:
 	elif _screen is IslandHomeScreen and (_screen as IslandHomeScreen).handle_back():
 		pass   # Puppy's open box closed first (2026-10-29)
 	elif _screen is IslandHomeScreen and TitleScreen.app_may_show:
-		show_title()   # the map goes back to the title (2026-10-29 decision)
+		_map_back()
 	else:
 		quit.call()   # the title quits (and the map when the title may not show: tests)
 
 
+## The map's back (its ← 돌아가기 and Android back): the islands' map when there are islands to choose (#114),
+## else the title (2026-10-29 decision).
+func _map_back() -> void:
+	show_title(TitleScreen.picks_island())
+
+
 ## The home is the 3D island (Plan G2): tap a spot, the cat hops over, the experiment opens. The
-## story's prologue plays over it the first time (or again from the settings: `replay`).
+## story's prologue plays over it the first time (or again from the settings: `replay`). Before it,
+## on a replay of an island that has a voyage to it, the voyage (#75). The first voyage plays from
+## 섬 고르기 (#118, show_title's island_chosen), never on its own after the finale.
 func show_list(replay := false) -> void:
+	var island := Island.current_id()
+	if replay and Story.enabled and island != ProgressStore.FIRST_ISLAND and Story.has_voyage(island):
+		show_voyage(island, true)
+		return
+	_show_map(replay)
+
+
+func _show_map(replay := false) -> void:
 	var screen := IslandHomeScreen.new()
 	screen.definitions = _definitions
 	screen.play_prologue_on_open = Story.should_play_prologue(replay)
 	screen.experiment_chosen.connect(show_experiment)
-	screen.settings_requested.connect(show_settings)
+	screen.back_requested.connect(func() -> void:
+		if TitleScreen.app_may_show:
+			_map_back())
 	_swap(screen, "home")
+
+
+## The voyage to `island` (VoyageScreen); then that island's map, its prologue the first time (or
+## again: `replay`, 이야기 다시 보기 there).
+func show_voyage(island: String, replay := false) -> void:
+	var screen := VoyageScreen.new(island)
+	screen.finished.connect(func(_to: String) -> void: _show_map(replay))
+	_swap(screen, "voyage")
 
 
 func show_experiment(definition: Dictionary, state := {}, launch_args := false) -> void:
@@ -224,6 +301,10 @@ func _slide_in(screen: Control) -> void:
 ##   finale        the map: the orbit spot just completed with the 10 others found: flag, flight, finale
 ##   map[:<n>]     the night map with the first n pieces of the order found (5 by default) and at the
 ##                 lookout, nothing but Puppy's riddle playing: fps measurements, screenshots
+##   voyage        the first island all found and its finale seen, the next island open (not in the
+##                 Play build): the voyage plays (as 섬 고르기's first 출발!, #118), then the next
+##                 island's map and prologue (#75)
+##   islands       as voyage, the voyage already seen: the title with 섬 고르기's map open (#75, #116)
 ## Every spot done (--progress=complete): full stamps, the story seen, the pieces at the lookout.
 static func complete_progress() -> void:
 	var store := {}
@@ -232,7 +313,7 @@ static func complete_progress() -> void:
 		ProgressStore.set_mark(ProgressStore.CLUES, spot, true)
 	ProgressStore.save(store)
 	for part in ["prologue", "finale"]:
-		ProgressStore.set_mark(ProgressStore.STORY, part, true)
+		Story.mark_seen(part)
 
 
 func _demo_story(value: String) -> Dictionary:
@@ -244,11 +325,33 @@ func _demo_story(value: String) -> Dictionary:
 	var id := value.get_slice(":", 1) if ":" in value else ""
 	var config := ConfigFile.new()   # a fresh bench store
 	config.save(ProgressStore.path)
+	Island.forget_current()   # the fresh store's island: the first
+	# finale:<island> (#106): another island's finale (the hutton sundial), that island open and in use.
+	if kind == "finale" and id != "" and not Island.entry(id).is_empty() and id != ProgressStore.FIRST_ISLAND:
+		Island.set_dev_open(not OS.has_feature("play"))
+		Island.set_current(id)
+		Story.mark_voyage_seen(id)
 	if kind != "prologue":
-		ProgressStore.set_mark(ProgressStore.STORY, "prologue", true)
+		Story.mark_seen("prologue")
 	var store := {}
 	var full := func(spot: String) -> int:
 		return MissionRound.missions(ExperimentRegistry.find(spot)).get("stages", []).size()
+	if kind in ["voyage", "islands"]:
+		Island.set_dev_open(not OS.has_feature("play"))   # the next island is still in the making (#72)
+		for spot in Story.spots():
+			store[spot] = full.call(spot)
+		ProgressStore.save(store)
+		Story.mark_seen("finale")
+		if kind == "voyage":
+			return {"voyage": Story.voyage_due(ProgressStore.load())}   # (#118: as 섬 고르기's first 출발!)
+		if kind == "islands":
+			for island in Island.ids():
+				if island != ProgressStore.FIRST_ISLAND:
+					Story.mark_voyage_seen(island)
+					# (and its prologue: the islands' map lands on its map, not its story, #114)
+					ProgressStore.set_mark(ProgressStore.STORY, ProgressStore.island_key(island, "prologue"), true)
+			return {"islands": true}
+		return {}
 	match kind:
 		"clue", "found":
 			if kind == "found":
@@ -267,6 +370,14 @@ func _demo_story(value: String) -> Dictionary:
 			id = Island.current().lookout
 			for spot in Story.spots():
 				store[spot] = full.call(spot)
+			var gnomon := Island.current().gnomon_spot()
+			if gnomon != "":   # the sundial (#106): the last wedge's flight, the gnomon, then the finale
+				var order := Story.order()
+				for spot in [order[order.size() - 2], gnomon]:
+					ProgressStore.mark_flag_pending(spot)
+					ProgressStore.set_mark(ProgressStore.PIECES, spot, false)
+				ProgressStore.save(store)
+				return {}
 	if kind in ["flight", "finale"] and ExperimentRegistry.find(id).size() > 0:
 		store[id] = full.call(id)
 		ProgressStore.save(store)

@@ -44,8 +44,8 @@
   "predict": {
     "question": "If you press the box, will it move right away?",
     "choices": [
-      { "label": "It holds, then moves" },
-      { "label": "It moves right away" }
+      { "label": "It holds, then moves", "guess": "I think it'll hold, then move!" },
+      { "label": "It moves right away", "guess": "I think it'll move right away!" }
     ],
     "reason": "The floor holds on to the box. When your push gets stronger than that, it moves.",
     "bridge": "Push it and see for yourself!"
@@ -98,6 +98,8 @@
   },
   "note": {
     "law": "The floor holds the box up to the maximum static friction. You have to push harder than that to move it, and the heavier the box, the bigger this force.",
+    "learn": "The floor holds the box back up to a limit (friction). You have to push harder than that to move it, and the heavier the box, the tighter the floor holds.",
+    "talk": ["Which is harder to push: an empty box or a box full of books?", "Why is it so easy to slip on ice?"],
     "formula": "f_max = μₛ m g",
     "numbers": [
       { "label": "Your push F" },

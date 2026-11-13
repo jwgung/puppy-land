@@ -86,6 +86,17 @@ func check_tags() -> void:
 	var found := ExperimentRegistry.validate(bad)
 	expect.call(Array(found).any(func(p: String) -> bool: return p.contains("say_face")) and Array(found).any(func(p: String) -> bool: return p.contains("clue_face")),
 		"faces: the registry rejects an unknown face tag", str(found))
+	var reply := ExperimentRegistry.find("shadow-clock").duplicate(true)
+	reply.story.keeper_reply_face = "angry"
+	var bad_face := ExperimentRegistry.validate(reply)
+	expect.call(Array(bad_face).any(func(p: String) -> bool: return p.contains("keeper_reply_face")),
+		"faces: the registry rejects an unknown keeper_reply_face", str(bad_face))
+	for value: Variant in [7, ""]:
+		var text := ExperimentRegistry.find("shadow-clock").duplicate(true)
+		text.story.keeper_reply = value
+		var bad_text := ExperimentRegistry.validate(text)
+		expect.call(Array(bad_text).any(func(p: String) -> bool: return p.contains("story.keeper_reply must be a text")),
+			"faces: the registry rejects a keeper_reply that is %s" % ("empty" if value is String else "not a string"), str(bad_text))
 
 
 ## Puppy gives clues and story lines only; the science is Dugi's (2026-10-29 user).
@@ -107,7 +118,7 @@ func check_puppy_words() -> void:
 
 ## The box: faces, the default, no re-pop for the same face, a soft pop for a new one, stable rects.
 func check_box() -> void:
-	var box := DialogueBox.new("두기두기의 설명이에요.")
+	var box := DialogueBox.new("두기두기의 설명이야.")
 	var host := Control.new()
 	host.theme = load(UI_THEME).build()
 	host.size = TABLET
@@ -121,10 +132,10 @@ func check_box() -> void:
 	var tag := box.name_tag.get_rect()
 	var problems := []
 	var swaps := box.swaps
-	box.open("다시 같은 얼굴이에요.", "explain")
+	box.open("다시 같은 얼굴이야.", "explain")
 	if box.swaps != swaps or box.portrait.scale != Vector2.ONE:
 		problems.append("same face re-popped")
-	for who in ["dugi", "puppy"]:
+	for who in ["dugi", "puppy", "fox"]:
 		for face in Story.FACES:
 			box.set_speaker(who, face)
 			box.layout(Rect2(Vector2.ZERO, TABLET), TABLET.x - 300.0, 16.0)
@@ -188,7 +199,7 @@ func check_story_faces() -> void:
 			if not story.dialogue.active or story.dialogue.text != words:
 				break
 			story.dialogue.advance()
-	expect.call(str(shown) == str(want), "faces: the prologue's 8 pages show their speakers' tagged faces", str(shown))
+	expect.call(str(shown) == str(want), "faces: the prologue's pages show their speakers' tagged faces", str(shown))
 	host.queue_free()
 	await tree.process_frame
 	# Puppy's riddle and his not-here line on the night map.
@@ -224,8 +235,8 @@ func check_lab_faces() -> void:
 		await tree.process_frame
 		await tree.process_frame
 		# Dugi's introduction (its own face, kid.intro_face), then the question.
-		var intro_ok: bool = box.speaker == "dugi" and box.text == MissionRound.intro(screen.definition.raw)[0] \
-			and box.face == MissionRound.intro(screen.definition.raw)[1]
+		var intro_ok: bool = box.speaker == "dugi" and box.text == MissionRound.intro(screen.definition.raw).text \
+			and box.face == MissionRound.intro(screen.definition.raw).face
 		for k in 8:
 			if not box.active or box.hold:
 				break
@@ -241,6 +252,7 @@ func check_lab_faces() -> void:
 			if str(choice.id) != answer:
 				other = str(choice.id)
 		screen._predict_pick_choice(answer if pick == "right" else other)
+		await _read_cat_guess(screen)   # (#132: the bread cat says the pick first)
 		screen.mission_round.reveal()
 		# 2026-10-29: Dugi's bridge to the first mission first (its face), the reason only after the first
 		# attempt's result line (here a miss), then at once.
@@ -287,13 +299,13 @@ func check_stage_says() -> void:
 		for k in stages.size() + 1:
 			screen.mission_round.stamps = k   # in memory only
 			screen.mission_round.judged_run = false
-			var want: Array = [str(stages[k].say), str(stages[k].say_face)] if k < stages.size() \
-				else [ExperimentRegistry.kid_text(definition, "say"), str(definition.kid.say_face)]
+			var want: Dictionary = MissionRound.dialogue_line(str(stages[k].say), str(stages[k].say_face)) if k < stages.size() \
+				else MissionRound.dialogue_line(ExperimentRegistry.kid_text(definition, "say"), str(definition.kid.say_face))
 			if str(screen.explain_say()) != str(want):
 				wrong.append("%s playing %d: %s" % [definition.id, k, str(screen.explain_say())])
 			if k > 0:
 				screen.mission_round.judged_run = true   # the stamp of stage k-1 just came: its say
-				if str(screen.explain_say()) != str([str(stages[k - 1].say), str(stages[k - 1].say_face)]):
+				if str(screen.explain_say()) != str(MissionRound.dialogue_line(str(stages[k - 1].say), str(stages[k - 1].say_face))):
 					wrong.append("%s cleared %d: %s" % [definition.id, k - 1, str(screen.explain_say())])
 		screen.mission_round.stamps = 0
 		await _free(screen)
@@ -351,3 +363,19 @@ func _free(screen: Control) -> void:
 	screen.get_parent().queue_free()
 	for i in 3:
 		await tree.process_frame
+
+
+## The bread cat says the child's pick first (#132): wait for his box and read it (close), so Dugi's
+## bridge comes next. Returns [speaker, text, face] of the box it closed ([] when none came).
+func _read_cat_guess(screen: Control) -> Array:
+	for i in 30:
+		await tree.process_frame
+		if not screen.cat_guess_pending():
+			return []
+		var box: DialogueBox = screen.dialogue
+		if box.active and box.speaker == "cat":
+			var seen := [box.speaker, box.text, box.face]
+			box.close()
+			await tree.process_frame
+			return seen
+	return []

@@ -21,7 +21,9 @@ const EXPERIMENT_SCREEN := "res://scripts/shell/experiment_screen.gd"
 const UI_THEME := "res://scripts/app/ui_theme.gd"
 const TABLET := Vector2(1152, 720)
 const PHONE := Vector2(1560, 720)
-const VERTS_MAX := 30000
+## (30000 until the islands grew 1.3 times on 2026-11-10/11: the buoyancy lab's world has 30270, its
+## longer coast and paths.)
+const VERTS_MAX := 31000
 ## Each lab's zone theme (the island's zones), written out here.
 const THEMES := {
 	"projectile": "meadow", "collision": "meadow", "free-fall": "meadow",
@@ -97,6 +99,24 @@ func check_lab(id: String) -> void:
 	rig.set_state(start)
 	expect.call(problems.is_empty(), "lab world (%s): every view ray below the horizon meets land, beach or sea (no island rim), default view and camera limits" % id,
 		"; ".join(problems.slice(0, 3)))
+
+	# 1b. Closer to the characters (#124): zoomed all the way in on the default view the camera is
+	# out of every model's box, and the pan reaches every character standing around the lab.
+	var close: Dictionary = start.duplicate()
+	close.distance = rig.distance_range.x
+	rig.set_state(close)
+	var close_problems := []
+	for b: AABB in rig.keep_out_boxes:
+		if b.has_point(rig.global_position):
+			close_problems.append("camera in %s" % str(b))
+	for p: Vector3 in rig.reach_points:
+		if Vector2(p.x - rig.view_target.x, p.z - rig.view_target.z).length() > rig.pan_reach():
+			close_problems.append("out of reach %s" % str(p))
+	if not rig.zoom_to_point or rig.keep_out_boxes.is_empty() or (screen.cast != null and rig.reach_points.is_empty()):
+		close_problems.append("close view off")
+	rig.set_state(start)
+	expect.call(close_problems.is_empty(), "lab world (%s): zoomed in to %.1f m the camera is out of the models and the cast is in reach" % [id, rig.distance_range.x],
+		"; ".join(close_problems.slice(0, 3)))
 
 	# 2. Flat at y = 0 where the floors and the cast are.
 	var center: Vector3 = island.get_meta("center")

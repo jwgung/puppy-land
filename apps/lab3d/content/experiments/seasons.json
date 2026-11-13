@@ -1,0 +1,133 @@
+{
+  "id": "seasons",
+  "version": 1,
+  "icon": "❄",
+  "law": {},
+  "scene": "res://experiments/seasons/seasons.gd",
+  "bench_id": "SE",
+  "camera": {
+    "target": [0.0, 4.2, -0.8],
+    "distance": 19.5,
+    "distance_range": [1.5, 30.0],
+    "yaw_range_deg": [-100.0, 100.0],
+    "pitch_range_deg": [-89.0, -2.0],
+    "pan_radius": 7.0,
+    "default_mode": "front",
+    "views": {
+      "front": { "yaw_deg": 0.0, "pitch_deg": -10.0 },
+      "three_quarter": { "yaw_deg": 24.0, "pitch_deg": -22.0 },
+      "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 26.0 },
+      "side": { "yaw_deg": 90.0, "pitch_deg": -12.0, "distance": 24.0 },
+      "follow": { "yaw_deg": 0.0, "pitch_deg": -18.0, "distance": 19.5, "target": [0.6, 6.0, 0.0] }
+    }
+  },
+  "controls": [
+    {
+      "id": "tilt",
+      "type": "choice",
+      "default": "tilted",
+      "options": [{ "id": "tilted" }, { "id": "upright" }]
+    }
+  ],
+  "actions": [
+    { "id": "reset", "style": "primary" }
+  ],
+  "key_observations": ["state", "sun", "day"],
+  "predict": {
+    "question_face": "thinking",
+    "choices": [
+      { "id": "yes", "picture": "seasons_change" },
+      { "id": "no", "picture": "seasons_same" }
+    ],
+    "answer": "no",
+    "bridge_face": "happy"
+  },
+  "missions": {
+    "judge_on": ["winter", "loop", "summer"],
+    "stages": [
+      {
+        "observe": "",
+        "judge_on": ["winter"],
+        "miss_on": ["spring", "summer", "autumn", "upright", "loop"],
+        "conditions": { "tilt": "tilted" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["loop"],
+        "miss_on": ["upright", "spring", "summer", "autumn", "winter"],
+        "conditions": { "tilt": "upright" },
+        "say_face": "explain",
+        "win_face": "surprised",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["summer"],
+        "miss_on": ["spring", "winter", "autumn", "upright", "loop"],
+        "conditions": { "tilt": "tilted" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      }
+    ]
+  },
+  "story": { "keeper_face": "worried", "clue_face": "thinking", "map_clue_face": "explain" },
+  "kid": {
+    "intro_face": "explain",
+    "intro_more": [
+      { "face": "explain" }
+    ],
+    "card": "state",
+    "say_face": "explain",
+    "picks": {
+      "tilt": [
+        { "value": "tilted", "picture": "earth_tilted" },
+        { "value": "upright", "picture": "earth_upright" }
+      ]
+    }
+  },
+  "note": {
+    "numbers": [
+      { "ids": ["state"] },
+      { "ids": ["sun"] },
+      { "ids": ["day"] }
+    ],
+    "graph": false
+  },
+  "cast": {
+    "dugi": {
+      "at": [9.6, 3.8],
+      "explain_on": ["winter", "summer", "loop"],
+      "delay_s": 0.6
+    },
+    "puppy": {
+      "at": [-10.4, -3.0]
+    },
+    "fox": { "at": [-8.6, -3.0] }
+  },
+  "observations": [
+    { "id": "state" },
+    { "id": "sun" },
+    { "id": "day" }
+  ],
+  "manipulation": {
+    "grab_radius": 72.0,
+    "objects": [
+      { "id": "earth", "surface": "path", "snap": 0.0, "height": false, "marker": false, "guide_to": "min" }
+    ]
+  },
+  "graph": {
+    "x": { "unit": "°", "max": 360.0 },
+    "y": { "unit": "°", "min_max": 90.0 },
+    "series": [
+      { "id": "noon", "color": "#ffb31a", "style": "line" },
+      { "id": "now", "color": "#ff3b3b", "style": "points" }
+    ]
+  }
+}

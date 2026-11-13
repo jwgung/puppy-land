@@ -1,0 +1,173 @@
+{
+  "title": "Where does the water go?",
+  "category": "Earth and sky",
+  "question": "If you warm up seawater, where does the water go?",
+  "steps": [
+    "Press and hold the sun over the sea with your finger.",
+    "Watch the vapor rise from the sea and become a cloud, and the cloud grow until it rains.",
+    "Use the button at the bottom left to switch between a weak sun and a strong sun."
+  ],
+  "observe": "When the sun warms the sea, water turns into vapor and rises into the sky. High up the vapor cools into tiny drops that make a cloud, and when the drops grow big they fall as rain. The stronger the sun, the more water evaporates and the more it rains.",
+  "terms": [
+    {
+      "name": "Evaporation",
+      "description": "Water warming up and rising into the air as invisible vapor."
+    },
+    {
+      "name": "Water vapor",
+      "description": "Water as a gas. You can't see it."
+    },
+    {
+      "name": "Cloud",
+      "description": "Tiny drops of water gathered high in the sky, where the vapor cooled down."
+    },
+    {
+      "name": "Rain",
+      "description": "Drops in a cloud that grew big and heavy and fall to the ground."
+    }
+  ],
+  "law": {
+    "equation": "evaporation → cloud → rain → back to the sea",
+    "title": "The water cycle",
+    "description": "When the sun warms water, it turns into vapor and rises into the sky. Up there the vapor cools into a cloud, and when the cloud's drops grow big they come down as rain. The rain flows into rivers and the sea and rises again. Water goes round and round."
+  },
+  "tip": "Press and hold the sun over the sea with one finger: the sun warms the sea. Let go and it stops; press again and it goes on. When the sun bar runs out, the day is over. Press Start over for a new day.",
+  "tip_short": "Press and hold the sun to warm the sea",
+  "controls": [
+    {
+      "label": "Sun",
+      "options": [
+        {
+          "label": "Weak sun"
+        },
+        {
+          "label": "Strong sun"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "label": "Start over"
+    }
+  ],
+  "predict": {
+    "question": "If you warm up seawater, where does the water go?",
+    "choices": [
+      { "label": "Up into the sky", "guess": "I think it'll go up into the sky!" },
+      { "label": "It stays in the sea", "guess": "I think it'll stay in the sea!" }
+    ],
+    "reason": "Warm water turns into vapor and rises into the sky. You just can't see it.",
+    "bridge": "Shine the sun and see for yourself!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Press and hold the sun to warm the sea and make one cloud!",
+        "say": "When the sun warms the sea, vapor rises. High in the sky it is cold, so the vapor turns into tiny drops. The drops gather into a cloud.",
+        "win": "A fluffy cloud!",
+        "miss": "Hold it a little longer!",
+        "miss_conditions": "Pick the weak sun!"
+      },
+      {
+        "text": "Grow the cloud until it rains!",
+        "say": "When the drops gather and grow big, they can't float in the sky any more. Then they fall as rain.",
+        "win": "Pitter-patter! Rain!",
+        "miss": "Hold it so the cloud grows!",
+        "miss_conditions": "Pick the weak sun!"
+      },
+      {
+        "text": "Switch to the strong sun and fill the pond to the top!",
+        "say": "The stronger the sun, the more water evaporates. More clouds grow and more rain falls. The water that filled the pond flows back to the sea as a stream.",
+        "win": "The pond is full! The piece floated up!",
+        "miss": "Hold it a little longer!",
+        "miss_conditions": "Pick the strong sun!"
+      }
+    ]
+  },
+  "story": {
+    "keeper": "This was the frogs' pond. No rain came, and it dried up to the bottom…",
+    "clue": "The frogs must be so thirsty… Huh? There's a piece stuck in the dry bottom!",
+    "more": [
+      {
+        "text": "If the pond fills up, I think the piece will float up."
+      }
+    ],
+    "map_clue": "By the sea, where the dry pond is!"
+  },
+  "kid": {
+    "intro": "This is the water journey lab. When the sun warms water, it turns into invisible vapor and rises into the sky. This is called **evaporation**.",
+    "intro_more": [
+      {
+        "text": "Up in the sky the vapor cools into clouds, and it comes back down to the ground as rain. Water goes round and round like this."
+      }
+    ],
+    "title": "Press the sun and warm the sea!",
+    "place": "Water journey",
+    "say": "When the sun warms the sea, water turns into vapor and rises. Up high it cools into a cloud, and when the cloud grows big it rains.",
+    "tip": "Press and hold the sun to warm the sea.",
+    "cards": {
+      "state": "Water journey",
+      "pond": "Pond",
+      "day": "Day"
+    },
+    "picks": {
+      "sun": [
+        {
+          "label": "Weak sun"
+        },
+        {
+          "label": "Strong sun"
+        }
+      ]
+    }
+  },
+  "note": {
+    "law": "When the sun warms water, it rises as vapor, cools into a cloud up high, and comes back down as rain. The stronger the sun, the more evaporates.",
+    "learn": "The Sun warms water into vapour that rises, cools into clouds high up and comes back down as rain. The water never disappears; it keeps going round.",
+    "talk": ["Why does washing dry faster in the sun?", "Where does a puddle go after the rain?"],
+    "formula": "evaporation → cloud → rain",
+    "numbers": [
+      {
+        "label": "Water journey"
+      },
+      {
+        "label": "Pond"
+      },
+      {
+        "label": "Day"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "label": "Water journey"
+    },
+    {
+      "label": "Pond"
+    },
+    {
+      "label": "Day"
+    }
+  ],
+  "graph": {
+    "title": "Sunshine and the pond's water",
+    "x": {
+      "label": "Time in the sun"
+    },
+    "y": {
+      "label": "Water in the pond (full = 100)"
+    },
+    "series": [
+      {
+        "label": "Weak sun"
+      },
+      {
+        "label": "Strong sun"
+      },
+      {
+        "label": "Now"
+      }
+    ]
+  }
+}

@@ -86,7 +86,7 @@ func check_key_card_words() -> void:
 	expect.call(wrong.is_empty() and ExperimentScreen.card_text(spring, stretch, -0.31) == "눌려서 0.3미터"
 		and ExperimentScreen.card_text({}, {"unit": "m", "id": "x"}, null, true) == "? 미터"
 		and ExperimentScreen.card_text({}, {"unit": "m/s", "id": "x"}, null, true) == "1초에 ? 미터"
-		and ExperimentScreen.card_text(friction, state, "버티는 중 · 마찰이 막고 있어요") == "꼼짝 안 해요"
+		and ExperimentScreen.card_text(friction, state, "버티는 중 · 마찰이 막고 있어") == "꼼짝 안 해"
 		and ExperimentScreen.card_text(friction, state, "새 상태") == "새 상태"
 		and not spring.key_observations.has("total"),
 		"key card words: 12.3미터, 1.3초, 1초에 12.5미터, 31.0도, 4줄, 눌려서 0.3미터, ? 미터, a status in kid words; spring's 에너지 합 only in 자세히",
@@ -161,7 +161,7 @@ static func range_definition() -> Dictionary:
 const JARGON := ["가속도", "탈출", "반지름", "질량", "구속", "주기", "계수", "임계", "운동량", "마찰력", "부력",
 	"토크", "역학", "속력", "탄성", "밀도", "공식", "궤도", "v₀", "μ", "√", "=", "÷", "×", "m/s", " N", "kg"]
 
-## The force names Dugi teaches in a child's words ("이 힘을 마찰력이라고 해요", 2026-10-31 user: "용어를
+## The force names Dugi teaches in a child's words ("이 힘을 마찰력이라고 해", 2026-10-31 user: "용어를
 ## 알려는 줘야지"): in his introduction (kid.intro), his explanations (kid.say, the stages' say) and the
 ## prediction's reason (2026-11-01 user: "어떤 힘이 이런 일을 일으키는지"); the rest stays plain.
 const TAUGHT_TERMS := ["마찰력", "부력", "탄성"]
@@ -259,7 +259,7 @@ func check_registry_validation() -> void:
 		["one choice", func(d: Dictionary) -> void: d.predict.choices = [d.predict.choices[0]], "two choices"],
 		["a kid key", func(d: Dictionary) -> void: d.kid["color"] = "빨강", "kid.color"],
 		["an empty kid text", func(d: Dictionary) -> void: d.kid.say = "", "kid.say"],
-		["a kid card", func(d: Dictionary) -> void: d.kid.cards = {"nope": "없어요"}, "kid.cards"],
+		["a kid card", func(d: Dictionary) -> void: d.kid.cards = {"nope": "없어"}, "kid.cards"],
 		["a hidden line", func(d: Dictionary) -> void: d.missions.hidden_series_until_end = ["nope"], "hidden_series_until_end"],
 	]
 	for case in bad:
@@ -315,7 +315,7 @@ func check_mission_round() -> void:
 	expect.call(mission.stage() == 0 and awarded.is_empty(), "a throw in flight is not judged", str(awarded))
 	mission.on_run_ended("landed", labs.settled, {"range": 2.9})
 	expect.call(mission.stage() == 0 and awarded.is_empty(), "a throw that falls short (2.9 m < 3 m) changes nothing", str(awarded))
-	mission.on_run_ended("landed", labs.settled, {"range": "닿지 않아요"})
+	mission.on_run_ended("landed", labs.settled, {"range": "닿지 않아"})
 	expect.call(mission.stage() == 0 and awarded.is_empty(), "a run with no number is not judged", str(awarded))
 	mission.on_run_ended("out", labs.settled, {"range": 9.0})
 	expect.call(mission.stage() == 0 and awarded.is_empty(), "a flight out of the island is not a stage clear", str(awarded))
@@ -411,7 +411,7 @@ func _check_judge_kinds() -> void:
 	var third := state.on_run_ended("moving", lab, {})
 	expect.call(not first and second and not third and state.stamps == 1,
 		"round: a state goal clears on its judge_on status with its conditions (no observe)", "%s %s %s" % [first, second, third])
-	expect.call(MissionRound.result_in(ExperimentRegistry.find("constraints"), "swinging", {"rope_half_swing": "한 번 왕복하면 보여요"}) == false
+	expect.call(MissionRound.result_in(ExperimentRegistry.find("constraints"), "swinging", {"rope_half_swing": "한 번 왕복하면 보여"}) == false
 		and MissionRound.result_in(ExperimentRegistry.find("constraints"), "swinging", {"rope_half_swing": 2.9})
 		and MissionRound.result_in(ExperimentRegistry.find("projectile"), "fence", {"range": 9.0})
 		and not MissionRound.result_in(ExperimentRegistry.find("projectile"), "flying", {"range": 9.0}),

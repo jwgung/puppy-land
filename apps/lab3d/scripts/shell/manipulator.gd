@@ -82,8 +82,9 @@ const DEMO_HOLDS := [2.0, 3.5]   # s the demo holds a hold object (alternating; 
 var view: View3D
 var experiment: Experiment
 ## id -> {"surface": String, "snap": float, "height_max": float, "height_step": float, "drag": bool,
-## "hold": bool} (height_max 0 = no height handle; drag false = a finger never picks it up; hold = a
-## press holds it, nothing is dragged).
+## "hold": bool, "guide": String, "guide_to": String, "marker": bool} (height_max 0 = no height handle;
+## drag false = a finger never picks it up; hold = a press holds it, nothing is dragged; marker false
+## = no footprint marker while dragged, default true).
 var rules: Dictionary = {}
 ## The definition's manipulation.grab_radius (UI units around an object's centre a press picks it).
 var grab_radius := PICK_RADIUS
@@ -613,6 +614,8 @@ func _update_target(announce := true) -> void:
 		var juice := experiment.manipulation_juice(active_id)
 		if juice:
 			juice.wobble()
+	if not rules[active_id].get("marker", true):
+		return   # (#74: the globe's knob turns the Earth; no footprint to show)
 	var markers: Array = _marker_pair(active_id)
 	var marker_xf := _surface.pose(t, MARKER_LIFT)
 	markers[0].global_transform = marker_xf
@@ -864,7 +867,7 @@ const GUIDE_REACH := 0.6
 ## The gesture the hand guide (HandGuide) shows for this lab, read only (nothing is pressed or moved):
 ## {"kind": "pull" | "hold" | "tap" | "drag", "id", "from": world point the finger presses now (guide_point),
 ## "to": world point the drag or the pull ends at}, or {} when the lab has no object a finger takes now.
-## The object is the slingshot's, else the first one a finger may pick up. A pull ends where the demo's
+## The object is the slingshot's, else the first one a finger may pick up now. A pull ends where the demo's
 ## pull (slingshot_demo) lands on the slingshot's surface, so it stays the throw's direction when the
 ## camera turns. The rule says what the lab really takes (2026-11-03 playtest: the hand showed a drag
 ## where a touch lets the box go, and the spring's pull the wrong way): `"guide": "tap"` shows a tap
@@ -873,7 +876,9 @@ const GUIDE_REACH := 0.6
 func guide() -> Dictionary:
 	var id := slingshot_id if slingshot_id != "" and rules.has(slingshot_id) else ""
 	if id == "":
-		var draggable := draggable_ids()
+		# The first object a finger may take now: a lab may offer some objects only in some stages and
+		# has no body for the others then (#92 one object per stage, #96).
+		var draggable := draggable_ids().filter(func(d: String) -> bool: return experiment.manipulation_body(d) != null)
 		if draggable.is_empty():
 			return {}
 		id = draggable[0]

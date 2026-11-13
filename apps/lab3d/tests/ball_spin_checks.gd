@@ -801,7 +801,7 @@ func check_frictionless_slide() -> void:
 ##   the panel stays at the fence time, "울타리에 맞음", the ball on the island;
 ##   2 deg: the face at t1, then the friction impulse leaves it rising; it clears the other fence's
 ##   top and leaves the island: "섬 밖으로 날아감";
-##   15 deg: over the right fence (no contact): "무중력: 곧게 날아가요", then off the island.
+##   15 deg: over the right fence (no contact): "무중력: 곧게 날아가", then off the island.
 ## The engine ball never reaches into a board.
 func check_zero_gravity_fences() -> void:
 	var lab: Experiment = await _lab("projectile")

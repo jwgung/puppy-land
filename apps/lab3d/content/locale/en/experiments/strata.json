@@ -1,0 +1,82 @@
+{
+  "title": "How do rock layers pile up?",
+  "category": "Land and rocks",
+  "question": "Which layer of the strata is the oldest?",
+  "steps": [
+    "Drag a bucket with your finger and let go over the water tank: it pours.",
+    "Watch where the first pour ends up in the tank's layers.",
+    "You can drag the shell into the tank too."
+  ],
+  "observe": "Gravel, sand and mud poured into water sink and settle on top of what is already there. So the first pour becomes the bottom layer, and the lower a layer is, the older it is.",
+  "terms": [
+    { "name": "Strata", "description": "Striped layers of gravel, sand, mud and more that sank in water and piled up, one after another." },
+    { "name": "Fossil", "description": "The body or the trace of a living thing from long ago, buried while the layers piled up." },
+    { "name": "Volcanic ash", "description": "Grey dust blown out when a volcano erupts. When it piles up, it makes a grey layer." }
+  ],
+  "law": {
+    "equation": "first layer laid down = bottom layer",
+    "title": "The order of the strata",
+    "description": "Strata pile up from the bottom. So the bottom layer was laid down longest ago, and the higher ones came later. Fossils and volcanic ash in the layers tell us what happened back then."
+  },
+  "tip": "Drag a bucket with one finger and let go over the tank: it pours. Let go anywhere else and it goes back. In the cliff mission, pour in the same order as the cliff's stripes.",
+  "tip_short": "Drag a bucket into the tank",
+  "actions": [{ "label": "Start over" }],
+  "predict": {
+    "question": "Which layer of the strata is the oldest?",
+    "choices": [{ "label": "The bottom layer", "guess": "I think it's the bottom layer!" }, { "label": "The top layer", "guess": "I think it's the top layer!" }],
+    "reason": "Layers pile up from the bottom. So the bottom layer was laid down longest ago.",
+    "bridge": "Pile them up and see for yourself!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Pour gravel, sand and mud into the tank in order and make striped layers!",
+        "say": "The gravel you pour first ends up at the bottom. The sand goes on top of it, and the mud on top of all.",
+        "win": "Striped layers!",
+        "miss": "Start with the gravel, in order!"
+      },
+      {
+        "text": "Put in the shell so the fossil ends up in the middle layer!",
+        "say": "A living thing buried while the layers pile up becomes a **fossil**. A layer with fossils tells us what lived back then.",
+        "win": "The shell fossil is in!",
+        "miss": "Put the shell in after the gravel!"
+      },
+      {
+        "text": "Pile gravel, sand, grey ash and mud in order, just like the cliff!",
+        "say": "The grey layer is ash that flew out when a volcano erupted long ago. It is called **volcanic ash**. Layers under the ash were laid down before the volcano erupted.",
+        "win": "The piece! A volcano erupted long ago?",
+        "miss": "Look at the cliff's stripes and pour in order!"
+      }
+    ]
+  },
+  "story": {
+    "keeper": "This is the striped cliff. The shaking that night made one side of it fall down…",
+    "clue": "I can see a piece in the crack! But there are so many stripes, I can't tell which one.",
+    "map_clue": "In the valley, where the striped cliff is!"
+  },
+  "kid": {
+    "intro": "This is the strata lab. When gravel, sand and mud sink in water one after another, they make striped layers. These are called **strata**.",
+    "intro_more": [
+      { "text": "The first layer laid down is at the bottom. So the lower a layer is, the older it is. Pile them up in the tank, then read the cliff." }
+    ],
+    "title": "Pile up layers in the tank and read the cliff!",
+    "place": "Strata",
+    "say": "The first layer laid down is at the bottom. So the lower a layer is, the older it is.",
+    "tip": "Drag a bucket onto the tank to pour it.",
+    "cards": { "state": "Now", "bottom": "Bottom layer", "top": "Top layer" }
+  },
+  "note": {
+    "law": "Strata pile up from the bottom. So the bottom layer, laid down first, is the oldest.",
+    "learn": "Layers of rock pile up from the bottom, so the lowest layer is the oldest. Fossils in a layer tell us what lived at that time.",
+    "talk": ["In a pile of papers on a desk, where is the one put down first?", "If shell fossils are found on a mountain, what was that place like long ago?"],
+    "formula": "first layer laid down = bottom layer",
+    "numbers": [{ "label": "Now" }, { "label": "Bottom layer" }, { "label": "Top layer" }]
+  },
+  "observations": [{ "label": "Now" }, { "label": "Bottom layer" }, { "label": "Top layer" }],
+  "graph": {
+    "title": "Pouring order and the layer's place",
+    "x": { "label": "Layer from the bottom" },
+    "y": { "label": "Poured as number" },
+    "series": [{ "label": "Layer" }]
+  }
+}

@@ -1,6 +1,9 @@
 ## Loads experiment content from content/experiments/index.json and validates each definition
-## against the shell's interface. index.json `experiments` are listed on the list screen; `hidden`
-## ones (development scenes) are only opened by id (--experiment=<id>).
+## against the shell's interface. index.json `experiments` are the first island's labs (load_all:
+## the mechanics island's spots, in the list's order); `islands` maps a later island to its labs
+## (#74: {"hutton": ["day-night.json", ...]}, island_labs()), kept apart so the first island's list
+## stays its own; `hidden` ones (development scenes) are only opened by id (--experiment=<id>).
+## find() knows them all (Island.playable: a spot opens when it is an experiment).
 ## Each experiment file holds its definition's data; its words (title, question, steps, observe, terms,
 ## law, tip, tip_short, labels, the kid and mission lines) are in the same shape in
 ## content/locale/<lang>/experiments/<file> and are put back in when it loads (Locale.overlay,
@@ -21,6 +24,9 @@ const KEY_OBSERVATIONS_MAX := 3
 
 static var _cache: Array[Dictionary] = []
 static var _hidden: Array[Dictionary] = []
+## The later islands' labs (index.json `islands`), every island's in one list, and island id -> ids.
+static var _island: Array[Dictionary] = []
+static var _island_ids: Dictionary = {}
 static var _loaded := false
 
 
@@ -31,8 +37,11 @@ static func load_all() -> Array[Dictionary]:
 		return _cache
 	var result: Array[Dictionary] = []
 	var hidden: Array[Dictionary] = []
+	var island: Array[Dictionary] = []
 	_cache = result
 	_hidden = hidden
+	_island = island
+	_island_ids = {}
 	_loaded = true
 	var index: Variant = _read_json(INDEX_PATH)
 	if not index is Dictionary:
@@ -40,7 +49,33 @@ static func load_all() -> Array[Dictionary]:
 		return result
 	_load_files(index.get("experiments", []), result)
 	_load_files(index.get("hidden", []), hidden)
+	var islands: Variant = index.get("islands", {})
+	for island_id: Variant in (islands as Dictionary if islands is Dictionary else {}):
+		var own: Array[Dictionary] = []
+		_load_files(islands[island_id] if islands[island_id] is Array else [], own)
+		island.append_array(own)
+		_island_ids[str(island_id)] = own.map(func(d: Dictionary) -> String: return str(d.id))
 	return result
+
+
+## The labs of a later island (index.json `islands`), in its list's order ([] for the first island,
+## whose labs are load_all()).
+static func island_labs(island_id: String) -> Array[Dictionary]:
+	load_all()
+	var out: Array[Dictionary] = []
+	for id: String in _island_ids.get(island_id, []):
+		out.append(find(id))
+	return out
+
+
+## The later island that lists `id` (index.json `islands`), "" for the first island's labs and an
+## unknown id (PieceArt: the piece the lab gives).
+static func island_of(id: String) -> String:
+	load_all()
+	for island_id: String in _island_ids:
+		if id in (_island_ids[island_id] as Array):
+			return island_id
+	return ""
 
 
 ## The definitions are read again on the next load_all (Locale.set_language: their words changed).
@@ -48,13 +83,15 @@ static func load_all() -> Array[Dictionary]:
 static func forget_loaded() -> void:
 	_cache = []
 	_hidden = []
+	_island = []
+	_island_ids = {}
 	_loaded = false
 
 
 ## The loaded definition with this id, listed or hidden ({} if there is none).
 static func find(id: String) -> Dictionary:
 	load_all()
-	for definition in _cache + _hidden:
+	for definition in _cache + _hidden + _island:
 		if definition.id == id:
 			return definition
 	return {}
@@ -149,6 +186,8 @@ static func validate(definition: Dictionary) -> PackedStringArray:
 ## full texts and the formula labels):
 ##   "kid": {"title": <the title bar>, "place": <the map's spot name>, "say": <Dugi's dialogue>, "say_face": <its face>,
 ##           "intro": <Dugi's introduction of the lab before his question>, "intro_face": <its face>,
+##           "intro_more": [<more lines of it: {"text", "face"?, "picture"?}> (#74)],
+##           "say_picture", "intro_picture": <their explanation pictures, ExplainPictures.KINDS (#73)>,
 ##           "tip": <the short gesture hint>, "card": <the one key observation shown as a card>,
 ##           "cards": {<observation id>: <its key card's caption>},
 ##           "states": {<a status text of the lab>: <its key card words>},
@@ -188,8 +227,12 @@ static func _validate_kid(kid: Variant, ids: Array) -> PackedStringArray:
 		elif key == "say_face" or key == "intro_face":
 			if not kid[key] in Story.FACES:
 				problems.append("kid.%s must be one of Story.FACES" % key)
+		elif key == "say_picture" or key == "intro_picture":
+			problems.append_array(ExplainPictures.check(kid, key, "kid." + key))
 		elif key == "picks":
 			pass   # ConditionPicks.validate (it needs the controls and the missions)
+		elif key == "intro_more":
+			problems.append_array(_validate_intro_more(kid.intro_more))
 		elif key == "bars":
 			var bars: Variant = kid.bars
 			if not (bars is Dictionary and bars.keys().all(func(id: Variant) -> bool: return id in ids)
@@ -202,10 +245,31 @@ static func _validate_kid(kid: Variant, ids: Array) -> PackedStringArray:
 	return problems
 
 
+## kid.intro_more (#74): Dugi's introduction goes on in more lines, each {"text", "face"?, "picture"?}
+## (MissionRound.intro_lines; the picture an ExplainPictures kind, the face one of Story.FACES).
+static func _validate_intro_more(lines: Variant) -> PackedStringArray:
+	var problems := PackedStringArray()
+	if not (lines is Array and not lines.is_empty()):
+		problems.append("kid.intro_more must list lines")
+		return problems
+	for i in lines.size():
+		var line: Variant = lines[i]
+		if not (line is Dictionary and line.get("text") is String and line.text != ""):
+			problems.append("kid.intro_more[%d] needs a text" % i)
+			continue
+		if line.has("face") and not line.face in Story.FACES:
+			problems.append("kid.intro_more[%d].face must be one of Story.FACES" % i)
+		problems.append_array(ExplainPictures.check(line, "picture", "kid.intro_more[%d].picture" % i))
+	return problems
+
+
 ## The story's words for this lab (`story`, optional, 2026-10-28 "별 조각 찾기"): {"clue": <Puppy's
 ## clue, told once on the first visit before Dugi's question>, "map_clue": <Puppy's riddle on the
-## night map while this spot is the next to find>, "clue_face"?, "map_clue_face"?: <Story.FACES>}
-## (Story.clue, Story.map_clue, their portraits' faces).
+## night map while this spot is the next to find>, "keeper": <the island keeper's line before the
+## clue on the first visit (#74, Story.KEEPER)>, "keeper_reply": <the keeper's answer after the clue
+## (#86)>, "more": [<more lines after the clue (#98): {"speaker", "text", "face"?}>], "clue_face"?,
+## "map_clue_face"?, "keeper_face"?, "keeper_reply_face"?: <Story.FACES>} (Story.clue, Story.map_clue,
+## Story.keeper, Story.keeper_reply, Story.more, their portraits' faces).
 static func _validate_story(story: Variant) -> PackedStringArray:
 	var problems := PackedStringArray()
 	if story == null:
@@ -214,13 +278,33 @@ static func _validate_story(story: Variant) -> PackedStringArray:
 		problems.append("story must be an object")
 		return problems
 	for key in story:
-		if key in ["clue_face", "map_clue_face"]:
+		if key == "more":
+			problems.append_array(_validate_story_more(story.more))
+		elif key in ["clue_face", "map_clue_face", "keeper_face", "keeper_reply_face"]:
 			if not story[key] in Story.FACES:
 				problems.append("story.%s must be one of Story.FACES" % key)
-		elif not key in ["clue", "map_clue"]:
-			problems.append("story.%s unknown (clue, map_clue, clue_face, map_clue_face)" % key)
+		elif not key in ["clue", "map_clue", "keeper", "keeper_reply"]:
+			problems.append("story.%s unknown (clue, map_clue, keeper, keeper_reply, more and their _face)" % key)
 		elif not (story[key] is String and story[key] != ""):
 			problems.append("story.%s must be a text" % key)
+	return problems
+
+
+## story.more (#98): more first-visit lines after the clue, each {"speaker": <Story.SPEAKERS>, "text",
+## "face"?: <Story.FACES>}.
+static func _validate_story_more(lines: Variant) -> PackedStringArray:
+	var problems := PackedStringArray()
+	if not lines is Array:
+		problems.append("story.more must list lines")
+		return problems
+	for i in lines.size():
+		var line: Variant = lines[i]
+		if not line is Dictionary or not (line.get("text") is String and line.text != ""):
+			problems.append("story.more[%d] needs a text" % i)
+		elif not Story.SPEAKERS.has(str(line.get("speaker", ""))):
+			problems.append("story.more[%d].speaker must be one of Story.SPEAKERS" % i)
+		elif line.has("face") and not line.face in Story.FACES:
+			problems.append("story.more[%d].face must be one of Story.FACES" % i)
 	return problems
 
 
@@ -305,6 +389,8 @@ static func card_label(definition: Dictionary, id: String) -> String:
 ## takes the shared law and the key observations (note()).
 const NOTE_NUMBERS_MIN := 3
 const NOTE_NUMBERS_MAX := 4
+const NOTE_TALK_MIN := 1
+const NOTE_TALK_MAX := 2
 
 
 static func _validate_note(note: Variant, observations: Array) -> PackedStringArray:
@@ -315,11 +401,16 @@ static func _validate_note(note: Variant, observations: Array) -> PackedStringAr
 		problems.append("note must be an object")
 		return problems
 	for key in note:
-		if not key in ["law", "formula", "numbers", "graph"]:
-			problems.append("note.%s unknown (law, formula, numbers, graph)" % key)
-	for key in ["law", "formula"]:
+		if not key in ["law", "formula", "numbers", "graph", "learn", "talk"]:
+			problems.append("note.%s unknown (law, formula, numbers, graph, learn, talk)" % key)
+	for key in ["law", "formula", "learn"]:
 		if not (note.get(key) is String and note.get(key) != ""):
 			problems.append("note.%s must be a text" % key)
+	# 아이와 이야기해 보기 (#126): NOTE_TALK_MIN-NOTE_TALK_MAX questions a guardian can read out.
+	var talk: Variant = note.get("talk")
+	if not (talk is Array and talk.size() >= NOTE_TALK_MIN and talk.size() <= NOTE_TALK_MAX
+			and talk.all(func(t: Variant) -> bool: return t is String and t != "")):
+		problems.append("note.talk must list %d-%d questions" % [NOTE_TALK_MIN, NOTE_TALK_MAX])
 	if not note.get("graph", true) is bool:
 		problems.append("note.graph must be true or false")
 	var ids := observations.map(func(o: Dictionary) -> Variant: return o.get("id"))
@@ -356,7 +447,7 @@ static func note(definition: Dictionary) -> Dictionary:
 
 
 ## `cast` (Task 4h, optional): {"dugi": {"at": [x, z], "explain_on": [status...], "delay_s"?},
-## "puppy": {"at": [x, z]}} (IslandCast).
+## "puppy": {"at": [x, z]}, "fox": {"at": [x, z]}} (IslandCast; the fox: the hutton island's keeper).
 static func _validate_cast(cast: Variant) -> PackedStringArray:
 	var problems := PackedStringArray()
 	if cast == null:
@@ -366,7 +457,7 @@ static func _validate_cast(cast: Variant) -> PackedStringArray:
 		return problems
 	for who in cast:
 		var spec: Variant = cast[who]
-		if who not in ["dugi", "puppy"] or not spec is Dictionary:
+		if who not in ["dugi", "puppy", "fox"] or not spec is Dictionary:
 			problems.append("cast.%s unknown" % who)
 			continue
 		var at: Variant = spec.get("at")
@@ -402,7 +493,8 @@ static func _validate_key_observations(keys: Variant, observations: Array) -> Pa
 ## Optional `manipulation` (Task 2b): {"objects": [{"id", "surface", "snap" (m, optional),
 ## "height": false | {"max" (m, > 0, a multiple of step), "step" (m, optional)}} or a hold object
 ## {"id", "hold": true} (2026-10-28: press and hold, no surface); optional "guide": "drag" | "tap" and
-## "guide_to": "min" | "max" (the hand guide's gesture and drag end, Manipulator.guide)],
+## "guide_to": "min" | "max" (the hand guide's gesture and drag end, Manipulator.guide); optional
+## "marker": false (#74: no footprint marker while dragged: a knob that turns something, not a place)],
 ## "demo_action" (optional, an action id: what the --auto-drag demo does after putting an object down)}.
 static func _validate_manipulation(manipulation: Variant, actions: Array = []) -> PackedStringArray:
 	var problems := PackedStringArray()
@@ -440,6 +532,8 @@ static func _validate_manipulation(manipulation: Variant, actions: Array = []) -
 			problems.append("manipulation %s.height must be false or {max, step}" % object.id)
 		if not object.get("drag", true) is bool:
 			problems.append("manipulation %s.drag must be true or false" % object.id)
+		if not object.get("marker", true) is bool:
+			problems.append("manipulation %s.marker must be true or false" % object.id)
 		if not object.get("guide", "drag") in ["drag", "tap"]:
 			problems.append("manipulation %s.guide must be \"drag\" or \"tap\"" % object.id)
 		if not object.get("guide_to", "min") in ["min", "max"]:

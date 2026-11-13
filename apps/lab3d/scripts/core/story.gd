@@ -4,28 +4,42 @@
 ## the lookout (전망대) on the map and, all 11 there, the star goes back to the sky.
 ##
 ## Roles (fixed): 퍼피 the detective finds clues (what, where), 두기두기 the scientist gives the reason
-## (why), the bread cat acts and never speaks. The story is pictures and words only: it never sets a
+## (why), the bread cat, the hero, acts and says how he feels and what he will do: never a clue or a
+## reason (#132, 2026-11-12 user: "빵고양이가 주인공인데... 말은 해야지"; before, he never spoke). The story is pictures and words only: it never sets a
 ## control, runs an action or reads a body (the labs' physics, missions, controls and numbers are
 ## the same with or without it).
 ##
-## This is the story's data and saved state: the words (content/story.json with its words in
-## content/locale/<lang>/story.json, each lab's story.clue),
+## This is the story's data and saved state: the words (the island's content/story/<island>.json with
+## its words in content/locale/<lang>/story/<island>.json, each lab's story.clue),
 ## the marks in the ProgressStore (prologue / finale played, clue told, piece flown) and whether the
 ## story runs at all (`enabled`: App turns it on for the child's app, never for a measurement or a
 ## test that does not ask for it). The map's StoryDirector and the lab screen play it.
 class_name Story
 extends RefCounted
 
-const CONTENT_PATH := "res://content/story.json"
+## The island's story (#69): content/story/<island>.json, its words content/locale/<lang>/story/<island>.json.
+const CONTENT_ROOT := "res://content/story"
 ## Who speaks: [the name tag's Locale key, portrait path pattern (%s = the face)] (DialogueBox.set_speaker).
 const SPEAKERS := {
+	"cat": ["speaker.cat", "res://assets/characters/portraits/cat_%s.webp"],   # the bread cat (#132)
 	"dugi": ["speaker.dugi", "res://assets/characters/portraits/dugi_%s.webp"],
 	"puppy": ["speaker.puppy", "res://assets/characters/portraits/puppy_%s.webp"],
+	# The second island's keeper (#71, 2026-11-06 look chosen by the user), named 여우친구 / "Fox Friend"
+	# by the user on 2026-11-06 (its tag: ui.json speaker.fox).
+	"fox": ["speaker.fox", "res://assets/characters/portraits/fox_%s.webp"],
+	# The same fox before it says who it is (the voyage's landing, #118: its tag 여우친구 there, 섬지기
+	# once it told the trio it keeps the island).
+	"fox_stranger": ["speaker.fox_stranger", "res://assets/characters/portraits/fox_%s.webp"],
 }
+## The island keeper who speaks a spot's first line on Hutton Island (#74: story.keeper, before Puppy's
+## clue). Its name tag is the speaker's (ui.json speaker.fox), never written here.
+const KEEPER := "fox"
 ## The portraits' expressions (2026-10-29 user request "대화시 표정을 좀 더 다양하게"), one picture per
 ## speaker and face (art_src/characters/*_portrait.py). Each line of the content may name its face
 ## (`face`, `say_face`, `clue_face`, `map_clue_face`, `question_face`, `map_wrong_face`); an untagged
-## line shows DEFAULT_FACE. explain = Dugi's pointing stick / Puppy's raised paw (telling).
+## line shows DEFAULT_FACE. Dugi's lines may also carry an explanation picture next to the
+## face (`picture`, `say_picture`, `intro_picture`, `reason_picture`, `bridge_picture`:
+## ExplainPictures). explain = Dugi's pointing stick / Puppy's raised paw (telling).
 const FACES := ["explain", "happy", "surprised", "thinking", "worried"]
 const DEFAULT_FACE := "explain"
 ## Dugi's face for the prediction's reason (told after the first run): a right guess is a happy
@@ -39,12 +53,9 @@ static func face_or_default(face: Variant) -> String:
 
 
 ## The portrait of `who` with `face` (an unknown face: the default).
-## Puppy's portraits show his flag's word: the English ones are in portraits/en (2026-11-02).
+## The speaker's portrait for a face: one set for every language (#128: Puppy's flag has no word).
 static func portrait_path(who: String, face: String) -> String:
-	var path := str(SPEAKERS[who][1]) % face_or_default(face)
-	if who == "puppy" and Locale.lang == "en":
-		path = path.get_base_dir().path_join("en").path_join(path.get_file())
-	return path
+	return str(SPEAKERS[who][1]) % face_or_default(face)
 
 ## The story plays (App: the child's app; off for measurements, screenshots without --demo-story
 ## and tests that build screens directly).
@@ -53,11 +64,113 @@ static var enabled := false
 ## `enabled` itself).
 static var app_may_enable := true
 static var _content: Dictionary = {}
+## The island whose story `_content` is.
+static var _content_island := ""
 
 
-## The story's pages: "prologue" or "finale" -> [{who, face, text}, ...] (face optional).
+## The story's pages: "prologue", "finale" or "voyage" -> [{who, face, text, picture, shot}, ...]
+## (face optional; picture optional: an ExplainPictures kind on one of Dugi's pages, #73; shot: a
+## voyage page's camera, VOYAGE_SHOTS).
 static func pages(part: String) -> Array:
 	return _load().get(part, [])
+
+
+## The pages of `island`'s story (the island in use: pages(); another: its file read now).
+static func pages_of(island: String, part: String) -> Array:
+	if island == Island.current_id():
+		return pages(part)
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(content_path(island))) if FileAccess.file_exists(content_path(island)) else null
+	parsed = Locale.overlay(parsed, Locale.words("story/%s.json" % island)) if parsed is Dictionary else null
+	return parsed.get(part, []) if parsed is Dictionary else []
+
+
+# --- the voyage to the next island (#75, 2026-11-06 user-approved: a short 3D scene on a boat) -----
+# An island's story file may hold a "voyage": the trip by boat from the island before it, played once
+# (VoyageScreen) before this island's own prologue on its map; 이야기 다시 보기 on this island plays it
+# again (then the prologue). Since #118 (2026-11-11 user: "다음 배로 넘어가는건 지도에서 다음 허턴섬이
+# 해금되고, 이동할때 가는걸로"): after the island before's finale the trio stay there (Puppy says a new
+# island opened, ← 돌아가기 nudges), 섬 고르기 shows the new island's unlock once (unlock_shown) and its
+# first 출발! plays the voyage instead of the map's sail. The picker (TitleScreen.picks_island) shows
+# once a voyage is due or was seen.
+
+## A voyage page's camera and the boat's place on the way (VoyageScreen).
+const VOYAGE_SHOTS := ["depart", "sea", "flicker", "arrive"]
+
+
+## The island `island` has a voyage to it (its story's voyage pages).
+static func has_voyage(island: String) -> bool:
+	return not pages_of(island, "voyage").is_empty()
+
+
+static func voyage_seen(island: String) -> bool:
+	return ProgressStore.mark(ProgressStore.STORY, ProgressStore.island_key(island, "voyage"))
+
+
+static func mark_voyage_seen(island: String) -> void:
+	ProgressStore.set_mark(ProgressStore.STORY, ProgressStore.island_key(island, "voyage"), true)
+
+
+## The island whose voyage is still to come ("" for none): the island after the one in use, once it is
+## open (Island.is_open) and the finale of the one in use was seen, while its voyage was never played
+## (#118: 섬 고르기 then shows, its first 출발! plays the voyage). `finale_done`: the finale counts as
+## seen (its words after the sky, before it is marked at its end).
+static func voyage_due(progress: Dictionary, finale_done := false) -> String:
+	if not enabled or not (finale_seen() or finale_done):
+		return ""
+	var from := Island.current_id()
+	for id in Island.ids():
+		if Island.opens_after(id) == from and Island.is_open(id, progress) and not voyage_seen(id) and has_voyage(id):
+			return id
+	return ""
+
+
+## The unlock of `island` on 섬 고르기 played (#118: once; ProgressStore STORY island_key(island, "unlock")).
+static func unlock_shown(island: String) -> bool:
+	return ProgressStore.mark(ProgressStore.STORY, ProgressStore.island_key(island, "unlock"))
+
+
+static func mark_unlock_shown(island: String) -> void:
+	ProgressStore.set_mark(ProgressStore.STORY, ProgressStore.island_key(island, "unlock"), true)
+
+
+## Some voyage was played: the title's 시작하기 opens 섬 고르기 (#75; TitleScreen.picks_island).
+static func any_voyage_seen() -> bool:
+	return Island.ids().any(func(id: String) -> bool: return voyage_seen(id))
+
+
+## The explanation picture a story page shows: its `picture` on Dugi's page, "" on anyone else's
+## (Puppy and the island keepers never explain science; Story.validate rejects such a page too).
+static func page_picture(entry: Dictionary) -> String:
+	return ExplainPictures.picture_or_none(entry.get("picture")) if str(entry.get("who", "dugi")) == "dugi" else ""
+
+
+## The problems of a story file's pages (`content`: the island's story, Story pages): every `who`
+## a speaker, every `face` one of FACES, every `picture` one of ExplainPictures.KINDS and only on
+## Dugi's pages (Puppy and the island keepers never explain science). Empty = valid.
+static func validate(content: Dictionary) -> PackedStringArray:
+	var problems := PackedStringArray()
+	for part in ["prologue", "finale", "finale_after", "voyage"]:
+		var entries: Variant = content.get(part, [])
+		if not entries is Array:
+			problems.append("%s must list pages" % part)
+			continue
+		for i in entries.size():
+			var entry: Variant = entries[i]
+			if not entry is Dictionary:
+				problems.append("%s[%d] must be an object" % [part, i])
+				continue
+			var who := str(entry.get("who", "dugi"))
+			if not SPEAKERS.has(who):
+				problems.append("%s[%d].who must be one of Story.SPEAKERS" % [part, i])
+			if entry.has("face") and not entry.face in FACES:
+				problems.append("%s[%d].face must be one of Story.FACES" % [part, i])
+			if part == "voyage" and not entry.get("shot") in VOYAGE_SHOTS:
+				problems.append("%s[%d].shot must be one of Story.VOYAGE_SHOTS" % [part, i])
+			var bad := ExplainPictures.check(entry, "picture", "%s[%d].picture" % [part, i])
+			problems.append_array(bad)
+			if entry.has("picture") and bad.is_empty() and who != "dugi":
+				problems.append("%s[%d].picture is Dugi's only (the page is %s's)" % [part, i, who])
+	return problems
 
 
 ## The story is read again on the next use (Locale.set_language: its words changed).
@@ -65,13 +178,24 @@ static func pages(part: String) -> Array:
 ## app_may_enable: a language picked in the settings switched the story off, 2026-11-02.)
 static func forget_loaded() -> void:
 	_content = {}
+	_content_island = ""
+
+
+## The story file of `island`.
+static func content_path(island: String) -> String:
+	return CONTENT_ROOT.path_join("%s.json" % island)
 
 
 static func _load() -> Dictionary:
-	if _content.is_empty():
-		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(CONTENT_PATH))
-		parsed = Locale.overlay(parsed, Locale.words("story.json")) if parsed is Dictionary else null
+	var island := Island.current_id()
+	if _content.is_empty() or _content_island != island:
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(content_path(island)))
+		parsed = Locale.overlay(parsed, Locale.words("story/%s.json" % island)) if parsed is Dictionary else null
 		_content = parsed if parsed is Dictionary else {}
+		_content_island = island
+		var problems := validate(_content)
+		if not problems.is_empty():
+			push_error("Story: %s is invalid: %s" % [content_path(island), "; ".join(problems)])
 	return _content
 
 
@@ -84,6 +208,38 @@ static func should_play_prologue(replay := false) -> bool:
 ## Puppy's clue for a lab ("" when it has none).
 static func clue(definition: Dictionary) -> String:
 	return _story_text(definition, "clue")
+
+
+## The island keeper's line on the spot's first visit, before Puppy's clue ("" when it has none: the
+## mechanics island has no keeper). #74: the fox tells what is wrong at the spot.
+static func keeper(definition: Dictionary) -> String:
+	return _story_text(definition, "keeper")
+
+
+static func keeper_face(definition: Dictionary) -> String:
+	return face_or_default(_story_text(definition, "keeper_face"))
+
+
+## The keeper's answer after Puppy's clue on the first visit ("" when it has none). #86: the fox tells
+## how the piece's lid opens.
+static func keeper_reply(definition: Dictionary) -> String:
+	return _story_text(definition, "keeper_reply")
+
+
+static func keeper_reply_face(definition: Dictionary) -> String:
+	return face_or_default(_story_text(definition, "keeper_reply_face"))
+
+
+## More first-visit lines after Puppy's clue (#98: the volcano's talk, Puppy and the keeper in turn):
+## [{"speaker": Story.SPEAKERS key, "face", "text"}], [] when it has none.
+static func more(definition: Dictionary) -> Array:
+	var story: Variant = definition.get("story")
+	var lines: Variant = story.get("more", []) if story is Dictionary else []
+	var out := []
+	for line: Variant in (lines if lines is Array else []):
+		if line is Dictionary and str(line.get("text", "")) != "" and SPEAKERS.has(str(line.get("speaker", ""))):
+			out.append({"speaker": str(line.speaker), "face": face_or_default(line.get("face")), "text": str(line.text)})
+	return out
 
 
 ## Puppy's riddle on the night map while this spot is the next to find ("" when it has none).
@@ -126,9 +282,19 @@ static func next_spot(progress: Dictionary) -> String:
 	return ""
 
 
-## The spot opens from the map: its piece is found, or it is the next one.
+## The spot opens from the map: its piece is found, or it is the next one and today's new spot on an
+## island not bought (DailyLimit, #77).
 static func enterable(progress: Dictionary, id: String) -> bool:
-	return id in found(progress) or id == next_spot(progress)
+	return id in found(progress) or (id == next_spot(progress) and DailyLimit.allows(Island.current_id(), id))
+
+
+## Puppy's line when the next spot waits for tomorrow (#77: an island not bought, today's new spot used).
+static func today_line() -> String:
+	return str(_load().get("map_today", ""))
+
+
+static func today_face() -> String:
+	return face_or_default(_load().get("map_today_face"))
 
 
 ## Puppy's line when a locked spot is tapped.
@@ -138,6 +304,22 @@ static func wrong_line() -> String:
 
 static func wrong_face() -> String:
 	return face_or_default(_load().get("map_wrong_face"))
+
+
+## The words after the star's finale reached the sky (#118: the trio on the square, after the
+## fireworks and the island's ribbon): pages like the finale's, [] when the island has none.
+static func finale_after() -> Array:
+	return pages("finale_after")
+
+
+## Puppy's line after them when the next island opened (#118: go back to 섬 고르기; the voyage plays
+## when the child picks it there), "" when there is none.
+static func finale_next_line() -> String:
+	return str(_load().get("finale_next", ""))
+
+
+static func finale_next_face() -> String:
+	return face_or_default(_load().get("finale_next_face"))
 
 
 ## Dugi's line when the finale's star came back down (2026-11-01: pull harder).
@@ -160,7 +342,7 @@ static func science_words() -> Array:
 ## Every line Puppy says: his story pages, every lab's clue and riddle, the wrong-spot line.
 static func puppy_lines() -> Array:
 	var out := []
-	for part in ["prologue", "finale"]:
+	for part in ["prologue", "finale", "voyage"]:
 		for entry in pages(part):
 			if str(entry.get("who", "")) == "puppy":
 				out.append(str(entry.get("text", "")))
@@ -170,6 +352,7 @@ static func puppy_lines() -> Array:
 			if line != "":
 				out.append(line)
 	out.append(wrong_line())
+	out.append(today_line())
 	return out
 
 
@@ -194,9 +377,7 @@ static func spots() -> Array:
 
 ## The spots whose piece is found: every stage stamped (an old save counts too).
 static func found(progress: Dictionary) -> Array:
-	return spots().filter(func(id: String) -> bool:
-		var stages: Array = MissionRound.missions(ExperimentRegistry.find(id)).get("stages", [])
-		return not stages.is_empty() and ProgressStore.stamps(progress, id) >= stages.size())
+	return Island.current().found(progress)
 
 
 ## The found pieces already at the lookout (their flight played, or an old save: no flight).
@@ -212,11 +393,22 @@ static func to_fly(progress: Dictionary) -> Array:
 
 
 static func prologue_seen() -> bool:
-	return ProgressStore.mark(ProgressStore.STORY, "prologue")
+	return ProgressStore.mark(ProgressStore.STORY, _part_key("prologue"))
 
 
 static func finale_seen() -> bool:
-	return ProgressStore.mark(ProgressStore.STORY, "finale")
+	return ProgressStore.mark(ProgressStore.STORY, _part_key("finale"))
+
+
+## The island's "prologue" or "finale" was played (at its end or 건너뛰기, StoryDirector._finish: left half way by back or the app
+## closing, it plays again next time, #108).
+static func mark_seen(part: String) -> void:
+	ProgressStore.set_mark(ProgressStore.STORY, _part_key(part), true)
+
+
+## The save key of the island in use's story part (ProgressStore.island_key).
+static func _part_key(part: String) -> String:
+	return ProgressStore.island_key(Island.current_id(), part)
 
 
 static func clue_seen(id: String) -> bool:

@@ -34,8 +34,8 @@
   "predict": {
     "question": "Lifting the heavy chest with one rope, does it take a lot of force?",
     "choices": [
-      { "label": "A lot" },
-      { "label": "A little" }
+      { "label": "A lot", "guess": "I think it'll take a lot of force!" },
+      { "label": "A little", "guess": "I think it'll take a little force!" }
     ],
     "reason": "With one rope, your hand holds the chest's whole weight. So it takes a lot of force.",
     "bridge": "Pull it and see for yourself!"
@@ -83,6 +83,8 @@
   },
   "note": {
     "law": "With n ropes holding the load, the force needed is 1/n. But you have to pull n times as much rope.",
+    "learn": "The more ropes hold the load, the less force it takes. You pull the rope that much farther in return: force is traded for distance.",
+    "talk": ["How does a crane at a building site lift such heavy things?", "To use less force, what did you have to do more of?"],
     "numbers": [
       { "label": "Load weight mg" },
       { "label": "Ropes holding the load n" },
