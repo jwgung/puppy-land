@@ -114,7 +114,8 @@ func submit() -> void:
 		return
 	note_label.text = Locale.t("guardian.gate_wrong")
 	new_sum()
-	field.release_focus()   # the keyboard goes down: the new sum shows
+	if field.is_inside_tree():   # (release_focus needs the tree)
+		field.release_focus()   # the keyboard goes down: the new sum shows
 
 
 ## Digits only (a hardware keyboard or a pasted text can bring others).
