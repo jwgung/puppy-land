@@ -1796,8 +1796,8 @@ func _guide_view_point(world: Vector3) -> Vector2:
 
 # --- game: the condition picture buttons (2026-10-27) ------------------------------------------
 
-## The row of the stage's condition buttons (ConditionPicks.groups): built again when the stage
-## changes, empty (and hidden) for a stage without conditions or a finished round.
+## The row of the stage's condition buttons (ConditionPicks.groups): built again when the stage or the
+## controls it shows change, empty (and hidden) for a stage without conditions or a finished round.
 func _build_picks(stage: int) -> void:
 	# One factor at a time (ConditionPicks.groups): the row also follows the lab's values, so a hidden
 	# condition changed in 자세히 brings its buttons back (and they go again once it fits).

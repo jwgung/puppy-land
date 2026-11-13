@@ -2,7 +2,9 @@
 ## button is turned on again). A sum a child of this app's age does not do in the head: a × b + c, a
 ## 12..19, b 3..9, c 10..49 (answers 46..220), new each time, typed with the device's number keyboard
 ## (2026-11-08 user-approved mock: no on-screen keys) and 확인 or the keyboard's done key. A wrong
-## answer brings a new sum; the third wrong one closes the gate. Nothing typed is kept.
+## answer brings a new sum; the third wrong one closes the gate. Nothing typed is kept. The field gets
+## no focus when the gate opens or after a wrong answer (2026-11-13 user: the keyboard would come up
+## at once and cover the sum): the guardian reads it, then taps the field for the keyboard.
 ## The numbers are the guardian's: the one place the app shows numbers to read (the "no numbers on
 ## screen" rule is the child's).
 class_name ParentalGate
@@ -85,13 +87,6 @@ func _init() -> void:
 	new_sum()
 
 
-## No focus on the field when the gate opens or after a wrong answer (2026-11-13 user "바로 포커싱
-## 시키지마. input 바로 띄우니까 문제가 안 보여"): the keyboard would cover the sum. The guardian reads
-## it, then taps the field for the keyboard.
-func _ready() -> void:
-	super()
-
-
 ## A new sum (the answer cleared).
 func new_sum() -> void:
 	a = rng.randi_range(A_RANGE.x, A_RANGE.y)
@@ -119,8 +114,7 @@ func submit() -> void:
 		return
 	note_label.text = Locale.t("guardian.gate_wrong")
 	new_sum()
-	if field.is_inside_tree():
-		field.release_focus()   # the keyboard goes down: the new sum shows
+	field.release_focus()   # the keyboard goes down: the new sum shows
 
 
 ## Digits only (a hardware keyboard or a pasted text can bring others).

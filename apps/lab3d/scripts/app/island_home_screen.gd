@@ -1037,22 +1037,23 @@ func _step_walk(delta: float) -> void:
 			continue
 		var side: float = entry[1]
 		var lag: float = FOLLOW_LAG * float(entry[2])
+		var is_fox := actor == fox
 		var behind: Array = _along(clampf(s - lag, 0.0, length))
 		var dir: Vector2 = behind[1] if behind[1] != Vector2.ZERO else cat_dir
 		# (dir.y, -dir.x): the walker's left. The guide walks FOX_WIDE m out to the side, so it passes the
 		# cat with room to spare instead of squeezing by it (2026-11-13 user "막 비벼지고").
-		var wide := FOX_WIDE if lag < 0.0 else FOLLOW_SIDE
+		var wide := FOX_WIDE if is_fox else FOLLOW_SIDE
 		var goal: Vector2 = behind[0] + Vector2(dir.y, -dir.x) * wide * side
 		# (behind the way's start: they wait for their turn where they stand, not further back off the way)
 		var place: Vector3 = group[actor]
 		var to_place := settle
-		if lag < 0.0:   # (the fox) its lead point would end on the cat's own stand: over the last lead it heads for its place
+		if is_fox:   # its lead point would end on the cat's own stand: over the last lead it heads for its place
 			to_place = maxf(settle, clampf(1.0 - (length - s) / -lag, 0.0, 1.0))
 		goal = goal.lerp(Vector2(place.x, place.z), to_place)
 		var now: Vector3 = _walk_last.get(actor, actor.position)
 		var at := Vector2(now.x, now.z)
-		var step := (goal - at).limit_length((top_speed * (FOX_PACE if actor == fox else 1.0) + 4.0 * settle) * delta)
-		if actor == fox:   # the fast guide eases its steps (no jerk back and forth when its goal turns, 2026-11-13)
+		var step := (goal - at).limit_length((top_speed * (FOX_PACE if is_fox else 1.0) + 4.0 * settle) * delta)
+		if is_fox:   # the fast guide eases its steps (no jerk back and forth when its goal turns, 2026-11-13)
 			step = (_walk_step.get(actor, step) as Vector2).lerp(step, lerpf(FOX_EASE, 1.0, settle))   # (into its place at the end)
 		var start := at
 		at += step
@@ -1060,10 +1061,10 @@ func _step_walk(delta: float) -> void:
 		var off := at - cat_at
 		if off.length() < KEEP_APART:
 			var away := off.normalized() if off.length() > 0.01 else Vector2(cat_dir.y, -cat_dir.x) * side
-			if off.dot(cat_dir) > 0.0 or actor == fox:   # (the guide passes the cat to its own side to lead)
-				away = (away + Vector2(cat_dir.y, -cat_dir.x) * side * (2.0 if actor == fox else 1.0)).normalized()
+			if off.dot(cat_dir) > 0.0 or is_fox:   # (the guide passes the cat to its own side to lead)
+				away = (away + Vector2(cat_dir.y, -cat_dir.x) * side * (2.0 if is_fox else 1.0)).normalized()
 			at = cat_at + away * KEEP_APART
-		if actor == fox:   # (the step it really took: kept off the cat it does not push on into it)
+		if is_fox:   # (the step it really took: kept off the cat it does not push on into it)
 			_walk_step[actor] = at - start
 		spots[actor] = at
 	# The followers keep apart from each other too (the fox as well: 2026-11-13 user "여우친구 이동할때 막
@@ -1137,7 +1138,8 @@ func _step_stroll(delta: float) -> void:
 		var place := trio_spot(actor)
 		# Near the way's end each heads for its own place in the row (the way ends on the cat's): they
 		# never bunch up on that one point (2026-11-13 user "막 비벼지고").
-		var to_place := maxf(settle, clampf((s - at[at.size() - 1] + 2.0 * STROLL_LAG) / (2.0 * STROLL_LAG), 0.0, 1.0))
+		var tail := 2.0 * STROLL_LAG   # (the last stretch of the way)
+		var to_place := maxf(settle, clampf((s - (at[at.size() - 1] - tail)) / tail, 0.0, 1.0))
 		p = p.lerp(Vector2(place.x, place.z), to_place)
 		_set_walker(actor, p, HOP_HEIGHT * absf(sin(float(_stroll.t) * PI * HOP_HZ + float(entry[1]))) * (1.0 - settle), delta)
 		if settle > 0.0:
