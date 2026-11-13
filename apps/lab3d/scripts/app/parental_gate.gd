@@ -85,9 +85,11 @@ func _init() -> void:
 	new_sum()
 
 
+## No focus on the field when the gate opens or after a wrong answer (2026-11-13 user "바로 포커싱
+## 시키지마. input 바로 띄우니까 문제가 안 보여"): the keyboard would cover the sum. The guardian reads
+## it, then taps the field for the keyboard.
 func _ready() -> void:
 	super()
-	field.grab_focus()   # the keyboard comes up with the gate
 
 
 ## A new sum (the answer cleared).
@@ -118,7 +120,7 @@ func submit() -> void:
 	note_label.text = Locale.t("guardian.gate_wrong")
 	new_sum()
 	if field.is_inside_tree():
-		field.grab_focus()
+		field.release_focus()   # the keyboard goes down: the new sum shows
 
 
 ## Digits only (a hardware keyboard or a pasted text can bring others).
