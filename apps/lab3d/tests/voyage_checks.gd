@@ -362,15 +362,17 @@ func check_skip_and_replay(_quality_script: GDScript) -> void:
 		"%s %s %s" % [replay, replay_prologue, first_replay])
 
 
-## 섬 고르기 (one way in since 2026-11-09): 시작하기 goes straight to the island before any voyage and
-## opens the cards after one; the cards; a tap on a card or its button chooses; back closes them.
+## 섬 고르기 (one way in since 2026-11-09): 시작하기 opens the cards whenever there are two islands
+## (2026-11-13 user: also before any voyage; until then it went straight on); the cards; a tap on a
+## card or its button chooses; back closes them.
 func check_title_islands(_quality_script: GDScript) -> void:
 	_first_done()
-	ProgressStore.set_mark(ProgressStore.STORY, "finale", false)   # (before the finale no island waits: straight on)
+	ProgressStore.set_mark(ProgressStore.STORY, "finale", false)   # (before the finale: the cards too, the next island locked)
 	var app := await _app([])
-	(app._screen as TitleScreen).start_button.pressed.emit()
+	var before_title := app._screen as TitleScreen
+	before_title.start_button.pressed.emit()
 	await tree.process_frame
-	var hidden: bool = not (app._screen is TitleScreen) and not TitleScreen.picks_island()   # (straight on: the map or the voyage)
+	var hidden: bool = app._screen == before_title and before_title.island_cards != null and TitleScreen.picks_island()   # (the name is from before 2026-11-13: it went straight on)
 	await _free(app)
 	ProgressStore.set_mark(ProgressStore.STORY, "finale", true)
 	Story.mark_voyage_seen(NEXT)
@@ -456,7 +458,7 @@ func check_title_islands(_quality_script: GDScript) -> void:
 	await _free(app)
 	expect.call(no_title_story and next_story and first_story, "섬 고르기: 이야기 다시 보기 is on each island's card (not the title): the next island's plays its voyage again, the first island's its prologue",
 		"%s %s %s" % [no_title_story, next_story, first_story])
-	expect.call(hidden and shown, "섬 고르기: 시작하기 goes straight on before a voyage, opens the cards after one (no separate 섬 고르기 button)", "%s %s" % [hidden, shown])
+	expect.call(hidden and shown, "섬 고르기: 시작하기 opens the cards before a voyage too and after one (no separate 섬 고르기 button)", "%s %s" % [hidden, shown])
 	expect.call(problems.is_empty() and back_closes, "섬 고르기: a card per island and 다음 섬; a locked one grey with a lock, its condition (다음 섬: 곧 만나요), no button; 다시 가기 on a finished island; back closes the cards",
 		"; ".join(problems) + " back %s" % back_closes)
 	expect.call(open_card and chosen and tag_tap_stays, "섬 고르기: an open island's 출발! makes it the island in use and opens its map (after the boat's sail); a tap on its tag does nothing",
@@ -696,7 +698,7 @@ func check_map_back() -> void:
 				problems.append("the emblem not under ← %s (← %s)" % [str(emblem), str(rect)])
 		back.pressed.emit()
 	await tree.process_frame
-	var title_before: bool = app._screen is TitleScreen and (app._screen as TitleScreen).island_cards == null
+	var title_before: bool = app._screen is TitleScreen and (app._screen as TitleScreen).island_cards != null   # (the islands' map before a voyage too, 2026-11-13)
 	await _free(app)
 	_made()
 	Story.mark_voyage_seen(NEXT)
@@ -715,7 +717,7 @@ func check_map_back() -> void:
 	await _free(app)
 	_made()
 	expect.call(problems.is_empty() and title_before and cards_button and cards_android,
-		"map ← 돌아가기 (worded as the islands' map's, #116): top left, the emblem under it; ← and Android back go to the title before a voyage, to the islands' map after one",
+		"map ← 돌아가기 (worded as the islands' map's, #116): top left, the emblem under it; ← and Android back go to the islands' map (before a voyage too, 2026-11-13)",
 		"; ".join(problems) + " %s %s %s" % [title_before, cards_button, cards_android])
 
 
