@@ -455,7 +455,10 @@ func check_incline() -> void:
 		var want: Dictionary = stages[i].conditions
 		lab.set_run_length(7.5)
 		lab.set_control("material", want.material)
-		var fitting: Array = goals.call("picked", definition, i, "angle", true) if want.has("angle") else [20.0, 30.0]
+		# (every angle button that fits the stage: since 2026-11-13 a stage shows only the factor it
+		# changes, so the shown ones are not all of them)
+		var angles: Array = ConditionPicks.picks(definition).get("angle", []).map(func(p: Dictionary) -> float: return float(p.value))
+		var fitting: Array = angles.filter(func(a: float) -> bool: return MissionRound.condition_holds(want.angle, a)) if want.has("angle") else [20.0, 30.0]
 		for angle in fitting:
 			lab.set_control("angle", float(angle))
 			if lab.observations()["reach_%d" % (i + 1)] < 0.5:
@@ -463,7 +466,7 @@ func check_incline() -> void:
 		# (where the slope is the stage's change: the same material as the stage before)
 		var lowest: float = (fitting.map(func(a: Variant) -> float: return float(a)) as Array).min()
 		var slope_change := i == 0 or str(stages[i - 1].conditions.material) == str(want.material)
-		for angle in goals.call("picked", definition, i, "angle", false) if want.has("angle") and slope_change else []:
+		for angle in angles.filter(func(a: float) -> bool: return not MissionRound.condition_holds(want.angle, a)) if want.has("angle") and slope_change else []:
 			lab.set_control("angle", float(angle))
 			if float(angle) < lowest and lab.observations()["reach_%d" % (i + 1)] > 0.5:
 				problems.append("stage %d: the gentler slope %s° reaches the row too" % [i + 1, angle])
