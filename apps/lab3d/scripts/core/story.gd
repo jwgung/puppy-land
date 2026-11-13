@@ -91,7 +91,7 @@ static func pages_of(island: String, part: String) -> Array:
 # 해금되고, 이동할때 가는걸로"): after the island before's finale the trio stay there (Puppy says a new
 # island opened, ← 돌아가기 nudges), 섬 고르기 shows the new island's unlock once (unlock_shown) and its
 # first 출발! plays the voyage instead of the map's sail. The picker (TitleScreen.picks_island) shows
-# once a voyage is due or was seen.
+# whenever there are two islands (2026-11-13; before, once a voyage was due or seen).
 
 ## A voyage page's camera and the boat's place on the way (VoyageScreen).
 const VOYAGE_SHOTS := ["depart", "sea", "flicker", "arrive"]
@@ -133,7 +133,8 @@ static func mark_unlock_shown(island: String) -> void:
 	ProgressStore.set_mark(ProgressStore.STORY, ProgressStore.island_key(island, "unlock"), true)
 
 
-## Some voyage was played: the title's 시작하기 opens 섬 고르기 (#75; TitleScreen.picks_island).
+## Some voyage was played (since 2026-11-13 the title's 시작하기 opens 섬 고르기 whenever there are two
+## islands, TitleScreen.picks_island; this was its condition before).
 static func any_voyage_seen() -> bool:
 	return Island.ids().any(func(id: String) -> bool: return voyage_seen(id))
 

@@ -146,6 +146,7 @@ var _dialogue_right_for := Vector2.ZERO  # the view size it was found for
 var _picks_row: HBoxContainer = null
 var _picks: Array = []                # [{"control": id, "preset": kid.picks entry, "button": Button}]
 var _picks_stage := -2                # the stage the row was built for
+var _picks_shown: Array = []          # and the controls it shows
 var _picks_for := Vector4(NAN, 0, 0, 0)   # view width, height, talking, asking the row was laid out for (_fit_picks)
 ## The celebrations (2026-10-28): the stamp flying into its slot (StampSlam), the strip's filled
 ## stamps so far (a stamp in flight fills its slot when it lands), the whole-round confetti and the
@@ -1795,17 +1796,24 @@ func _guide_view_point(world: Vector3) -> Vector2:
 
 # --- game: the condition picture buttons (2026-10-27) ------------------------------------------
 
-## The row of the stage's condition buttons (ConditionPicks.groups): built again when the stage
-## changes, empty (and hidden) for a stage without conditions or a finished round.
+## The row of the stage's condition buttons (ConditionPicks.groups): built again when the stage or the
+## controls it shows change, empty (and hidden) for a stage without conditions or a finished round.
 func _build_picks(stage: int) -> void:
-	if stage == _picks_stage:
+	# One factor at a time (ConditionPicks.groups): the row also follows the lab's values, so a hidden
+	# condition changed in 자세히 brings its buttons back (and they go again once it fits).
+	var have := {}
+	for control in definition.controls():
+		have[control.id] = experiment.control_value(control.id) if experiment != null else control.get("default")
+	var groups := ConditionPicks.groups(definition.raw, stage, have)
+	var shown := groups.map(func(g: Dictionary) -> String: return g.control)
+	if stage == _picks_stage and shown == _picks_shown:
 		return
 	_picks_stage = stage
+	_picks_shown = shown
 	if _picks_row != null:
 		_picks_row.queue_free()
 		_picks_row = null
 	_picks.clear()
-	var groups := ConditionPicks.groups(definition.raw, stage)
 	if groups.is_empty():
 		_fit_overlays()
 		return
@@ -2588,6 +2596,8 @@ func _sync_control(id: String) -> void:
 						note = "μs = %.2f · μk = %.2f   %s" % [option.mu_s, option.mu_k, note]
 					widgets.note.text = note
 	_sync_picks(id)
+	if _picks_stage > -2:
+		_build_picks(_picks_stage)   # (a hidden condition changed in 자세히: its buttons come back)
 
 
 ## The other numbers (in 더 보기): the observations the note does not list, two per row.

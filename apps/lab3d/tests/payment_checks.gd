@@ -306,13 +306,13 @@ func check_gate() -> void:
 		for r: Rect2 in shown.rects() + [shown.field.get_global_rect(), shown.ok_button.get_global_rect(), shown.note_label.get_global_rect()]:
 			if not Rect2(Vector2.ZERO, host.size).encloses(r):
 				problems.append("%s: %s outside %s" % [size_name, r, host.size])
-		if not shown.field.has_focus():
-			problems.append("%s: the answer field has no focus (no keyboard)" % size_name)
+		if shown.field.has_focus():
+			problems.append("%s: the answer field takes the focus at once (the keyboard would hide the sum)" % size_name)
 		if shown.close_button.get_global_rect().intersects(shown.ok_button.get_global_rect()):
 			problems.append("%s: × over 확인" % size_name)
 		host.queue_free()
 		await _frames(1)
-	expect.call(problems.is_empty(), "payment: the guardian's check (a × b + c in range, number keyboard field, a new sum when wrong, closed after three)", "; ".join(problems))
+	expect.call(problems.is_empty(), "payment: the guardian's check (a × b + c in range, number keyboard field without focus at first (the sum shows), a new sum when wrong, closed after three)", "; ".join(problems))
 
 
 ## The offer: price and 구매 from the store, waiting in place of the price and 구매, a bought island

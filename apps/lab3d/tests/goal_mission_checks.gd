@@ -72,12 +72,13 @@ static func option(definition: Dictionary, id: String, option_id: String) -> Dic
 	return {}
 
 
-## The picture buttons of stage `stage` for control `id` that fit (`fits`) or do not fit its condition.
+## The picture buttons of control `id` that fit (`fits`) or do not fit stage `stage`'s condition on it
+## (every button of the control: since 2026-11-13 a stage shows only the factor it changes).
 static func picked(definition: Dictionary, stage: int, id: String, fits: bool) -> Array:
-	for group in ConditionPicks.groups(definition, stage):
-		if group.control == id:
-			return group.presets.filter(func(p: Dictionary) -> bool: return MissionRound.condition_holds(group.want, p.value) == fits).map(func(p: Dictionary) -> Variant: return p.value)
-	return []
+	var conditions: Dictionary = MissionRound.missions(definition).stages[stage].get("conditions", {})
+	if not conditions.has(id):
+		return []
+	return ConditionPicks.picks(definition).get(id, []).filter(func(p: Dictionary) -> bool: return MissionRound.condition_holds(conditions[id], p.value) == fits).map(func(p: Dictionary) -> Variant: return p.value)
 
 
 func _lab(id: String) -> Experiment:

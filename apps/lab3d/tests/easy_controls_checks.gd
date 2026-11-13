@@ -84,16 +84,24 @@ func _close(screen: Control) -> void:
 
 
 ## The controls stage `stage` asks the child to set (its conditions, without the ones every stage
-## asks the same of).
-func _asked(definition: Dictionary, stage: int) -> Array:
+## asks the same of). One factor at a time (2026-11-13 user): of two, only the one this stage changes
+## from the stage before (the first: from the next), and any whose `lab` value does not fit now.
+func _asked(definition: Dictionary, stage: int, lab: Experiment = null) -> Array:
 	var stages: Array = MissionRound.missions(definition).get("stages", [])
 	var fixed := ConditionPicks.fixed_controls(definition)
 	var out := []
 	if ConditionPicks.auto(definition):
 		return out   # the lab sets the conditions itself: no buttons
+	var conditions: Dictionary = stages[stage].get("conditions", {})
 	for control in definition.controls:
-		if stages[stage].get("conditions", {}).has(control.id) and not control.id in fixed:
+		if conditions.has(control.id) and not control.id in fixed:
 			out.append(control.id)
+	if out.size() > 1:
+		var other: Dictionary = stages[stage - 1 if stage > 0 else 1].get("conditions", {})
+		var changed := out.filter(func(id: String) -> bool: return str(other.get(id)) != str(conditions[id]) \
+			or (lab != null and not MissionRound.condition_holds(conditions[id], lab.control_value(id))))
+		if not changed.is_empty():
+			out = changed
 	return out
 
 
@@ -112,7 +120,7 @@ func check_rows(id: String) -> void:
 		for i in 2:
 			await tree.process_frame
 		var buttons: Array = screen.pick_buttons()
-		var want := _asked(definition, stage) if stage < stages.size() else []
+		var want := _asked(definition, stage, screen.experiment) if stage < stages.size() else []
 		var have := []
 		for pick in buttons:
 			if not pick.control in have:
@@ -136,7 +144,7 @@ func check_rows(id: String) -> void:
 			if b.size.x < screen.PICK_SIZE.x - 1.0 or b.size.y < screen.PICK_SIZE.y - 1.0 or labels.size() != 1 or (labels[0] as Label).text == "" \
 					or b.button_pressed != ConditionPicks.selected(pick.preset, screen.experiment.control_value(pick.control)):
 				problems.append("stage %d: %s is not a big picture button with its words and the current value lit" % [stage + 1, b.name])
-	expect.call(problems.is_empty(), "easy controls (%s): per stage the picture buttons are exactly the stage's conditions (one fits, one does not, at most 4); none without conditions, at the end or while Dugi asks" % id,
+	expect.call(problems.is_empty(), "easy controls (%s): per stage the picture buttons are exactly the stage's conditions, one factor at a time (the one it changes, or one the lab does not fit; one fits, one does not, at most 4); none without conditions, at the end or while Dugi asks" % id,
 		"; ".join(problems))
 	await _close(screen)
 

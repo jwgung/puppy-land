@@ -379,12 +379,28 @@ func check_keeper_walk() -> void:
 			screen._walk_to_spot(i)
 			var ahead := 0
 			var frames := 0
+			var last_step := Vector2.ZERO
+			var last_p := Vector2(screen.fox.position.x, screen.fox.position.z)
+			var closest := INF
+			var flips := 0
 			for f in 600:
 				if not screen._walking:
 					break
 				await tree.process_frame
 				frames += 1
 				var p := Vector2(screen.fox.position.x, screen.fox.position.z)
+				# No rubbing (2026-11-13 user "여우친구 이동할때 막 비벼지고"): the four keep apart every frame
+				# and the fox never jerks back and forth while under way (over 0.6 m/s, as polish_checks).
+				var four: Array = [screen.cat, screen.puppy, screen.dugi, screen.fox]
+				for a in four.size():
+					for b in range(a + 1, four.size()):
+						closest = minf(closest, Vector2(four[a].position.x, four[a].position.z).distance_to(Vector2(four[b].position.x, four[b].position.z)))
+				var step := p - last_p
+				if step.length() > 0.01 and last_step.length() > 0.01 and step.angle_to(last_step) > deg_to_rad(120.0):
+					flips += 1
+				if step.length() > 0.004:
+					last_step = step
+				last_p = p
 				if screen.map.water_at(p.x, p.y) or screen.map.coast_fraction(p.x, p.y) > MapIsland.SHORE_F:
 					problems.append("the fox in the water walking to %s" % screen._spots[i].id)
 					break
@@ -395,6 +411,10 @@ func check_keeper_walk() -> void:
 			if screen._walking:
 				problems.append("the walk to %s never ended" % screen._spots[i].id)
 				break
+			if closest < 0.5:
+				problems.append("walking to %s two of the four came %.2f m close" % [screen._spots[i].id, closest])
+			if flips > 0:
+				problems.append("walking to %s the fox jerked back %d times" % [screen._spots[i].id, flips])
 			if frames > 20 and ahead < frames * 0.5:
 				problems.append("the fox did not lead to %s (%d of %d frames ahead)" % [screen._spots[i].id, ahead, frames])
 			var place: Vector3 = screen.group_at(screen._spots[i])[screen.fox]
@@ -404,9 +424,24 @@ func check_keeper_walk() -> void:
 			for other: Node3D in screen.trio():
 				if Vector2(other.position.x, other.position.z).distance_to(fp) < IslandHomeScreen.KEEP_APART * 0.95:
 					problems.append("the fox at %s too near %s" % [screen._spots[i].id, other.name])
+		# The stroll from the beach (after the voyage): past its first second the four keep apart.
+		screen.stroll_home(VoyageScreen.keeper_spot(screen.map), StoryDirector.STROLL_S)
+		var closest := INF
+		var t := 0.0
+		while screen.strolling() and t < StoryDirector.STROLL_S + 1.0:
+			await tree.process_frame
+			t += 1.0 / 60.0
+			if t < 1.0:
+				continue
+			var four: Array = [screen.cat, screen.puppy, screen.dugi, screen.fox]
+			for a in four.size():
+				for b in range(a + 1, four.size()):
+					closest = minf(closest, Vector2(four[a].position.x, four[a].position.z).distance_to(Vector2(four[b].position.x, four[b].position.z)))
+		if closest < 0.5:
+			problems.append("strolling from the beach two of the four came %.2f m close" % closest)
 	await _free(screen)
 	Island.use_for_run(ProgressStore.FIRST_ISLAND)
-	expect.call(problems.is_empty(), "hutton map: the fox keeper stands in the row on the square, leads the walk to every spot (on land) and stands by the group there, clear; the first island has none (#120)",
+	expect.call(problems.is_empty(), "hutton map: the fox keeper stands in the row on the square, leads the walk to every spot (on land, the four at least 0.5 m apart every frame, no jerking back) and stands by the group there, clear; the stroll from the beach keeps the four apart; the first island has none (#120)",
 		"; ".join(problems.slice(0, 8)))
 
 

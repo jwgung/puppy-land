@@ -321,6 +321,10 @@ func check_restart_in_app() -> void:
 	if to_title:
 		(app._screen as TitleScreen).start_button.pressed.emit()
 		await tree.process_frame
+		var cards = (app._screen as TitleScreen).island_cards   # (the islands' map first, 2026-11-13)
+		if cards != null:
+			(cards.buttons[ProgressStore.FIRST_ISLAND] as Button).pressed.emit()
+			await tree.process_frame
 		prologue = app._screen is IslandHomeScreen and app._screen.play_prologue_on_open
 	app.queue_free()
 	for i in 3:
@@ -330,7 +334,7 @@ func check_restart_in_app() -> void:
 	Story.enabled = false
 	quality_script.set("_args_cache", saved_args)
 	ProgressStore.path = ProgressStore.TEST_PATH
-	expect.call(to_title and prologue, "처음부터 다시 하기 in the app: the title, then 시작하기 plays the prologue again", "%s %s" % [to_title, prologue])
+	expect.call(to_title and prologue, "처음부터 다시 하기 in the app: the title, then 시작하기 and the first island's 출발! play the prologue again", "%s %s" % [to_title, prologue])
 	DirAccess.remove_absolute(ProgressStore.path)
 
 

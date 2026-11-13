@@ -145,7 +145,11 @@ func update_cat(force: float, max_static: float, travel: float, speed: float) ->
 	if cat == null:
 		return
 	var effort := force / (max_static * CAT_FULL_EFFORT) if max_static > 0.0 else 0.0
-	cat.push(cat_face_x(), CAT_HAND_Y * _look, effort, travel, speed, _box_visual.global_position.z)
+	# A big box would hide the cat from the front camera (2026-11-13 user "큰 상자로 바꾸면 빵고양이가
+	# 가려져서 잘 안 보임"): the cat stands towards the camera (+z) as far as its paws still meet the
+	# face (CatActor.push_half_width from the face's front edge). A small box keeps it in the middle.
+	var toward := maxf(_look * _box_size * 0.5 - cat.push_half_width, 0.0)
+	cat.push(cat_face_x(), CAT_HAND_Y * _look, effort, travel, speed, _box_visual.global_position.z + toward)
 
 
 ## The push gauge beside the box at `box_center` (its body's centre): shown while `held`, filled to

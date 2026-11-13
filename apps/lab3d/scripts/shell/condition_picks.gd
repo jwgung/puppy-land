@@ -14,7 +14,11 @@
 ## (the lever's and the pulley's 20 kg load: nothing to choose there). Each shown control has at
 ## least one button that satisfies the stage and one that does not (the child still chooses);
 ## with two controls each shows two buttons (the satisfying one and its neighbour), so a row never
-## has more than MAX_BUTTONS. No stage conditions (the projectile's throws, a finished round): no row.
+## has more than MAX_BUTTONS. One factor at a time (2026-11-13 user, the slide: "인자를 여러개 보여주지
+## 마"): of a stage's controls only the ones whose condition differs from the stage before (the first
+## stage: from the next) get buttons; the others keep what the lab already has. When the lab's own
+## value (`have`, control id -> value) no longer fits one of those (changed in 자세히), its buttons come
+## back so the child can put it right. No stage conditions (the projectile's throws, a finished round): no row.
 ## `missions.auto_conditions: true` (2026-10-29, the collision's ball weights): the lab sets the stage's
 ## conditions itself when a stage becomes current (ExperimentScreen, through its own _set_control), so
 ## no row is built (groups() is empty) and auto_values() names the values to set.
@@ -83,7 +87,8 @@ static func fixed_controls(definition: Dictionary) -> Array:
 
 ## The button groups of stage `stage` (-1 or past the last: none), in the definition's control order:
 ## [{"control": id, "want": the stage's condition, "presets": [the kid.picks entries shown]}].
-static func groups(definition: Dictionary, stage: int) -> Array:
+## `have`: the lab's control values now (optional, see above).
+static func groups(definition: Dictionary, stage: int, have := {}) -> Array:
 	var stages: Array = MissionRound.missions(definition).get("stages", [])
 	if auto(definition) or stage < 0 or stage >= stages.size():
 		return []
@@ -95,6 +100,12 @@ static func groups(definition: Dictionary, stage: int) -> Array:
 		var id: String = control.id
 		if conditions.has(id) and not id in fixed and all.has(id) and not out.any(func(g: Dictionary) -> bool: return g.control == id):
 			out.append({"control": id, "want": conditions[id], "presets": all[id]})
+	if out.size() > 1 and stages.size() > 1:   # one factor: the control(s) this stage changes
+		var other: Dictionary = stages[stage - 1 if stage > 0 else 1].get("conditions", {})
+		var changed := out.filter(func(g: Dictionary) -> bool: return str(other.get(g.control)) != str(g.want) \
+			or (have.has(g.control) and not MissionRound.condition_holds(g.want, have[g.control])))
+		if not changed.is_empty():
+			out = changed
 	var per := MAX_BUTTONS if out.size() <= 1 else floori(float(MAX_BUTTONS) / out.size())
 	for group in out:
 		group.presets = _shown(group.presets, group.want, per)
