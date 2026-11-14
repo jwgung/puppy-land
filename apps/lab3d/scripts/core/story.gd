@@ -82,9 +82,14 @@ static func pages(part: String) -> Array:
 static func pages_of(island: String, part: String) -> Array:
 	if island == Island.current_id():
 		return pages(part)
+	return _read_of(island).get(part, [])
+
+
+## The story file of another island with its words (an island without a story: {}).
+static func _read_of(island: String) -> Dictionary:
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(content_path(island))) if FileAccess.file_exists(content_path(island)) else null
 	parsed = Locale.overlay(parsed, Locale.words("story/%s.json" % island)) if parsed is Dictionary else null
-	return parsed.get(part, []) if parsed is Dictionary else []
+	return parsed if parsed is Dictionary else {}
 
 
 # --- the voyage to the next island (#75, 2026-11-06 user-approved: a short 3D scene on a boat) -----
@@ -98,6 +103,13 @@ static func pages_of(island: String, part: String) -> Array:
 
 ## A voyage page's camera and the boat's place on the way (VoyageScreen).
 const VOYAGE_SHOTS := ["depart", "sea", "flicker", "arrive"]
+
+
+## The voyage to `island` is made at night (its story's `voyage_at_night`, the curie island #155: the
+## lighthouse is out): the sea turns night from the "sea" shot on and the island stays dark instead of
+## flickering. Its prologue then starts at night on the beach.
+static func voyage_at_night(island: String) -> bool:
+	return _read_of(island).get("voyage_at_night", false) == true
 
 
 ## The island `island` has a voyage to it (its story's voyage pages).

@@ -1,0 +1,26 @@
+{
+  "about": "이야기 \"꺼진 무지개 등대\"(퀴리섬, docs/islands/curie.md·curie-lines.md 확정 2026-11-13, #155). voyage = 섬 고르기에서 퀴리섬 출발!을 처음 누를 때 배를 타고 가는 짧은 3D 장면(VoyageScreen, 허턴섬과 같은 틀): 쪽마다 who·face·shot(depart 허턴섬 바닷가 출발, sea 밤바다 위, flicker 불 꺼진 퀴리섬을 바라봄, arrive 퀴리섬 바닷가 도착·야옹이를 만남). voyage_at_night = 이 배 장면은 sea부터 밤이고 퀴리섬은 불이 꺼진 채 깜박이지 않는다(허턴섬은 어두워졌다 밝아짐). prologue = 그 뒤 퀴리섬 지도에서 잇는 첫 이야기(대사 7~18, 바닷가에서 등대 아래까지). 끝 이야기(finale)는 #168. 영어 글은 #169에서 다듬음.",
+  "voyage": [
+    { "who": "fox", "face": "happy", "shot": "depart" },
+    { "who": "cat", "face": "happy", "shot": "depart" },
+    { "who": "dugi", "face": "explain", "shot": "depart" },
+    { "who": "puppy", "face": "thinking", "shot": "sea" },
+    { "who": "dugi", "face": "thinking", "shot": "flicker" },
+    { "who": "yaongi", "face": "surprised", "shot": "arrive" }
+  ],
+  "voyage_at_night": true,
+  "prologue": [
+    { "who": "cat", "face": "explain" },
+    { "who": "yaongi", "face": "happy" },
+    { "who": "yaongi", "face": "worried" },
+    { "who": "dugi", "face": "explain" },
+    { "who": "yaongi", "face": "worried" },
+    { "who": "yaongi", "face": "worried" },
+    { "who": "cat", "face": "worried" },
+    { "who": "puppy", "face": "thinking" },
+    { "who": "yaongi", "face": "thinking" },
+    { "who": "puppy", "face": "thinking" },
+    { "who": "cat", "face": "explain" },
+    { "who": "yaongi", "face": "happy" }
+  ]
+}

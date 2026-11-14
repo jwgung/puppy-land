@@ -301,6 +301,7 @@ func _slide_in(screen: Control) -> void:
 ##   finale        the map: the orbit spot just completed with the 10 others found: flag, flight, finale
 ##   map[:<n>]     the night map with the first n pieces of the order found (5 by default) and at the
 ##                 lookout, nothing but Puppy's riddle playing: fps measurements, screenshots
+##   voyage:<island> that island's voyage (the island before it all found and in use, #155)
 ##   voyage        the first island all found and its finale seen, the next island open (not in the
 ##                 Play build): the voyage plays (as 섬 고르기's first 출발!, #118), then the next
 ##                 island's map and prologue (#75)
@@ -336,6 +337,18 @@ func _demo_story(value: String) -> Dictionary:
 	var store := {}
 	var full := func(spot: String) -> int:
 		return MissionRound.missions(ExperimentRegistry.find(spot)).get("stages", []).size()
+	if kind == "voyage" and id != "" and Island.opens_after(id) != "":
+		# voyage:<island> (#155): that island's voyage, the island before it all found and in use.
+		var before := Island.opens_after(id)
+		Island.set_dev_open(not OS.has_feature("play"))
+		Island.set_current(before)
+		Story.mark_voyage_seen(before)
+		for spot in Island.by_id(before).spots():
+			store[spot] = full.call(spot)
+		ProgressStore.save(store)
+		Story.mark_seen("prologue")
+		Story.mark_seen("finale")
+		return {"voyage": id}
 	if kind in ["voyage", "islands"]:
 		Island.set_dev_open(not OS.has_feature("play"))   # the next island is still in the making (#72)
 		for spot in Story.spots():

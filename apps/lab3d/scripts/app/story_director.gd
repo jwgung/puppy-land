@@ -504,6 +504,8 @@ func play_prologue() -> void:
 		var beach := VoyageScreen.keeper_spot(home.map)
 		home.stroll_home(beach, STROLL_S)
 		_set_camera(_beach_shot(beach))
+		if Story.voyage_at_night(home.island.id):   # the voyage ended at night (#155): the beach too
+			_set_night(1.0)
 	_open_page(0)
 
 

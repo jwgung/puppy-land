@@ -12,6 +12,10 @@
 ## the sea, its sky left out), the sea's far islands and boats (MapSea), the trip's boat (MapSea's boat,
 ## bigger) with the map-size trio aboard, and the keeper. Pictures and words only: nothing is saved
 ## but the voyage's mark and the island in use, and no lab is touched.
+##
+## A voyage at night (the curie island, #155: the story's `voyage_at_night`, its lighthouse is out): the
+## sea turns night from the "sea" shot on (story_tint, the sky and the sea's colour as the map's night,
+## the far boats' lanterns lit) and the next island stays as dark as the night, without the flicker.
 class_name VoyageScreen
 extends Control
 
@@ -50,6 +54,9 @@ const GLIDE_S := 4.0
 ## The next island going dark and bright again (the flicker shot): its own tint, one dark beat per FLICKER_S.
 const DARK_TINT := Vector3(0.24, 0.28, 0.58)
 const FLICKER_S := 1.6
+## The night of a voyage at night: the shots after the departure, how long the dusk takes (s).
+const NIGHT_SHOTS := ["sea", "flicker", "arrive"]
+const NIGHT_S := 2.0
 ## The keeper on the beach of `to` (from its centre), facing the boat.
 const KEEPER_AT := Vector2(5.2, 14.2)
 const KEEPER_INLAND := 0.86          # of the coast radius that way: the dry sand (MapIsland.SHORE_F 0.955 is the water's edge)
@@ -81,6 +88,8 @@ var page := -1
 var shot := ""
 var way := 0.0                     # where the boat is on its way (0..1)
 var flicker := 0.0                 # the next island's darkness now (0 bright, 1 dark; tests)
+var night_voyage := false          # the voyage is made at night (Story.voyage_at_night)
+var night := 0.0                   # the night now (0 day, 1 night; tests)
 var done := false
 var _pages: Array = []
 var _glide_from := 0.0
@@ -89,6 +98,8 @@ var _glide_t := 0.0
 var _flicker_t := 0.0
 var _clock := 0.0
 var _tint_material: ShaderMaterial
+var _can_tint := false
+var _day_sea := Color.BLACK
 
 
 ## `island`: the island the voyage goes to (its story has the voyage pages).
@@ -96,6 +107,7 @@ func _init(island: String) -> void:
 	name = "VoyageScreen"
 	to = island
 	from = Island.opens_after(island)
+	night_voyage = Story.voyage_at_night(island)
 
 
 func _ready() -> void:
@@ -112,6 +124,8 @@ func _ready() -> void:
 	view.set_world(world)
 	env = MapIsland.make_environment()
 	view.viewport.add_child(env)
+	_can_tint = DisplayServer.get_name() != "headless"
+	_day_sea = env.environment.background_color
 	_build_world()
 	shield = Control.new()
 	shield.name = "VoyageShield"
@@ -133,6 +147,8 @@ func _ready() -> void:
 
 func _exit_tree() -> void:
 	MapIsland.light_no_spots()
+	if night_voyage:   # the day again for whoever comes next (the map's director sets its own night)
+		_set_night(0.0)
 
 
 func _build_world() -> void:
@@ -167,7 +183,7 @@ func _build_world() -> void:
 		boat.add_child(aboard[i])
 		aboard[i].scale = Vector3.ONE * ACTOR_ON_BOAT * float(ABOARD_SCALE[i])
 		aboard[i].position = ABOARD[i]
-	keeper = keeper_model()
+	keeper = keeper_model(Island.by_id(to).keeper)
 	keeper.scale = Vector3.ONE * KEEPER_SCALE
 	world.add_child(keeper)
 	var spot := keeper_spot(to_map)
@@ -186,9 +202,10 @@ static func keeper_spot(map: MapIsland) -> Vector2:
 	return Vector2.from_angle(a) * map.coast_radius(a) * KEEPER_INLAND
 
 
-## The island keeper (the fox, #71) in the storybook look of the cast (ArtKit.toon_material).
-static func keeper_model() -> Node3D:
-	var model := IslandCast.fox_model()
+## The island keeper (`keeper`: the fox, #71, also when the island names none; the curie island's
+## yaongi, #155) in the storybook look of the cast (ArtKit.toon_material).
+static func keeper_model(keeper := "") -> Node3D:
+	var model := IslandCast.keeper_model(keeper if keeper != "" else "fox")
 	model.name = "Keeper"
 	return model
 
@@ -224,6 +241,7 @@ func _open_page(i: int) -> void:
 	if new_shot != shot:
 		shot = new_shot
 		_flicker_t = 0.0
+		sea.set_lanterns(night_voyage and shot in NIGHT_SHOTS)
 		_place_boat(_glide_from)
 		_pose_cast()
 	var who := str(entry.get("who", "dugi"))
@@ -318,16 +336,29 @@ func advance(delta: float) -> void:
 	_glide_t = minf(_glide_t + delta, GLIDE_S)
 	var k := _glide_t / GLIDE_S
 	_place_boat(lerpf(_glide_from, _glide_to, k * k * (3.0 - 2.0 * k)))
-	if shot == "flicker":
+	if shot == "flicker" and not night_voyage:
 		_flicker_t += delta
 		flicker = 0.5 - 0.5 * cos(TAU * _flicker_t / FLICKER_S)
 	else:
 		flicker = 0.0
 	_tint_material.set_shader_parameter("own_tint", Vector3.ONE.lerp(DARK_TINT, flicker))
+	if night_voyage:
+		_set_night(move_toward(night, 1.0 if shot in NIGHT_SHOTS else 0.0, delta / NIGHT_S))
 	var eye := view_eye()
 	view.rig.look_at_from_position(eye, view_target())
 	if star.visible:
 		StarArt.face_camera(star, view.rig, _clock)
+
+
+## The night level now (0 day .. 1 night): the shaders' global tint, the sky and the sea's colour,
+## as the map's night (StoryDirector).
+func _set_night(level: float) -> void:
+	night = level
+	if _can_tint:
+		RenderingServer.global_shader_parameter_set(&"story_tint", Vector3.ONE.lerp(StoryDirector.NIGHT_TINT, level))
+	MapIsland.sky_material().set_shader_parameter("own_tint", Vector3.ONE.lerp(StoryDirector.NIGHT_SKY, level))
+	if env != null and is_instance_valid(env) and _day_sea != Color.BLACK:
+		env.environment.background_color = _day_sea.lerp(StoryDirector.NIGHT_SEA, level)
 
 
 ## The camera of the shot now (SHOTS eye and target).

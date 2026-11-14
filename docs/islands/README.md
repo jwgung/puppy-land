@@ -4,7 +4,7 @@
 
 - 뉴턴섬(역학): 기획 문서 없음. 실험은 [apps/lab3d README](../../apps/lab3d/README.md) "실험 목록".
 - 허턴섬(지구과학): [기획](hutton.md) · [미션](hutton-missions.md) · [대사](hutton-lines.md)
-- 퀴리섬(화학): [기획](curie.md) · [미션](curie-missions.md)
+- 퀴리섬(화학): [기획](curie.md) · [미션](curie-missions.md) · [대사](curie-lines.md)
 
 ## 섬 공통 규칙
 
