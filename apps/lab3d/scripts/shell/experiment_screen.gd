@@ -1590,7 +1590,7 @@ func _show_piece() -> void:
 		_piece.queue_free()
 	var cat := lab_cat()
 	var height := cat.bounds().size.y if cat != null else 1.4
-	_piece = PieceArt.make(piece_kind(), clampf(height * 0.32, 0.25, 1.0))   # big enough to see its face
+	_piece = PieceArt.make(piece_kind(), clampf(height * 0.32, 0.25, 1.0), PieceArt.slot_of(definition.id()))   # big enough to see its face
 	_piece.name = "FoundPiece"
 	_piece_t = 0.0
 	# The piece game's piece (LabGame, 2026-10-29): the one the child got out flies from where it lies
@@ -1663,7 +1663,7 @@ func _show_done_card() -> void:
 	if is_sidebar_open():
 		close_sidebar(false)
 	_hide_tip()
-	_done_card = RoundDoneCard.new(_stamp_labels.size(), Story.enabled, piece_kind())
+	_done_card = RoundDoneCard.new(_stamp_labels.size(), Story.enabled, piece_kind(), PieceArt.slot_of(definition.id()))
 	if _piece != null and is_instance_valid(_piece):
 		_piece.queue_free()   # the card shows the piece now
 	_piece = null

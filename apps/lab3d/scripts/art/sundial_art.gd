@@ -49,15 +49,20 @@ const CARD_HEIGHT := 2.0
 ## Rounding of the three corners (edges split to this length, then Chaikin corner cutting twice).
 const ROUND_STEP := 0.09
 
-static var _rim: Array = []
+static var _rims: Dictionary = {}   # wedge angle (deg) -> rim
 static var _meshes: Array = []
 
 
 ## The wedge's rim in the xy plane (Vector2, y up, counter-clockwise): the point at the bottom (APEX),
 ## the arc at the top (SPAN from it), all three corners softly rounded.
 static func rim() -> Array:
-	if _rim.is_empty():
-		var half := deg_to_rad(WEDGE_DEG * 0.5)
+	return rim_of(WEDGE_DEG)
+
+
+## The same rim for a wedge of `deg` degrees (the curie island's lens cuts its disc in eleven: LensArt).
+static func rim_of(deg: float) -> Array:
+	if not _rims.has(deg):
+		var half := deg_to_rad(deg * 0.5)
 		var apex := APEX
 		var raw: Array = [apex]
 		for i in ARC_STEPS + 1:
@@ -78,8 +83,8 @@ static func rim() -> Array:
 				out.append(q0.lerp(q1, 0.25))
 				out.append(q0.lerp(q1, 0.75))
 			dense = out
-		_rim = dense
-	return _rim
+		_rims[deg] = dense
+	return _rims[deg]
 
 
 ## The rim pushed out by `w` along its normals (the outline).

@@ -1,8 +1,9 @@
 ## The map corner's emblem of the pieces found on an island (the story "별 조각 찾기"; PieceArt picks
 ## the island's): one wedge per piece fills as the pieces reach the lookout, and a newly filled wedge
-## pops (a short bounce of the whole emblem). StarEmblem (the guiding star, the mechanics island) and
-## SundialEmblem (the sundial's dial, the hutton island, #101) draw it. Pictures only, no number and
-## no words; 2D shapes only (one canvas item); it takes no touch.
+## pops (a short bounce of the whole emblem). StarEmblem (the guiding star, the mechanics island),
+## SundialEmblem (the sundial's dial, the hutton island, #101) and LensEmblem (the rainbow lighthouse's
+## lens, the curie island, #154) draw it. Pictures only, no number and no words; 2D shapes only (one
+## canvas item); it takes no touch.
 class_name PieceEmblem
 extends Control
 
@@ -13,6 +14,9 @@ const POP_S := 0.45
 
 var total := 11
 var filled := 0
+## The last piece is in its middle (set_whole: the sundial's gnomon #106, the lens's flame #154): after
+## the finale. The star's emblem draws no middle.
+var whole := false
 var _pop := -1.0
 
 
@@ -30,6 +34,14 @@ func set_filled(count: int, pop := false) -> void:
 	if pop:
 		_pop = 0.0
 		set_process(true)
+	queue_redraw()
+
+
+## The emblem is whole (every piece in, its middle drawn): after the island's finale.
+func set_whole(on: bool) -> void:
+	whole = on
+	if on:
+		filled = total
 	queue_redraw()
 
 

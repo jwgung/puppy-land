@@ -24,11 +24,12 @@ const INDEX_PATH := "res://content/islands/index.json"
 const GROUNDS := ["meadow", "hill", "yard", "pond", "coast", "valley"]
 ## The lookout may be the cat's square instead of a spot (the hutton island's sundial, #72).
 const HOME := "home"
-## The pieces an island's spots give (#101, PieceArt): the guiding star's (the default) or the
-## sundial's golden wedges (the hutton island).
+## The pieces an island's spots give (#101, PieceArt): the guiding star's (the default), the
+## sundial's golden wedges (the hutton island) or the rainbow lighthouse's lens (the curie island, #154).
 const PIECE_STAR := "star"
 const PIECE_SUNDIAL := "sundial"
-const PIECES := [PIECE_STAR, PIECE_SUNDIAL]
+const PIECE_LENS := "lens"
+const PIECES := [PIECE_STAR, PIECE_SUNDIAL, PIECE_LENS]
 
 ## Zone id -> {ground (GROUNDS: the hutton island adds coast and valley, #72), look (the lab ground's look; default the ground), at [x, z], radius or
 ## size [w, d], height (hills; the valley's rise), spots [[experiment id, [x, z], landmark yaw deg], ...]}, in the
@@ -280,6 +281,29 @@ func gnomon_spot() -> String:
 	if piece != PIECE_SUNDIAL or order.size() <= SUNDIAL_WEDGES:
 		return ""
 	return str(order[SUNDIAL_WEDGES])
+
+
+## The lens's wedges (#154): the first LENS_PIECES spots of the order each give one; the next (the
+## curie island's last, the flame colours) gives the lighthouse's flame.
+const LENS_PIECES := 11
+
+
+## The spot that gives the lens's flame ("" unless the island's pieces are the lens, with enough spots).
+func flame_spot() -> String:
+	if piece != PIECE_LENS or order.size() <= LENS_PIECES:
+		return ""
+	return str(order[LENS_PIECES])
+
+
+## The spot whose piece never flies on the map (its place is the emblem's middle): the gnomon or the
+## flame ("" on an island of star pieces).
+func held_spot() -> String:
+	return gnomon_spot() if piece == PIECE_SUNDIAL else flame_spot()
+
+
+## Where `spot_id` stands in the order (its piece's place in the lens or the dial; -1 when not here).
+func slot_of(spot_id: String) -> int:
+	return order.find(spot_id)
 
 
 ## What is wrong with the data ("" when nothing).
