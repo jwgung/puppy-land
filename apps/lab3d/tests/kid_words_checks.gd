@@ -69,7 +69,10 @@ func check_banmal() -> void:
 			check.call(id + " choice", choice.get("label"))
 			check.call(id + " guess", choice.get("guess"))
 	for island in Island.ids():
-		var story: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://content/locale/ko/story/%s.json" % island))
+		var story_path := "res://content/locale/ko/story/%s.json" % island
+		if not FileAccess.file_exists(story_path):   # an island still being made has no story yet
+			continue
+		var story: Variant = JSON.parse_string(FileAccess.get_file_as_string(story_path))
 		if story is Dictionary:
 			for part in ["prologue", "finale", "finale_after", "voyage"]:
 				for page in story.get(part, []):

@@ -376,7 +376,7 @@ func check_title_islands(_quality_script: GDScript) -> void:
 	await _free(app)
 	ProgressStore.set_mark(ProgressStore.STORY, "finale", true)
 	Story.mark_voyage_seen(NEXT)
-	# The next island in the making: its card locked, with the first island's name in the condition.
+	# The next island in the making: its card locked, 곧 만나요 (#152; a playable one names the island before).
 	_in_making()
 	app = await _app([])
 	var title := app._screen as TitleScreen
@@ -399,8 +399,13 @@ func check_title_islands(_quality_script: GDScript) -> void:
 			if card.find_child("Lock", true, false) == null:
 				problems.append("no lock on %s" % id)
 		var next_line := (cards.cards[NEXT].find_child("About", true, false) as Label).text
-		if not IslandCards.island_name(ProgressStore.FIRST_ISLAND) in next_line:
+		if next_line != Locale.t("islands.soon"):   # (in the making it would not open after the first: 곧 만나요, #152)
 			problems.append("condition %s" % next_line)
+		var later := {"id": NEXT, "open": false, "after": IslandCards.island_name(ProgressStore.FIRST_ISLAND)}
+		Island.use_index([{"id": ProgressStore.FIRST_ISLAND, "file": "mechanics.json"}, {"id": NEXT, "file": "hutton.json", "opens_after": ProgressStore.FIRST_ISLAND, "product": "island_hutton"}])
+		if not IslandCards.island_name(ProgressStore.FIRST_ISLAND) in IslandCards.locked_line(later):   # (a playable one: its condition)
+			problems.append("a playable locked island's condition %s" % IslandCards.locked_line(later))
+		_in_making()
 		var last_line := (cards.cards[""].find_child("About", true, false) as Label).text
 		if last_line != Locale.t("islands.soon"):   # (no island opens after the last: no promise)
 			problems.append("next line %s" % last_line)

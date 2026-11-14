@@ -41,6 +41,13 @@ var radius_x := 0.0
 var radius_z := 0.0
 var coast_waves: Array = []
 var coast_bumps: Array = []
+## A flask's neck out of the coast (curie, 2026-11-13 user "섬 모양 자체를 플라스크로"): [angle deg,
+## width m, length m from the centre]; straight sides, the mouth at its end. And the top grid's
+## sectors round the island (more for a neck, so its sides stay straight; default MapIsland.SECTORS).
+var coast_necks: Array = []
+var coast_sectors := 0
+const MIN_SECTORS := 24     # fewer and the coast is a polygon
+const MAX_SECTORS := 240    # more costs the map's one mesh for nothing seen
 var trees: Array = []        # [x, z, size]
 var rocks: Array = []        # [x, z, radius]
 var clouds: Array = []       # [x, y, z, size]
@@ -56,8 +63,11 @@ var piece := PIECE_STAR
 var keeper := ""
 ## The island's own landforms and buildings (#72), each optional: volcano {at [x, z], radius, height}
 ## (a cone, the valley's ground rising to it), river [[x, z], ...] (from its source to past the coast),
-## lighthouse [x, z], sundial true (on the square). Read by MapIsland and LabWorld; {} on the
-## mechanics island.
+## lighthouse [x, z], sundial true (on the square). The curie island's (2026-11-13): lighthouse_rainbow
+## true (MapLandmarks.lighthouse rainbow, on the flask's rock lip when it is at a neck's mouth), houses
+## [[x, z, yaw deg], ...] (the kitchen village), potions [[x, z, size], ...] (bottles in the grass),
+## washing [x, z] (the spring's washing place, facing the pond). Read by MapIsland and LabWorld; {}
+## on the mechanics island.
 var features: Dictionary = {}
 ## The island's id in the list ("" for an island read straight from data).
 var id := ""
@@ -193,6 +203,8 @@ static func from_data(data: Dictionary) -> Island:
 	island.radius_z = float(coast.get("radius_z", 0.0))
 	island.coast_waves = _array(coast.get("waves"))
 	island.coast_bumps = _array(coast.get("bumps"))
+	island.coast_necks = _array(coast.get("necks"))
+	island.coast_sectors = int(coast.get("sectors", 0))
 	island.trees = _array(data.get("trees"))
 	island.rocks = _array(data.get("rocks"))
 	island.clouds = _array(data.get("clouds"))
@@ -276,6 +288,11 @@ func _check() -> String:
 		return "no zones"
 	if radius_x <= 0.0 or radius_z <= 0.0:
 		return "no coast"
+	for neck: Variant in coast_necks:
+		if not _numbers(neck, 3) or float(neck[1]) <= 0.0 or float(neck[2]) <= maxf(radius_x, radius_z):
+			return "coast: a neck is not [angle, width, length past the coast]"
+	if coast_sectors != 0 and (coast_sectors < MIN_SECTORS or coast_sectors > MAX_SECTORS):
+		return "coast: sectors not %d..%d" % [MIN_SECTORS, MAX_SECTORS]
 	for zone in zones:
 		var spec: Variant = zones[zone]
 		if not spec is Dictionary or str(spec.get("ground", "")) not in GROUNDS or _array(spec.get("at")).size() != 2 \
@@ -317,12 +334,23 @@ func _check_features() -> String:
 			"lighthouse":
 				if _array(v).size() != 2:
 					return "features.lighthouse: [x, z]"
-			"sundial":
+			"sundial", "lighthouse_rainbow":
 				if not v is bool:
-					return "features.sundial: true or false"
+					return "features.%s: true or false" % key
+			"houses", "potions":   # the curie island's (MapLandmarks.house, potion): [x, z, yaw] / [x, z, size]
+				if not v is Array or not v.all(func(p: Variant) -> bool: return _numbers(p, 3)):
+					return "features.%s: [x, z, n] each" % key
+			"washing":
+				if not _numbers(v, 2):
+					return "features.washing: [x, z]"
 			_:
 				return "features.%s is not a feature" % key
 	return ""
+
+
+## True when `v` is an array of `n` numbers.
+static func _numbers(v: Variant, n: int) -> bool:
+	return v is Array and v.size() == n and v.all(func(x: Variant) -> bool: return x is float or x is int)
 
 
 static func _dict(v: Variant) -> Dictionary:
