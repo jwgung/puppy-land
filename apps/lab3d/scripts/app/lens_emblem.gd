@@ -3,8 +3,9 @@
 ## the pieces reach the lookout, each in its rainbow colour (LensArt.RAINBOW: the filled lens is a
 ## rainbow wheel) with a light glass ring and a deeper band along the rim; the others are pale paper.
 ## The middle stays an empty round spot: the lighthouse's flame, spot 12's piece (Island.flame_spot),
-## which never flies (StoryDirector) and lights there once the lens is whole (set_whole, the finale);
-## before, the pieces past the eleventh fill nothing more. Filling and pop: PieceEmblem. Pictures only.
+## which never flies (StoryDirector) and lights there once the lens is whole (set_whole: the island
+## card after the finale now; the map's corner when the curie finale comes, #168); before, the pieces
+## past the eleventh fill nothing more. Filling and pop: PieceEmblem. Pictures only.
 class_name LensEmblem
 extends PieceEmblem
 
@@ -25,15 +26,7 @@ func wedges_filled() -> int:
 
 ## Wedge `i`'s polygon (from the top, clockwise on screen), radius r about c, from `r0` outwards.
 static func wedge(c: Vector2, r0: float, r: float, i: int) -> PackedVector2Array:
-	var steps := 8
-	var a0 := -PI * 0.5 + TAU * i / WEDGES
-	var a1 := -PI * 0.5 + TAU * (i + 1) / WEDGES
-	var poly := PackedVector2Array()
-	for s in steps + 1:
-		poly.append(c + Vector2.from_angle(lerpf(a0, a1, float(s) / steps)) * r)
-	for s in range(steps, -1, -1):
-		poly.append(c + Vector2.from_angle(lerpf(a0, a1, float(s) / steps)) * r0)
-	return poly
+	return wedge_of(c, r0, r, i, WEDGES)
 
 
 ## The lit flame in 2D (y down) about `c`, `k` px from its middle to its foot: LensArt's teardrop with

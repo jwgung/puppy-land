@@ -46,9 +46,13 @@ func check_data() -> void:
 	var mechanics := Island.by_id("mechanics")
 	if mechanics.piece != Island.PIECE_STAR or mechanics.held_spot() != "" or mechanics.flame_spot() != "":
 		problems.append("mechanics: %s, held %s" % [mechanics.piece, mechanics.held_spot()])
+	var eleven: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://content/islands/mechanics.json"))
+	eleven.piece = Island.PIECE_LENS   # 11 spots: no flame
+	if Island.from_data(eleven).problem == "":
+		problems.append("a lens island of 11 spots reads without a problem")
 	if PieceArt.lab_scale(PieceArt.LENS) != PieceArt.SUNDIAL_LAB_SCALE or PieceArt.lab_scale(PieceArt.STAR) != 1.0:
 		problems.append("lab scale %.2f" % PieceArt.lab_scale(PieceArt.LENS))
-	expect.call(problems.is_empty(), "lens piece: curie gives the rainbow lens and its 12th spot (flame colours) the flame that never flies; hutton keeps the sundial (gnomon held), mechanics the star; slots are the order's places",
+	expect.call(problems.is_empty(), "lens piece: curie gives the rainbow lens and its 12th spot (flame colours) the flame that never flies; hutton keeps the sundial (gnomon held), mechanics the star; slots are the order's places; a lens island needs its 12 spots",
 		"; ".join(problems))
 
 
@@ -78,6 +82,8 @@ func check_wedges() -> void:
 		if node.name != want_name or draws != 2 or _body(node) == null or _body(node).mesh != LensArt.piece_meshes(slot)[0]:
 			problems.append("slot %d: %s, %d draws" % [slot, node.name, draws])
 		node.free()
+	if LensArt.piece_meshes(-1) != LensArt.piece_meshes(0):   # a spot not in the order: the first wedge, dressed
+		problems.append("a slot below the first")
 	if LensArt.piece_meshes(0)[0] == LensArt.piece_meshes(1)[0]:
 		problems.append("two wedges share a mesh (one colour)")
 	var top := -INF

@@ -37,6 +37,20 @@ func set_filled(count: int, pop := false) -> void:
 	queue_redraw()
 
 
+## Wedge `i` of `count` (from the top, clockwise on screen), radius r about c, from `r0` outwards (the
+## sundial's dial and the lens cut their disc so).
+static func wedge_of(c: Vector2, r0: float, r: float, i: int, count: int) -> PackedVector2Array:
+	var steps := 8
+	var a0 := -PI * 0.5 + TAU * i / count
+	var a1 := -PI * 0.5 + TAU * (i + 1) / count
+	var poly := PackedVector2Array()
+	for s in steps + 1:
+		poly.append(c + Vector2.from_angle(lerpf(a0, a1, float(s) / steps)) * r)
+	for s in range(steps, -1, -1):
+		poly.append(c + Vector2.from_angle(lerpf(a0, a1, float(s) / steps)) * r0)
+	return poly
+
+
 ## The emblem is whole (every piece in, its middle drawn): after the island's finale.
 func set_whole(on: bool) -> void:
 	whole = on

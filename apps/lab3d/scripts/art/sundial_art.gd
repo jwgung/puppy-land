@@ -170,14 +170,7 @@ static func _pillow(points: Array, depth: float, dress: bool) -> ArrayMesh:
 static func _dress(b: ArtMeshBuilder, z: float, side: float) -> void:
 	var facing := Vector3(0.0, 0.0, side)
 	var zb := z + side * 0.003
-	var poly := band(shrunk(rim(), SHRINK), SHRINK)
-	for i in (poly.size() >> 1) - 1:   # the band as a strip: outer i, i + 1 against their inner points
-		var o0 := poly[i]
-		var o1 := poly[i + 1]
-		var i0 := poly[poly.size() - 1 - i]
-		var i1 := poly[poly.size() - 2 - i]
-		b.add_triangle([Vector3(o0.x, o0.y, zb), Vector3(o1.x, o1.y, zb), Vector3(i1.x, i1.y, zb)], [RIM_3D, RIM_3D, RIM_3D], facing)
-		b.add_triangle([Vector3(o0.x, o0.y, zb), Vector3(i1.x, i1.y, zb), Vector3(i0.x, i0.y, zb)], [RIM_3D, RIM_3D, RIM_3D], facing)
+	strip(b, band(shrunk(rim(), SHRINK), SHRINK), zb, RIM_3D, facing)
 	var zl := z + side * 0.005
 	for pair: Array in hour_lines(SHRINK):
 		var a: Vector2 = pair[0]
@@ -187,6 +180,19 @@ static func _dress(b: ArtMeshBuilder, z: float, side: float) -> void:
 		b.add_triangle([v[0], v[1], v[2]], [LINE_3D, LINE_3D, LINE_3D], facing)
 		b.add_triangle([v[0], v[2], v[3]], [LINE_3D, LINE_3D, LINE_3D], facing)
 	StarArt.add_face(b, z + side * 0.01, side, FACE_AT, FACE_K)
+
+
+## A strip polygon (its outer run, then its inner run backwards, as band gives) laid flat at height z:
+## outer i, i + 1 against their inner points (also the lens's ring and band, LensArt).
+static func strip(b: ArtMeshBuilder, poly: PackedVector2Array, z: float, color: Color, facing: Vector3) -> void:
+	var colors := [color, color, color]
+	for i in (poly.size() >> 1) - 1:
+		var o0 := poly[i]
+		var o1 := poly[i + 1]
+		var i0 := poly[poly.size() - 1 - i]
+		var i1 := poly[poly.size() - 2 - i]
+		b.add_triangle([Vector3(o0.x, o0.y, z), Vector3(o1.x, o1.y, z), Vector3(i1.x, i1.y, z)], colors, facing)
+		b.add_triangle([Vector3(o0.x, o0.y, z), Vector3(i1.x, i1.y, z), Vector3(i0.x, i0.y, z)], colors, facing)
 
 
 static func _lit(n: Vector3, sun: Vector3) -> Color:

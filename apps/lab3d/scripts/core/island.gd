@@ -331,6 +331,8 @@ func _check() -> String:
 				return "zone %s: a spot is not [id, [x, z], yaw]" % zone
 	if piece not in PIECES:
 		return "piece %s is not one of %s" % [piece, ", ".join(PIECES)]
+	if piece == PIECE_LENS and spots().size() != LENS_PIECES + 1:   # the eleven wedges and the flame
+		return "a lens island has %d spots, not %d" % [spots().size(), LENS_PIECES + 1]
 	var ids := spots()
 	if lookout not in ids and lookout != HOME:
 		return "lookout %s is not a spot or the square" % lookout

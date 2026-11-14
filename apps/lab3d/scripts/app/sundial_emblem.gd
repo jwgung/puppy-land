@@ -25,17 +25,7 @@ func wedges_filled() -> int:
 
 ## Wedge `i`'s polygon (from the top, clockwise on screen), radius r about c, from `r0` outwards.
 static func wedge(c: Vector2, r0: float, r: float, i: int) -> PackedVector2Array:
-	var steps := 8
-	var a0 := -PI * 0.5 + TAU * i / WEDGES
-	var a1 := -PI * 0.5 + TAU * (i + 1) / WEDGES
-	var poly := PackedVector2Array()
-	for s in steps + 1:
-		var a := lerpf(a0, a1, float(s) / steps)
-		poly.append(c + Vector2(cos(a), sin(a)) * r)
-	for s in range(steps, -1, -1):
-		var a := lerpf(a0, a1, float(s) / steps)
-		poly.append(c + Vector2(cos(a), sin(a)) * r0)
-	return poly
+	return wedge_of(c, r0, r, i, WEDGES)
 
 
 func _draw() -> void:

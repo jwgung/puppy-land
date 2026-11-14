@@ -1074,7 +1074,7 @@ python3 -I apps/lab3d/tools/device_gesture.py orbit  # orbit | pinch | pinch-fix
 
 - **섬마다 조각**: `content/islands/curie.json` `"piece": "lens"`(`Island.PIECE_LENS`). 고르는 곳은 허턴섬과 같은 `PieceArt` 하나다. 조각마다 색이 달라서 `PieceArt.make`·`draw_2d`에 `slot`(장소가 섬 순서에서 몇 번째인지, `Island.slot_of`, 실험은 `PieceArt.slot_of`)을 넘긴다.
 - **3D** (`LensArt`, `scripts/art/lens_art.gd`): 해시계 부채꼴과 같은 둥근 모서리 테두리(`SundialArt.rim_of`)를 360/11°로, 같은 그리기 2번(빛을 구운 면 + 갈색 외곽선 껍질). 앞뒤 면에 조각 색(`LensArt.RAINBOW`, 위에서 시계 방향으로 빨강 → 분홍), 가운데를 가로지르는 밝은 유리 고리, 호를 따라 진한 띠, `StarArt.add_face`의 얼굴. 12번 조각은 불꽃(눈물방울 모양, 노란 속불, 얼굴). 실험 속 크기는 부채꼴이라 해시계와 같이 1.3배.
-- **2D**: 다 한 카드는 같은 모양(`LensArt.draw_piece_2d`). 지도 모서리 표시 `LensEmblem`: 11칸의 둥근 렌즈, 조각이 올 때마다 위에서 시계 방향으로 한 칸씩 그 무지개 색(유리 고리·진한 띠)이 차서 다 차면 무지개 바퀴, 가운데 빈 동그라미는 불꽃 자리. 12번째 조각은 칸을 채우지 않고 날지 않는다(`Island.held_spot`: 허턴섬의 바늘과 같은 자리, `StoryDirector._next_flight`). 끝 이야기 뒤(`PieceEmblem.set_whole`, 해시계와 같이 바탕으로 옮김)에 가운데에 불꽃이 켜진다. 등대와 끝 이야기의 렌즈·불은 #167·#168.
+- **2D**: 다 한 카드는 같은 모양(`LensArt.draw_piece_2d`). 지도 모서리 표시 `LensEmblem`: 11칸의 둥근 렌즈, 조각이 올 때마다 위에서 시계 방향으로 한 칸씩 그 무지개 색(유리 고리·진한 띠)이 차서 다 차면 무지개 바퀴, 가운데 빈 동그라미는 불꽃 자리. 12번째 조각은 칸을 채우지 않고 날지 않는다(`Island.held_spot`: 허턴섬의 바늘과 같은 자리, `StoryDirector._next_flight`). 가운데 불꽃은 `PieceEmblem.set_whole`(해시계와 같이 바탕으로 옮김)로 켜진다. 지금은 끝 이야기를 본 섬 고르기 카드에서만 켜지고, 지도 모서리와 등대의 렌즈·불은 퀴리섬 끝 이야기(#167·#168)에서 켠다.
 - 시험: `tests/lens_piece_checks.gd`(퀴리섬은 렌즈·12번 불꽃은 날지 않음, 허턴섬 바늘·뉴턴섬 별 그대로, 360/11° 부채꼴과 색 11가지·불꽃, 그리기 2번, 표시 11칸과 불꽃, 카드 그림).
 
 ### 낮과 밤 (#74, 2026-11-06)

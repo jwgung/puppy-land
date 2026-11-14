@@ -34,7 +34,7 @@ static var _flame_rim: Array = []
 
 ## The colour of the piece in `slot` (its spot's place in the order, from 0; the flame's past the lens).
 static func color_of(slot: int) -> Color:
-	return FLAME if slot >= PIECES else RAINBOW[posmod(slot, PIECES)]
+	return FLAME if slot >= PIECES else RAINBOW[maxi(slot, 0)]
 
 
 ## The wedge's rim: SundialArt's rounded wedge at an eleventh of the disc.
@@ -71,22 +71,23 @@ static func ring(k: float) -> PackedVector2Array:
 
 ## [body mesh, outline mesh] of the piece in `slot` (radius 1, the xy plane, facing +z), cached.
 static func piece_meshes(slot: int) -> Array:
-	var key := mini(slot, PIECES)   # every slot past the lens is the flame
+	var key := clampi(slot, 0, PIECES)   # every slot past the lens is the flame (and none is below the first)
 	if not _meshes.has(key):
-		var points := flame_rim() if key >= PIECES else rim()
+		var flame := key >= PIECES
+		var points := flame_rim() if flame else rim()
 		var face := color_of(key).lerp(Color.WHITE, LIGHTEN_3D)
-		_meshes[key] = [_pillow(points, SundialArt.DEPTH, face, key),
-			_pillow(SundialArt.outset(points, SundialArt.OUTLINE_W), SundialArt.DEPTH * (1.0 + SundialArt.OUTLINE_W * 2.5), face, -1)]
+		_meshes[key] = [_pillow(points, SundialArt.DEPTH, face, flame, true),
+			_pillow(SundialArt.outset(points, SundialArt.OUTLINE_W), SundialArt.DEPTH * (1.0 + SundialArt.OUTLINE_W * 2.5), face, flame, false)]
 	return _meshes[key]
 
 
-## A pillow: `points` (z = 0) rising to the flat face (shrunk by SundialArt.SHRINK) at z = +-depth in
-## `face`; its dress (the ring, the band or the flame's heart, and the face) on both sides when `slot`
-## is not -1 (the outline).
-static func _pillow(points: Array, depth: float, face: Color, slot: int) -> ArrayMesh:
+## A pillow: `points` (z = 0) rising to the flat face (shrunk by SundialArt.SHRINK about the wedge's
+## or the `flame`'s middle) at z = +-depth in `face`; its decoration (the ring and the band, or the
+## flame's heart, and the face) on both sides when `dress` (not on the outline). SundialArt._pillow's
+## shape with the piece's own colours.
+static func _pillow(points: Array, depth: float, face: Color, flame: bool, dress: bool) -> ArrayMesh:
 	var b := ArtKit.builder()
 	var sun := Vector3(-0.45, 0.7, 0.55).normalized()
-	var flame := slot >= PIECES
 	var about := FLAME_HEART_AT if flame else SundialArt.CENTRE
 	var top2: Array = points.map(func(p: Vector2) -> Vector2: return about + (p - about) * SundialArt.SHRINK)
 	var centre := Vector3(about.x, about.y, 0.0)
@@ -113,7 +114,7 @@ static func _pillow(points: Array, depth: float, face: Color, slot: int) -> Arra
 			b.add_triangle([r0, r1, t1], [color, color, color], n)
 			b.add_triangle([r0, t1, t0], [color, color, color], n)
 			b.add_triangle([centre + Vector3(0.0, 0.0, z), t0, t1], [face, face, face], facing)
-		if slot >= 0:
+		if dress:
 			_dress(b, z, side, face, flame, top2)
 	return b.commit()
 
@@ -128,23 +129,12 @@ static func _dress(b: ArtMeshBuilder, z: float, side: float, face: Color, flame:
 		_fan(b, FLAME_HEART_AT, heart, zd, FLAME_HEART.lerp(Color.WHITE, LIGHTEN_3D), facing)
 		StarArt.add_face(b, z + side * 0.01, side, FLAME_FACE_AT, 0.85)
 		return
-	_strip(b, SundialArt.band(SundialArt.shrunk(rim(), SundialArt.SHRINK), SundialArt.SHRINK), zd, face.darkened(BAND_DARK), facing)
-	_strip(b, ring(SundialArt.SHRINK), zd, face.lerp(Color.WHITE, RING_LIGHT), facing)
+	SundialArt.strip(b, SundialArt.band(SundialArt.shrunk(rim(), SundialArt.SHRINK), SundialArt.SHRINK), zd, face.darkened(BAND_DARK), facing)
+	SundialArt.strip(b, ring(SundialArt.SHRINK), zd, face.lerp(Color.WHITE, RING_LIGHT), facing)
 	StarArt.add_face(b, z + side * 0.01, side, SundialArt.FACE_AT, SundialArt.FACE_K)
 
 
-## A strip polygon (its outer run, then its inner run backwards, as SundialArt.band gives) at height z.
-static func _strip(b: ArtMeshBuilder, poly: PackedVector2Array, z: float, color: Color, facing: Vector3) -> void:
-	var colors := [color, color, color]
-	for i in (poly.size() >> 1) - 1:
-		var o0 := poly[i]
-		var o1 := poly[i + 1]
-		var i0 := poly[poly.size() - 1 - i]
-		var i1 := poly[poly.size() - 2 - i]
-		b.add_triangle([Vector3(o0.x, o0.y, z), Vector3(o1.x, o1.y, z), Vector3(i1.x, i1.y, z)], colors, facing)
-		b.add_triangle([Vector3(o0.x, o0.y, z), Vector3(i1.x, i1.y, z), Vector3(i0.x, i0.y, z)], colors, facing)
-
-
+## A flat fan of `points` about `c` at height z (the flame's heart).
 static func _fan(b: ArtMeshBuilder, c: Vector2, points: Array, z: float, color: Color, facing: Vector3) -> void:
 	var colors := [color, color, color]
 	for i in points.size():
