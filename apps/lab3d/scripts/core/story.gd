@@ -30,6 +30,9 @@ const SPEAKERS := {
 	# The same fox before it says who it is (the voyage's landing, #118: its tag 여우친구 there, 섬지기
 	# once it told the trio it keeps the island).
 	"fox_stranger": ["speaker.fox_stranger", "res://assets/characters/portraits/fox_%s.webp"],
+	# The third island's lighthouse keeper (#153, 2026-11-13 look chosen by the user: the chemist cat,
+	# yaongi.py), who calls itself 야옹이 (docs/islands/curie-lines.md; its tag: ui.json speaker.yaongi).
+	"yaongi": ["speaker.yaongi", "res://assets/characters/portraits/yaongi_%s.webp"],
 }
 ## The island keeper who speaks a spot's first line on Hutton Island (#74: story.keeper, before Puppy's
 ## clue). Its name tag is the speaker's (ui.json speaker.fox), never written here.

@@ -135,7 +135,7 @@ func check_box() -> void:
 	box.open("다시 같은 얼굴이야.", "explain")
 	if box.swaps != swaps or box.portrait.scale != Vector2.ONE:
 		problems.append("same face re-popped")
-	for who in ["dugi", "puppy", "fox"]:
+	for who in ["dugi", "puppy", "fox", "yaongi"]:
 		for face in Story.FACES:
 			box.set_speaker(who, face)
 			box.layout(Rect2(Vector2.ZERO, TABLET), TABLET.x - 300.0, 16.0)
