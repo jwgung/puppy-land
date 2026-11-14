@@ -3,7 +3,9 @@
 ## hill; 12 spots in the story's order; the lighthouse), its map is laid out on land (every stage on
 ## the grass and out of the pond, 2.5 m apart, the paths on the grass, the trees and rocks clear),
 ## and while its spots are not labs yet it is an island in the making: never open, even after the
-## hutton island, and its card says 곧 만나요 (docs/islands/curie.md).
+## hutton island, and its card says 곧 만나요 (docs/islands/curie.md). The island is a flask lying on its
+## side (2026-11-13 user "섬 모양 자체를 플라스크로"): its neck reaches out to the mouth where the rainbow
+## lighthouse stands on the rock lip, not on the sand; broken neck or village data says what is wrong.
 extends RefCounted
 
 const UI_THEME := "res://scripts/app/ui_theme.gd"
@@ -24,6 +26,7 @@ func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:
 func run() -> void:
 	check_data()
 	check_in_making()
+	check_flask()
 	await check_map()
 	Island.use_for_run(ProgressStore.FIRST_ISLAND)
 
@@ -45,6 +48,56 @@ func check_data() -> void:
 	if Island.opens_after("curie") != "hutton":
 		problems.append("opens after %s" % Island.opens_after("curie"))
 	expect.call(problems.is_empty(), "curie island: content/islands/curie.json reads (kitchen meadow, spring pond, lighthouse hill: 4 spots each, 12 in the story's order, the lighthouse, pieces to the flame spot), after hutton",
+		"; ".join(problems))
+
+
+func check_flask() -> void:
+	var problems := []
+	var island := Island.by_id("curie")
+	var map := MapIsland.new(island)
+	if island.coast_necks.size() != 1:
+		problems.append("necks %s" % str(island.coast_necks))
+	else:
+		var neck: Array = island.coast_necks[0]
+		var dir := Vector2.from_angle(deg_to_rad(float(neck[0])))
+		if not is_equal_approx(map.coast_radius(deg_to_rad(float(neck[0]))), float(neck[2])):
+			problems.append("the coast along the neck is %.1f m, not its %.1f" % [map.coast_radius(deg_to_rad(float(neck[0]))), float(neck[2])])
+		var light := Vector2(island.features.lighthouse[0], island.features.lighthouse[1])
+		if map.neck_at(light).is_empty():
+			problems.append("the lighthouse %s is not at the neck's mouth (on the lip)" % str(light))
+		if not island.features.get("lighthouse_rainbow", false):
+			problems.append("the lighthouse is not the rainbow one")
+		var flame: Dictionary = {}
+		for zone in island.zones:
+			for spot in island.zones[zone].spots:
+				if spot[0] == "flame-color":
+					flame = {"at": Vector2(spot[1][0], spot[1][1])}
+		if flame.is_empty() or flame.at.dot(dir) < map.coast_radius(deg_to_rad(float(neck[0])) + 0.5, false):
+			problems.append("the flame spot is not out in the neck")
+		if not map.on_neck_beach(dir * (float(neck[2]) - 3.0) + Vector2(-dir.y, dir.x) * (float(neck[1]) * 0.5 - 0.3)):
+			problems.append("no beach along the neck's side")
+	for other in ["mechanics", "hutton"]:
+		var o := Island.by_id(other)
+		if not o.coast_necks.is_empty() or MapIsland.new(o).sectors != MapIsland.SECTORS:
+			problems.append("%s has a neck or other sectors" % other)
+	var base: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://content/islands/curie.json"))
+	var broken := {
+		"a neck inside the coast": {"coast": {"necks": [[0.0, 6.0, 5.0]]}},
+		"a neck angle not a number": {"coast": {"necks": [["east", 6.0, 25.0]]}},
+		"too many sectors": {"coast": {"sectors": 100000}},
+		"a house of two numbers": {"features": {"houses": [[1.0, 2.0]]}},
+		"a potion size not a number": {"features": {"potions": [[1.0, 2.0, "big"]]}},
+		"washing not a point": {"features": {"washing": ["here", 1.0]}},
+		"rainbow not true/false": {"features": {"lighthouse_rainbow": "yes"}},
+	}
+	for name in broken:
+		var data := base.duplicate(true)
+		for key in broken[name]:
+			(data[key] as Dictionary).merge(broken[name][key], true)
+		var bad := Island.from_data(data)
+		if bad.problem == "" or bad.playable():
+			problems.append("%s reads without a problem" % name)
+	expect.call(problems.is_empty(), "curie flask: the neck reaches its length, the rainbow lighthouse on the lip at its mouth, the flame spot out in the neck, a beach along its sides; the other islands keep their round coasts; a broken neck, sectors or village feature says what is wrong",
 		"; ".join(problems))
 
 

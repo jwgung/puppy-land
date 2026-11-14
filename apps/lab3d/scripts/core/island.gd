@@ -46,6 +46,8 @@ var coast_bumps: Array = []
 ## sectors round the island (more for a neck, so its sides stay straight; default MapIsland.SECTORS).
 var coast_necks: Array = []
 var coast_sectors := 0
+const MIN_SECTORS := 24     # fewer and the coast is a polygon
+const MAX_SECTORS := 240    # more costs the map's one mesh for nothing seen
 var trees: Array = []        # [x, z, size]
 var rocks: Array = []        # [x, z, radius]
 var clouds: Array = []       # [x, y, z, size]
@@ -287,10 +289,10 @@ func _check() -> String:
 	if radius_x <= 0.0 or radius_z <= 0.0:
 		return "no coast"
 	for neck: Variant in coast_necks:
-		if not neck is Array or neck.size() != 3 or float(neck[1]) <= 0.0 or float(neck[2]) <= maxf(radius_x, radius_z):
+		if not _numbers(neck, 3) or float(neck[1]) <= 0.0 or float(neck[2]) <= maxf(radius_x, radius_z):
 			return "coast: a neck is not [angle, width, length past the coast]"
-	if coast_sectors != 0 and coast_sectors < 24:
-		return "coast: sectors under 24"
+	if coast_sectors != 0 and (coast_sectors < MIN_SECTORS or coast_sectors > MAX_SECTORS):
+		return "coast: sectors not %d..%d" % [MIN_SECTORS, MAX_SECTORS]
 	for zone in zones:
 		var spec: Variant = zones[zone]
 		if not spec is Dictionary or str(spec.get("ground", "")) not in GROUNDS or _array(spec.get("at")).size() != 2 \
@@ -336,14 +338,19 @@ func _check_features() -> String:
 				if not v is bool:
 					return "features.%s: true or false" % key
 			"houses", "potions":   # the curie island's (MapLandmarks.house, potion): [x, z, yaw] / [x, z, size]
-				if not v is Array or not v.all(func(p: Variant) -> bool: return _array(p).size() == 3):
+				if not v is Array or not v.all(func(p: Variant) -> bool: return _numbers(p, 3)):
 					return "features.%s: [x, z, n] each" % key
 			"washing":
-				if _array(v).size() != 2:
+				if not _numbers(v, 2):
 					return "features.washing: [x, z]"
 			_:
 				return "features.%s is not a feature" % key
 	return ""
+
+
+## True when `v` is an array of `n` numbers.
+static func _numbers(v: Variant, n: int) -> bool:
+	return v is Array and v.size() == n and v.all(func(x: Variant) -> bool: return x is float or x is int)
 
 
 static func _dict(v: Variant) -> Dictionary:
