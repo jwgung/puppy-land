@@ -93,7 +93,7 @@ func build() -> void:
 ## lab's island's (PieceArt, #101: the star, or the hutton island's sundial wedge).
 func make_piece(at: Vector3, size := PIECE_SIZE) -> Node3D:
 	piece_size = size * kind_scale()
-	piece = PieceArt.make(piece_kind(), piece_size)
+	piece = PieceArt.make(piece_kind(), piece_size, PieceArt.slot_of(lab.definition.id()) if lab != null else 0)
 	_grow_from = 0.0
 	piece.name = "Piece"
 	piece.position = at

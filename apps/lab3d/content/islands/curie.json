@@ -101,6 +101,7 @@
     [170.0, 27.3, 3.0],
     [300.0, 28.6, 3.0]
   ],
+  "piece": "lens",
   "lookout": "flame-color",
   "order": ["diffusion", "dissolving", "melt-cook", "dough", "clean-water", "soap", "cabbage", "tooth", "fizz", "candle", "rust", "flame-color"]
 }

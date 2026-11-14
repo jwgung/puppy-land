@@ -143,6 +143,9 @@
 ##    sundial, mechanics star), the 36° wedge (on its point, band, hour lines and face inside,
 ##    two draws), the 10-wedge dial emblem, every hutton lab's piece, the cat's piece and the card, the
 ##    map's emblem and flying pieces, the island cards; the mechanics ones stay stars.
+## 22e. the curie island's pieces (tests/lens_piece_checks.gd, #154 2026-11-13): Island.piece lens, the
+##    12th spot's flame held (never flies) like the gnomon, the 360/11° rainbow wedges by slot and the
+##    flame piece (two draws), the 11-wedge lens emblem with the flame lit at set_whole, the card picture.
 ## 23c. UI polish (tests/polish_checks.gd, 2026-10-29): 자세히's header (닫기) stays above the scrolled
 ##    note; a vertical drag from a button, check box or slider scrolls the settings and the note
 ##    (DragScroll) and presses nothing; check boxes instead of switches; 처음부터 다시 하기 asks first and
@@ -411,6 +414,11 @@ func _run() -> void:
 	_expect(sundial != null and sundial.can_instantiate(), "sundial piece checks compile", "")
 	if sundial != null and sundial.can_instantiate():
 		await sundial.new(self, _expect).run()
+	print("== the curie island's pieces (#154: rainbow lens wedges, the flame, the lens emblem) ==")
+	var lens: GDScript = load("res://tests/lens_piece_checks.gd")
+	_expect(lens != null and lens.can_instantiate(), "lens piece checks compile", "")
+	if lens != null and lens.can_instantiate():
+		await lens.new(self, _expect).run()
 	print("== game G3: the slingshot (pull = angle / speed, big readout, no path, formula stamp) ==")
 	var slingshot: GDScript = load("res://tests/slingshot_checks.gd")
 	_expect(slingshot != null and slingshot.can_instantiate(), "slingshot checks compile", "")

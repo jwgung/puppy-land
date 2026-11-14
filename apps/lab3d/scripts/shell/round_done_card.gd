@@ -22,8 +22,10 @@ const POP_S := 0.35
 var stamps := 3
 ## The story: the round's piece (piece_kind) is drawn over the stamps (the piece the child just found).
 var piece := false
-## Which piece (PieceArt: the island's, #101): the star, or the hutton island's sundial wedge.
+## Which piece (PieceArt: the island's, #101): the star, the hutton island's sundial wedge or the curie
+## island's lens wedge; `piece_slot` its place in the order (the lens's colour, #154).
 var piece_kind := PieceArt.STAR
+var piece_slot := 0
 var dim: ColorRect
 var card: PanelContainer
 var stamp_row: Control
@@ -32,11 +34,12 @@ var stay_button: Button
 var closed := false
 
 
-func _init(stamp_count: int, with_piece := false, kind := PieceArt.STAR) -> void:
+func _init(stamp_count: int, with_piece := false, kind := PieceArt.STAR, slot := 0) -> void:
 	name = "RoundDoneCard"
 	stamps = stamp_count
 	piece = with_piece
 	piece_kind = kind
+	piece_slot = slot
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	dim = ColorRect.new()
@@ -109,7 +112,7 @@ func _draw_stamps() -> void:
 		var c := Vector2((w - row_w) * 0.5 + STAMP_R + i * (STAMP_R * 2.0 + STAMP_GAP), row_y)
 		StampSlam.draw_stamp(stamp_row, c, STAMP_R, true)
 	if piece:   # the found piece, drawn like the 3D one (StarArt, 2026-10-29 user; the island's kind, #101)
-		PieceArt.draw_2d(piece_kind, stamp_row, Vector2(w * 0.5, STAR_R + 4.0), STAR_R)
+		PieceArt.draw_2d(piece_kind, stamp_row, Vector2(w * 0.5, STAR_R + 4.0), STAR_R, piece_slot)
 
 
 ## Closes now: the touch of this same frame already reaches what is behind (IGNORE before the free).

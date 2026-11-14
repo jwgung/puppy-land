@@ -475,8 +475,8 @@ func _tag(entry: Dictionary) -> PanelContainer:
 		holder.name = "Pieces"
 		var emblem := PieceArt.emblem(str(entry.piece), int(entry.total))
 		emblem.set_filled(int(entry.pieces))
-		if emblem is SundialEmblem and entry.get("finale", false):
-			(emblem as SundialEmblem).set_whole(true)   # #106: the sundial is whole after its finale
+		if not emblem is StarEmblem and entry.get("finale", false):
+			emblem.set_whole(true)   # #106, #154: the sundial's or the lens's middle after its finale
 		emblem.pivot_offset = Vector2.ZERO
 		emblem.scale = Vector2.ONE * EMBLEM_SCALE
 		holder.custom_minimum_size = emblem.get_combined_minimum_size() * EMBLEM_SCALE
