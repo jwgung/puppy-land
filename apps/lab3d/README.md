@@ -927,7 +927,7 @@ adb shell am start -n jwgung.puppyland/com.godot.game.GodotAppLauncher \
 | `--auto-release=<초>` | 그 간격으로 상자를 다시 놓는다(측정용) |
 | `--demo-celebrate=<초>` | (미션 실험, 화면 찍기용) 그 시간 뒤 1.6초마다 도장을 하나씩 받은 것처럼 도장 쾅 → 다 깼을 때 축하 → 카드를 보인다. 판정·저장 없음(진행 파일은 `progress-bench.cfg`) |
 | `--demo-title` | (화면 찍기·fps용) 측정 인자가 있어도 켤 때 타이틀을 보인다. 진행은 `progress-bench.cfg`에만 |
-| `--demo-story=<부분>` | (화면 찍기용) 이야기를 `progress-bench.cfg`에서만 켠다: `prologue`, `clue:<id>`, `found:<id>`, `flight:<id>`, `finale`, `map`(1절 "이야기") |
+| `--demo-story=<부분>` | (화면 찍기용) 이야기를 `progress-bench.cfg`에서만 켠다: `prologue`, `clue:<id>`, `found:<id>`, `flight:<id>`, `finale`, `map`(1절 "이야기"), `voyage`·`voyage:<섬 id>`(그 섬의 배 장면, 앞 섬을 다 찾은 상태, #155), `islands` |
 | `--demo-flag=<id>` | (지도, 화면 찍기용) 그 장소를 방금 다 깬 것으로(`progress-bench.cfg`에만 도장 3개 + 깃발 대기) 지도를 열어 깃발 올리기를 보인다 |
 | `--auto-drag=<초>` | 그 간격으로 첫 조작 물체를 손가락 입력 경로 그대로 1초 동안 끌어 놓고(영역 끝과 40% 지점을 번갈아), `demo_action`이 있으면 0.4초 뒤 누른다(2026-10-29부터 자유 낙하·미끄럼틀은 놓기가 곧 실행이라 없음). 새총 실험(던지기·공 부딪히기·별 돌기)은 같은 경로로 당겼다 놓고, 꾹 누르는 실험(상자 밀기·시소 들기·줄로 짐 들기)은 2.0초·3.5초를 번갈아 누른 뒤 뗀다(측정용, `bench_device.sh` 기본) |
 | `--q-<항목>=<값>` | 품질 단계 항목 덮어쓰기(측정용) |

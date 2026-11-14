@@ -59,8 +59,7 @@ var lab_facing: Dictionary = {}   # experiment id -> map angle deg of the lab's 
 var lookout := ""
 ## The piece each spot gives (PIECES; "star" when the file has none): PieceArt draws it.
 var piece := PIECE_STAR
-## The island's keeper who walks with the trio on its map and stands in its labs ("" for none; "fox":
-## the hutton island's, 2026-11-11 user: "실험 간 이동할때도 여우친구가 있어야지. 길잡이니까").
+## The island's keeper ("" for none; "yaongi": the curie island's, so far only at the voyage's landing, #155). The fox, the hutton island's, walks with the trio on its map and stands in its labs ( 2026-11-11 user: "실험 간 이동할때도 여우친구가 있어야지. 길잡이니까").
 var keeper := ""
 ## The island's own landforms and buildings (#72), each optional: volcano {at [x, z], radius, height}
 ## (a cone, the valley's ground rising to it), river [[x, z], ...] (from its source to past the coast),

@@ -6,7 +6,7 @@
 ##   island, then the bread cat on the square as the day comes back. A tap turns the page; 건너뛰기
 ##   skips it all. Afterwards the map is as it was (no piece on it, the day, the child's camera).
 ##   Another island's prologue (#75: the hutton island's lines after the voyage) is its words over its
-##   square by day, the camera easing between a few views of it; the map's night comes on the last page.
+##   square by day (after a voyage at night, Story.voyage_at_night, from the night of the beach), the camera easing between a few views of it; the map's night comes on the last page.
 ## - a found piece's flight (a round completed in a lab): after the spot's flag rises, a star piece
 ##   flies from the spot to the lookout (전망대) and the corner emblem (StarEmblem) fills a wedge.
 ## - the finale (the 11th piece at the lookout, once): the pieces gather into the whole star, Puppy and

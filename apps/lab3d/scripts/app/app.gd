@@ -13,7 +13,7 @@
 ##                       never the child's progress
 ##   --demo-story=<part> screenshots of the story in the bench store only (never the child's progress):
 ##                       prologue | clue:<id> | found:<id> | flight:<id> | finale | finale:<island> | map[:<n>]
-##                       | voyage | islands
+##                       | voyage | voyage:<island> | islands
 ##                       (Story, _demo_story; finale:hutton: the sundial finale, #106)
 ##   --progress=complete  writes the child's progress as all done, once (2026-11-02 user: "apk 다 깬걸로
 ##                       해줘. 보기 어렵다"): every stamp, the story's prologue, clues and finale seen, every
