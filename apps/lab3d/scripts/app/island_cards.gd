@@ -317,7 +317,7 @@ static func _mini_island_mesh(id: String) -> Mesh:
 	var island := Island.by_id(id)
 	var map := MapIsland.new(island)
 	var widest := 0.0
-	var sides := maxi(COAST_SIDES, map.sectors)   # (a flask's neck needs the map's finer sectors)
+	var sides := map.sectors if not island.coast_necks.is_empty() else COAST_SIDES   # (a flask's neck needs the map's finer sectors)
 	for i in sides:
 		widest = maxf(widest, map.coast_radius(TAU * i / sides))
 	var shrink := r / maxf(widest, 0.001)

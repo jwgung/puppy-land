@@ -61,8 +61,11 @@ var piece := PIECE_STAR
 var keeper := ""
 ## The island's own landforms and buildings (#72), each optional: volcano {at [x, z], radius, height}
 ## (a cone, the valley's ground rising to it), river [[x, z], ...] (from its source to past the coast),
-## lighthouse [x, z], sundial true (on the square). Read by MapIsland and LabWorld; {} on the
-## mechanics island.
+## lighthouse [x, z], sundial true (on the square). The curie island's (2026-11-13): lighthouse_rainbow
+## true (MapLandmarks.lighthouse rainbow, on the flask's rock lip when it is at a neck's mouth), houses
+## [[x, z, yaw deg], ...] (the kitchen village), potions [[x, z, size], ...] (bottles in the grass),
+## washing [x, z] (the spring's washing place, facing the pond). Read by MapIsland and LabWorld; {}
+## on the mechanics island.
 var features: Dictionary = {}
 ## The island's id in the list ("" for an island read straight from data).
 var id := ""

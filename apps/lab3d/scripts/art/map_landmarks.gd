@@ -302,8 +302,7 @@ static func volcano(b: ArtMeshBuilder, xf: Transform3D, radius: float, height: f
 
 
 ## A lighthouse on its rock: a red and white striped tower, a white gallery, the yellow lamp and a
-## red roof (about 2.4 m).
-## The lighthouse: red and white bands, a yellow lamp. `rainbow` (the curie island's, Island
+## red roof (about 2.4 m). `rainbow` (the curie island's, Island
 ## lighthouse_rainbow): six rainbow bands, a little taller, its lamp dark (the crystal lens is in
 ## pieces until the finale, docs/islands/curie.md).
 static func lighthouse(b: ArtMeshBuilder, xf: Transform3D, rainbow := false) -> void:

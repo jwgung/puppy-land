@@ -68,7 +68,8 @@ const VOLCANO_SINK := 0.25
 ## The coast zone's sand edge wavers: [order, share of the radius, phase] round its middle.
 const COAST_WAVER := [[3.0, 0.07, 1.0], [5.0, 0.04, 0.3]]
 const LIGHTHOUSE_CLEAR := 0.8        # m round the lighthouse kept clear of decoration
-const HOUSE_SCALE := 1.6
+const HOUSE_SCALE := 1.6           # the curie houses on the map (MapLandmarks.house is about 1.2 m)
+const WASHING_CLEAR := 1.0          # the washing place's footprint (decorations keep off)
 const HOUSE_CLEAR := 1.6             # the curie village houses' footprint (decorations keep off)
 const NECK_BEACH := 1.4              # m of sand along a flask neck's sides (on_neck_beach)
 const NECK_BEACH_LIFT := 0.12         # over the stretched polar triangles under it (they bulge up between samples)
@@ -898,7 +899,7 @@ func features_clear(p: Vector2, radius: float) -> bool:
 		return false
 	if f.has("lighthouse") and p.distance_to(_v2(f.lighthouse)) < LIGHTHOUSE_CLEAR + radius:
 		return false
-	if f.has("washing") and p.distance_to(_v2(f.washing)) < 1.0 + radius:
+	if f.has("washing") and p.distance_to(_v2(f.washing)) < WASHING_CLEAR + radius:
 		return false
 	if f.has("volcano") and not new_land_clear(p, radius):
 		return false
@@ -935,7 +936,8 @@ func _add_volcano(b: ArtMeshBuilder) -> void:
 	MapLandmarks.volcano(b, Transform3D(Basis(), Vector3(at.x, y, at.y)), radius, float(v.height), y - low + VOLCANO_SINK)
 
 
-## The lighthouse on the beach and the sundial on the square.
+## The lighthouse on the beach (on the flask's lip at a neck's mouth), the curie village's houses,
+## potions and washing place, and the sundial on the square.
 func _add_marks(b: ArtMeshBuilder) -> void:
 	var f := island.features
 	if f.has("lighthouse"):
