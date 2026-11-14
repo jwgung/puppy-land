@@ -6,8 +6,10 @@ Run (headless):
         [--out apps/lab3d/assets/characters/yaongi.glb] [--preview yaongi_preview.png] [--size 768]
 
 The look (docs/islands/curie.md; picked by the user on 2026-11-13 from drafts and colourways: "화학섬
-느낌이 나는 디자인으로", "6번이 제일 맘에 듬", "목도리는 빼줘", "코트 닫아"): a white cat, a coral lab
-coat closed in front with three buttons and coral sleeves, brass lab goggles pushed up on the forehead,
+느낌이 나는 디자인으로", "6번이 제일 맘에 듬", "목도리는 빼줘", "코트 닫아", then coat draft b of three
+for "야옹이 옷 좀 어케해바"): a white cat in a white lab coat (a V neck with coral lapels over a mint
+shirt, a short flared skirt with a front seam and two coral buttons, coral turned-back cuffs), brass
+lab goggles pushed up on the forehead,
 a chest pocket with three test tubes, a round-bottomed flask of teal potion in the right paw, the tail's
 tip in rainbow bands (the rainbow lighthouse's keeper). Unlike the bread cat (an orange tabby in a bread
 bag): white, slim, a long thin tail.
@@ -38,12 +40,13 @@ import face_kit as fk  # noqa: E402  (portrait expressions only)
 TEX = 1024
 PAD = 3
 
-# storybook pastel: white fur, pink inner ears and nose, brass goggles, a coral coat, teal potion
+# storybook pastel: white fur, pink inner ears and nose, brass goggles, a white coat with coral trims, teal potion
 P = dict(
     fur="#f7f4ee", fur_shade="#e6e0d6", ear_tip="#ffb3c1", cream="#ffffff", blush="#ffb0b8",
     eye="#2a1a14", nose="#ff8fa3", mouth="#6b3424", tongue="#ff7f8c", sock="#f2ede4",
-    brass="#d9a441", brass_dark="#b07f2a", coat="#ffb3ae", coat_dark="#f08f8a", whisker="#b9a99a",
+    brass="#d9a441", brass_dark="#b07f2a", coat="#ffffff", coat_dark="#dfe6ee", whisker="#b9a99a",
     glass="#7fb8d4", cork="#c89b6d", liquid="#36c2b4", tube1="#ff6b6b", tube2="#7bd389", tube3="#6cb8ff",
+    lapel="#ffb3ae", shirt="#bfeee6", button="#ff8f88", cuff="#ffb3ae",
 )
 RAINBOW = ["#ff6b6b", "#ffb347", "#ffe066", "#7bd389", "#6cb8ff", "#b48cff"]
 # Atlas layout (pixels, origin bottom-left like Blender UVs)
@@ -53,7 +56,7 @@ R_TAIL = (256, 256, 512, 512)
 R_BODY = (512, 256, 768, 512)
 SWATCH_ORIGIN = (768, 0)  # 4 x 4 swatches of 64 px
 SWATCHES = ["fur", "cream", "sock", "brass", "brass_dark", "nose", "coat", "coat_dark", "glass", "liquid",
-            "tube1", "tube2", "tube3", "cork"]
+            "tube1", "tube2", "tube3", "cork", "cuff", "button"]
 
 
 def region_uv(rect, u, v):
@@ -194,11 +197,14 @@ def paint_body():
     blend(img, np.clip((dy + 0.2) * 0.8, 0, 1), hexc(P["fur_shade"]), 0.4)
     bib = sd_ellipse(lon, lat, 0.0, 0.25, 0.70, 1.20)   # a white chest and tummy
     blend(img, smooth_fill(bib * 0.3, 0.02), hexc(P["cream"]))
-    coat = np.clip((lat + 0.95) * 12, 0, 1)   # the lab coat: all round and closed in front, to the hips
+    coat = np.clip((lat + 0.95) * 12, 0, 1)   # the white lab coat, all round (its skirt: make_hem)
     blend(img, coat, hexc(P["coat"]))
     blend(img, coat * np.clip((dy + 0.1) * 0.8, 0, 1), hexc(P["coat_dark"]), 0.35)
-    for b in (0.30, -0.05, -0.40):   # three buttons down the middle of the front
-        blend(img, smooth_fill(sd_ellipse(lon, lat, 0.0, b, 0.07, 0.07), 0.01), hexc(P["coat_dark"]))
+    vee = 0.62 * np.clip((lat - 0.10) / 1.1, 0, 1)   # its V neck (half width in lon): the mint shirt in it,
+    shirt = np.clip((vee - np.abs(lon)) * 30, 0, 1) * (lat > 0.10)   # a coral lapel down each side
+    lapel = np.clip((vee + 0.20 - np.abs(lon)) * 30, 0, 1) * (lat > 0.0) * (1 - shirt)
+    blend(img, lapel, hexc(P["lapel"]))
+    blend(img, shirt, hexc(P["shirt"]))
     return img
 
 
@@ -246,7 +252,7 @@ def capsule(pts, radii, start=True, end=True):
 
 
 def make_head(bm):
-    build_sphere(bm, head_point, lambda u, v: region_uv(R_HEAD, u, v), segs=36, rings=22, lat_min=math.radians(-62))
+    build_sphere(bm, head_point, lambda u, v: region_uv(R_HEAD, u, v), segs=32, rings=20, lat_min=math.radians(-62))
 
 
 def make_goggles(bm):
@@ -317,7 +323,25 @@ def make_body(bm):
     for s in (-1, 1):  # round feet poking out forward
         rot = Matrix.Rotation(s * math.radians(14), 3, "Z")
         ellipsoid(bm, Vector((s * 0.105, -0.085, 0.048)), (0.076, 0.105, 0.052), sock, 12, 7, rot)
+    make_hem(bm)
     make_tail(bm)
+
+
+HEM_Z = [0.30, 0.22, 0.14, 0.085]        # the coat's skirt: heights and radii (x; y squashed like the body)
+HEM_R = [0.232, 0.244, 0.258, 0.268]
+
+
+def make_hem(bm):
+    """The lab coat's skirt below the waist: a short flared frustum just outside the body (a closed
+    shell for the outline), a thin seam down its front and two coral buttons on it."""
+    squash = BODY_R.y / BODY_R.x
+    pts = [Vector((0.0, BODY_C.y, z)) for z in HEM_Z]
+    build_tube(bm, pts, HEM_R, 24, lambda u, v: swatch_uv("coat"), up_hint=Vector((0, -1, 0)), squash=squash)
+    front = [Vector((0.0, BODY_C.y - r * squash - 0.002, z)) for z, r in zip(HEM_Z, HEM_R)]
+    build_tube(bm, front, [0.005] * len(front), 4, lambda u, v: swatch_uv("coat_dark"), up_hint=Vector((0, -1, 0)))
+    for z in (0.26, 0.17):
+        r = HEM_R[0] + (HEM_R[-1] - HEM_R[0]) * (HEM_Z[0] - z) / (HEM_Z[0] - HEM_Z[-1])
+        ellipsoid(bm, Vector((0.018, BODY_C.y - r * squash - 0.004, z)), (0.016, 0.008, 0.016), swatch_uv("button"), 6, 3)
 
 
 def make_tail(bm):
@@ -350,6 +374,8 @@ def make_arm(bm, side):
     pts, radii = capsule(line, radii, end=False)
     sleeve = swatch_uv("coat")
     build_tube(bm, pts, radii, 12, lambda u, v: sleeve, up_hint=Vector((0, 0, 1)))
+    # a turned-back coral cuff at the sleeve's end
+    build_tube(bm, [H - ax * 0.040, H - ax * 0.004], [ARM_R * 1.16] * 2, 10, lambda u, v: swatch_uv("cuff"), up_hint=Vector((0, 0, 1)))
     rot = Vector((1, 0, 0)).rotation_difference(ax).to_matrix()
     ellipsoid(bm, H + ax * PAW_R * 0.10, (PAW_R * 1.05, PAW_R, PAW_R * 0.97), swatch_uv("sock"), 14, 8, rot)
     return H
