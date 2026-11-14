@@ -45,7 +45,7 @@
 ##    the push framed closer and back, 처음으로 at once, the physics timeline unchanged.
 ## 15. key cards (Task 2d): every listed experiment opens in the front view with 2-3 key cards that
 ##    show the panel's text.
-## 16. island cast (Task 4h, tests/island_cast_checks.gd): the Dugi / Puppy models' mesh contract,
+## 16. island cast (Task 4h, tests/island_cast_checks.gd): the Dugi / Puppy / fox / yaongi models' mesh contract,
 ##    the explain cycle (rest -> point -> rest, the stick hidden at rest), the status trigger, placement
 ##    and layout in every experiment, physics and panels unchanged with the cast.
 ## 17. game G1 (tests/mission_checks.gd): the missions / predict blocks of the content, the
@@ -1057,7 +1057,8 @@ func _check_art_atlases() -> void:
 	var problems := []
 	for path in ["res://assets/props/parcel_box_parcel_box_atlas.png", "res://assets/props/yarn_ball_yarn_ball_atlas.png",
 			"res://assets/characters/bread_cat_bread_cat_atlas.png", "res://assets/characters/dugi_dugi_atlas.png",
-			"res://assets/characters/puppy_puppy_atlas.png", "res://assets/characters/fox_fox_atlas.png"]:
+			"res://assets/characters/puppy_puppy_atlas.png", "res://assets/characters/fox_fox_atlas.png",
+			"res://assets/characters/yaongi_yaongi_atlas.png"]:
 		var source := Image.load_from_file(ProjectSettings.globalize_path(path))
 		var imported := (load(path) as Texture2D).get_image()
 		imported.clear_mipmaps()
