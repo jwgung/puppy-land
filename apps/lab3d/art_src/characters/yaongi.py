@@ -121,7 +121,7 @@ def paint_head(face=None):
     qx = dx * HEAD_R * HEAD_SX
     qz = dz * HEAD_R * HEAD_SZ
     aa = 0.0020
-    # cream: the muzzle and both cheeks sweeping out under the eyes (the fox's white face), and the chin
+    # cream: the muzzle and both cheeks sweeping out under the eyes, and the chin
     mask = np.minimum(sd_ellipse(qx, qz, 0.0, -0.105, 0.085, 0.060), qz + 0.19)
     blend(img, smooth_fill(mask, 0.004) * front, hexc(P["cream"]))
     blend(img, smooth_fill(qz + 0.16, 0.02) * (dy < 0.4), hexc(P["cream"]))
@@ -366,7 +366,7 @@ def make_flask(bm, at):
     neck = [at + Vector((0, 0, z)) for z in (0.040, 0.084, 0.086, 0.135)]
     build_tube(bm, neck, [0.026] * 4, 10, lambda u, v: swatch_uv("liquid" if v < 0.5 else "glass"), up_hint=Vector((0, -1, 0)))
     build_tube(bm, [at + Vector((0, 0, 0.132)), at + Vector((0, 0, 0.150))], [0.034, 0.034], 10, lambda u, v: swatch_uv("cork"), up_hint=Vector((0, -1, 0)))
-    for k, (dx, dz, r) in enumerate(((0.018, 0.150, 0.012), (-0.010, 0.180, 0.009))):   # two little bubbles above it
+    for dx, dz, r in ((0.018, 0.150, 0.012), (-0.010, 0.180, 0.009)):   # two little bubbles above it
         ellipsoid(bm, at + Vector((dx, 0.0, dz)), (r, r, r), swatch_uv("liquid"), 6, 4)
 
 
@@ -390,7 +390,7 @@ def make_material(img):
     return mat
 
 
-SCALE = 1.0   # no correction: parts are authored at final size: ~1.30 m with the ears (Puppy 1.27 m with his hat)
+SCALE = 1.0   # no correction: parts are authored at final size: ~1.19 m with the ears (the fox 1.30 m)
 
 
 def mesh_object(name, bm, pivot_world, parent, parent_pivot, mat):
@@ -446,8 +446,17 @@ def build(face=None):
 
 
 PROPS = ("Goggles", "Pocket", "Flask")
-PROP_OUTLINE = 0.005   # the props' outline in a render (the body's: BODY_OUTLINE)
-BODY_OUTLINE = 0.010
+PROP_OUTLINE = 0.005   # the props' outline in a render (the body's: dugi_portrait.OUTLINE)
+
+
+def add_outlines(dp, outline_mat):
+    """The storybook outline (dugi_portrait.add_outline) on every mesh: the body's width, the small
+    props PROP_OUTLINE (see the header)."""
+    body = dp.OUTLINE
+    for o in [o for o in bpy.data.objects if o.type == "MESH"]:
+        dp.OUTLINE = PROP_OUTLINE if o.name in PROPS else body
+        dp.add_outline(o, outline_mat)
+    dp.OUTLINE = body
 
 
 def _rotate_about_origin(ob, q):
@@ -495,9 +504,7 @@ def render_preview(path, size, turn=-28.0):
     chars = [o for o in bpy.data.objects if o.type == "MESH"]
     for m in {s.material for o in chars for s in o.material_slots if s.material}:
         dp.toon(m)
-    for o in chars:
-        dp.OUTLINE = PROP_OUTLINE if o.name in PROPS else BODY_OUTLINE
-        dp.add_outline(o, outline_mat)
+    add_outlines(dp, outline_mat)
     scene.render.filepath = os.path.abspath(path)
     bpy.ops.render.render(write_still=True)
     print("YAONGI_PREVIEW", scene.render.filepath)

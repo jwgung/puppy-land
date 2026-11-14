@@ -63,11 +63,7 @@ def render(name, spec, out_dir, size):
     chars = [o for o in bpy.data.objects if o.type == "MESH"]
     for m in {s.material for o in chars for s in o.material_slots if s.material}:
         dp.toon(m)
-    body_outline = dp.OUTLINE
-    for o in chars:
-        dp.OUTLINE = yaongi.PROP_OUTLINE if o.name in yaongi.PROPS else body_outline
-        dp.add_outline(o, outline_mat)
-    dp.OUTLINE = body_outline
+    yaongi.add_outlines(dp, outline_mat)
     scene.render.filepath = os.path.join(out_dir, "yaongi_%s.webp" % name)
     bpy.ops.render.render(write_still=True)
     print("PORTRAIT", scene.render.filepath)
