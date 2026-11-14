@@ -317,13 +317,14 @@ static func _mini_island_mesh(id: String) -> Mesh:
 	var island := Island.by_id(id)
 	var map := MapIsland.new(island)
 	var widest := 0.0
-	for i in COAST_SIDES:
-		widest = maxf(widest, map.coast_radius(TAU * i / COAST_SIDES))
+	var sides := maxi(COAST_SIDES, map.sectors)   # (a flask's neck needs the map's finer sectors)
+	for i in sides:
+		widest = maxf(widest, map.coast_radius(TAU * i / sides))
 	var shrink := r / maxf(widest, 0.001)
 	var coast := func(a: float) -> float: return map.coast_radius(a) * shrink
-	_add_shape(b, coast, 1.12, sea - 0.05, sea + 0.01, MapIsland.sea_color().lightened(0.35), MapIsland.sea_color().lightened(0.35))
-	_add_shape(b, coast, 1.0, sea - 0.3, sea + 0.2, ArtPalette.SAND.darkened(0.08), ArtPalette.SAND)
-	_add_shape(b, coast, MapIsland.grass_edge(), sea + 0.2, sea + 0.5, ArtPalette.GRASS, ArtPalette.GRASS_TOP)
+	_add_shape(b, coast, 1.12, sea - 0.05, sea + 0.01, MapIsland.sea_color().lightened(0.35), MapIsland.sea_color().lightened(0.35), sides)
+	_add_shape(b, coast, 1.0, sea - 0.3, sea + 0.2, ArtPalette.SAND.darkened(0.08), ArtPalette.SAND, sides)
+	_add_shape(b, coast, MapIsland.grass_edge(), sea + 0.2, sea + 0.5, ArtPalette.GRASS, ArtPalette.GRASS_TOP, sides)
 	var top := sea + 0.5
 	for t in MINI_TREES:   # trees round the edge of the grass
 		var a := TAU * (float(t) + 0.35) / MINI_TREES
@@ -339,7 +340,9 @@ static func _mini_island_mesh(id: String) -> Mesh:
 			MapLandmarks.lighthouse(b, place.call(4.0, 1.4))
 			MapLandmarks.sundial(b, place.call(-0.6, 2.6))
 		"curie":   # (the rainbow lighthouse on its hill: the lighthouse until #154 / #167)
-			MapLandmarks.lighthouse(b, place.call(2.6, -1.8))
+			MapLandmarks.lighthouse(b, place.call(7.6, 0.0), true)   # the rainbow one at the flask's mouth
+			MapLandmarks.house(b, place.call(-3.4, -1.6), 0)
+			MapLandmarks.potion(b, place.call(-1.0, 2.8), 0.8, 1)
 		"mechanics":
 			MapLandmarks.add(b, "orbit", place.call(-2.2, -1.6))
 			MapLandmarks.add(b, "spring", place.call(2.4, -0.8))
@@ -354,14 +357,14 @@ static func _mini_island_mesh(id: String) -> Mesh:
 
 ## A flat shape round the origin, `share` of the radius `radius(theta)` at every angle (COAST_SIDES of
 ## them), from `y0` to its top at `y1`: its side in `side`, its top in `top_color`.
-static func _add_shape(b: ArtMeshBuilder, radius: Callable, share: float, y0: float, y1: float, side: Color, top_color: Color) -> void:
+static func _add_shape(b: ArtMeshBuilder, radius: Callable, share: float, y0: float, y1: float, side: Color, top_color: Color, sides := COAST_SIDES) -> void:
 	var ring: Array[Vector3] = []
-	for i in COAST_SIDES:
-		var a := TAU * i / COAST_SIDES
+	for i in sides:
+		var a := TAU * i / sides
 		ring.append(Vector3(cos(a), 0.0, sin(a)) * float(radius.call(a)) * share)
-	for i in COAST_SIDES:
+	for i in sides:
 		var p0 := ring[i]
-		var p1 := ring[(i + 1) % COAST_SIDES]
+		var p1 := ring[(i + 1) % sides]
 		b.add_triangle([Vector3(0.0, y1, 0.0), p1 + Vector3.UP * y1, p0 + Vector3.UP * y1], [top_color, top_color, top_color])
 		var out := ((p0 + p1) * 0.5).normalized()
 		b.add_triangle([p0 + Vector3.UP * y1, p1 + Vector3.UP * y1, p1 + Vector3.UP * y0], [side, side, side], out)

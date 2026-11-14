@@ -265,7 +265,10 @@ const BASE_RADIUS_X := 12.8
 
 ## How much wider this island is than BASE_RADIUS_X (1 or more).
 func island_scale() -> float:
-	return maxf(1.0, island.radius_x / BASE_RADIUS_X)
+	var wide := island.radius_x
+	for neck in island.coast_necks:   # a flask's neck out to the side (curie): most of it in view too
+		wide = maxf(wide, 0.75 * float(neck[2]))
+	return maxf(1.0, wide / BASE_RADIUS_X)
 
 
 func _map_camera() -> Dictionary:

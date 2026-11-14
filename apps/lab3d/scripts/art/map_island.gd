@@ -68,6 +68,13 @@ const VOLCANO_SINK := 0.25
 ## The coast zone's sand edge wavers: [order, share of the radius, phase] round its middle.
 const COAST_WAVER := [[3.0, 0.07, 1.0], [5.0, 0.04, 0.3]]
 const LIGHTHOUSE_CLEAR := 0.8        # m round the lighthouse kept clear of decoration
+const HOUSE_SCALE := 1.6
+const HOUSE_CLEAR := 1.6             # the curie village houses' footprint (decorations keep off)
+const NECK_BEACH := 1.4              # m of sand along a flask neck's sides (on_neck_beach)
+const NECK_BEACH_LIFT := 0.12         # over the stretched polar triangles under it (they bulge up between samples)
+const LIP_DEPTH := 1.6               # the flask's rock lip across its mouth (the lighthouse stands on it)
+const LIP_HEIGHT := 0.5
+const LIP_OVER := 0.5               # m it stands out past the neck's sides
 
 var island: Island
 var zones: Dictionary
@@ -82,12 +89,14 @@ var decorations: Array = []
 var spot_info: Dictionary = {}
 ## The river as drawn: its samples (x, z) and the ribbon's width at each (#72).
 var river_points := PackedVector2Array()
+var sectors := SECTORS             # the top grid's sectors (Island.coast_sectors, else SECTORS)
 var river_widths := PackedFloat32Array()
 
 
 ## The map of `of` (Island: its zones, paths, square and coast).
 func _init(of: Island) -> void:
 	island = of
+	sectors = island.coast_sectors if island.coast_sectors > 0 else SECTORS
 	zones = island.zones
 	paths = island.paths
 	home = island.home
@@ -112,7 +121,7 @@ func _init(of: Island) -> void:
 # --- the shape --------------------------------------------------------------------------------
 
 ## The coast's distance from the island centre in the direction `theta` (atan2(z, x)).
-func coast_radius(theta: float) -> float:
+func coast_radius(theta: float, necks := true) -> float:
 	var c := cos(theta)
 	var s := sin(theta)
 	var rx := island.radius_x
@@ -123,7 +132,57 @@ func coast_radius(theta: float) -> float:
 	for bump in island.coast_bumps:
 		var t := angle_difference(theta, deg_to_rad(bump[0])) / deg_to_rad(bump[2])
 		r += bump[1] * exp(-t * t)
+	for neck in island.coast_necks if necks else []:   # straight sides half its width off its middle line, out to its length
+		var d := absf(angle_difference(theta, deg_to_rad(neck[0])))
+		if d < PI * 0.5:
+			r = maxf(r, minf(float(neck[2]), float(neck[1]) * 0.5 / maxf(sin(d), 1e-4)))
 	return r
+
+
+## The flask neck (Island.coast_necks) whose mouth is by `p` (within LIP_DEPTH of its end), else [].
+func neck_at(p: Vector2) -> Array:
+	for neck in island.coast_necks:
+		var dir := Vector2.from_angle(deg_to_rad(neck[0]))
+		if absf(p.dot(dir) - float(neck[2])) < LIP_DEPTH * 1.5 and absf(dir.cross(p)) < float(neck[1]) * 0.5:
+			return neck
+	return []
+
+
+## The sand along each flask neck's two long sides (Island.coast_necks): a strip NECK_BEACH m wide
+## on the ground from where the round island's grass ends to the mouth, so the sides have a beach
+## like the rest of the coast (the polar rings give them none of their own).
+func _add_neck_beach(b: ArtMeshBuilder) -> void:
+	var colors := [ArtPalette.SAND, ArtPalette.SAND, ArtPalette.SAND]
+	for neck in island.coast_necks:
+		var dir := Vector2.from_angle(deg_to_rad(neck[0]))
+		var across := Vector2(-dir.y, dir.x)
+		var half := float(neck[1]) * 0.5
+		for side in [-1.0, 1.0]:
+			var steps := int(ceil(float(neck[2]) / PATH_STEP))
+			for k in steps:
+				var a0 := float(neck[2]) * k / steps
+				var a1 := float(neck[2]) * (k + 1) / steps
+				var pts: Array = []
+				for q in [[a0, half - NECK_BEACH], [a1, half - NECK_BEACH], [a1, half + 0.2], [a0, half + 0.2]]:
+					pts.append(dir * q[0] + across * side * q[1])
+				if not (on_neck_beach(pts[0]) and on_neck_beach(pts[1])):
+					continue
+				var v: Array = []
+				for p: Vector2 in pts:
+					v.append(Vector3(p.x, maxf(height_at(p.x, p.y), SEA_Y - 0.05) + NECK_BEACH_LIFT, p.y))
+				b.add_triangle([v[0], v[1], v[2]], colors)
+				b.add_triangle([v[0], v[2], v[3]], colors)
+
+
+## True on a flask neck's beach (Island.coast_necks): its long sides' last NECK_BEACH m past the
+## round island's grass; the polar rings give the neck's sides no beach of their own.
+func on_neck_beach(p: Vector2) -> bool:
+	for neck in island.coast_necks:
+		var dir := Vector2.from_angle(deg_to_rad(neck[0]))
+		if p.dot(dir) > 0.0 and absf(dir.cross(p)) > float(neck[1]) * 0.5 - NECK_BEACH \
+				and p.length() > RINGS[GRASS_EDGE] * coast_radius(atan2(p.y, p.x), false):
+			return true
+	return false
 
 
 ## How far out (x, z) lies: 0 at the centre, 1 on the coast; the grass ends at RINGS[GRASS_EDGE].
@@ -142,7 +201,7 @@ func height_at(x: float, z: float) -> float:
 	var f := coast_fraction(x, z)
 	if f >= 1.0:
 		return BEACH_Y[-1]
-	var i0 := int(floor(fposmod(theta, TAU) / TAU * SECTORS))
+	var i0 := int(floor(fposmod(theta, TAU) / TAU * sectors))
 	var j0 := 0
 	while j0 < RINGS.size() - 2 and RINGS[j0 + 1] <= f:
 		j0 += 1
@@ -152,7 +211,7 @@ func height_at(x: float, z: float) -> float:
 		if j < 0 or j >= RINGS.size() - 1:
 			continue
 		for di in [0, -1, 1, -2, 2]:
-			var i := posmod(i0 + di, SECTORS)
+			var i := posmod(i0 + di, sectors)
 			var quad := _quad(j, i)
 			for tri in [[quad[0], quad[1], quad[2]], [quad[0], quad[2], quad[3]]]:
 				var w := _bary(p, tri)
@@ -220,12 +279,12 @@ func _build_grid() -> void:
 	_grid.clear()
 	for j in RINGS.size():
 		var row: Array = []
-		for i in SECTORS:
-			var theta := TAU * i / SECTORS
+		for i in sectors:
+			var theta := TAU * i / sectors
 			var f: float = RINGS[j]
 			if j > 0 and j < GRASS_EDGE:
 				var step: float = minf(RINGS[j + 1] - RINGS[j], RINGS[j] - RINGS[j - 1])
-				theta += _hash(i, j, 1) * JITTER * TAU / SECTORS
+				theta += _hash(i, j, 1) * JITTER * TAU / sectors
 				f += _hash(i, j, 2) * JITTER * step
 			var r := f * coast_radius(theta)
 			var x := r * cos(theta)
@@ -235,7 +294,7 @@ func _build_grid() -> void:
 
 
 func _quad(j: int, i: int) -> Array:
-	var i1 := (i + 1) % SECTORS
+	var i1 := (i + 1) % sectors
 	return [_grid[j][i], _grid[j][i1], _grid[j + 1][i1], _grid[j + 1][i]]
 
 
@@ -363,7 +422,7 @@ func _add_top(b: ArtMeshBuilder) -> void:
 		if zones[zone].ground in GROUND_COLORS:
 			meadows.append([_v2(zones[zone].at), float(zones[zone].radius), zones[zone].ground])
 	for j in RINGS.size() - 1:
-		for i in SECTORS:
+		for i in sectors:
 			var q := _quad(j, i)
 			for k in 2:
 				var tri: Array = [q[0], q[1], q[2]] if k == 0 else [q[0], q[2], q[3]]
@@ -423,10 +482,10 @@ func _add_sea(b: ArtMeshBuilder) -> void:
 
 ## A band between two rings [radius fn, colour] at height y (one quad per sector).
 func _ring_band(b: ArtMeshBuilder, a: Array, c: Array, y: float) -> void:
-	var sectors := SECTORS * 2
-	for i in sectors:
-		var t0 := TAU * i / sectors
-		var t1 := TAU * (i + 1) / sectors
+	var band_sectors := sectors * 2
+	for i in band_sectors:
+		var t0 := TAU * i / band_sectors
+		var t1 := TAU * (i + 1) / band_sectors
 		var p := [_polar(t0, a[0].call(t0), y), _polar(t1, a[0].call(t1), y), _polar(t1, c[0].call(t1), y), _polar(t0, c[0].call(t0), y)]
 		b.add_triangle([p[0], p[1], p[2]], [a[1], a[1], c[1]])
 		b.add_triangle([p[0], p[2], p[3]], [a[1], c[1], c[1]])
@@ -795,6 +854,8 @@ func clear(x: float, z: float, radius: float) -> bool:
 	var p := Vector2(x, z)
 	if p.length() + radius * 0.6 > grass_edge() * coast_radius(atan2(z, x)):   # crowns may lean over the sand
 		return false
+	if on_neck_beach(p):
+		return false
 	if p.distance_to(home) < PLAZA_RADIUS + 0.3 + radius:
 		return false
 	for q in path_points:
@@ -837,6 +898,8 @@ func features_clear(p: Vector2, radius: float) -> bool:
 		return false
 	if f.has("lighthouse") and p.distance_to(_v2(f.lighthouse)) < LIGHTHOUSE_CLEAR + radius:
 		return false
+	if f.has("washing") and p.distance_to(_v2(f.washing)) < 1.0 + radius:
+		return false
 	if f.has("volcano") and not new_land_clear(p, radius):
 		return false
 	return true
@@ -849,6 +912,8 @@ func features_clear(p: Vector2, radius: float) -> bool:
 func _add_features(b: ArtMeshBuilder) -> void:
 	_add_volcano(b)
 	_add_marks(b)
+	if not island.coast_necks.is_empty():
+		_add_neck_beach(b)
 	if not river_points.is_empty():
 		_add_river(b)
 	if new_land:
@@ -872,9 +937,36 @@ func _add_volcano(b: ArtMeshBuilder) -> void:
 
 ## The lighthouse on the beach and the sundial on the square.
 func _add_marks(b: ArtMeshBuilder) -> void:
-	if island.features.has("lighthouse"):
-		var at := _v2(island.features.lighthouse)
-		MapLandmarks.lighthouse(b, Transform3D(Basis(), Vector3(at.x, height_at(at.x, at.y), at.y)))
+	var f := island.features
+	if f.has("lighthouse"):
+		var at := _v2(f.lighthouse)
+		var foot := Vector3(at.x, height_at(at.x, at.y), at.y)
+		var neck := neck_at(at)
+		if not neck.is_empty():   # the flask's lip: a rock rim across the mouth, the lighthouse on it, not on the sand
+			var yaw := Basis(Vector3.UP, -deg_to_rad(float(neck[0])))
+			var lip_y := maxf(foot.y, SEA_Y) + LIP_HEIGHT
+			b.ao_min = 0.8
+			b.ao_height = 0.4
+			b.add_rounded_box(Transform3D(yaw, Vector3(at.x, lip_y - LIP_HEIGHT * 0.5 - 0.15, at.y)),
+				Vector3(LIP_DEPTH, LIP_HEIGHT + 0.3, float(neck[1]) + LIP_OVER * 2.0), 0.25, 2, ArtPalette.ROCK, ArtPalette.ROCK_TOP)
+			foot.y = lip_y
+		MapLandmarks.lighthouse(b, Transform3D(Basis(), foot), f.get("lighthouse_rainbow", false))
+	for k in f.get("houses", []).size():
+		var h: Array = f.houses[k]
+		MapLandmarks.house(b, _at(h[0], height_at(h[0], h[1]), h[1], h[2]).scaled_local(Vector3.ONE * HOUSE_SCALE), k)
+		decorations.append(["house", h[0], h[1], HOUSE_CLEAR])
+	for k in f.get("potions", []).size():
+		var p: Array = f.potions[k]
+		MapLandmarks.potion(b, _at(p[0], height_at(p[0], p[1]), p[1]), p[2], k)
+		decorations.append(["potion", p[0], p[1], 0.5 * float(p[2]) + 0.2])
+	if f.has("washing"):
+		var w := _v2(f.washing)
+		var to_pond := 0.0
+		for zone in zones:   # the slab along the shore: its long side facing the pond
+			if zones[zone].ground == "pond":
+				var d := _v2(zones[zone].at) - w
+				to_pond = rad_to_deg(atan2(d.x, d.y))
+		MapLandmarks.washing(b, _at(w.x, height_at(w.x, w.y), w.y, to_pond))
 	if island.has_sundial():
 		MapLandmarks.sundial_base(b, Transform3D(Basis(), sundial_foot()))
 

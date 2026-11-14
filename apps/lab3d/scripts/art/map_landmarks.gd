@@ -303,24 +303,83 @@ static func volcano(b: ArtMeshBuilder, xf: Transform3D, radius: float, height: f
 
 ## A lighthouse on its rock: a red and white striped tower, a white gallery, the yellow lamp and a
 ## red roof (about 2.4 m).
-static func lighthouse(b: ArtMeshBuilder, xf: Transform3D) -> void:
+## The lighthouse: red and white bands, a yellow lamp. `rainbow` (the curie island's, Island
+## lighthouse_rainbow): six rainbow bands, a little taller, its lamp dark (the crystal lens is in
+## pieces until the finale, docs/islands/curie.md).
+static func lighthouse(b: ArtMeshBuilder, xf: Transform3D, rainbow := false) -> void:
 	b.ao_min = 0.8
 	b.ao_height = 0.3
 	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, -0.2, 0.0)), 0.58, 0.48, 0.42, 8, ArtPalette.ROCK)
-	var bands := 4
-	var tower := 1.5
+	var bands := RAINBOW.size() if rainbow else 4
+	var tower := 1.9 if rainbow else 1.5
 	for k in bands:
 		var t0 := float(k) / bands
 		var t1 := float(k + 1) / bands
 		var r0 := lerpf(0.33, 0.24, t0)
 		var r1 := lerpf(0.33, 0.24, t1)
-		b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, 0.2 + tower * t0, 0.0)), r0, r1, tower / bands, 10,
-			ArtPalette.RED if k % 2 == 0 else ArtPalette.WHITE, false)
+		var band: Color = RAINBOW[k] if rainbow else (ArtPalette.RED if k % 2 == 0 else ArtPalette.WHITE)
+		b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, 0.2 + tower * t0, 0.0)), r0, r1, tower / bands, 10, band, false)
 	var deck := 0.2 + tower
 	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, deck, 0.0)), 0.36, 0.36, 0.08, 10, ArtPalette.WHITE)
 	b.ao_min = 1.0
-	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, deck + 0.08, 0.0)), 0.2, 0.2, 0.26, 8, ArtPalette.YELLOW, false)
-	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, deck + 0.34, 0.0)), 0.3, 0.0, 0.32, 10, ArtPalette.RED)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, deck + 0.08, 0.0)), 0.2, 0.2, 0.26, 8, LAMP_DARK if rainbow else ArtPalette.YELLOW, false)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, deck + 0.34, 0.0)), 0.3, 0.0, 0.32, 10, RAINBOW[5] if rainbow else ArtPalette.RED)
+
+
+# --- the curie island's things (2026-11-13 user "화학섬 느낌이 나게"): the kitchen village's houses
+# with coloured chimney smoke, potion bottles standing in the grass, the spring's washing place.
+
+const RAINBOW := [Color("ff5a5a"), Color("ff9a3c"), Color("ffd84a"), Color("5fd38a"), Color("4fa8ff"), Color("9b6bff")]
+const LAMP_DARK := Color("8a94a6")
+const POTIONS := [Color("ff5fa2"), Color("36c2b4"), Color("9b6bff"), Color("ff9a3c")]
+const GLASS := Color("c9f1ff")
+const HOUSE_WALL := Color("fff1d6")
+const HOUSE_ROOFS := [Color("ff7b6b"), Color("4fa8ff"), Color("9b6bff")]
+const SMOKES := [Color("ffb3d9"), Color("b9f2e4"), Color("d8c8ff")]
+
+
+## A kitchen house (about 1.2 m): cream walls, a door, a pyramid roof (HOUSE_ROOFS[k]) and a brick
+## chimney puffing three balls of coloured smoke (SMOKES[k]: something cooking).
+static func house(b: ArtMeshBuilder, xf: Transform3D, k: int) -> void:
+	b.ao_min = 0.8
+	b.ao_height = 0.4
+	_box(b, xf, Vector3(0.0, 0.42, 0.0), Vector3(1.2, 0.84, 1.0), HOUSE_WALL)
+	_box(b, xf, Vector3(0.0, 0.26, 0.505), Vector3(0.32, 0.52, 0.02), ArtPalette.WOOD)
+	for s in [-1.0, 1.0]:
+		_box(b, xf, Vector3(s * 0.36, 0.52, 0.505), Vector3(0.2, 0.2, 0.02), ArtPalette.WATER_TOP)
+	b.add_cylinder(xf * Transform3D(Basis(Vector3.UP, PI * 0.25), Vector3(0.0, 0.84, 0.0)), 0.95, 0.0, 0.62, 4, HOUSE_ROOFS[k % HOUSE_ROOFS.size()])
+	_box(b, xf, Vector3(0.3, 1.2, -0.15), Vector3(0.2, 0.5, 0.2), ArtPalette.CLAY)
+	b.ao_min = 1.0
+	var smoke: Color = SMOKES[k % SMOKES.size()]
+	for p in [[0.32, 1.62, -0.15, 0.15], [0.42, 1.9, -0.2, 0.19], [0.58, 2.22, -0.26, 0.23]]:
+		_ball(b, xf, Vector3(p[0], p[1], p[2]), p[3], smoke)
+
+
+## A potion bottle standing in the grass (`size` 1 = about 1.3 m): a round glass bulb of coloured
+## potion (POTIONS[k]), a glass neck, a cork, a bubble over it.
+static func potion(b: ArtMeshBuilder, xf: Transform3D, size: float, k: int) -> void:
+	var s := Transform3D(Basis().scaled(Vector3.ONE * size), Vector3.ZERO)
+	var liquid: Color = POTIONS[k % POTIONS.size()]
+	b.ao_min = 0.85
+	b.ao_height = 0.3
+	_ball(b, xf * s, Vector3(0.0, 0.42, 0.0), 0.42, liquid)
+	b.add_cylinder(xf * s * Transform3D(Basis(), Vector3(0.0, 0.74, 0.0)), 0.13, 0.13, 0.36, 8, GLASS)
+	b.add_cylinder(xf * s * Transform3D(Basis(), Vector3(0.0, 1.08, 0.0)), 0.17, 0.15, 0.12, 8, ArtPalette.WOOD)
+	b.ao_min = 1.0
+	_ball(b, xf * s, Vector3(0.12, 1.36, 0.0), 0.08, liquid.lightened(0.3))
+	_ball(b, xf * s, Vector3(-0.06, 1.55, 0.0), 0.05, liquid.lightened(0.3))
+
+
+## The spring's washing place: a flat stone slab by the water, a wooden tub of soapy water and
+## soap bubbles over it.
+static func washing(b: ArtMeshBuilder, xf: Transform3D) -> void:
+	b.ao_min = 0.85
+	b.ao_height = 0.3
+	_box(b, xf, Vector3(0.0, 0.08, 0.0), Vector3(1.5, 0.16, 0.7), ArtPalette.ROCK_TOP)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.45, 0.16, 0.0)), 0.3, 0.36, 0.34, 10, ArtPalette.WOOD, true, ArtPalette.WATER_TOP)
+	b.ao_min = 1.0
+	for p in [[0.35, 0.68, 0.05, 0.11], [0.6, 0.86, -0.05, 0.08], [0.42, 1.04, 0.1, 0.06], [-0.3, 0.4, 0.0, 0.09]]:
+		_ball(b, xf, Vector3(p[0], p[1], p[2]), p[3], ArtPalette.WHITE)
 
 
 ## The sundial's dial (#106, #110): the stone plate's top at DIAL_Y over the base's foot, the dial

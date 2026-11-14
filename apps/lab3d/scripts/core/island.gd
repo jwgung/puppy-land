@@ -41,6 +41,11 @@ var radius_x := 0.0
 var radius_z := 0.0
 var coast_waves: Array = []
 var coast_bumps: Array = []
+## A flask's neck out of the coast (curie, 2026-11-13 user "섬 모양 자체를 플라스크로"): [angle deg,
+## width m, length m from the centre]; straight sides, the mouth at its end. And the top grid's
+## sectors round the island (more for a neck, so its sides stay straight; default MapIsland.SECTORS).
+var coast_necks: Array = []
+var coast_sectors := 0
 var trees: Array = []        # [x, z, size]
 var rocks: Array = []        # [x, z, radius]
 var clouds: Array = []       # [x, y, z, size]
@@ -193,6 +198,8 @@ static func from_data(data: Dictionary) -> Island:
 	island.radius_z = float(coast.get("radius_z", 0.0))
 	island.coast_waves = _array(coast.get("waves"))
 	island.coast_bumps = _array(coast.get("bumps"))
+	island.coast_necks = _array(coast.get("necks"))
+	island.coast_sectors = int(coast.get("sectors", 0))
 	island.trees = _array(data.get("trees"))
 	island.rocks = _array(data.get("rocks"))
 	island.clouds = _array(data.get("clouds"))
@@ -276,6 +283,11 @@ func _check() -> String:
 		return "no zones"
 	if radius_x <= 0.0 or radius_z <= 0.0:
 		return "no coast"
+	for neck: Variant in coast_necks:
+		if not neck is Array or neck.size() != 3 or float(neck[1]) <= 0.0 or float(neck[2]) <= maxf(radius_x, radius_z):
+			return "coast: a neck is not [angle, width, length past the coast]"
+	if coast_sectors != 0 and coast_sectors < 24:
+		return "coast: sectors under 24"
 	for zone in zones:
 		var spec: Variant = zones[zone]
 		if not spec is Dictionary or str(spec.get("ground", "")) not in GROUNDS or _array(spec.get("at")).size() != 2 \
@@ -317,9 +329,15 @@ func _check_features() -> String:
 			"lighthouse":
 				if _array(v).size() != 2:
 					return "features.lighthouse: [x, z]"
-			"sundial":
+			"sundial", "lighthouse_rainbow":
 				if not v is bool:
-					return "features.sundial: true or false"
+					return "features.%s: true or false" % key
+			"houses", "potions":   # the curie island's (MapLandmarks.house, potion): [x, z, yaw] / [x, z, size]
+				if not v is Array or not v.all(func(p: Variant) -> bool: return _array(p).size() == 3):
+					return "features.%s: [x, z, n] each" % key
+			"washing":
+				if _array(v).size() != 2:
+					return "features.washing: [x, z]"
 			_:
 				return "features.%s is not a feature" % key
 	return ""
