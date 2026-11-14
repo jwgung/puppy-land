@@ -16,6 +16,8 @@ const PHONE := Vector2(1560, 720)
 const TABLET := Vector2(1152, 720)
 const UiScale := preload("res://tests/ui_scale_checks.gd")   # PHONE_ZOOMED (화면 크기)
 const NEXT := "hutton"
+## The third island's voyage (#155): at night, to the lighthouse keeper.
+const THIRD := "curie"
 
 
 func _init(scene_tree: SceneTree, expect_fn: Callable) -> void:
@@ -31,10 +33,12 @@ func run() -> void:
 	ProgressStore.reset_all()
 	check_dev_switch()
 	check_content()
+	check_content_third()
 	check_due_rule()
 	TitleScreen.app_may_show = true
 	Story.app_may_enable = true
 	await check_voyage_flow(quality_script)
+	await check_voyage_third()
 	await check_finale_stays(quality_script)
 	await check_skip_and_replay(quality_script)
 	await check_title_islands(quality_script)
@@ -112,6 +116,116 @@ func check_content() -> void:
 				problems.append("%s %s words" % [lang, part])
 	expect.call(problems.is_empty(), "voyage: the next island's story has the voyage (depart, sea, flicker, arrive; the keeper last) and its prologue, words in ko and en",
 		"; ".join(problems))
+
+
+## The third island's story (#155, docs/islands/curie-lines.md): the voyage's six pages (the keeper's
+## 야옹이 last, the sea at night), its 12-page prologue, words in ko and en; the other voyage is by day.
+func check_content_third() -> void:
+	var problems := []
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(Story.content_path(THIRD)))
+	problems.append_array(Story.validate(parsed if parsed is Dictionary else {}))
+	var voyage := Story.pages_of(THIRD, "voyage")
+	var order := []
+	for e: Dictionary in voyage:
+		if order.is_empty() or order[-1] != str(e.get("shot", "")):
+			order.append(str(e.get("shot", "")))
+	if order != Story.VOYAGE_SHOTS:
+		problems.append("shots %s" % str(order))
+	if voyage.size() != 6 or str(voyage[-1].get("who")) != "yaongi":
+		problems.append("the keeper does not speak last (%d pages)" % voyage.size())
+	if Story.pages_of(THIRD, "prologue").size() != 12:
+		problems.append("prologue %d pages" % Story.pages_of(THIRD, "prologue").size())
+	if not Story.voyage_at_night(THIRD) or Story.voyage_at_night(NEXT) or Story.voyage_at_night(ProgressStore.FIRST_ISLAND):
+		problems.append("voyage_at_night is not the third island's alone")
+	if Island.by_id(THIRD).keeper != "yaongi":
+		problems.append("the island's keeper is %s" % Island.by_id(THIRD).keeper)
+	for lang in ["ko", "en"]:
+		var words: Variant = Locale._read("res://content/locale/%s/story/%s.json" % [lang, THIRD])
+		for part in ["voyage", "prologue"]:
+			var list: Array = words.get(part, []) if words is Dictionary else []
+			var want := Story.pages_of(THIRD, part).size()
+			if list.size() != want or list.any(func(e: Variant) -> bool: return not e is Dictionary or str(e.get("text", "")) == ""):
+				problems.append("%s %s words" % [lang, part])
+	expect.call(problems.is_empty(), "voyage: the curie island's story has the voyage (depart, sea, flicker, arrive; 야옹이 last, at night) and its 12-page prologue, words in ko and en",
+		"; ".join(problems))
+
+
+## The voyage to the third island: day as they leave, night from the sea on (the island dark, never
+## flickering, the far boats' lanterns lit), 야옹이 on the dry beach at the landing, the day back when
+## it ends and the prologue starting at night on the beach; the voyage to the second island has no night.
+func check_voyage_third() -> void:
+	Story.enabled = true
+	_first_done()
+	var app := await _app(["--islands=open"])
+	app.show_voyage(THIRD)
+	await tree.process_frame
+	var voyage := app._screen as VoyageScreen
+	var problems := []
+	if voyage == null or not voyage.night_voyage or voyage.from != NEXT:
+		problems.append("no night voyage from %s" % NEXT)
+	else:
+		var pages := Story.pages_of(THIRD, "voyage")
+		for i in pages.size():
+			var shot := str(pages[i].shot)
+			for t in 4:   # (a tap may only finish the page's typing)
+				if voyage.page >= i:
+					break
+				voyage.tap_page()
+				await tree.process_frame
+			for k in 12:
+				voyage.advance(0.25)
+				if voyage.flicker > 0.0:
+					problems.append("the island flickers on %s" % shot)
+			if shot == "depart" and voyage.night != 0.0:
+				problems.append("night at the departure (%.2f)" % voyage.night)
+			if shot != "depart" and not is_equal_approx(voyage.night, 1.0):
+				problems.append("not night on %s (%.2f)" % [shot, voyage.night])
+			if voyage.sea.lanterns.any(func(l: Node3D) -> bool: return l.visible) != (shot != "depart"):
+				problems.append("lanterns on %s" % shot)
+			if voyage.keeper.visible != (shot == "arrive"):
+				problems.append("keeper on %s (page %d, voyage shot %s, visible %s)" % [shot, voyage.page, voyage.shot, voyage.keeper.visible])
+			if shot == "arrive":
+				if voyage.keeper.name != "Keeper" or voyage.keeper.find_child("Goggles", true, false) == null:
+					problems.append("the keeper is not 야옹이")
+				var local := voyage.keeper.position - VoyageScreen.TO_AT
+				if voyage.to_map.coast_fraction(local.x, local.z) > MapIsland.SHORE_F - 0.03:
+					problems.append("야옹이 stands in the water (%.2f of the coast)" % voyage.to_map.coast_fraction(local.x, local.z))
+				var spot := VoyageScreen.keeper_spot(voyage.to_map)
+				for spot_id in Island.by_id(THIRD).spots():
+					var at: Array = _spot_at(spot_id)
+					if at.size() == 2 and Vector2(at[0], at[1]).distance_to(spot) < 1.0:
+						problems.append("야옹이 stands on the spot %s" % spot_id)
+			voyage.tap_page()
+			voyage.tap_page()
+			await tree.process_frame
+	for t in 3:   # (the last page's taps end the voyage; the map builds its story a frame later)
+		if voyage != null and not voyage.done:
+			voyage.tap_page()
+		await tree.process_frame
+	var home := app._screen as IslandHomeScreen
+	var landed := home != null and home.island.id == THIRD and Story.voyage_seen(THIRD) and home.play_prologue_on_open \
+		and home.story != null and home.story.part == "prologue" and is_equal_approx(home.story.night, 1.0)
+	if not landed:
+		problems.append("the prologue does not start at night on the beach (screen %s, story %s, play %s, island %s)" % [app._screen, home.story if home != null else "-", home.play_prologue_on_open if home != null else "-", home.island.id if home != null else "-"])
+	await _free(app)
+	# The second island's voyage keeps its day.
+	app = await _app(["--islands=open"])
+	app.show_voyage(NEXT)
+	await tree.process_frame
+	var by_day := app._screen as VoyageScreen
+	if by_day == null or by_day.night_voyage:
+		problems.append("the hutton voyage is at night")
+	await _free(app)
+	expect.call(problems.is_empty(), "voyage: to the curie island it is night from the sea on (the island dark, no flicker, lanterns lit), 야옹이 waits on the dry beach off the spots, the prologue starts at night; the hutton voyage stays by day (#155)",
+		"; ".join(problems))
+
+
+func _spot_at(spot_id: String) -> Array:
+	for zone in Island.by_id(THIRD).zones.values():
+		for spot in zone.spots:
+			if spot[0] == spot_id:
+				return spot[1]
+	return []
 
 
 func check_due_rule() -> void:

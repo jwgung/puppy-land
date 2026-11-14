@@ -102,6 +102,7 @@
     [300.0, 28.6, 3.0]
   ],
   "piece": "lens",
+  "keeper": "yaongi",
   "lookout": "flame-color",
   "order": ["diffusion", "dissolving", "melt-cook", "dough", "clean-water", "soap", "cabbage", "tooth", "fizz", "candle", "rust", "flame-color"]
 }

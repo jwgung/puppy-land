@@ -927,7 +927,7 @@ adb shell am start -n jwgung.puppyland/com.godot.game.GodotAppLauncher \
 | `--auto-release=<초>` | 그 간격으로 상자를 다시 놓는다(측정용) |
 | `--demo-celebrate=<초>` | (미션 실험, 화면 찍기용) 그 시간 뒤 1.6초마다 도장을 하나씩 받은 것처럼 도장 쾅 → 다 깼을 때 축하 → 카드를 보인다. 판정·저장 없음(진행 파일은 `progress-bench.cfg`) |
 | `--demo-title` | (화면 찍기·fps용) 측정 인자가 있어도 켤 때 타이틀을 보인다. 진행은 `progress-bench.cfg`에만 |
-| `--demo-story=<부분>` | (화면 찍기용) 이야기를 `progress-bench.cfg`에서만 켠다: `prologue`, `clue:<id>`, `found:<id>`, `flight:<id>`, `finale`, `map`(1절 "이야기") |
+| `--demo-story=<부분>` | (화면 찍기용) 이야기를 `progress-bench.cfg`에서만 켠다: `prologue`, `clue:<id>`, `found:<id>`, `flight:<id>`, `finale`, `map`(1절 "이야기"), `voyage`·`voyage:<섬 id>`(그 섬의 배 장면, 앞 섬을 다 찾은 상태, #155), `islands` |
 | `--demo-flag=<id>` | (지도, 화면 찍기용) 그 장소를 방금 다 깬 것으로(`progress-bench.cfg`에만 도장 3개 + 깃발 대기) 지도를 열어 깃발 올리기를 보인다 |
 | `--auto-drag=<초>` | 그 간격으로 첫 조작 물체를 손가락 입력 경로 그대로 1초 동안 끌어 놓고(영역 끝과 40% 지점을 번갈아), `demo_action`이 있으면 0.4초 뒤 누른다(2026-10-29부터 자유 낙하·미끄럼틀은 놓기가 곧 실행이라 없음). 새총 실험(던지기·공 부딪히기·별 돌기)은 같은 경로로 당겼다 놓고, 꾹 누르는 실험(상자 밀기·시소 들기·줄로 짐 들기)은 2.0초·3.5초를 번갈아 누른 뒤 뗀다(측정용, `bench_device.sh` 기본) |
 | `--q-<항목>=<값>` | 품질 단계 항목 덮어쓰기(측정용) |
@@ -1076,6 +1076,16 @@ python3 -I apps/lab3d/tools/device_gesture.py orbit  # orbit | pinch | pinch-fix
 - **3D** (`LensArt`, `scripts/art/lens_art.gd`): 해시계 부채꼴과 같은 둥근 모서리 테두리(`SundialArt.rim_of`)를 360/11°로, 같은 그리기 2번(빛을 구운 면 + 갈색 외곽선 껍질). 앞뒤 면에 조각 색(`LensArt.RAINBOW`, 위에서 시계 방향으로 빨강 → 분홍), 가운데를 가로지르는 밝은 유리 고리, 호를 따라 진한 띠, `StarArt.add_face`의 얼굴. 12번 조각은 불꽃(눈물방울 모양, 노란 속불, 얼굴). 실험 속 크기는 부채꼴이라 해시계와 같이 1.3배.
 - **2D**: 다 한 카드는 같은 모양(`LensArt.draw_piece_2d`). 지도 모서리 표시 `LensEmblem`: 11칸의 둥근 렌즈, 조각이 올 때마다 위에서 시계 방향으로 한 칸씩 그 무지개 색(유리 고리·진한 띠)이 차서 다 차면 무지개 바퀴, 가운데 빈 동그라미는 불꽃 자리. 12번째 조각은 칸을 채우지 않고 날지 않는다(`Island.held_spot`: 허턴섬의 바늘과 같은 자리, `StoryDirector._next_flight`). 가운데 불꽃은 `PieceEmblem.set_whole`(해시계와 같이 바탕으로 옮김)로 켜진다. 지금은 끝 이야기를 본 섬 고르기 카드에서만 켜지고, 지도 모서리와 등대의 렌즈·불은 퀴리섬 끝 이야기(#167·#168)에서 켠다.
 - 시험: `tests/lens_piece_checks.gd`(퀴리섬은 렌즈·12번 불꽃은 날지 않음, 허턴섬 바늘·뉴턴섬 별 그대로, 360/11° 부채꼴과 색 11가지·불꽃, 그리기 2번, 표시 11칸과 불꽃, 카드 그림).
+
+### 퀴리섬 배 장면과 첫 이야기 (#155, 2026-11-13 [대사](../../docs/islands/curie-lines.md) "배 장면과 첫 이야기")
+
+허턴섬의 배 장면(`VoyageScreen`)과 같은 틀이고 달라진 것만 적는다.
+
+- **말**: `content/story/curie.json`(`voyage` 6쪽: 섬지기 여우 "잘 다녀와"(`fox`)·빵고양이·두기두기가 `depart`, 퍼피가 `sea`, 두기두기가 `flicker`, 야옹이(`yaongi`)가 `arrive`. `prologue` 12쪽: 대사 7~18, 바닷가에서 등대 아래까지)와 `content/locale/<언어>/story/curie.json`. 영어는 우선 한국어 뜻대로 옮겼고 #169에서 다듬는다. 끝 이야기(`finale`)는 #168.
+- **밤 배 장면**(`voyage_at_night: true`, `Story.voyage_at_night`): 등대가 꺼진 섬이라 `depart`는 낮, `sea`부터 밤이다. 지도의 밤과 같은 값(`StoryDirector.NIGHT_TINT`·`NIGHT_SKY`·`NIGHT_SEA`)으로 `NIGHT_S` 2초 동안 어두워지고(`VoyageScreen.night`), 먼 바다의 배 등불이 켜진다. `flicker` 쪽은 허턴섬처럼 어두워졌다 밝아지지 않고 밤 속에 어두운 퀴리섬을 보여 준다. 배 장면이 끝나면 낮으로 되돌리고, 첫 이야기(`StoryDirector.play_prologue`)는 바닷가에서 밤(1.0)으로 시작해 마지막 쪽에서 지도의 밤으로 이어진다.
+- **섬지기 야옹이**: `curie.json`의 `"keeper": "yaongi"`. 배 장면 도착에 `IslandCast.keeper_model("yaongi")`가 허턴섬 여우와 같은 만화책 재질로 마른 모래에 선다. 지도에서 셋과 함께 걷고 실험에 함께 서는 것은 장소 티켓(#156~)에서 한다(지금은 `island.keeper == "fox"`만 걷는다).
+- **열림**: 배 장면은 앞 섬을 다 찾고 열린 섬만 나온다. 퀴리섬은 12곳이 다 실험이 되기 전에는 `Island.playable`이 아니라 잠겨 있고 `--islands=open`·`--island=curie`로만 본다. 섬 고르기 카드의 이름·부제(`island.curie.about` "물질과 변화")는 #152에서 이미 있다.
+- 시험: `tests/voyage_checks.gd` `check_content_third`(6쪽·야옹이 마지막·12쪽·두 언어 글·밤은 퀴리섬만)·`check_voyage_third`(낮에 출발·`sea`부터 밤·깜박임 없음·등불·야옹이가 마른 모래에서 장소 위가 아님·첫 이야기가 밤에 시작·허턴섬 배 장면은 밤 없음).
 
 ### 낮과 밤 (#74, 2026-11-06)
 

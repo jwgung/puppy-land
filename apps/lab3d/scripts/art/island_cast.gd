@@ -69,8 +69,14 @@ static func create(definition: Dictionary, lab: Experiment) -> IslandCast:
 ## look, casting no shadow (the map's and the labs' characters bake theirs): the voyage's landing and
 ## the hutton labs.
 static func fox_model() -> Node3D:
-	var model: Node3D = (load("res://assets/characters/fox.glb") as PackedScene).instantiate()
-	model.name = "Fox"
+	return keeper_model("fox")
+
+
+## The island keeper `keeper` ("fox" or "yaongi", the third island's lighthouse keeper #153) as a model
+## in the toon look: assets/characters/<keeper>.glb, casting no shadow.
+static func keeper_model(keeper: String) -> Node3D:
+	var model: Node3D = (load("res://assets/characters/%s.glb" % keeper) as PackedScene).instantiate()
+	model.name = keeper.capitalize()
 	for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
 		var mat := mi.mesh.surface_get_material(0) as BaseMaterial3D
 		if mat != null and mat.albedo_texture != null:
