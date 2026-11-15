@@ -1,7 +1,7 @@
 ## The island map's spot landmarks (2026-10-27 user decision "지도 전체 손보기"): one small,
 ## chunky model per lab, readable from the map camera (about 1-2 m), so a child sees what is done
-## there before reading its name. Built into the caller's builder (MapIsland merges all 11 into one
-## mesh); the shapes echo each lab's own props and colours (experiments/*/..._props.gd).
+## there before reading its name. Built into the caller's builder (MapIsland merges all of an island's
+## landmarks into one mesh); the shapes echo each lab's own props and colours (experiments/*/..._props.gd).
 ## Visual only: the labs' physics never sees these.
 class_name MapLandmarks
 extends RefCounted
