@@ -888,10 +888,10 @@ func guide() -> Dictionary:
 	if id == slingshot_id:
 		var to: Variant = _pull_end(from)
 		return {"kind": "pull", "id": id, "from": from, "to": to} if to is Vector3 else {}
+	if rules[id].get("guide", "") == "tap":   # (a hold object pressed once, #156's dropper: a tap)
+		return {"kind": "tap", "id": id, "from": from}
 	if rules[id].hold:
 		return {"kind": "hold", "id": id, "from": from}
-	if rules[id].get("guide", "") == "tap":
-		return {"kind": "tap", "id": id, "from": from}
 	var surface := _surface_for(id)
 	if surface == null:
 		return {}

@@ -70,6 +70,8 @@ static func add(b: ArtMeshBuilder, id: String, xf: Transform3D) -> float:
 			return _shake_house(b, xf)
 		"volcano":
 			return _lava_model(b, xf)
+		"diffusion":
+			return _diffusion(b, xf)
 	_rod(b, xf, Vector3.ZERO, Vector3(0.0, 1.0, 0.0), 0.08, ArtPalette.BLUE)
 	_ball(b, xf, Vector3(0.0, 1.15, 0.0), 0.2, ArtPalette.WHITE)
 	return 1.35
@@ -664,6 +666,24 @@ static func _lava_model(b: ArtMeshBuilder, xf: Transform3D) -> float:
 # --- helpers ---------------------------------------------------------------------------------
 
 ## A plain box: a bevel (108 triangles instead of 12) does not show at the map's distance.
+## The curie island's 퍼지는 냄새와 잉크 (#156, "빵 냄새가 솔솔 나는 곳"): a glass of water on a little
+## wooden table, the ink's blue cloud in its top half, a dropper with its red bulb over it and a small
+## golden loaf beside it with a puff of its smell.
+static func _diffusion(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.add_cylinder(xf, 0.5, 0.42, 0.12, 10, ArtPalette.WOOD_GRAIN, true, ArtPalette.WOOD)
+	var cup := Vector3(-0.1, 0.12, 0.0)
+	b.add_cylinder(xf * Transform3D(Basis(), cup), 0.22, 0.27, 0.58, 12, Color("cdeeff"), true, Color("8fd3ff"))
+	b.add_cylinder(xf * Transform3D(Basis(), cup + Vector3(0.0, 0.3, 0.0)), 0.26, 0.275, 0.24, 12, DiffusionProps.INK_CLOUD, true, Color("4a5cd0"))
+	_ball(b, xf, cup + Vector3(0.03, 0.42, 0.18), 0.07, DiffusionProps.INK)
+	_rod(b, xf, cup + Vector3(0.0, 0.66, 0.0), cup + Vector3(0.0, 0.98, 0.0), 0.035, Color("e9f4fa"))
+	_ball(b, xf, cup + Vector3(0.0, 1.05, 0.0), 0.09, DiffusionProps.BULB_RED)
+	var loaf := Vector3(0.3, 0.12, 0.18)
+	b.add_sphere(xf * Transform3D(Basis.from_scale(Vector3(1.0, 0.6, 0.7)), loaf + Vector3(0.0, 0.04, 0.0)), 0.17, 3, 8, DiffusionProps.BREAD)
+	for puff: Array in [[Vector3(0.36, 0.42, 0.18), 0.06], [Vector3(0.44, 0.58, 0.16), 0.075]]:
+		_ball(b, xf, puff[0], puff[1], DiffusionProps.SMELL)
+	return 1.35
+
+
 static func _box(b: ArtMeshBuilder, xf: Transform3D, at: Vector3, size: Vector3, color: Color, top: Variant = null) -> void:
 	b.add_rounded_box(xf * Transform3D(Basis(), at), size, 0.0, 0, color, top)
 

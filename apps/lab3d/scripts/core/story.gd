@@ -35,7 +35,8 @@ const SPEAKERS := {
 	"yaongi": ["speaker.yaongi", "res://assets/characters/portraits/yaongi_%s.webp"],
 }
 ## The island keeper who speaks a spot's first line on Hutton Island (#74: story.keeper, before Puppy's
-## clue). Its name tag is the speaker's (ui.json speaker.fox), never written here.
+## clue). Its name tag is the speaker's (ui.json speaker.fox), never written here. Another island's
+## keeper is its own (Island.keeper: the curie island's 야옹이, keeper_of()).
 const KEEPER := "fox"
 ## The portraits' expressions (2026-10-29 user request "대화시 표정을 좀 더 다양하게"), one picture per
 ## speaker and face (art_src/characters/*_portrait.py). Each line of the content may name its face
@@ -236,6 +237,20 @@ static func keeper_face(definition: Dictionary) -> String:
 	return face_or_default(_story_text(definition, "keeper_face"))
 
 
+## Who speaks the keeper's lines of `definition`'s spot (#156): its island's keeper (Island.keeper, a
+## SPEAKERS key: the curie island's "yaongi"), else KEEPER (the hutton island's fox).
+static func keeper_of(definition: Dictionary) -> String:
+	var island := ExperimentRegistry.island_of(str(definition.get("id", "")))
+	var who := Island.by_id(island).keeper if island != "" else ""
+	return who if SPEAKERS.has(who) else KEEPER
+
+
+## The first-visit lines between the keeper's line and Puppy's clue (#156, curie-lines.md: "빵고양이:
+## 걱정 마 …" before Puppy's clue): [{"speaker": SPEAKERS key, "face", "text"}], [] when it has none.
+static func before(definition: Dictionary) -> Array:
+	return _lines(definition, "before")
+
+
 ## The keeper's answer after Puppy's clue on the first visit ("" when it has none). #86: the fox tells
 ## how the piece's lid opens.
 static func keeper_reply(definition: Dictionary) -> String:
@@ -249,8 +264,13 @@ static func keeper_reply_face(definition: Dictionary) -> String:
 ## More first-visit lines after Puppy's clue (#98: the volcano's talk, Puppy and the keeper in turn):
 ## [{"speaker": Story.SPEAKERS key, "face", "text"}], [] when it has none.
 static func more(definition: Dictionary) -> Array:
+	return _lines(definition, "more")
+
+
+## The story's line list `key` ("more", "before"): its lines with a known speaker and a text.
+static func _lines(definition: Dictionary, key: String) -> Array:
 	var story: Variant = definition.get("story")
-	var lines: Variant = story.get("more", []) if story is Dictionary else []
+	var lines: Variant = story.get(key, []) if story is Dictionary else []
 	var out := []
 	for line: Variant in (lines if lines is Array else []):
 		if line is Dictionary and str(line.get("text", "")) != "" and SPEAKERS.has(str(line.get("speaker", ""))):

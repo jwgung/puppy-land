@@ -35,7 +35,9 @@ const KINDS := ["long_arc", "same_arc", "fall_together", "fall_heavy_first", "li
 	# #97 (지진): which ground shakes more, rock or sand?
 	"quake_rock", "quake_sand",
 	# #98 (화산): what mountain does sticky lava make?
-	"mountain_tall", "mountain_wide"]
+	"mountain_tall", "mountain_wide",
+	# #156 (퍼지는 냄새와 잉크): does ink spread first in cold water or in hot water?
+	"ink_cold_first", "ink_hot_first"]
 const STRONG := Color("e2683c")
 const PALE := Color("c9b892")
 const GROUND := Color("8a6a46")
@@ -51,6 +53,7 @@ const STICK := Color("c98d4f")
 const CAP := Color("ff3b3b")
 const NIGHT_SHADE := Color(0.1, 0.14, 0.35, 0.55)   # the Earth's far half (the night)
 const LAVA_HILL := Color("c8501a")      # the mountain the sticky lava makes (mountain_*, #98)
+const INK := Color("2a3cb0")            # the ink in the glasses (ink_*, #156)
 
 
 ## Draws `kind` filling `canvas` (an unknown kind draws the ground only).
@@ -109,6 +112,8 @@ static func draw(canvas: Control, kind: String) -> void:
 			_water(canvas, r, kind == "water_rises")
 		"dew_from_air", "dew_from_inside":
 			_dew(canvas, r, kind == "dew_from_air")
+		"ink_cold_first", "ink_hot_first":
+			_ink_glasses(canvas, r, kind == "ink_hot_first")
 		"breeze_from_sea", "breeze_from_land":
 			_breeze(canvas, r, kind == "breeze_from_sea")
 		"cloud_grows", "cloud_stays":
@@ -741,6 +746,40 @@ static func _dew(canvas: Control, r: Rect2, from_air: bool) -> void:
 		for side: float in [-1.0, 1.0]:
 			var from := c + Vector2(side * 4.0, -h * 0.4)
 			_arrow(canvas, from, from + Vector2(side * (bottom + 14.0), -2.0), STRONG, 3.0)
+
+## Two glasses on the ground with a drop of ink in each (#156): cold water on the left (a snowflake), hot
+## water on the right (steam). In the choice's glass the ink has spread all through it (thick orange
+## outline); in the other it is still a small cloud under the top (pale outline).
+static func _ink_glasses(canvas: Control, r: Rect2, hot_first: bool) -> void:
+	_ground(canvas, r)
+	var h := r.size.y * 0.72
+	var bottom := minf(r.size.x * 0.11, h * 0.36)
+	var top := bottom * 1.25
+	for i in 2:
+		var hot := i == 1
+		var chosen := hot == hot_first
+		var c := Vector2(r.position.x + r.size.x * (0.3 if i == 0 else 0.7), r.end.y - 2.0)
+		var glass := PackedVector2Array([c + Vector2(-bottom, 0.0), c + Vector2(bottom, 0.0), c + Vector2(top, -h), c + Vector2(-top, -h)])
+		var level := -h * 0.82
+		var w := lerpf(bottom, top, 0.82)
+		var water := PackedVector2Array([c + Vector2(-bottom + 2.0, -2.0), c + Vector2(bottom - 2.0, -2.0), c + Vector2(w - 2.0, level), c + Vector2(-w + 2.0, level)])
+		canvas.draw_colored_polygon(water, INK if chosen else WATER)
+		if not chosen:
+			canvas.draw_circle(c + Vector2(0.0, level + h * 0.14), h * 0.11, INK)
+		var outline := PackedVector2Array([glass[3], glass[0], glass[1], glass[2]])
+		canvas.draw_polyline(outline, STRONG if chosen else PALE, 4.0 if chosen else 2.0, true)
+		var mark := c + Vector2(0.0, -h - 10.0)
+		if hot:
+			for k in 3:
+				var at := mark + Vector2((k - 1) * top * 0.6, 6.0)
+				var wisp := PackedVector2Array()
+				for j in 7:
+					var u := j / 6.0
+					wisp.append(at + Vector2(2.5 * sin(u * TAU), -u * 12.0))
+				canvas.draw_polyline(wisp, Color("c4402a"), 2.0, true)
+		else:
+			_snowflake(canvas, mark, Color("7fb0e0"), 0.8)
+
 
 ## A sunny coast as the 바닷바람 lab draws it (#93): the land on the left with a little house, the sea
 ## on the right with waves, the sun over the land, and a big orange wind arrow low over the shore,

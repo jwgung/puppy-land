@@ -203,6 +203,13 @@
 ##    and hold), the judging of the three stages (the wrong magma's line), the magma button, the site
 ##    (the big volcano at night on stage 3), no number on the screen, what matters in view, the spot,
 ##    the opening lines (story.more), the hand and the piece (the needle pushed up).
+## 25a. 퍼지는 냄새와 잉크 (tests/diffusion_checks.gd, #156 2026-11-15): Curie Island's first lab, its data
+##    and its lines against docs/islands/curie-lines.md 1 (야옹이 the keeper, the bread cat before Puppy's
+##    clue), the model against the textbook values (water's viscosity, x = sqrt(4 D t), hot faster than
+##    cold, the smell in air before the ink in water), deterministic, the judging of the three stages (the
+##    wait and wrong-water lines), the dropper (a press is a drop), the tables per stage, the water button,
+##    no number on the screen, the dots where the spread allows, what matters in view, the spot, the
+##    opening and the piece (the bread box).
 ## 24l. the hutton cast (tests/hutton_cast_checks.gd, #114 2026-11-10): in every Hutton lab on the
 ##    tablet and the phone, Puppy's result bubble clear of Dugi's open box and portrait, Puppy at most
 ##    half under them.
@@ -494,6 +501,11 @@ func _run() -> void:
 	_expect(volcano != null and volcano.can_instantiate(), "volcano checks compile", "")
 	if volcano != null and volcano.can_instantiate():
 		await volcano.new(self, _expect).run()
+	print("== 퍼지는 냄새와 잉크 (#156): Curie Island's first lab, its lines, model, judging, dropper, tables, view and piece ==")
+	var diffusion: GDScript = load("res://tests/diffusion_checks.gd")
+	_expect(diffusion != null and diffusion.can_instantiate(), "diffusion checks compile", "")
+	if diffusion != null and diffusion.can_instantiate():
+		await diffusion.new(self, _expect).run()
 	print("== the hutton cast (#114): Puppy and his bubble clear of Dugi's box in every lab ==")
 	var hutton_cast: GDScript = load("res://tests/hutton_cast_checks.gd")
 	_expect(hutton_cast != null and hutton_cast.can_instantiate(), "hutton cast checks compile", "")

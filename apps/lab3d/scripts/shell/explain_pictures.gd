@@ -16,7 +16,7 @@
 class_name ExplainPictures
 extends RefCounted
 
-const KINDS := ["axis", "morning_evening", "sea_breeze", "river"]
+const KINDS := ["axis", "morning_evening", "sea_breeze", "river", "particles"]
 ## The card's width : height (DialogueBox.CARD_SIZE has it too) and its drawing space (the mockup's).
 const ASPECT := 1.5
 const DESIGN := Vector2(432.0, 432.0 / ASPECT)
@@ -104,6 +104,8 @@ static func draw_card(canvas: CanvasItem, kind: String, rect: Rect2) -> void:
 			pen.mirror(false)
 		"river":
 			_river(pen)
+		"particles":
+			_particles(pen)
 	pen.card_front()
 	canvas.draw_set_transform_matrix(Transform2D.IDENTITY)
 
@@ -310,6 +312,59 @@ static func _river(p: Pen) -> void:
 	p.arrow(fast, ORG)
 	# The slow water inside: a shorter, thinner arrow.
 	p.arrow(arc_points(c, mid - 16, mid - 16, 228, 292, 0.0, 40), WHITE, ARROW_WIDTH * 0.7, Color8(120, 166, 204), Color8(70, 130, 186))
+
+
+## A glass of water seen up close (#156, curie-lines.md 1: "컵 속 물 알갱이들 사이로 잉크 알갱이가 흩어지는
+## 모양"): the water is pale blue particles packed close together; the ink's dark blue particles came in
+## at the top and scatter down between them, each with a little wiggle line (they keep moving).
+static func _particles(p: Pen) -> void:
+	p.sky(Color8(255, 240, 214), Color8(246, 222, 184))
+	# The table top under the glass.
+	p.fill(rect_points(Rect2(0, 236, DESIGN.x, DESIGN.y - 236)), Color8(201, 141, 79))
+	p.fill(rect_points(Rect2(0, 236, DESIGN.x, 6)), Color8(219, 164, 104))
+	var glass := PackedVector2Array([Vector2(126, 34), Vector2(306, 34), Vector2(290, 246), Vector2(142, 246)])
+	var water := PackedVector2Array([Vector2(131, 62), Vector2(301, 62), Vector2(287, 240), Vector2(145, 240)])
+	p.fill(glass, Color8(234, 246, 255))
+	p.fill(water, Color8(178, 222, 248))
+	var water_dot := Color8(120, 184, 236)
+	var water_rim := Color8(88, 150, 214)
+	var ink := Color8(36, 52, 168)
+	var ink_rim := Color8(20, 30, 110)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 156
+	# The water's particles: a loose grid, every one nudged a little.
+	var r := 7.5
+	var row := 0
+	var y := 76.0
+	while y < 232.0:
+		var x := 146.0 + (8.0 if row % 2 == 1 else 0.0)
+		while x < 290.0:
+			var at := Vector2(x + rng.randf_range(-2.5, 2.5), y + rng.randf_range(-2.5, 2.5))
+			if Geometry2D.is_point_in_polygon(at, water):
+				p.ellipse(at, r, r, water_dot)
+				p.ring(at, r, r, water_rim, 1.2)
+			x += 17.0
+		y += 15.0
+		row += 1
+	# The ink's particles: thick at the top middle, scattering down and out, with wiggle lines.
+	for i in 22:
+		var k := i / 21.0
+		var spread := lerpf(10.0, 62.0, k)
+		var at := Vector2(216.0 + rng.randf_range(-spread, spread), lerpf(78.0, 214.0, k * k) + rng.randf_range(-8.0, 8.0))
+		at.x = clampf(at.x, 152.0, 280.0)
+		p.ellipse(at, r * 1.05, r * 1.05, ink)
+		p.ring(at, r * 1.05, r * 1.05, ink_rim, 1.4)
+		p.ellipse(at + Vector2(-2.5, -2.5), 2.2, 2.2, Color(1, 1, 1, 0.7))
+		if i % 3 == 0:
+			var a := rng.randf_range(0.0, TAU)
+			var side := Vector2.from_angle(a)
+			var from := at + side * (r + 4.0)
+			p.line(arc_points(from + side * 6.0, 6.0, 6.0, rad_to_deg(a) + 150.0, rad_to_deg(a) + 210.0, 0.0, 8), Color8(226, 104, 60), 2.0, false)
+	# The glass's outline and shine.
+	p.ring_points(glass, OUT, 3.0)
+	p.line(PackedVector2Array([Vector2(146, 52), Vector2(156, 220)]), Color(1, 1, 1, 0.75), 4.0)
+	# The drop that brought them, falling in at the top.
+	p.ellipse(Vector2(216, 22), 7, 9, ink)
 
 
 # --- shapes ---------------------------------------------------------------------------------------
