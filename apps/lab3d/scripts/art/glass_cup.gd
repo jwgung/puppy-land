@@ -5,7 +5,7 @@
 ## - show_spread(share, color): something spreading through the water from just under its top (a
 ##   drop of ink, later the salt or the soap of the next spots): a soft cloud that grows with `share`
 ##   (0..1) up to the whole water, which takes its colour as it fills;
-## - water_box(): the water's inside (bottom, top, radius) for a ParticleCloud's `contain`.
+## - water_box(): the water's inside (bottom, top, radius) for a ParticleCloud's `in_cylinder`.
 ## The glass's materials draw in a fixed order (render_priority): the water, then the cloud, then the
 ## glass shell, so the cloud reads inside the water and the shell over both. Visual only.
 class_name GlassCup

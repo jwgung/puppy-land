@@ -38,7 +38,7 @@ static func room_mesh() -> Mesh:
 	var b := ArtKit.builder()
 	b.ao_min = 0.85
 	b.ao_height = 1.2
-	# A row of jars (the island's potion colours) standing at the back of the table, and the pot.
+	# A row of jars (the island's potion colours) and the pot on the grass at the back left of the table.
 	var back := Vector3(-4.6, 0.0, -0.6)   # on the grass, left of the table (the glasses stand in front of the table's back)
 	for k in JARS.size():
 		var at := back + Vector3(k * 0.45, 0.0, 0.0)

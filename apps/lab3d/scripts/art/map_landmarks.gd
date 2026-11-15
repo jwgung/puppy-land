@@ -663,9 +663,6 @@ static func _lava_model(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	return 1.25
 
 
-# --- helpers ---------------------------------------------------------------------------------
-
-## A plain box: a bevel (108 triangles instead of 12) does not show at the map's distance.
 ## The curie island's 퍼지는 냄새와 잉크 (#156, "빵 냄새가 솔솔 나는 곳"): a glass of water on a little
 ## wooden table, the ink's blue cloud in its top half, a dropper with its red bulb over it and a small
 ## golden loaf beside it with a puff of its smell.
@@ -684,6 +681,9 @@ static func _diffusion(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	return 1.35
 
 
+# --- helpers ---------------------------------------------------------------------------------
+
+## A plain box: a bevel (108 triangles instead of 12) does not show at the map's distance.
 static func _box(b: ArtMeshBuilder, xf: Transform3D, at: Vector3, size: Vector3, color: Color, top: Variant = null) -> void:
 	b.add_rounded_box(xf * Transform3D(Basis(), at), size, 0.0, 0, color, top)
 

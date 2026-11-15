@@ -45,7 +45,7 @@ func build() -> void:
 	lamps.name = "Lamps"
 	lamps.material_override = ArtKit.lit_material()
 	box.add_child(lamps)
-	make_piece(BOX_AT + Vector3(0.0, 0.0, 0.0), PIECE_SIZE * 0.8)
+	make_piece(BOX_AT, PIECE_SIZE * 0.8)
 	_jump(0)
 
 

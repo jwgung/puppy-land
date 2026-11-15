@@ -228,7 +228,7 @@ static func clue(definition: Dictionary) -> String:
 
 
 ## The island keeper's line on the spot's first visit, before Puppy's clue ("" when it has none: the
-## mechanics island has no keeper). #74: the fox tells what is wrong at the spot.
+## mechanics island has no keeper). #74: the spot's island keeper tells what is wrong there (keeper_of: the fox, 야옹이).
 static func keeper(definition: Dictionary) -> String:
 	return _story_text(definition, "keeper")
 
