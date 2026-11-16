@@ -814,10 +814,15 @@ func check_piece() -> void:
 	lab.set_game_stage(2, 2, false)
 	(lab.model as DissolvingModel).pour()
 	lab._show()
-	for i in 90:
+	for i in int(DissolvingProps.POUR_S * 60.0) + 30:
 		await tree.process_frame
-	if game.piece_state != "held" or not game.piece.visible or game.piece.global_position.distance_to(DissolvingProps.TRAY_AT) > 0.6 or game._lamps_lit != 2:
-		problems.append("after the pour: %s at %s, lamps %d" % [game.piece_state, str(game.piece.global_position), game._lamps_lit])
+	if game.piece_state != "held" or game.piece.visible or game.piece.global_position.distance_to(DissolvingProps.TRAY_AT) > 0.6 or game._lamps_lit != 2:
+		problems.append("after the pour: %s at %s, shown %s, lamps %d" % [game.piece_state, str(game.piece.global_position), game.piece.visible, game._lamps_lit])
+	_run(lab.model as DissolvingModel, DissolvingModel.dry_days() * DissolvingModel.DAY_S + 0.5)
+	lab._show()
+	await tree.process_frame
+	if not game.piece.visible:
+		problems.append("not in the salt on the dry tray")
 	game.show_stage(-1, 3, true)
 	var frames := 0
 	while game.piece_state != "out" and frames < 500:
@@ -827,7 +832,7 @@ func check_piece() -> void:
 		problems.append("after the last stamp: %s at %s" % [game.piece_state, str(game.piece.global_position)])
 	if not game.take_piece() is Vector3:
 		problems.append("not taken")
-	expect.call(problems.is_empty(), "dissolving piece: hidden in the bucket (a lamp a stamp), on the tray under the water after the pour, out of the salt at the last stamp and down in front of the bread cat",
+	expect.call(problems.is_empty(), "dissolving piece: hidden in the bucket (a lamp a stamp), on the tray under the water out of sight after the pour, in the salt on the dry tray, out of the salt at the last stamp and down in front of the bread cat",
 		"; ".join(problems))
 	lab.queue_free()
 	await tree.process_frame

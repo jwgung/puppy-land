@@ -1,7 +1,8 @@
 ## The 녹으면 사라질까? piece game (#157; curie-lines.md 2: "바닷물 통 바닥에 조각이 있어! 물이 가득해서 못
 ## 꺼내겠어." … "소금이 생겼어! 조각도!"): the piece lies at the bottom of the seawater bucket, three lamps on
 ## the bucket's front. Each stamp lights a lamp (and the bread cat cheers). In stage 3 the pour
-## carries the piece out onto the sun tray, where it lies under the water; the last stamp (the tray dry,
+## carries the piece out onto the sun tray, where it lies under the water out of sight until the
+## salt comes out round it; the last stamp (the tray dry,
 ## the salt left) lifts it out of the white crust and it jumps down onto the table in front of the bread
 ## cat's crates; the screen then flies it to the cat. Visual only.
 class_name DissolvingGame
@@ -16,6 +17,8 @@ const RISE_S := 0.6
 const FLIGHT_S := 1.2
 const LAND_FROM_CAT := Vector3(0.0, 0.0, 0.75)
 const HIGHLIGHT_R := 0.75
+## The piece shows on the tray once this share of the salt has come out (before: under the water).
+const SHOW_AT_CRUST := 0.3
 
 var lamps: MeshInstance3D
 var _lamps_lit := -1
@@ -82,7 +85,7 @@ func _place() -> void:
 	_on_tray = poured and not p.pouring()
 	if piece_state != "held":
 		return
-	piece.visible = _on_tray
+	piece.visible = _on_tray and p.shown_crust >= SHOW_AT_CRUST   # (under the water out of sight; it shows in the salt)
 	piece.position = DissolvingProps.TRAY_AT + ON_TRAY if _on_tray else p.bucket.global_position + Vector3.UP * 0.2
 
 

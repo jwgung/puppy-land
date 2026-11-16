@@ -815,7 +815,7 @@ static func _salt_glass(canvas: Control, r: Rect2, stays: bool) -> void:
 		canvas.draw_polyline(hook, STRONG, 3.0, true)
 		canvas.draw_circle(q + Vector2(0.0, 3.0), 2.0, STRONG)
 	var glass := PackedVector2Array([c + Vector2(-top, -h), c + Vector2(-bottom, 0.0), c + Vector2(bottom, 0.0), c + Vector2(top, -h)])
-	canvas.draw_polyline(glass, STRONG if stays else PALE, 3.0, true)
+	canvas.draw_polyline(glass, STRONG, 3.0, true)   # (the same on both cards: no hint of the answer)
 
 
 ## A sunny coast as the 바닷바람 lab draws it (#93): the land on the left with a little house, the sea

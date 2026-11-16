@@ -31,9 +31,9 @@ const CUP_X := {0: 0.1, 1: 0.35, 2: -0.6}
 ## The salt: its white, the spoonful's mound at the glass's bottom (radius, height at full, m), the
 ## cloud's colour while it dissolves.
 const SALT := Color("f7f9fb")
-const MOUND := Vector2(0.3, 0.16)
+const MOUND := Vector2(0.26, 0.3)
 const SALT_HAZE := Color("ffffff")
-const HAZE_ALPHA := 0.7
+const HAZE_ALPHA := 0.9
 ## The salt dish left of the glass (x from the glass), its radius, its blue rim.
 const DISH_FROM_CUP := -0.85
 const DISH_R := 0.3
@@ -79,7 +79,7 @@ const BUCKET_X := {0: 2.75, 2: 0.45}
 const BUCKET_Z := 0.4
 const POUR_X := 1.15
 const TIP_DEG := 55.0
-const POUR_S := 1.0
+const POUR_S := 1.5
 ## The time sign behind the tray (its bar's middle) and the bread cat: how far left of the glass it
 ## stands (per table) and how high its crates lift it.
 const SIGN_AT := Vector3(1.55, 2.35, -0.55)
@@ -129,7 +129,7 @@ func build(lab: Node3D) -> void:
 	lab.add_child(cup)
 	mound = ArtKit.instance(_mound_mesh())
 	mound.name = "SaltMound"
-	mound.position = Vector3(0.0, 0.07, 0.0)
+	mound.position = Vector3(0.0, 0.08, 0.0)
 	cup.add_child(mound)
 	spoon = Node3D.new()
 	spoon.name = "Spoon"
@@ -271,8 +271,8 @@ func show(site: float, spoon_angle: float, bottom: float, dissolved: float, gram
 	mound.visible = shown_bottom > 0.01 and site != DissolvingModel.TRAY
 	mound.scale = Vector3(lerpf(0.35, 1.0, sqrt(shown_bottom)), maxf(shown_bottom, 0.05), lerpf(0.35, 1.0, sqrt(shown_bottom)))
 	# Cloudy while it dissolves, clear once it is all gone (and before the stirring starts).
-	shown_haze = sin(PI * clampf(dissolved, 0.0, 1.0)) if site != DissolvingModel.TRAY else 0.0
-	cup.show_spread(shown_haze, SALT_HAZE)
+	shown_haze = minf(1.0, 2.5 * sin(PI * clampf(dissolved, 0.0, 1.0))) if site != DissolvingModel.TRAY else 0.0
+	cup.show_spread(0.75 if shown_haze > 0.0 else 0.0, SALT_HAZE)   # (the cloud through most of the water)
 	SoftCloud.set_look(cup.cloud_material, SALT_HAZE, HAZE_ALPHA * shown_haze)
 	cup.water_material.albedo_color = Color.WHITE
 	shown_needle = needle_deg(grams)
@@ -356,12 +356,12 @@ func advance(delta: float) -> void:
 
 # --- meshes -------------------------------------------------------------------------------------------
 
-## The spoonful at the glass's bottom: a low white mound (unit height: the node scales it).
+## The spoonful at the glass's bottom: a low white mound (its lower half in the glass's foot; the node scales it as it dissolves).
 static func _mound_mesh() -> Mesh:
 	var b := ArtKit.builder()
 	b.ao_min = 0.9
 	b.ao_height = 1.0
-	b.add_sphere(Transform3D(Basis.from_scale(Vector3(MOUND.x, 1.0, MOUND.x * 0.8)), Vector3.ZERO), 1.0, 4, 14, SALT)
+	b.add_sphere(Transform3D(Basis.from_scale(Vector3(MOUND.x, MOUND.y, MOUND.x * 0.8)), Vector3.ZERO), 1.0, 4, 14, SALT)
 	return b.commit()
 
 
