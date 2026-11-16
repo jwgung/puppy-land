@@ -9,19 +9,25 @@
 ##   Korean line is 반말; English has every line;
 ## - the model: the same steps give the same state (deterministic); the textbook values (water's
 ##   viscosity at 20 and 80 °C, the spreading front's square root law); hot water spreads the ink faster
-##   than cold (Stokes–Einstein, about 4.6 times); the smell in air reaches Puppy's nose before the ink
+##   than cold (Stokes–Einstein, about 2.7 times at 50 °C); the smell in air reaches Puppy's nose before the ink
 ##   fills even the hot glass (a gas spreads faster than a liquid);
 ## - the judging (MissionRound on the real lab): each stage's hit and misses (Puppy's wait line), the
 ##   wrong water's line, nothing while the finger is on the dropper or right after the drop;
 ## - the hand: a press on the dropper's bulb is a new drop (nothing moves), the ink spreads after the
 ##   let-go; the hand guide taps it;
+## - the bread cat does the lab (2026-11-15 user): on its crates on the table beside the glass, it
+##   squeezes the bulb with both paws on it while the finger presses (pressing, the arms not stretched)
+##   and lets go with the finger (effort 0); its crates stand on the table clear of the glasses, the loaf,
+##   the bread box and the cast on every table;
 ## - the tables: stage 1 one glass, stage 2 a cold glass beside it, stage 3 the loaf (its smell to
 ##   Puppy's nose); a stage just cleared keeps its table until the next reset;
 ## - the water button: 찬물 / 뜨거운 물 (picture buttons on every stage) set the water, start the run over,
 ##   steam the hot glass; 다시 keeps it;
-## - no number on the screen: the observations are words, no units; the dots and puffs are random but
-##   stay where the model's spread allows (in the glass's water, along the smell's way up to its front);
-## - what matters is in view: the dropper's bulb, the glasses, the loaf, Puppy's nose and the bread box
+## - no number on the screen: the observations are words, no units; the ink's cloud and the smell's
+##   haze sway but stay where the model's spread allows (in the glass's water, deeper sooner in hot
+##   water; along the smell's way up to its front), in their colours and draw order;
+## - what matters is in view: the dropper's bulb, the glasses (no smaller than before the cat came up on
+##   the table: GLASS_MIN of the height), the bread cat's head, the loaf, Puppy's nose and the bread box
 ##   on the phone, the desktop and the tablet, clear of the top band and the bottom;
 ## - the spot: the curie map's first spot is this experiment (the island stays in the making until all
 ##   12 are labs), its map landmark is its own;
@@ -44,6 +50,11 @@ const BOTTOM_FREE := 0.8
 const TOP_FREE := 0.38
 const LEFT_BAND := 680.0
 const LINE_MAX := 24
+## The glass's least height on the screen (share of the view's height).
+const GLASS_MIN := 0.148
+## How close (m) the cat's paws are to their points on the bulb, and how far its arms may stretch.
+const PAW_GAP := 0.02
+const STRETCH_MAX := 1.05
 const STEP := 1.0 / 60.0
 ## Water's viscosity (Pa·s) in the tables (CRC Handbook): 1.002 mPa·s at 20 °C, 0.355 at 80 °C.
 const VISCOSITY_20 := 1.002e-3
@@ -71,6 +82,7 @@ func run() -> void:
 	check_textbook()
 	await check_judging()
 	await check_hold()
+	await check_cat_press()
 	await check_tables()
 	await check_condition_button()
 	await check_no_numbers()
@@ -322,7 +334,7 @@ func check_model() -> void:
 
 ## Textbook values: water's viscosity (Vogel) within 2% of the tables at 20 and 80 °C; the spreading
 ## front follows x = sqrt(4 D t) (a quarter of the time, half the way); hot water spreads the ink about
-## 4.6 times as fast as cold (Stokes–Einstein: 353 / 283 K times 1.30 / 0.355 mPa·s); a smell's D in air
+## 2.7 times as fast as cold (Stokes–Einstein: 323 / 283 K times 1.307 / 0.547 mPa·s); a smell's D in air
 ## is about ten thousand times an ink's in water, so the smell reaches Puppy's nose before even the hot
 ## glass is all blue, and the stepped model gets there in the same order.
 func check_textbook() -> void:
@@ -335,7 +347,7 @@ func check_textbook() -> void:
 	if absf(DiffusionModel.reach(full * 0.25, full) - 0.5) > 1e-9 or DiffusionModel.reach(full, full) != 1.0:
 		problems.append("the front is not a square root law")
 	var ratio := DiffusionModel.full_time(DiffusionModel.COLD_C) / DiffusionModel.full_time(DiffusionModel.HOT_C)
-	if ratio < 4.3 or ratio > 4.9:
+	if ratio < 2.5 or ratio > 2.95:
 		problems.append("hot is %.2f times as fast" % ratio)
 	var gas := DiffusionModel.smell_d(20.0) / DiffusionModel.ink_d(20.0)
 	if gas < 5e3 or gas > 2e4:
@@ -374,8 +386,8 @@ func check_judging() -> void:
 	var problems := []
 	var cases := [
 		[0, "cold", 0.5, false, false], [0, "cold", 3.0, false, true], [0, "cold", 12.5, true, false],
-		[0, "hot", 1.5, false, true], [0, "hot", 3.0, false, false],
-		[1, "hot", 0.5, false, false], [1, "hot", 1.5, false, true], [1, "hot", 3.0, true, false], [1, "hot", 13.0, true, false],
+		[0, "hot", 1.5, false, true], [0, "hot", 4.0, false, false],
+		[1, "hot", 0.5, false, false], [1, "hot", 1.5, false, true], [1, "hot", 3.6, true, false], [1, "hot", 13.0, true, false],
 		[1, "cold", 3.0, false, true], [1, "cold", 13.0, false, true],
 		[2, "hot", 0.5, false, false], [2, "hot", 1.2, false, true], [2, "hot", 2.0, true, false], [2, "cold", 2.0, false, false],
 	]
@@ -455,6 +467,65 @@ func check_hold() -> void:
 	expect.call(problems.is_empty(), "diffusion hand: a press on the dropper's bulb is a new drop (the knob never moves), the ink spreads after the let-go; the hand guide taps the bulb",
 		"; ".join(problems))
 	host.queue_free()
+	await tree.process_frame
+
+
+# --- the bread cat -------------------------------------------------------------------------------
+
+## On each table the bread cat stands on its crates on the table left of the glass; a press puts both
+## its paws on the bulb's sides (where the squeezed bulb is, the arms not stretched past STRETCH_MAX),
+## pressing; the let-go takes its paws off (effort 0) and it stands back up. Its crates stand on the
+## table's top, inside its ends, clear of the glasses, the loaf's board, the bread box and the cast.
+func check_cat_press() -> void:
+	var lab := _lab()
+	tree.root.add_child(lab)
+	await tree.process_frame
+	var props: DiffusionProps = lab.props
+	var cat := props.cat
+	var cast: Dictionary = _definition().cast
+	var problems := []
+	var seen := []
+	for stage in [0, 1, 2]:
+		lab.set_game_stage(stage, stage, false)
+		await tree.process_frame
+		var foot := props.cup.global_position
+		var crates := props.cat_stand
+		var half := (crates.footprint + Vector2.ONE * CatCrates.CRATE_RIM) * 0.5
+		var span := Vector2(cat.global_position.x - half.x, cat.global_position.x + half.x)
+		if not crates.visible or absf(crates.global_position.y - KitchenSet.TABLE_TOP) > 1e-4 or absf(crates.scale.y - (cat.global_position.y - KitchenSet.TABLE_TOP)) > 1e-4:
+			problems.append("stage %d: the crates are not from the table's top up to the cat" % (stage + 1))
+		if span.x < KitchenSet.TABLE_AT.x - KitchenSet.TABLE_SIZE.x * 0.5 or span.y > foot.x - DiffusionProps.CUP_TOP:
+			problems.append("stage %d: the crates at x %s, the table's left end %.2f, the glass's rim %.2f" % [stage + 1, str(span), KitchenSet.TABLE_AT.x - KitchenSet.TABLE_SIZE.x * 0.5, foot.x - DiffusionProps.CUP_TOP])
+		var others := {"the cold glass": [props.beside.global_position.x, DiffusionProps.CUP_TOP, props.beside.visible],
+			"the loaf's board": [props.bread.global_position.x, 0.75, props.bread.visible],
+			"the bread box": [DiffusionGame.BOX_AT.x, DiffusionGame.BOX_SIZE.x * 0.5, true]}
+		for who: String in cast:
+			others[who] = [float(cast[who].at[0]), 0.5, true]
+		for what: String in others:
+			var o: Array = others[what]
+			if o[2] and absf(float(o[0]) - cat.global_position.x) < float(o[1]) + half.x:
+				problems.append("stage %d: the cat's crates on %s" % [stage + 1, what])
+		lab.hold_started(DiffusionLab.KNOB_ID)
+		for i in 30:
+			await tree.process_frame
+		var bulb: Vector3 = props.dropper.global_position
+		var paws := DiffusionProps.paw_points(bulb, cat.global_position, props.shown_squeeze)
+		var gap := maxf(cat.hand_point(0).distance_to(paws[0]), cat.hand_point(1).distance_to(paws[1]))
+		var reach := maxf(cat.stretch(0), cat.stretch(1))
+		if cat.mode != "grab" or props.shown_effort <= 0.0 or props.shown_squeeze <= 0.0 or gap > PAW_GAP or reach > STRETCH_MAX \
+				or paws.any(func(p: Vector3) -> bool: return p.distance_to(bulb) > DiffusionProps.BULB + 1e-4):
+			problems.append("stage %d pressing: mode %s, effort %.2f, squeeze %.2f, paws %.3f m off the bulb, arms %.2f" % [stage + 1, cat.mode, props.shown_effort, props.shown_squeeze, gap, reach])
+		seen.append("lean %.0f deg" % rad_to_deg(cat.lean()))
+		lab.hold_ended(DiffusionLab.KNOB_ID)
+		if cat.attached() or props.shown_effort != 0.0:
+			problems.append("stage %d let go: mode %s, effort %.2f" % [stage + 1, cat.mode, props.shown_effort])
+		for i in 40:
+			await tree.process_frame
+		if cat.mode != "free" or cat.lean() != 0.0 or props.shown_squeeze != 0.0:
+			problems.append("stage %d after the let-go: mode %s, squeeze %.2f" % [stage + 1, cat.mode, props.shown_squeeze])
+	expect.call(problems.is_empty(), "diffusion bread cat: on its crates on the table beside the glass, both paws squeeze the dropper's bulb while the finger presses (%s, the arms not stretched), off with the let-go (effort 0); its crates clear of the glasses, the loaf, the bread box and the cast" % ", ".join(seen),
+		"; ".join(problems))
+	lab.queue_free()
 	await tree.process_frame
 
 
@@ -560,9 +631,10 @@ func check_no_numbers() -> void:
 	await tree.process_frame
 
 
-## The dots are random (a picture) but stay where the model's spread allows: the ink's in the glass's
-## water and, early on, near the top where the drop went in; the smell's puffs along its way, none past
-## its front; a hot glass's dots jiggle harder than a cold one's.
+## The clouds are a picture but stay where the model's spread allows: the ink's lumps in the glass's
+## water, swaying, reaching deeper sooner in hot water and growing from the drop's blob; the smell's haze
+## along its way, none past its front, only on the bread table after a drop; their colours and the
+## glass's draw order (water, cloud, shell, steam). No particles in the scene (2026-11-16 user).
 func check_dots() -> void:
 	var lab := _lab()
 	tree.root.add_child(lab)
@@ -574,31 +646,35 @@ func check_dots() -> void:
 	lab.hold_started(DiffusionLab.KNOB_ID)
 	lab.hold_ended(DiffusionLab.KNOB_ID)
 	var box := props.cup.water_box()
-	var early_low := INF
-	var moved := 0.0
-	var last := props.ink.points.duplicate()
-	for i in 40:   # 0.67 s: the smell about half way
+	for i in 30:   # 0.5 s: the smell about half way
 		await tree.physics_frame
 		await tree.process_frame
-	for p: Vector3 in props.ink.points.slice(0, props.ink.shown()):
-		var flat := Vector2(p.x, p.z).length()
-		if flat > box.z + 1e-4 or p.y < box.x - 1e-4 or p.y > box.y + 1e-4:
-			problems.append("an ink dot out of the water at %s" % str(p))
-			break
-		early_low = minf(early_low, p.y)
-	for i in props.ink.shown():
-		moved += props.ink.points[i].distance_to(last[i])
-	if props.ink.shown() != DiffusionProps.INK_DOTS or moved <= 0.0:
-		problems.append("ink dots %d, moved %.2f" % [props.ink.shown(), moved])
+	var last := props.cup.lump_points.duplicate()
+	for i in 10:
+		await tree.physics_frame
+		await tree.process_frame
+	var hot_low := INF
+	var moved := 0.0
+	for i in GlassCup.CLOUD_LUMPS:
+		var p := props.cup.lump_points[i]
+		if Vector2(p.x, p.z).length() > box.z + 1e-4 or p.y < box.x - 1e-4 or p.y > box.y + 1e-4:
+			problems.append("an ink lump out of the water at %s" % str(p))
+		hot_low = minf(hot_low, p.y)
+		moved += p.distance_to(last[i])
+		var size := props.cup.lump_sizes[i]
+		if size.x > (box.z + 0.05) * 1.07 or size.y > (box.y - box.x) / GlassCup.CLOUD_LUMPS * GlassCup.CLOUD_TALL * 1.07:
+			problems.append("an ink lump too big %s" % str(size))
+	if not props.cup.cloud.visible or moved <= 0.0 or props.cup.lump_sizes[0].x <= GlassCup.CLOUD_START:
+		problems.append("the ink cloud shown %s, moved %.3f, top lump %s" % [props.cup.cloud.visible, moved, str(props.cup.lump_sizes[0])])
 	var front: float = props.shown_smell
 	var nose_gap := props.smell_point(front).distance_to(props.nose)
-	for p: Vector3 in props.smell.points.slice(0, props.smell.shown()):
-		if p.distance_to(props.nose) < nose_gap - DiffusionProps.SMELL_BAND * 1.8 - DiffusionProps.SMELL_WOBBLE:
-			problems.append("a smell puff past its front (%.2f of the way) at %s" % [front, str(p)])
+	for p: Vector3 in props.haze_points:
+		if p.distance_to(props.nose) < nose_gap - DiffusionProps.SMELL_SWAY - 1e-3:
+			problems.append("the smell's haze past its front (%.2f of the way) at %s" % [front, str(p)])
 			break
-	if props.smell.shown() != DiffusionProps.SMELL_PUFFS or front <= 0.2 or front >= 1.0:
-		problems.append("smell puffs %d at %.2f of the way" % [props.smell.shown(), front])
-	# Cold: the same drop's dots stay near the top for longer.
+	if not props.smell_haze.visible or front <= 0.2 or front >= 1.0:
+		problems.append("the smell's haze shown %s at %.2f of the way" % [props.smell_haze.visible, front])
+	# Cold: the same drop's cloud stays near the top for longer; no bread, no haze.
 	lab.set_control("water", "cold")
 	lab.set_game_stage(0, 0, false)
 	lab.hold_started(DiffusionLab.KNOB_ID)
@@ -607,11 +683,27 @@ func check_dots() -> void:
 		await tree.physics_frame
 		await tree.process_frame
 	var cold_low := INF
-	for p: Vector3 in props.ink.points.slice(0, props.ink.shown()):
+	for p: Vector3 in props.cup.lump_points:
 		cold_low = minf(cold_low, p.y)
-	if not (cold_low > early_low):
-		problems.append("the cold glass's lowest dot %.2f is not above the hot one's %.2f" % [cold_low, early_low])
-	expect.call(problems.is_empty(), "diffusion dots: the ink's dots jiggle inside the glass's water, deeper sooner in hot water; the smell's puffs go along its way up to its front only",
+	if not (cold_low > hot_low):
+		problems.append("the cold glass's lowest lump %.2f is not above the hot one's %.2f" % [cold_low, hot_low])
+	if props.smell_haze.visible:
+		problems.append("the smell's haze shows without the bread")
+	# Colours and the draw order.
+	var ink_tint: Vector4 = props.cup.cloud_material.get_shader_parameter("tint")
+	var haze_tint: Vector4 = (props.smell_haze.material_override as ShaderMaterial).get_shader_parameter("tint")
+	var want_ink := DiffusionProps.INK_CLOUD.srgb_to_linear()
+	var want_haze := DiffusionProps.SMELL_HAZE.srgb_to_linear()
+	if not ink_tint.is_equal_approx(Vector4(want_ink.r, want_ink.g, want_ink.b, 1.0)) or not haze_tint.is_equal_approx(Vector4(want_haze.r, want_haze.g, want_haze.b, 1.0)):
+		problems.append("cloud tints %s, %s" % [str(ink_tint), str(haze_tint)])
+	var order := [props.cup.water_material.render_priority, props.cup.cloud_material.render_priority,
+		(props.cup.get_node("Shell") as MeshInstance3D).material_override.render_priority,
+		(props.cup.get_node("Steam/Wisp0") as MeshInstance3D).material_override.render_priority]
+	if order != [GlassCup.WATER_PRIORITY, GlassCup.CLOUD_PRIORITY, GlassCup.SHELL_PRIORITY, GlassCup.STEAM_PRIORITY] \
+			or not (order[0] < order[1] and order[1] < order[2] and order[2] < order[3]) \
+			or props.smell_haze.material_override.render_priority != GlassCup.CLOUD_PRIORITY:
+		problems.append("draw order %s" % str(order))
+	expect.call(problems.is_empty(), "diffusion clouds: the ink's cloud sways inside the glass's water and reaches deeper sooner in hot water; the smell's haze goes along its way up to its front only, on the bread table; their colours; the water, cloud, shell and steam draw in that order",
 		"; ".join(problems))
 	lab.queue_free()
 	await tree.process_frame
@@ -645,6 +737,15 @@ func check_in_view() -> void:
 			lab.set_game_stage(stage, stage, false)
 			var bulb: Vector3 = props.dropper.global_position
 			inside.call(at.call(bulb + Vector3.UP * DiffusionProps.BULB * 1.3), "stage %d the bulb's top" % (stage + 1))
+			for press: bool in [false, true]:
+				if press:
+					lab.hold_started(DiffusionLab.KNOB_ID)
+				props.cat.advance(0.0)
+				var b := props.cat.bounds()
+				inside.call(at.call(b.position + Vector3(b.size.x * 0.5, b.size.y, b.size.z * 0.5)), "stage %d the cat's head%s" % [stage + 1, " pressing" if press else ""])
+				if press:
+					lab.hold_ended(DiffusionLab.KNOB_ID)
+					props.cat.stand(props.cat.position)
 			for glass: GlassCup in [props.cup, props.beside]:
 				if glass.visible:
 					for corner: Vector3 in [Vector3(-glass.radius_top, glass.height, 0.0), Vector3(glass.radius_top, glass.height, 0.0), Vector3(-glass.radius_bottom, 0.0, 0.0), Vector3(glass.radius_bottom, 0.0, 0.0)]:
@@ -652,10 +753,13 @@ func check_in_view() -> void:
 		inside.call(at.call(props.bread.global_position + Vector3(0.0, 0.5, 0.0)), "the loaf")
 		inside.call(at.call(props.nose), "Puppy's nose")
 		inside.call(at.call(lab.game.box.global_position + Vector3.UP * DiffusionGame.BOX_SIZE.y * 0.5), "the bread box")
-		seen.append("%s glass %.2f of the height" % [str(size), (at.call(props.cup.global_position) as Vector2).y - (at.call(props.cup.global_position + Vector3.UP * props.cup.height) as Vector2).y])
+		var glass_share: float = (at.call(props.cup.global_position) as Vector2).y - (at.call(props.cup.global_position + Vector3.UP * props.cup.height) as Vector2).y
+		if glass_share < GLASS_MIN:
+			problems.append("%s: the glass is %.3f of the height" % [str(size), glass_share])
+		seen.append("%s glass %.3f of the height" % [str(size), glass_share])
 		host.queue_free()
 		await tree.process_frame
-	expect.call(problems.is_empty(), "diffusion in view: the dropper's bulb, the glasses, the loaf, Puppy's nose and the bread box between the top band and the bottom %.0f%% (phone, desktop and tablet)" % ((1.0 - BOTTOM_FREE) * 100.0),
+	expect.call(problems.is_empty(), "diffusion in view: the dropper's bulb, the glasses (at least %.1f%% of the height), the bread cat's head, the loaf, Puppy's nose and the bread box between the top band and the bottom %.0f%% (phone, desktop and tablet)" % [GLASS_MIN * 100.0, (1.0 - BOTTOM_FREE) * 100.0],
 		"; ".join(problems.slice(0, 5) + seen))
 
 
@@ -771,7 +875,7 @@ func check_piece() -> void:
 	again.game.show_stage(-1, 3, false)
 	if (again.game as DiffusionGame).take_piece() != null or (again.game as DiffusionGame).lid.rotation.x > -1.0:
 		problems.append("a finished spot: a piece, or the box shut")
-	expect.call(problems.is_empty(), "diffusion piece: shut in the bread box (a lamp a stamp) until the last stamp, then the lid opens and the piece jumps down by the bread cat; a finished spot shows the box open, no piece",
+	expect.call(problems.is_empty(), "diffusion piece: shut in the bread box (a lamp a stamp) until the last stamp, then the lid opens and the piece jumps down onto the table in front of the bread cat; a finished spot shows the box open, no piece",
 		"; ".join(problems))
 	lab.queue_free()
 	again.queue_free()

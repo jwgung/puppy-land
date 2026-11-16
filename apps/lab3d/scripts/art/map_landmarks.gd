@@ -671,13 +671,13 @@ static func _diffusion(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	var cup := Vector3(-0.1, 0.12, 0.0)
 	b.add_cylinder(xf * Transform3D(Basis(), cup), 0.22, 0.27, 0.58, 12, Color("cdeeff"), true, Color("8fd3ff"))
 	b.add_cylinder(xf * Transform3D(Basis(), cup + Vector3(0.0, 0.3, 0.0)), 0.26, 0.275, 0.24, 12, DiffusionProps.INK_CLOUD, true, Color("4a5cd0"))
-	_ball(b, xf, cup + Vector3(0.03, 0.42, 0.18), 0.07, DiffusionProps.INK)
+	_ball(b, xf, cup + Vector3(0.03, 0.42, 0.18), 0.07, DiffusionProps.INK_DEEP)
 	_rod(b, xf, cup + Vector3(0.0, 0.66, 0.0), cup + Vector3(0.0, 0.98, 0.0), 0.035, Color("e9f4fa"))
 	_ball(b, xf, cup + Vector3(0.0, 1.05, 0.0), 0.09, DiffusionProps.BULB_RED)
 	var loaf := Vector3(0.3, 0.12, 0.18)
 	b.add_sphere(xf * Transform3D(Basis.from_scale(Vector3(1.0, 0.6, 0.7)), loaf + Vector3(0.0, 0.04, 0.0)), 0.17, 3, 8, DiffusionProps.BREAD)
 	for puff: Array in [[Vector3(0.36, 0.42, 0.18), 0.06], [Vector3(0.44, 0.58, 0.16), 0.075]]:
-		_ball(b, xf, puff[0], puff[1], DiffusionProps.SMELL)
+		_ball(b, xf, puff[0], puff[1], DiffusionProps.SMELL_HAZE)
 	return 1.35
 
 

@@ -2,8 +2,8 @@
 ## curie-lines.md 1): Curie Island's kitchen (KitchenSet), a glass of water on the big table and a
 ## dropper over it. The child presses the dropper's red bulb (manipulation rule "hold" with the hand
 ## guide's tap: a press is the whole action, nothing moves under the finger): a drop of ink falls in and
-## spreads through the still water by itself as jiggling blue dots. The condition button (왼쪽 아래)
-## picks the water: 찬물 or 뜨거운 물 (it steams; its dots jiggle harder and spread faster).
+## spreads through the still water by itself as a soft blue cloud. The condition button (왼쪽 아래)
+## picks the water: 찬물 or 뜨거운 물 (it steams; its cloud sways faster and spreads faster).
 ##
 ## The table changes with the stage (like the volcano's site): stage 1 one glass, stage 2 the glass and
 ## a glass of cold water beside it that gets a drop at the same moment (to compare), stage 3 (and a
@@ -16,7 +16,8 @@
 ## the screen.
 ##
 ## The hand: one knob ("dropper"), a pickable box round the dropper's bulb. hold_started is a new drop
-## (the run starts over: the model's drop()), hold_ended lets go. The model keeps spreading after the
+## (the run starts over: the model's drop()) and the bread cat squeezes the bulb with both paws
+## (2026-11-15 user: the cat does the lab), hold_ended lets go (the cat's paws too). The model keeps spreading after the
 ## finger leaves; the run counts as settled once the judged thing is there or it has spread for
 ## DiffusionModel.HINT_S (then Puppy's "wait" line can come while it goes on: MissionRound judges a
 ## settled run, misses included).
@@ -99,6 +100,7 @@ func reset_run() -> void:
 	if _site_due >= 0.0:
 		_set_site(_site_due)
 	pressing = false
+	props.press(false)
 	super()
 
 
@@ -120,6 +122,7 @@ func hold_started(id: String) -> void:
 	if game != null:
 		game.run_reset()
 	_show()
+	props.press(true)
 	_update_status(true)
 
 
@@ -127,6 +130,7 @@ func hold_ended(id: String) -> void:
 	if id != KNOB_ID:
 		return
 	pressing = false
+	props.press(false)
 	_show()
 	_update_status()
 

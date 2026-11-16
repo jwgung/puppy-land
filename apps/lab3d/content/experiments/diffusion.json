@@ -110,7 +110,7 @@
   },
   "cast": {
     "dugi": {
-      "at": [-4.6, 1.2],
+      "at": [-4.8, -0.2],
       "explain_on": ["full", "faster", "smell"],
       "delay_s": 0.6
     },

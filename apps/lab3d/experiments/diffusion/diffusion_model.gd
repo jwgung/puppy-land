@@ -9,7 +9,7 @@
 ##   cup of size L is coloured all through at t = L² / (4 D) (full_time()).
 ## - In water D follows Stokes–Einstein, D ∝ T / η(T), with water's viscosity η from the Vogel
 ##   equation η = A·10^(B / (T − C)) (A = 2.414e-5 Pa·s, B = 247.8 K, C = 140 K): D_INK at 20 °C,
-##   about 4.6 times as fast in hot water (HOT_C) as in cold (COLD_C).
+##   about 2.7 times as fast in hot water (50 °C, 2026-11-16 user: 80 °C was "too fast") (HOT_C) as in cold (COLD_C).
 ## - In air D grows as T^1.75 (Fuller's correlation); a smell's D is about ten thousand times an ink's
 ##   in water, so it crosses NOSE_PATH (the table to Puppy's nose) before the ink fills a small cup.
 ## - The real times are days for the cup (a still glass, no stirring, no warm currents) and hours for
@@ -35,7 +35,7 @@ const PAIR := 1.0
 const BREAD := 2.0
 ## The waters' temperatures (°C) and the room's (the air, the reference).
 const COLD_C := 10.0
-const HOT_C := 80.0
+const HOT_C := 50.0
 const ROOM_C := 20.0
 const KELVIN := 273.15
 ## Water's viscosity (Vogel): η = VOGEL_A · 10^(VOGEL_B / (T − VOGEL_C)), T in K, η in Pa·s.
@@ -51,7 +51,7 @@ const GAS_EXPONENT := 1.75
 const CUP_SIZE := 0.08
 const NOSE_PATH := 3.5
 ## Play seconds the cold cup takes to colour all through (sets PLAYBACK).
-const COLD_FULL_S := 12.0
+const COLD_FULL_S := 9.0
 ## The judged run counts as settled (Puppy's "wait" hint) once it has spread this long without its result.
 const HINT_S := 1.0
 

@@ -2,16 +2,21 @@
 ## from the model by DiffusionLab._redraw(). Curie Island's kitchen (KitchenSet: the open-air table, its jars and pot, the
 ## meadow) and on the table:
 ## - a glass of water (GlassCup) with a dropper over it, its red bulb the thing the child presses: a
-##   press squeezes the bulb and a blue drop falls into the water; then the ink spreads as blue dots
-##   (ParticleCloud, the 알갱이) jiggling out from under the water's top and a soft blue cloud that grows
-##   until the whole glass is blue. A hot glass steams and its dots jiggle harder;
+##   press squeezes the bulb and a blue drop falls into the water; then the ink spreads as a soft blue
+##   cloud (GlassCup.show_spread; 2026-11-16 user "그냥 번지는 걸로 가자": no particles in the scene, the
+##   particles card shows them) that starts as a dense blob under the dropper, hangs down in strands
+##   and grows until the whole glass is evenly blue. A hot glass steams and its cloud sways faster;
 ## - stage 2 (the PAIR table): a second glass of cold water beside it gets a drop at the same moment
 ##   (its own little dropper), to compare;
-## - stage 3 (the BREAD table): a loaf fresh from the oven on a board, its smell as golden puffs that go
-##   along the table to Puppy's nose at its right end (the cast's Puppy), the glass of ink beside it;
-## - the bread cat in front on the left, watching the glass.
-## Where things stand per table: cup_point(), beside_point(), BREAD_AT. The dots are random (a picture);
-## how far they reach is the model's share. Visual only: no body, nothing the model or the mission reads.
+## - stage 3 (the BREAD table): a loaf fresh from the oven on a board, its smell a soft warm haze (one
+##   MultiMesh of SoftCloud lumps, joined like smoke) that drifts along the table to Puppy's nose at its
+##   right end (the cast's Puppy), the glass of ink beside it;
+## - the bread cat on a stack of bread crates on the table, left of the main glass (2026-11-15 user: the
+##   bread cat does the lab): while the child presses the bulb it leans over and squeezes the bulb with
+##   both paws (CatActor.grab, pressing), and lets go when the finger does; otherwise it watches the glass.
+## Where things stand per table: cup_point(), beside_point(), cat_point(), BREAD_AT. How far the clouds
+## reach is the model's share; their sway is a picture. Visual only: no body, nothing the model or the
+## mission reads.
 class_name DiffusionProps
 extends RefCounted
 
@@ -21,7 +26,7 @@ const CUP_TOP := 0.6
 const CUP_HEIGHT := 1.3
 const CUP_FILL := 1.05
 const CUP_Z := 0.35
-const CUP_X := {0: 0.0, 1: -1.2, 2: -2.2}
+const CUP_X := {0: 0.0, 1: -1.2, 2: -1.9}
 const BESIDE_X := 1.2
 ## The loaf on its board (stage 3) and the smell's way from its top to Puppy's nose.
 const BREAD_AT := Vector3(-0.3, KitchenSet.TABLE_TOP, 0.45)
@@ -35,42 +40,51 @@ const NOSE_IN := Vector3(-0.35, 0.0, 0.1)
 const SMELL_BOW := 0.45
 ## Puppy's place when the definition has no cast (bench runs): the table's right end.
 const PUPPY_AT := Vector2(4.0, 1.1)
-## The ink: dots per glass, their size and colour, the cloud's colour; how hard the dots jiggle (m/s
-## per axis) in cold and hot water and how far they wander from their place (m).
-const INK_DOTS := 70
-const INK_DOT := 0.045
-const INK := Color("1c2a96")
-const INK_CLOUD := Color("2a3cb0")
-const JIGGLE_COLD := 0.35
-const JIGGLE_HOT := 1.1
-const WOBBLE := 0.07
-## The smell: puffs, their size and colour, their jiggle, how wide the band along its way is (m).
-const SMELL_PUFFS := 46
-const SMELL_PUFF := 0.075
-const SMELL := Color("f4b86a")
-const SMELL_JIGGLE := 1.6
-const SMELL_WOBBLE := 0.12
-const SMELL_BAND := 0.3
-## The dropper: how high its tip hangs over the glass's rim, its tube and bulb; the drop's fall (s) and
-## the bulb's squeeze (s, share).
-const DROPPER_UP := 0.3
-const TUBE := Vector2(0.075, 0.6)
-const BULB := 0.17
+## The ink: the drop's colour (the dropper's ink a little lighter), the cloud's colour, how fast the
+## cloud sways (rad/s) in cold and hot water.
+const INK_DEEP := Color("1f3cc4")
+const INK_CLOUD := Color("2f5ee0")
+const INK_SWAY_COLD := 0.8
+const INK_SWAY_HOT := 2.2
+## The smell's haze: how many soft lumps along its way (joined), their radius (m) just after the drop
+## and once it reaches the nose (the front lump smaller by SMELL_TIP), its colour and density, how far
+## (m) and how fast (rad/s) the lumps drift up and down.
+const SMELL_HAZE_LUMPS := 10
+const SMELL_HAZE_START := 0.2
+const SMELL_HAZE_SIZE := 0.55
+const SMELL_TIP := 0.6
+const SMELL_HAZE := Color("ffcf8a")
+const SMELL_HAZE_ALPHA := 0.45
+const SMELL_SWAY := 0.06
+const SMELL_SWAY_RATE := 1.2
+## The dropper: how far its tip is off the glass's middle (towards the cat, still over the water) and
+## how high over the rim it hangs, its tube and bulb (short and low: the cat's paws reach the bulb);
+## the drop's fall (s) and the bulb's squeeze (s to squeeze or spring back, share).
+const DROPPER_X := -0.35
+const DROPPER_UP := 0.04
+const TUBE := Vector2(0.075, 0.3)
+const BULB := 0.15
 const GLASS_TUBE := Color("e9f4fa")
 const BULB_RED := Color("e0483f")
 const BULB_TOP := Color("ff6a5a")
 const FALL_S := 0.35
 const SQUEEZE_S := 0.3
 const SQUEEZE := 0.35
-## The bread cat in front on the left.
-const CAT_AT := Vector3(-3.7, 0.0, 1.8)
+## The bread cat: how far left of the main glass's foot it stands (its crates clear of the glass) and
+## how high its crates lift it over the table's top (its shoulders level with the bulb); how hard it
+## presses (CatActor.grab's effort) and how far it may lean forward over the glass (deg).
+const CAT_FROM_CUP := 1.0
+const CAT_STAND := 1.08
+const CAT_PRESS := 1.0
+const CAT_LEAN_MAX := 45.0
 
 var cat: CatActor
+var cat_stand: CatCrates
 var cup: GlassCup
 var beside: GlassCup
-var ink: ParticleCloud
-var beside_ink: ParticleCloud
-var smell: ParticleCloud
+var smell_haze: MultiMeshInstance3D
+## Each haze lump's centre (world) now (tests).
+var haze_points := PackedVector3Array()
 var dropper: Node3D             # the main dropper (its bulb is the press target)
 var beside_dropper: Node3D
 var bread: Node3D
@@ -84,6 +98,12 @@ var shown_ink := 0.0
 var shown_beside := 0.0
 var shown_smell := 0.0
 var shown_dropped := false
+## The cat squeezes the bulb now (the finger presses it), with this effort (0 when it lets go); how far
+## the bulbs are squeezed now (their scale across the paws is 1 - this, up to SQUEEZE).
+var pressing := false
+var shown_effort := 0.0
+var shown_squeeze := 0.0
+var _squeeze_k := 0.0           # 0..1 of the way into the squeeze
 var _drop_at := -10.0
 var _t := 0.0
 
@@ -99,12 +119,8 @@ func build(lab: Node3D, puppy_at: Variant = null) -> void:
 	beside = GlassCup.new(CUP_BOTTOM, CUP_TOP, CUP_HEIGHT, CUP_FILL)
 	beside.name = "ColdCup"
 	lab.add_child(beside)
-	ink = ParticleCloud.new(INK_DOTS, INK_DOT, INK, 156)
-	ink.name = "Ink"
-	cup.add_child(ink)
-	beside_ink = ParticleCloud.new(INK_DOTS, INK_DOT, INK, 157)
-	beside_ink.name = "Ink"
-	beside.add_child(beside_ink)
+	for glass: GlassCup in [cup, beside]:
+		glass.drop_x = DROPPER_X
 	dropper = _dropper(lab, "Dropper")
 	beside_dropper = _dropper(lab, "ColdDropper")
 	beside_dropper.scale = Vector3.ONE * 0.75
@@ -119,15 +135,26 @@ func build(lab: Node3D, puppy_at: Variant = null) -> void:
 	bread.position = BREAD_AT
 	lab.add_child(bread)
 	bread.add_child(ArtKit.instance(bread_mesh()))
-	smell = ParticleCloud.new(SMELL_PUFFS, SMELL_PUFF, SMELL, 158)
-	smell.name = "Smell"
-	lab.add_child(smell)
+	smell_haze = MultiMeshInstance3D.new()
+	smell_haze.name = "SmellHaze"
+	smell_haze.multimesh = MultiMesh.new()
+	smell_haze.multimesh.transform_format = MultiMesh.TRANSFORM_3D
+	smell_haze.multimesh.mesh = SoftCloud.mesh()
+	smell_haze.multimesh.instance_count = SMELL_HAZE_LUMPS
+	smell_haze.material_override = SoftCloud.material(SMELL_HAZE, SMELL_HAZE_ALPHA, GlassCup.CLOUD_PRIORITY)
+	smell_haze.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	smell_haze.visible = false
+	lab.add_child(smell_haze)
+	haze_points.resize(SMELL_HAZE_LUMPS)
 	cat = CatActor.new(BreadCat.new())
 	cat.name = "Cat"
 	lab.add_child(cat)
 	cat.look_target = cup
-	cat.stand(CAT_AT)
-	cat.advance(0.0)
+	# Square crates: the bag stays on them facing the front (watching) or the bulb (pressing).
+	var side := maxf(cat.look.footprint.x, cat.look.footprint.y)
+	cat_stand = CatCrates.new(Vector2(side, side))
+	lab.add_child(cat_stand)
+	_place_cat()
 
 
 ## Where the main glass stands (its foot, world) on table `site`.
@@ -139,9 +166,41 @@ static func beside_point() -> Vector3:
 	return KitchenSet.table_point(BESIDE_X, CUP_Z)
 
 
-## The dropper's bulb (world) over the glass at `foot`: what the child presses.
+## The dropper's tip (world) over the glass at `foot`: where its drop falls from.
+static func tip_point(foot: Vector3) -> Vector3:
+	return foot + Vector3(DROPPER_X, CUP_HEIGHT + DROPPER_UP, 0.0)
+
+
+## The dropper's bulb (world) over the glass at `foot`: what the child presses (and the cat squeezes).
 static func bulb_point(foot: Vector3) -> Vector3:
-	return foot + Vector3(0.0, CUP_HEIGHT + DROPPER_UP + TUBE.y + BULB * 0.6, 0.0)
+	return tip_point(foot) + Vector3(0.0, TUBE.y + BULB * 0.6, 0.0)
+
+
+## Where the bread cat stands (its base on its crates, world) beside the glass at `foot`.
+static func cat_point(foot: Vector3) -> Vector3:
+	return foot + Vector3(-CAT_FROM_CUP, CAT_STAND, 0.0)
+
+
+## Where the cat's paws ([right, left], world) squeeze the bulb at `bulb` from `root`: on its sides
+## across the cat's facing, pressed in as far as the bulb is squeezed (`squeeze`: its scale across the
+## paws is 1 - squeeze).
+static func paw_points(bulb: Vector3, root: Vector3, squeeze: float) -> Array[Vector3]:
+	var f := Vector3(bulb.x - root.x, 0.0, bulb.z - root.z).normalized()
+	var right := Vector3(-f.z, 0.0, f.x)   # the actor's right paw side (facing +z: -x)
+	var half := BULB * (1.0 - squeeze)
+	return [bulb + right * half, bulb - right * half] as Array[Vector3]
+
+
+## The finger presses the bulb (`on`): the cat squeezes it, or lets go and stands back up.
+func press(on: bool) -> void:
+	if on == pressing:
+		return
+	pressing = on
+	shown_effort = CAT_PRESS if on else 0.0
+	if on:
+		_grab()
+	else:
+		cat.let_go(Vector3.ZERO)
 
 
 ## The smell's way (world) at `u` (0 over the loaf .. 1 at Puppy's nose): a low arc over the table.
@@ -164,70 +223,87 @@ func show(site: float, hot: bool, ink_share: float, beside_share: float, smell_s
 		beside_dropper.visible = beside.visible
 		bread.visible = site == DiffusionModel.BREAD
 		dropper.position = bulb_point(cup.position)
-		beside_dropper.position = beside.position + (bulb_point(Vector3.ZERO) - Vector3(0.0, BULB * 0.6, 0.0)) * 0.75 + Vector3(0.0, BULB * 0.6 * 0.75, 0.0) + Vector3(0.0, (CUP_HEIGHT + DROPPER_UP) * 0.25, 0.0)
+		beside_dropper.position = tip_point(beside.position) + Vector3(0.0, TUBE.y + BULB * 0.6, 0.0) * beside_dropper.scale.y
+		_place_cat()
 	shown_hot = hot
 	cup.set_hot(hot)
 	beside.set_hot(false)
 	shown_ink = ink_share
 	shown_beside = beside_share
 	shown_smell = smell_share
+	cup.sway_rate = INK_SWAY_HOT if hot else INK_SWAY_COLD
+	beside.sway_rate = INK_SWAY_COLD
 	cup.show_spread(ink_share, INK_CLOUD)
 	beside.show_spread(beside_share, INK_CLOUD)
-	ink.show_count(ink.capacity() if dropped else 0)
-	beside_ink.show_count(beside_ink.capacity() if dropped and beside.visible else 0)
-	smell.show_count(smell.capacity() if dropped and bread.visible else 0)
-	_place_dots(0.0)
+	smell_haze.visible = dropped and bread.visible and smell_share > 0.0
+	_place_haze()
 
 
-## A new drop: the dots start again at the water's top, the bulbs squeeze and the drops fall.
+## A new drop: the bulbs squeeze and the drops fall.
 func _new_drop() -> void:
 	_drop_at = _t
-	for cloud: ParticleCloud in [ink, beside_ink, smell]:
-		cloud.scatter_homes()
 
 
-## The dots jiggle, the steam rises, the drop falls and the bulbs squeeze (`delta` s).
+## The cat on its crates beside the main glass: squeezing the bulb while the finger presses it,
+## otherwise standing (facing the front, watching the glass).
+func _place_cat() -> void:
+	var root := cat_point(cup.position)
+	if pressing:
+		_grab()
+	else:
+		cat.stand(root)
+		cat.advance(0.0)
+	cat_stand.fit(cat, KitchenSet.TABLE_TOP)
+
+
+## Both paws on the bulb's sides (squeezed in as far as the bulb now), the cat facing it, pressing.
+func _grab() -> void:
+	var root := cat_point(cup.position)
+	var bulb := dropper.position
+	cat.grab(root, CatActor.facing(root, bulb), paw_points(bulb, root, shown_squeeze), CAT_PRESS, CAT_LEAN_MAX)
+
+
+## The clouds sway, the steam rises, the drop falls and the bulbs squeeze (`delta` s): squeezed in
+## while the cat presses (a new drop), springing back once it lets go; squeezed across the paws (the
+## bulb narrows along z between them and bulges the other ways).
 func advance(delta: float) -> void:
 	_t += delta
 	cup.advance(delta)
 	beside.advance(delta)
-	_place_dots(delta)
+	_place_haze()
 	var since := _t - _drop_at
-	var squeeze := SQUEEZE * sin(PI * clampf(since / SQUEEZE_S, 0.0, 1.0))
+	# Held at least SQUEEZE_S after a drop, so a quick tap still squeezes the bulb.
+	var target := 1.0 if shown_dropped and (pressing or since < SQUEEZE_S) else 0.0
+	_squeeze_k = move_toward(_squeeze_k, target, delta / SQUEEZE_S)
+	shown_squeeze = SQUEEZE * sin(PI * 0.5 * _squeeze_k)
+	var s := shown_squeeze
 	for d: Node3D in [dropper, beside_dropper]:
 		var bulb := d.get_child(1) as Node3D
-		bulb.scale = Vector3(1.0 + squeeze * 0.4, 1.0 - squeeze, 1.0 + squeeze * 0.4)
+		bulb.scale = Vector3(1.0 + s * 0.4, 1.0 + s * 0.2, 1.0 - s)
+	if pressing:
+		_grab()
 	for i in drops.size():
 		var glass: GlassCup = cup if i == 0 else beside
 		var fall := clampf(since / FALL_S, 0.0, 1.0)
 		drops[i].visible = shown_dropped and since < FALL_S and glass.visible
 		var top := CUP_HEIGHT + DROPPER_UP
-		drops[i].position = Vector3(0.0, lerpf(top, glass.drop_point().y, fall * fall), 0.0)
+		drops[i].position = Vector3(glass.drop_x, lerpf(top, glass.drop_point().y, fall * fall), 0.0)
 
 
-## Each cloud's dots where the model's shares put them now, with their jiggle.
-func _place_dots(delta: float) -> void:
-	var speed := JIGGLE_HOT if shown_hot else JIGGLE_COLD
-	_spread_in(ink, cup, shown_ink, speed, delta)
-	_spread_in(beside_ink, beside, shown_beside, JIGGLE_COLD, delta)
-	if smell.shown() > 0:
-		var front := shown_smell
-		smell.spread(delta, SMELL_JIGGLE, SMELL_WOBBLE, func(home: Vector3, jiggle: Vector3) -> Vector3:
-			# Along the way up to the front (the home's x picks how far), across it by the home's y and z.
-			var u := front * clampf(home.x * 0.5 + 0.5, 0.0, 1.0)
-			return smell_point(u) + Vector3(0.0, home.y, home.z) * SMELL_BAND + jiggle)
-
-
-## The ink's dots in `glass`: out from under the water's top to `share` of the way through it.
-func _spread_in(cloud: ParticleCloud, glass: GlassCup, share: float, speed: float, delta: float) -> void:
-	if cloud.shown() == 0:
+## The smell's haze where the model's share puts its front now: lumps evenly along the way from over
+## the loaf to the front, growing as it goes, the front one smaller, drifting gently up and down.
+func _place_haze() -> void:
+	if not smell_haze.visible:
 		return
-	var box := glass.water_box()
-	var start := glass.drop_point()
-	var reach := maxf(share, 0.04) * Vector3(box.z * 1.6, box.y - box.x, box.z * 1.6)
-	var centre := start.lerp(Vector3(0.0, (box.x + box.y) * 0.5, 0.0), share)
-	cloud.spread(delta, speed, WOBBLE, func(home: Vector3, jiggle: Vector3) -> Vector3:
-		return ParticleCloud.in_cylinder(centre + home * reach + jiggle, Vector3.ZERO, box.z, box.x, box.y))
+	var front := shown_smell
+	var size := lerpf(SMELL_HAZE_START, SMELL_HAZE_SIZE, front)
+	for i in SMELL_HAZE_LUMPS:
+		var u := i / float(SMELL_HAZE_LUMPS - 1)
+		var phase := _t * SMELL_SWAY_RATE + i * 1.3
+		var at := smell_point(front * u) + Vector3.UP * SMELL_SWAY * sin(phase)
+		var r := size * lerpf(1.0, SMELL_TIP, u) * (1.0 + 0.06 * sin(phase * 1.4))
+		haze_points[i] = at
+		smell_haze.multimesh.set_instance_transform(i, Transform3D(Basis.from_scale(Vector3.ONE * r), at))
 
 
 # --- meshes -------------------------------------------------------------------------------------------
@@ -242,7 +318,7 @@ func _dropper(lab: Node3D, node_name: String) -> Node3D:
 	b.ao_min = 1.0
 	var tube_top := -BULB * 0.6
 	b.add_cylinder(Transform3D(Basis(), Vector3(0.0, tube_top - TUBE.y, 0.0)), TUBE.x * 0.45, TUBE.x, TUBE.y, 10, GLASS_TUBE, true, Color.WHITE)
-	b.add_cylinder(Transform3D(Basis(), Vector3(0.0, tube_top - TUBE.y * 0.55, 0.0)), TUBE.x * 0.6, TUBE.x * 0.8, TUBE.y * 0.4, 10, INK_CLOUD.lightened(0.2))
+	b.add_cylinder(Transform3D(Basis(), Vector3(0.0, tube_top - TUBE.y * 0.55, 0.0)), TUBE.x * 0.6, TUBE.x * 0.8, TUBE.y * 0.4, 10, INK_DEEP.lightened(0.15))
 	node.add_child(ArtKit.instance(b.commit()))
 	var bulb := ArtKit.builder()
 	bulb.ao_min = 0.9
@@ -256,7 +332,7 @@ func _dropper(lab: Node3D, node_name: String) -> Node3D:
 static func _drop_mesh() -> Mesh:
 	var b := ArtKit.builder()
 	b.ao_min = 1.0
-	b.add_sphere(Transform3D(Basis.from_scale(Vector3(1.0, 1.3, 1.0)), Vector3.ZERO), 0.06, 3, 8, INK)
+	b.add_sphere(Transform3D(Basis.from_scale(Vector3(1.0, 1.3, 1.0)), Vector3.ZERO), 0.06, 3, 8, INK_DEEP)
 	return b.commit()
 
 

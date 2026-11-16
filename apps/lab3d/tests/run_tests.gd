@@ -208,7 +208,7 @@
 ##    clue), the model against the textbook values (water's viscosity, x = sqrt(4 D t), hot faster than
 ##    cold, the smell in air before the ink in water), deterministic, the judging of the three stages (the
 ##    wait and wrong-water lines), the dropper (a press is a drop), the tables per stage, the water button,
-##    no number on the screen, the dots where the spread allows, what matters in view, the spot, the
+##    no number on the screen, the ink and smell clouds where the spread allows, what matters in view, the spot, the
 ##    opening and the piece (the bread box).
 ## 24l. the hutton cast (tests/hutton_cast_checks.gd, #114 2026-11-10): in every Hutton lab on the
 ##    tablet and the phone, Puppy's result bubble clear of Dugi's open box and portrait, Puppy at most

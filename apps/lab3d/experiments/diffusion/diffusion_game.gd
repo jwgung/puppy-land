@@ -2,7 +2,8 @@
 ## 부엌 찾았어! 조각도!"): the piece is shut in the kitchen's bread box at the back of the table, three
 ## lamps on its front. Each stamp lights a lamp and the box gives a little hop; the last one (the
 ## smell reached Puppy's nose: he follows it back to the kitchen) opens its lid, the piece pops up out
-## of it and jumps down beside the bread cat; the screen then flies it to the cat. Visual only.
+## of it and jumps down onto the table in front of the bread cat's crates; the screen then flies it to
+## the cat. Visual only.
 class_name DiffusionGame
 extends LabGame
 
@@ -10,7 +11,8 @@ extends LabGame
 const BOX_AT := Vector3(2.5, KitchenSet.TABLE_TOP + 0.3, -0.45)
 const BOX_SIZE := Vector3(1.0, 0.6, 0.62)
 ## The lamps on its front, a stamp's hop (m, s), the lid's opening (rad, s), the piece's rise (m, s)
-## and its jump to beside the cat (s).
+## and its jump to the table in front of the cat (s; where it lands from the cat's feet, on the table's
+## top).
 const HOP := 0.14
 const HOP_S := 0.45
 const LID_OPEN := 1.9
@@ -18,7 +20,7 @@ const LID_S := 0.6
 const RISE := 0.55
 const RISE_S := 0.5
 const FLIGHT_S := 1.2
-const LAND_FROM_CAT := Vector3(1.1, 0.0, 0.2)
+const LAND_FROM_CAT := Vector3(0.0, 0.0, 0.75)
 const HIGHLIGHT_R := 0.95
 
 var box: Node3D
@@ -101,5 +103,7 @@ func _process(delta: float) -> void:
 		piece.position = BOX_AT + Vector3.UP * RISE * eased(_rise_at, RISE_S)
 		if progress(_rise_at, RISE_S) >= 1.0:
 			_rise_at = NEVER
-			# Out of the box: down beside the bread cat, growing to the round's size on the way.
-			launch_to(cat_spot(LAND_FROM_CAT), FLIGHT_S, 0.0, true)
+			# Out of the box: down onto the table in front of the bread cat (up on its crates),
+			# growing to the round's size on the way.
+			var at := cat_spot(Vector3.ZERO)
+			launch_to(Vector3(at.x, KitchenSet.TABLE_TOP, at.z) + LAND_FROM_CAT, FLIGHT_S, KitchenSet.TABLE_TOP, true)

@@ -18,6 +18,8 @@
 ##   --progress=complete  writes the child's progress as all done, once (2026-11-02 user: "apk 다 깬걸로
 ##                       해줘. 보기 어렵다"): every stamp, the story's prologue, clues and finale seen, every
 ##                       piece flown and flag up, so every spot opens on a day map. For looking at the app.
+##                       Every island that is playable (the mechanics and hutton islands), voyage seen too
+##                       (2026-11-16 user: both done so the curie island's way shows).
 ##                       Not in the Play build (Quality.DEV_KEYS, like --island and --ask=show).
 ##   --island=<id>      the map of island <id> for this run only (an island in the making, #72: its spots
 ##                       need not be experiments yet): nothing saved, no story, the bench store; not in
@@ -309,12 +311,18 @@ func _slide_in(screen: Control) -> void:
 ## Every spot done (--progress=complete): full stamps, the story seen, the pieces at the lookout.
 static func complete_progress() -> void:
 	var store := {}
-	for spot in Story.spots():
-		store[spot] = MissionRound.missions(ExperimentRegistry.find(spot)).get("stages", []).size()
-		ProgressStore.set_mark(ProgressStore.CLUES, spot, true)
+	for id in Island.ids():
+		var island := Island.by_id(id)
+		if not island.playable():   # (an island in the making has no stamps to give)
+			continue
+		for spot in island.spots():
+			store[spot] = MissionRound.missions(ExperimentRegistry.find(spot)).get("stages", []).size()
+			ProgressStore.set_mark(ProgressStore.CLUES, spot, true)
+		for part in ["prologue", "finale"]:
+			ProgressStore.set_mark(ProgressStore.STORY, ProgressStore.island_key(id, part), true)
+		if id != ProgressStore.FIRST_ISLAND:
+			Story.mark_voyage_seen(id)
 	ProgressStore.save(store)
-	for part in ["prologue", "finale"]:
-		Story.mark_seen(part)
 
 
 func _demo_story(value: String) -> Dictionary:
