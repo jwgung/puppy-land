@@ -109,7 +109,7 @@
     ]
   },
   "graph": {
-    "x": { "unit": "일", "max": 2.5 },
+    "x": { "unit": "", "max": 2.5 },
     "y": { "unit": "%", "min_max": 100.0 },
     "series": [
       { "id": "water", "color": "#4aa8f5", "style": "line" },
