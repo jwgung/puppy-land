@@ -47,6 +47,13 @@ var coast_bumps: Array = []
 ## sectors round the island (more for a neck, so its sides stay straight; default MapIsland.SECTORS).
 var coast_necks: Array = []
 var coast_sectors := 0
+## The whole island turned this many degrees round its centre (the map angle atan2(z, x) grows by it;
+## negative turns the +x side away from the default view, toward -z). The file's coordinates are the
+## island before the turn; from_data turns every place, path, feature, decoration and the coast, so
+## one number tilts it (curie, 2026-11-16 user "방향을 좀 바꿔줄래? 비스듬하게": -25, the flask's
+## neck up and to the right). MapIsland.coast_radius turns the coast's ellipse by it.
+var turn_deg := 0.0
+const MAX_TURN := 180
 const MIN_SECTORS := 24     # fewer and the coast is a polygon
 const MAX_SECTORS := 240    # more costs the map's one mesh for nothing seen
 var trees: Array = []        # [x, z, size]
@@ -205,6 +212,8 @@ static func from_data(data: Dictionary) -> Island:
 	island.coast_bumps = _array(coast.get("bumps"))
 	island.coast_necks = _array(coast.get("necks"))
 	island.coast_sectors = int(coast.get("sectors", 0))
+	var turn: Variant = data.get("turn_deg", 0.0)
+	island.turn_deg = float(turn) if turn is float or turn is int else NAN
 	island.trees = _array(data.get("trees"))
 	island.rocks = _array(data.get("rocks"))
 	island.clouds = _array(data.get("clouds"))
@@ -217,7 +226,81 @@ static func from_data(data: Dictionary) -> Island:
 	island.features = _dict(data.get("features"))
 	island.order = _array(data.get("order")).filter(func(id: Variant) -> bool: return id is String)
 	island.problem = island._check()
+	if island.problem == "" and island.turn_deg != 0.0:
+		island._turn()
+	elif island.problem != "":
+		island.turn_deg = 0.0   # (a broken island is never turned: nothing reads a NaN turn)
 	return island
+
+
+## `p` (the file's [x, z], before the turn) where it lies on the turned island.
+func turned(p: Vector2) -> Vector2:
+	return p.rotated(deg_to_rad(turn_deg))
+
+
+## Turns everything read from the file by turn_deg (copies: the caller's data is left as it was).
+## Points [x, z, ...] rotate, map angles grow by the turn, yaws (Basis(UP, yaw), the other way round)
+## shrink by it; the coast's waves shift their phase and its bumps and necks their angle.
+func _turn() -> void:
+	var t := deg_to_rad(turn_deg)
+	var point := func(v: Variant) -> Variant:
+		if not (v is Array and v.size() >= 2 and _numbers(v.slice(0, 2), 2)):
+			return v
+		var q := Vector2(float(v[0]), float(v[1])).rotated(t)
+		var out: Array = v.duplicate()
+		out[0] = q.x
+		out[1] = q.y
+		return out
+	var angle := func(v: Variant, k: int, by: float) -> Variant:
+		if not (v is Array and v.size() > k and (v[k] is float or v[k] is int)):
+			return v
+		var out: Array = v.duplicate()
+		out[k] = float(v[k]) + by
+		return out
+	home = home.rotated(t)
+	var turned_zones := {}
+	for zone in zones:
+		var spec: Dictionary = (zones[zone] as Dictionary).duplicate(true)
+		spec.at = point.call(spec.at)
+		var spots_turned := []
+		for spot: Array in spec.spots:
+			spots_turned.append([spot[0], point.call(spot[1]), float(spot[2]) - turn_deg])
+		spec.spots = spots_turned
+		turned_zones[zone] = spec
+	zones = turned_zones
+	paths = paths.map(func(line: Variant) -> Variant: return (line as Array).map(point) if line is Array else line)
+	trees = trees.map(point)
+	rocks = rocks.map(point)
+	clouds = clouds.map(func(c: Variant) -> Variant:   # [x, y, z, size]: x and z turn
+		if not (c is Array and c.size() >= 3 and _numbers(c.slice(0, 3), 3)):
+			return c
+		var q := Vector2(float(c[0]), float(c[2])).rotated(t)
+		var out: Array = c.duplicate()
+		out[0] = q.x
+		out[2] = q.y
+		return out)
+	far_clouds = far_clouds.map(func(c: Variant) -> Variant: return angle.call(c, 0, turn_deg))
+	sea_waves = sea_waves.map(func(w: Variant) -> Variant: return angle.call(w, 0, turn_deg))
+	var facing := {}
+	for lab in lab_facing:
+		facing[lab] = float(lab_facing[lab]) + turn_deg if (lab_facing[lab] is float or lab_facing[lab] is int) else lab_facing[lab]
+	lab_facing = facing
+	coast_waves = coast_waves.map(func(w: Variant) -> Variant:   # sin(k (theta - t) + phase)
+		return angle.call(w, 2, -float(w[0]) * t) if _numbers(w, 3) else w)
+	coast_bumps = coast_bumps.map(func(b: Variant) -> Variant: return angle.call(b, 0, turn_deg))
+	coast_necks = coast_necks.map(func(n: Variant) -> Variant: return angle.call(n, 0, turn_deg))
+	var f := features.duplicate(true)
+	for key in f:
+		match key:
+			"volcano":
+				f[key].at = point.call(f[key].at)
+			"river", "potions":
+				f[key] = (f[key] as Array).map(point)
+			"lighthouse", "washing":
+				f[key] = point.call(f[key])
+			"houses":   # [x, z, yaw deg]
+				f[key] = (f[key] as Array).map(func(h: Array) -> Array: return angle.call(point.call(h), 2, -turn_deg))
+	features = f
 
 
 ## The island has the sundial on its square (features.sundial).
@@ -314,6 +397,8 @@ func _check() -> String:
 	for neck: Variant in coast_necks:
 		if not _numbers(neck, 3) or float(neck[1]) <= 0.0 or float(neck[2]) <= maxf(radius_x, radius_z):
 			return "coast: a neck is not [angle, width, length past the coast]"
+	if is_nan(turn_deg) or absf(turn_deg) > MAX_TURN:
+		return "turn_deg is not a number of degrees (-%d..%d)" % [MAX_TURN, MAX_TURN]
 	if coast_sectors != 0 and (coast_sectors < MIN_SECTORS or coast_sectors > MAX_SECTORS):
 		return "coast: sectors not %d..%d" % [MIN_SECTORS, MAX_SECTORS]
 	for zone in zones:

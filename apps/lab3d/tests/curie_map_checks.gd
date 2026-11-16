@@ -3,9 +3,11 @@
 ## hill; 12 spots in the story's order; the lighthouse), its map is laid out on land (every stage on
 ## the grass and out of the pond, 2.5 m apart, the paths on the grass, the trees and rocks clear),
 ## and while its spots are not all labs yet (LABS: #156 the first) it is an island in the making: never
-## open, even after the hutton island, and its card says 곧 만나요 (docs/islands/curie.md). The island is a flask lying on its
-## side (2026-11-13 user "섬 모양 자체를 플라스크로"): its neck reaches out to the mouth where the rainbow
+## open, even after the hutton island, and its card says 곧 만나요 (docs/islands/curie.md). The island is a flask (2026-11-13 user "섬 모양 자체를 플라스크로"): its neck reaches out to the mouth where the rainbow
 ## lighthouse stands on the rock lip, not on the sand; broken neck or village data says what is wrong.
+## The flask lies at a slant (2026-11-16 user "방향을 좀 바꿔줄래? 비스듬하게", pick A): turn_deg -25
+## turns the whole island, its neck up and to the right (away from the default view), nothing moved
+## against anything else.
 extends RefCounted
 
 const UI_THEME := "res://scripts/app/ui_theme.gd"
@@ -15,6 +17,8 @@ const ORDER := ["diffusion", "dissolving", "melt-cook", "dough", "clean-water", 
 const ZONES := {"kitchen": "meadow", "spring": "pond", "lighthouse": "hill"}
 ## The spots that are labs already (#156 on): the others are places in the making.
 const LABS := ["diffusion"]
+## The island's turn (curie.json turn_deg, 2026-11-16 user pick A): the flask's neck this far round from +x.
+const TURN := -25.0
 
 var tree: SceneTree
 var expect: Callable
@@ -29,6 +33,7 @@ func run() -> void:
 	check_data()
 	check_in_making()
 	check_flask()
+	check_turn()
 	await check_map()
 	Island.use_for_run(ProgressStore.FIRST_ISLAND)
 
@@ -101,6 +106,72 @@ func check_flask() -> void:
 			problems.append("%s reads without a problem" % name)
 	expect.call(problems.is_empty(), "curie flask: the neck reaches its length, the rainbow lighthouse on the lip at its mouth, the flame spot out in the neck, a beach along its sides; the other islands keep their round coasts; a broken neck, sectors or village feature says what is wrong",
 		"; ".join(problems))
+
+
+func check_turn() -> void:
+	var problems := []
+	var island := Island.by_id("curie")
+	var base: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://content/islands/curie.json"))
+	var flat_data := base.duplicate(true)
+	flat_data.turn_deg = 0.0
+	var flat := Island.from_data(flat_data)
+	var t := deg_to_rad(TURN)
+	if not is_equal_approx(island.turn_deg, TURN) or island.coast_necks.size() != 1 or not is_equal_approx(float(island.coast_necks[0][0]), TURN):
+		problems.append("turn %.1f, neck %s (not %.0f deg)" % [island.turn_deg, str(island.coast_necks), TURN])
+	else:
+		var mouth := Vector2.from_angle(deg_to_rad(float(island.coast_necks[0][0]))) * float(island.coast_necks[0][2])
+		if mouth.x <= 0.0 or mouth.y >= 0.0:
+			problems.append("the neck's mouth %s is not up and to the right" % str(mouth))
+		var light := Vector2(island.features.lighthouse[0], island.features.lighthouse[1])
+		if light.distance_to(mouth) > MapIsland.LIP_DEPTH * 2.0:
+			problems.append("the lighthouse %s is not at the neck's end %s" % [str(light), str(mouth)])
+	if flat.problem != "":
+		problems.append("the island before the turn: %s" % flat.problem)
+	# Every place is the unturned one turned (the distances between them kept), the yaws with it.
+	var ours := island.map_spots()
+	var theirs := flat.map_spots()
+	var places := [[island.home, flat.home], [_v2(island.features.lighthouse), _v2(flat.features.lighthouse)], [_v2(island.features.washing), _v2(flat.features.washing)]]
+	for i in ours.size():
+		places.append([ours[i][1], theirs[i][1]])
+		if not is_equal_approx(float(ours[i][2]), float(theirs[i][2]) - TURN):
+			problems.append("%s yaw %.1f, not %.1f" % [ours[i][0], ours[i][2], float(theirs[i][2]) - TURN])
+	for key in ["houses", "potions"]:
+		for i in (island.features[key] as Array).size():
+			places.append([_v2(island.features[key][i]), _v2(flat.features[key][i])])
+	for i in island.trees.size():
+		places.append([_v2(island.trees[i]), _v2(flat.trees[i])])
+	for i in island.rocks.size():
+		places.append([_v2(island.rocks[i]), _v2(flat.rocks[i])])
+	for i in island.paths.size():
+		for k in (island.paths[i] as Array).size():
+			places.append([_v2(island.paths[i][k]), _v2(flat.paths[i][k])])
+	for pair in places:
+		if pair[0].distance_to(pair[1].rotated(t)) > 0.001:
+			problems.append("%s is not %s turned" % [str(pair[0]), str(pair[1])])
+	for i in places.size():
+		for k in range(i + 1, places.size()):
+			if absf(places[i][0].distance_to(places[k][0]) - places[i][1].distance_to(places[k][1])) > 0.001:
+				problems.append("%s to %s changed with the turn" % [str(places[i][1]), str(places[k][1])])
+	var map := MapIsland.new(island)
+	var flat_map := MapIsland.new(flat)
+	for i in 72:
+		var a := TAU * i / 72.0
+		if absf(map.coast_radius(a + t) - flat_map.coast_radius(a)) > 0.001:
+			problems.append("the coast at %.0f deg is not the unturned one turned" % rad_to_deg(a))
+			break
+	var bad := base.duplicate(true)
+	bad.turn_deg = "a lot"
+	if Island.from_data(bad).problem == "":
+		problems.append("turn_deg not a number reads without a problem")
+	bad.turn_deg = 400.0
+	if Island.from_data(bad).problem == "":
+		problems.append("turn_deg past 180 reads without a problem")
+	expect.call(problems.is_empty(), "curie turn: turn_deg %.0f turns the whole island (the neck at %.0f deg, its mouth up and to the right with the lighthouse at its end; every place, path, decoration, yaw and the coast the unturned one turned, the distances kept); a broken turn says what is wrong" % [TURN, TURN],
+		"; ".join(problems.slice(0, 8)))
+
+
+static func _v2(v: Array) -> Vector2:
+	return Vector2(float(v[0]), float(v[1]))
 
 
 func check_in_making() -> void:

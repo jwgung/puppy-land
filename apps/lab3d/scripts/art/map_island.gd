@@ -123,8 +123,8 @@ func _init(of: Island) -> void:
 
 ## The coast's distance from the island centre in the direction `theta` (atan2(z, x)).
 func coast_radius(theta: float, necks := true) -> float:
-	var c := cos(theta)
-	var s := sin(theta)
+	var c := cos(theta - deg_to_rad(island.turn_deg))   # the ellipse turns with the island (its waves, bumps and necks are turned when read)
+	var s := sin(theta - deg_to_rad(island.turn_deg))
 	var rx := island.radius_x
 	var rz := island.radius_z
 	var r := 1.0 / sqrt(c * c / (rx * rx) + s * s / (rz * rz))

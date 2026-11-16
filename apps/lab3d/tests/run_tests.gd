@@ -138,7 +138,8 @@
 ##    tests/cloud_sync_checks.gd.
 ## 22c2. the curie island's map (tests/curie_map_checks.gd, #152 2026-11-13): content/islands/curie.json
 ##    (three zones, 12 spots in the story's order, the lighthouse), its stages and paths on land, an
-##    island in the making (never open, 곧 만나요 on its card).
+##    island in the making (never open, 곧 만나요 on its card); the whole island turned by turn_deg -25
+##    (2026-11-16: the flask's neck up and to the right, every place the unturned one turned).
 ## 22c. the hutton island's map (tests/hutton_map_checks.gd, #72 2026-11-06): content/islands/hutton.json
 ##    (11 spots once in the order, the lookout on the square, the features checked), open after the
 ##    first island, now that every spot is a lab (an island in the making never opens), its map (one
