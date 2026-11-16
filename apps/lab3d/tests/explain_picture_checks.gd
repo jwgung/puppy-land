@@ -6,13 +6,16 @@
 ##   without one and the close take it away; the box's own words keep their picture;
 ## - in a lab (a stand-in line: no content uses a picture yet) the card stands in the middle of the
 ##   view, clear of the dialogue box (and the bust and name tag) and of the top chips, on phone,
-##   tablet and the zoomed phone; a tap on the card turns the page like a tap on the box (the lab's
-##   object under it is not touched) and the card goes with the box;
+##   tablet and the zoomed phone; a tap on the card is a tap on the box (the page whole, then after
+##   DialogueBox.TAP_LOCK_S the next; the lab's object under it is not touched) and the card goes
+##   with the box;
 ## - a story page with a picture (a stand-in page) shows its card and the next page's does not; a
 ##   picture on Puppy's page shows no card (Dugi only, Story.page_picture);
 ## - each picture draws at 1x and 2x with every shape triangulated, the card has the pictures'
 ##   aspect, and ExplainPictures draws no text (its source calls only shape-drawing APIs).
 extends RefCounted
+
+const Reading := preload("res://tests/dialogue_reading.gd")   # the pages read untouched (the read timer)
 
 var tree: SceneTree
 var expect: Callable
@@ -102,8 +105,7 @@ func check_box() -> void:
 	var pages := box.pages().size()
 	var kept := true
 	for k in pages - 1:
-		box.advance()   # the whole page
-		box.advance()   # the next page
+		Reading.read_page(box)
 		kept = kept and box.active and box.card.visible
 	steps.append(pages > 1 and kept)
 	box.open("The next line.")
@@ -131,7 +133,7 @@ func check_box() -> void:
 
 
 ## In a lab: the bridge line (a stand-in with a picture) shows the card in the middle, clear of the
-## box and the chips; a tap on the card turns the page; the card goes with the box.
+## box and the chips; a tap on the card is a tap on the box; the card goes with the box.
 func check_lab_card(size: Vector2) -> void:
 	DirAccess.remove_absolute(ProgressStore.path)
 	var root_size := tree.root.size
@@ -170,19 +172,27 @@ func check_lab_card(size: Vector2) -> void:
 	for c: Control in [screen._title_bar, screen._key_row, screen._mission_pill, screen._mission_strip, screen._mission_text, screen._top_buttons, screen._action_row]:
 		if c != null and c.visible and card.intersects(c.get_rect()):
 			problems.append("covers %s %s" % [c.name, str(c.get_rect())])
-	# A tap on the card turns the page like a tap on the box (the lab's object under it is not touched).
+	# A tap on the card is a tap on the box: the page whole, the next at once nothing, after the lock
+	# the next page (the lab's object under it is not touched); the card goes with the box.
 	var lab: Experiment = screen.experiment
 	var status := lab.status()
 	var at: Vector2 = tree.root.get_final_transform() * (screen.view.get_global_transform_with_canvas() * card.get_center())
+	var words := box.text
+	var page := box.page
+	await _tap(at)
+	await _tap(at)
+	var kept: bool = box.active and box.text == words and box.page == page and box.typed() and box.card.is_visible_in_tree()
 	var turns := 0
-	while box.active and turns < 6:
+	while box.active and turns < 8:
+		for i in 40:   # past DialogueBox.TAP_LOCK_S
+			await tree.process_frame
 		await _tap(at)
 		turns += 1
-	var through: bool = turns <= 3 and not box.active and not box.card.is_visible_in_tree() and lab.status() == status \
+	var through: bool = kept and not box.active and not box.card.is_visible_in_tree() and lab.status() == status \
 		and (screen.manipulator == null or screen.manipulator.mode == "")
 	expect.call(shown and problems.is_empty() and through,
-		"explain pictures (%s): the line's card stands in the middle of the view, clear of the dialogue box, its bust and name tag and the top chips; a tap on it turns the page and the card goes with the box" % name,
-		"shown %s %s; through %s (%d taps)" % [shown, "; ".join(problems), through, turns])
+		"explain pictures (%s): the line's card stands in the middle of the view, clear of the dialogue box, its bust and name tag and the top chips; a tap on it is a tap on the box (whole, locked, then the next) and the card goes with the box" % name,
+		"shown %s %s; whole and locked %s, through %s (%d more taps)" % [shown, "; ".join(problems), kept, through, turns])
 	if size == PHONE:
 		# Dugi's explanation of the stage being played carries the stage's picture.
 		var say: Dictionary = screen.explain_say()
@@ -231,7 +241,7 @@ func check_story_page() -> void:
 		for k in 6:
 			if not box.active or box.text != words:
 				break
-			box.advance()
+			Reading.read_page(box)
 	expect.call(str(seen) == str(["dugi:-", "dugi:axis", "puppy:-"]) and clear,
 		"explain pictures: a story page's picture shows on its card (clear of the box, the emblem and the skip button); Puppy's page with a picture shows none",
 		"%s clear %s" % [str(seen), clear])

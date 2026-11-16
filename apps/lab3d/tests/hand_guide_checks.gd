@@ -174,8 +174,8 @@ func check_lab(id: String) -> void:
 	await _frames(60)
 	if guide.playing() or guide.plays > 0:
 		problems.append("shown while Dugi asks")
-	# The child answers with a picture button; Dugi's bridge box opens and waits for a tap that a child
-	# who cannot read may never make: the hand comes anyway.
+	# The child answers with a picture button; Dugi's bridge box opens (a child who cannot read gets
+	# nothing from it): the hand comes while it is still open.
 	screen._predict_pick_choice(str(MissionRound.predict(screen.definition.raw).get("answer", "")))
 	await _read_cat_guess(screen)   # (#132: the bread cat says the pick first)
 	var lab: Experiment = screen.experiment
@@ -404,7 +404,7 @@ func check_map_tap() -> void:
 	story.say_riddle()
 	story.advance(0.05)
 	var stopped: bool = guide != null and not guide.playing()
-	# The riddle stays open (no tap): the hint's tap still plays over the open box.
+	# The riddle still open (its box is not stepped here): the hint's tap still plays over the open box.
 	story.advance(StoryDirector.HINT_DELAY_S + 0.1)
 	var hint_tap: bool = guide != null and guide.playing() and story.hinting() and story.riddle.active
 	var under_riddle: bool = guide != null and guide.get_index() < story.riddle.get_index()   # his words stay readable

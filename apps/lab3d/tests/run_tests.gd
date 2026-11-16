@@ -223,6 +223,8 @@
 ## Times are engine fixed steps (60 Hz), independent of rendering FPS.
 extends SceneTree
 
+const Reading := preload("res://tests/dialogue_reading.gd")   # the pages read untouched (the read timer)
+
 const VECTORS_PATH := "res://tests/incline_vectors.json"
 ## Scripts that use the Quality/Bench autoloads are loaded at runtime: with `-s` the autoload names
 ## do not exist yet when this file is compiled.
@@ -528,11 +530,16 @@ func _run() -> void:
 	_expect(hand != null and hand.can_instantiate(), "hand guide checks compile", "")
 	if hand != null and hand.can_instantiate():
 		await hand.new(self, _expect).run()
-	print("== a young child's way through the talk (2026-10-31: tap anywhere, the pictures shown, slower words) ==")
+	print("== a young child's way through the talk (2026-10-31: the pictures shown, slower words; 2026-11-16: a tap shows the page whole, then turns it after the lock) ==")
 	var kid_flow: GDScript = load("res://tests/kid_flow_checks.gd")
 	_expect(kid_flow != null and kid_flow.can_instantiate(), "kid flow checks compile", "")
 	if kid_flow != null and kid_flow.can_instantiate():
 		await kid_flow.new(self, _expect).run()
+	print("== the talk plays by itself (2026-11-16: the read time turns the pages; a tap shows a page whole, then turns it after the lock; hold waits; 건너뛰기 still ends) ==")
+	var autoplay: GDScript = load("res://tests/dialogue_autoplay_checks.gd")
+	_expect(autoplay != null and autoplay.can_instantiate(), "dialogue autoplay checks compile", "")
+	if autoplay != null and autoplay.can_instantiate():
+		await autoplay.new(self, _expect).run()
 	print("== the mission round as a module (MissionRound: clue, question, bridge, stamps, reason, misses, auto conditions) ==")
 	var round_module: GDScript = load("res://tests/mission_round_checks.gd")
 	_expect(round_module != null and round_module.can_instantiate(), "mission round checks compile", "")
@@ -1859,11 +1866,10 @@ func _check_tip_after_question() -> void:
 		await process_frame
 	var hidden_while_asking: bool = screen._asking() and not screen._tip.visible
 	screen._predict_pick_choice(str(MissionRound.predict(definition).get("answer", "")))
-	for i in 60:   # Dugi's bridge opens, then is read (a tap)
+	for i in 60:   # Dugi's bridge opens, then is read (by time)
 		await process_frame
 		if screen.dialogue.active:
-			screen.dialogue.advance()
-			screen.dialogue.advance()
+			Reading.read_page(screen.dialogue)
 	for i in 10:
 		await process_frame
 	var back: bool = screen._tip.visible and screen._tip.text != ""

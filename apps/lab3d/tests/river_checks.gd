@@ -27,6 +27,8 @@
 ##   at the first, the turtle at the second).
 extends RefCounted
 
+const Reading := preload("res://tests/dialogue_reading.gd")   # the pages read untouched (the read timer)
+
 const ID := "river"
 const LINES_PATH := "res://../../docs/islands/hutton-lines.md"
 const MISSIONS_PATH := "res://../../docs/islands/hutton-missions.md"
@@ -491,7 +493,7 @@ func check_view(size: Vector2) -> void:
 				for i in 6:
 					await tree.process_frame
 				if box.active:
-					box.advance()
+					Reading.read_page(box)
 			for i in 20:
 				await tree.process_frame
 		var blocks: Array[Rect2] = []

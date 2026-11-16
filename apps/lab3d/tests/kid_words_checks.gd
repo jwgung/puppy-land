@@ -15,6 +15,8 @@
 ## Read only: nothing here changes a lab's physics.
 extends RefCounted
 
+const Reading := preload("res://tests/dialogue_reading.gd")   # the pages read untouched (the read timer)
+
 var tree: SceneTree
 var expect: Callable
 const UI_THEME := "res://scripts/app/ui_theme.gd"
@@ -255,8 +257,7 @@ func check_term_box() -> void:
 	box.open()
 	var k: int = range(box.pages().size()).filter(func(i: int) -> bool: return TermMarks.marked(box.page_text(i))).front()
 	for i in k:
-		box.advance()
-		box.advance()
+		Reading.read_page(box)
 	var term_at := TermMarks.plain(box.page_text(k)).find("마찰력")
 	var before_term := true
 	while not box.typed():

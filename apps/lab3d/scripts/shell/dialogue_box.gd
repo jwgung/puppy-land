@@ -4,50 +4,57 @@
 ## Dugi on the view, whichever is nearer); a bust portrait of Dugi always stands on its left end and
 ## overlaps the top edge (assets/characters/portraits, rendered from the model by
 ## art_src/characters/dugi_portrait.py), the name tag "두기두기" sits on the top edge beside it,
-## and a blinking ▼ shows when the page is fully shown. The portrait's expression follows the line
+## and a ▼ shows once the page is fully shown, fading out as its read time runs down (the next page
+## or the close is coming). The portrait's expression follows the line
 ## (2026-10-29 user request "대화시 표정을 좀 더 다양하게": Story.FACES, set_speaker / open with a face,
 ## the content tags each line); it never changes within one line (2026-10-27: a face changing every
 ## page was too busy), a line with the same face keeps the picture as it is (no re-pop), and a new face
 ## swaps in with a short soft pop (SWAP_S) that changes neither the box nor the portrait's rect.
 ## A line may carry an explanation picture (#73, ExplainPictures: `picture` next to its `face` in the
 ## data): its card stands in the middle of the view while that line is in the box (every page of it)
-## and goes with the next line or the close. A tap on the card turns the page like a tap on the box
-## (the card stands over the middle of the view, often over the lab's object: a tap there must not
-## grab it); it keeps clear of the box and of the rects in `card_avoid` (the lab's top chips).
+## and goes with the next line or the close. A tap on the card is a tap on the box (tap()) and stays
+## on the card (it stands over the middle of the view, often over the lab's object: a tap there must
+## not grab it); it keeps clear of the box and of the rects in `card_avoid` (the lab's top chips).
 ##
 ## The words are the lab's observe text exactly (or, for one open, other words of Dugi's: the
 ## mission's question or the prediction's reason — Plan G4), only split into pages of at most
 ## LINES lines at the spaces, each sentence starting a line (joined() is the text
 ## again). A term Dugi introduces (TermMarks, "**마찰력**") is drawn bold on a yellow highlight; the
 ## pages are measured with that bold face, so the lines and pages are the ones it is shown in. Each
-## page types out at CHARS_PER_S; a tap shows the whole page, the next tap turns the page, and after the last page
-## it closes. Pages never turn by themselves (2026-10-28 user: only a tap turns a page; before, an
-## untouched page turned after READ_S + READ_PER_CHAR_S per character — `auto_turn` keeps that for
-## anyone who sets it); a box that holds (`hold`: a question waiting for its answer) stays on its
-## last page. UI only:
-## no full-screen layer; it takes taps only on the box and the bust (_has_point), the rest of its
-## rect passes them to the 3D view. A tap elsewhere on the view while a box waits turns its page
-## through the screen's TapCatcher (tap_catcher.gd, 2026-10-31).
+## page types out at CHARS_PER_S, stays READ_S + READ_PER_CHAR_S per character once fully shown, then
+## the next page comes, and after the last page it closes (`closed`): untouched, the whole talk plays
+## to its end. A tap (tap()) is the quicker way: while the page types it shows the whole page at
+## once, on a fully shown page it turns it (past the last it closes), except within TAP_LOCK_S after
+## the page became fully shown (a child tapping fast still sees each page). 2026-11-16 user: first
+## "누르면 넘어가지 말고, 대화를 다 출력시켜주자" (children skipped the talk too easily), then "누르면
+## 완성되게 하고, 넘어갈 수도 있게는 해"; before (2026-10-28) only a tap turned a page. A box that
+## holds (`hold`: a question waiting for its answer) stays on its last page. UI only: no full-screen
+## layer; it takes taps only on the box and the bust (_has_point) and keeps them (a tap on the box
+## never grabs the lab's object behind it), the rest of its rect passes them to the 3D view. A tap
+## elsewhere on the view while a box is open goes to tap() through the screen's TapCatcher
+## (tap_catcher.gd, 2026-10-31).
 class_name DialogueBox
 extends Control
 
-## Closed (by a tap past the last page, the read timer, or close()).
+## Closed (by the read timer or a tap past the last page, or close()).
 signal closed
 
 const LINES := 2
 const CHARS_PER_S := 18.0     # 2026-10-31 user: slower for a child (28 before)
+## A fully shown page stays READ_S + READ_PER_CHAR_S per character (its typed characters), then turns
+## (2026-11-16: tune these two on the tablet).
 const READ_S := 3.0
 const READ_PER_CHAR_S := 0.06
-## Whether an untouched page turns after its read time (off: only a tap turns a page).
-static var auto_turn := false
-const BLINK_HZ := 2.0
+## For this long after a page became fully shown a tap does not turn it (a fast double tap: the first
+## shows the page, the second must not skip it unread). A tap that shows the page acts at once.
+const TAP_LOCK_S := 0.6
 const BOX_PAD := Vector2(22.0, 14.0)        # inner padding (x, y)
 const NAME_LIFT := 18.0                     # the name tag rises this far above the box
 const PORTRAIT_SIZE := 236.0
 const PORTRAIT_INSET := 6.0                 # from the box's left end
 const PORTRAIT_SHARE := 0.94                # of the portrait's width the words keep clear of (the stick)
 const MIN_TEXT_WIDTH := 300.0
-const MORE_ROOM := 30.0                     # right of the text: the ▼
+const MORE_ROOM := 30.0                     # right of the text: the ▼ (the read time left)
 ## A new face settles in over SWAP_S s: the portrait grows from SWAP_SCALE and fades in from
 ## SWAP_ALPHA about its bottom middle (drawing only: its rect and the box stay where they are).
 const SWAP_S := 0.16
@@ -89,7 +96,7 @@ var swaps := 0
 var _swap_t := -1.0
 ## The box's own words (the lab's observe text): every open without other words shows these.
 var words := ""
-## A question is waiting for its answer: the last page stays (no read timer, a tap does not close).
+## A question is waiting for its answer: the last page stays (no read timer).
 var hold := false
 var box: PanelContainer
 var name_tag: PanelContainer
@@ -103,7 +110,6 @@ var page := 0
 var _pages: Array = []
 var _shown := 0.0                           # characters of the page shown (typewriter)
 var _read_left := 0.0
-var _clock := 0.0
 var _text_width := 0.0
 
 
@@ -145,9 +151,10 @@ func _init(own_words: String) -> void:
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
 	card.visible = false
 	card.gui_input.connect(func(event: InputEvent) -> void:
-		if TapCatcher.is_tap(event) and active:
-			advance()
-			card.accept_event())
+		if _is_press(event) and active:
+			if event.device != InputEvent.DEVICE_ID_EMULATION:   # a touch's emulated click: one tap, one step
+				tap()
+			card.accept_event())   # stays on the card: nothing grabbed behind it
 	card.size = CARD_SIZE
 	card.draw.connect(func() -> void: ExplainPictures.draw_card(card, picture, Rect2(Vector2.ZERO, card.size)))
 	add_child(card)
@@ -481,12 +488,28 @@ func _show_picture(kind: String) -> void:
 	card.queue_redraw()
 
 
-## The page is fully shown (the ▼ blinks).
+## The page is fully shown (the ▼ shows).
 func typed() -> bool:
 	return _pages.is_empty() or _shown >= page_length(page)
 
 
-## A tap: the whole page, else the next page, else close.
+## A child's tap: the whole page while it types (at once), else the next page (or the close past the
+## last) unless the page became fully shown less than TAP_LOCK_S ago. True if it did something.
+func tap() -> bool:
+	if not active:
+		return false
+	if typed() and (shown_for() < TAP_LOCK_S or (hold and page == _pages.size() - 1)):
+		return false
+	advance()
+	return true
+
+
+## Seconds since the page became fully shown (0 while it types; a held last page stays at 0).
+func shown_for() -> float:
+	return maxf(_read_time() - _read_left, 0.0) if typed() else 0.0
+
+
+## One step: the whole page, else the next page, else close (the read timer, tap(), tests).
 func advance() -> void:
 	if not active:
 		return
@@ -520,9 +543,11 @@ func _refresh() -> void:
 	var highlight := label.get_theme_color("term_highlight") if label.has_theme_color("term_highlight") else TERM_HIGHLIGHT
 	label.text = TermMarks.bbcode(page_text(page), highlight, shown)
 	label.visible_characters = shown
-	# A held question's last page waits for an answer, not a tap: no ▼ there.
+	# A held question's last page waits for an answer: no ▼ there. Elsewhere the ▼ fades out with the
+	# read time left (the next page or the close is coming).
 	var waits := hold and page == _pages.size() - 1
-	more.visible = typed() and not waits and fmod(_clock * BLINK_HZ, 1.0) < 0.6
+	more.visible = typed() and not waits
+	more.modulate.a = clampf(_read_left / _read_time(), 0.0, 1.0)
 
 
 func _process(delta: float) -> void:
@@ -533,13 +558,12 @@ func _process(delta: float) -> void:
 func step(delta: float) -> void:
 	if not active:
 		return
-	_clock += delta
 	if _swap_t >= 0.0:
 		_swap_t += delta
 		_draw_swap()
 	if not typed():
 		_shown += CHARS_PER_S * delta
-	elif auto_turn and (not hold or page < _pages.size() - 1):
+	elif not hold or page < _pages.size() - 1:
 		_read_left -= delta
 		if _read_left <= 0.0:
 			advance()
@@ -569,10 +593,14 @@ func _has_point(point: Vector2) -> bool:
 	return bust.has_point(point)
 
 
+## A touch or a click on the box or the bust: tap(), and taken here (it never reaches the 3D view).
 func _gui_input(event: InputEvent) -> void:
-	var tap: bool = (event is InputEventScreenTouch and event.pressed) \
-		or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT
-			and event.device != InputEvent.DEVICE_ID_EMULATION)   # a touch's emulated click: one tap, one page
-	if tap and active:
-		advance()
+	if _is_press(event) and active:
+		if event.device != InputEvent.DEVICE_ID_EMULATION:   # a touch's emulated click: one tap, one step
+			tap()
 		accept_event()
+
+
+static func _is_press(event: InputEvent) -> bool:
+	return (event is InputEventScreenTouch and event.pressed) \
+		or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT)

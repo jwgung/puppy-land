@@ -15,6 +15,7 @@ const APP := "res://scripts/app/app.gd"
 const PHONE := Vector2(1560, 720)
 const TABLET := Vector2(1152, 720)
 const UiScale := preload("res://tests/ui_scale_checks.gd")   # PHONE_ZOOMED (화면 크기)
+const Reading := preload("res://tests/dialogue_reading.gd")   # the pages read untouched (the read timer)
 const NEXT := "hutton"
 ## The third island's voyage (#155): at night, to the lighthouse keeper.
 const THIRD := "curie"
@@ -167,10 +168,10 @@ func check_voyage_third() -> void:
 		var pages := Story.pages_of(THIRD, "voyage")
 		for i in pages.size():
 			var shot := str(pages[i].shot)
-			for t in 4:   # (a tap may only finish the page's typing)
+			for t in 4:   # (read until this page opens)
 				if voyage.page >= i:
 					break
-				voyage.tap_page()
+				Reading.read_page(voyage.dialogue)
 				await tree.process_frame
 			for k in 12:
 				voyage.advance(0.25)
@@ -195,12 +196,11 @@ func check_voyage_third() -> void:
 					var at: Array = _spot_at(spot_id)
 					if at.size() == 2 and Vector2(at[0], at[1]).distance_to(spot) < 1.0:
 						problems.append("야옹이 stands on the spot %s" % spot_id)
-			voyage.tap_page()
-			voyage.tap_page()
+			Reading.read_page(voyage.dialogue)
 			await tree.process_frame
-	for t in 3:   # (the last page's taps end the voyage; the map builds its story a frame later)
+	for t in 3:   # (the last page read ends the voyage; the map builds its story a frame later)
 		if voyage != null and not voyage.done:
-			voyage.tap_page()
+			Reading.read_page(voyage.dialogue)
 		await tree.process_frame
 	var home := app._screen as IslandHomeScreen
 	var landed := home != null and home.island.id == THIRD and Story.voyage_seen(THIRD) and home.play_prologue_on_open \
@@ -323,8 +323,7 @@ func check_voyage_flow(_quality_script: GDScript) -> void:
 				problems.append("flicker on %s" % voyage.shot)
 			if not voyage.dialogue.active or voyage.dialogue.speaker != str(pages[i].who):
 				problems.append("page %d speaker %s" % [i, voyage.dialogue.speaker])
-			voyage.tap_page()   # the whole page
-			voyage.tap_page()   # the next
+			Reading.read_page(voyage.dialogue)   # read by time: the next page
 			await tree.process_frame
 		if max_flicker < 0.9:
 			problems.append("the next island never went dark (%.2f)" % max_flicker)
@@ -350,8 +349,8 @@ func check_voyage_flow(_quality_script: GDScript) -> void:
 			if home.story.part != "prologue":
 				break
 			pages_seen = maxi(pages_seen, home.story.page + 1)
-			home.story.tap_page()
-			home.story.tap_page()
+			if home.story.dialogue.active:
+				Reading.read_page(home.story.dialogue)
 			for k in 3:
 				await tree.process_frame
 		for i in 120:
