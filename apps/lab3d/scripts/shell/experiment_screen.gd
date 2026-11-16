@@ -1023,9 +1023,12 @@ func nudge_choices() -> void:
 		return
 	view.move_child(hand_guide, -1)   # over the dim and the buttons while it shows them
 	_nudging = true
-	var first := _choices.get_child(0) as Control
+	# A WeakRef, not the button: the answer rebuilds the row and frees it while the paw still draws, and a
+	# lambda holding a freed node raises an engine ERROR on the call (failed CI's script-error check).
+	var first: WeakRef = weakref(_choices.get_child(0))
 	hand_guide.play("tap", func() -> Vector2:
-		return _choices.position + first.position + first.size * 0.5 if _choices != null and is_instance_valid(first) else HandGuide.OFF_VIEW)
+		var button := first.get_ref() as Control
+		return _choices.position + button.position + button.size * 0.5 if _choices != null and button != null else HandGuide.OFF_VIEW)
 
 
 ## After a miss of stage `stage` with its conditions off (2026-11-05 user: children do not find the
@@ -1057,9 +1060,11 @@ func _try_nudge_picks() -> void:
 	_picks_nudge_stage = -1
 	view.move_child(hand_guide, -1)   # over the buttons while it shows them
 	_nudging = true
+	var target: WeakRef = weakref(button)   # see the answer buttons' paw above: never capture a node that can be freed
 	hand_guide.play("tap", func() -> Vector2:
-		return _picks_row.position + button.position + button.size * 0.5 \
-			if _picks_row != null and is_instance_valid(button) else HandGuide.OFF_VIEW)
+		var tapped := target.get_ref() as Control
+		return _picks_row.position + tapped.position + tapped.size * 0.5 \
+			if _picks_row != null and tapped != null else HandGuide.OFF_VIEW)
 
 
 ## The row shows and nothing covers it (Dugi's box or question).
