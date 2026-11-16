@@ -1,0 +1,172 @@
+{
+  "title": "Can you undo it: melted chocolate and a boiled egg",
+  "category": "Matter and change",
+  "question": "If you warm it and cool it down, does it come back?",
+  "steps": [
+    "Press the red handle on the stove and hold it: the fire is on and the pot warms up.",
+    "Let go and the fire goes out and the pot cools down.",
+    "Use the button at the bottom left to put chocolate or an egg in the pot."
+  ],
+  "observe": "Chocolate melts when it is warm and sets again when it cools. It only changed its shape, so you can do it over and over. An egg that cooks turns into something different inside, so it does not go back to a raw egg when it cools.",
+  "terms": [
+    {
+      "name": "A change you can undo",
+      "description": "Like melting and setting again: only the look changes, so warming or cooling brings it back."
+    },
+    {
+      "name": "A change you cannot undo",
+      "description": "Like cooking an egg: the stuff inside turns into something else, so cooling does not bring it back."
+    }
+  ],
+  "law": {
+    "equation": "A change of look can be undone; a change inside cannot",
+    "title": "Changes you can and cannot undo",
+    "description": "Chocolate melts when it is warm and sets when it cools, so you can warm and cool it again and again. An egg that cooks turns into something else inside, so cooling it does not make a raw egg again."
+  },
+  "tip": "The fire is on while you hold the stove's red handle. Let go and it goes out and cools. Pick the egg and it boils in its shell; the magnifier window shows only its inside.",
+  "tip_short": "Hold the red handle to warm it",
+  "controls": [
+    {
+      "label": "In the pot",
+      "options": [
+        {
+          "label": "Chocolate"
+        },
+        {
+          "label": "Egg"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "label": "Start over"
+    }
+  ],
+  "predict": {
+    "question": "If melted chocolate cools down, will it set again?",
+    "choices": [
+      {
+        "label": "Yes, it sets again",
+        "guess": "I think it will set again!"
+      },
+      {
+        "label": "No, it stays melted",
+        "guess": "I think it will stay melted!"
+      }
+    ],
+    "reason": "Chocolate melts when it is warm and sets when it cools. Only its shape changed, so you can undo it.",
+    "bridge": "Let's try it!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Melt the chocolate!",
+        "say": "Warm a hard chocolate over the fire and it goes soft and melts.",
+        "win": "The chocolate melted!",
+        "miss": "Hold the fire a little longer!",
+        "miss_conditions": "Pick the chocolate!"
+      },
+      {
+        "text": "Cool the melted chocolate in the star mold!",
+        "say": "Cool it and it gets hard again. You can melt and set chocolate again and again.",
+        "win": "A star chocolate!",
+        "miss": "Let go and let it cool!",
+        "miss_conditions": "Pick the chocolate!"
+      },
+      {
+        "text": "Cook an egg and cool it down: will it be raw again?",
+        "say": "When an egg cooks, its inside turns into something else. So cooling does not bring the raw egg back.",
+        "win": "Still cooked! A piece!",
+        "miss": "Cook the egg all the way!",
+        "miss_conditions": "Pick the egg!"
+      }
+    ]
+  },
+  "story": {
+    "keeper": "I left my saved chocolate by the stove and it all melted... and no ship comes, so I can't buy more. Is it ruined?",
+    "clue": "There is one shiny egg in the egg basket! Suspicious.",
+    "map_clue": "The kitchen village, where the chocolate pot is!"
+  },
+  "kid": {
+    "intro": "This is the undoing lab. When you warm or cool something, how it looks changes. Some changes come back, and some do not.",
+    "intro_more": [
+      {
+        "text": "(Careful) Fire is hot. Always do it with a grown-up."
+      }
+    ],
+    "title": "Hold the fire handle to warm it!",
+    "place": "Undoing",
+    "say": "A change of look can be undone. A change inside cannot.",
+    "tip": "Hold the fire handle.",
+    "cards": {
+      "choc": "Chocolate",
+      "egg": "Egg",
+      "fire": "Fire"
+    },
+    "picks": {
+      "item": [
+        {
+          "label": "Chocolate"
+        },
+        {
+          "label": "Egg"
+        }
+      ]
+    }
+  },
+  "note": {
+    "law": "A change that only changes the look can be undone; a change of the stuff inside cannot.",
+    "learn": "Chocolate melts and sets again as often as you like. An egg that is cooked does not go back to a raw egg when it cools.",
+    "talk": [
+      "If ice melts and freezes again, is it the same ice?",
+      "If you cool a baked bread, does it become dough again?"
+    ],
+    "formula": "Melting and setting can be undone; cooking cannot",
+    "numbers": [
+      {
+        "label": "Chocolate"
+      },
+      {
+        "label": "Egg"
+      },
+      {
+        "label": "Fire"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "label": "Chocolate"
+    },
+    {
+      "label": "Egg"
+    },
+    {
+      "label": "Fire"
+    }
+  ],
+  "graph": {
+    "title": "Time and temperature",
+    "x": {
+      "label": "Time (fast forward)"
+    },
+    "y": {
+      "label": "Temperature"
+    },
+    "series": [
+      {
+        "label": "Chocolate melts at"
+      },
+      {
+        "label": "Egg cooks at"
+      },
+      {
+        "label": "Temperature in the pot"
+      },
+      {
+        "label": "Now"
+      }
+    ]
+  }
+}

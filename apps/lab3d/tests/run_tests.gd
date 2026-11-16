@@ -224,6 +224,12 @@
 ##    (물의 여행's sign drawn the same), the judging, the spoon stirred round, the bucket poured and the time
 ##    run to the dry tray (night, moon stamps), the tables, no number, what matters in view, the spot,
 ##    the opening and the piece.
+## 25c. 되돌릴 수 있을까? (tests/melt_cook_checks.gd, #158 2026-11-17): Curie Island's third lab, its data and its
+##    lines against docs/islands/curie-lines.md 3 (the fire warning line), the model against the textbook
+##    (cocoa butter melts at 34 and sets at 28: melting and setting go back and forth; the egg's cooking never
+##    goes back), the judging of the three stages (the let-go lines, the wrong item's line), the stove handle
+##    (a press is the fire on), the bread cat's pour at stage 2's reset, the tables per stage, the item button,
+##    no number on the screen, what matters in view, the spot, the opening and the piece (the shiny egg).
 ## 24l. the hutton cast (tests/hutton_cast_checks.gd, #114 2026-11-10): in every Hutton lab on the
 ##    tablet and the phone, Puppy's result bubble clear of Dugi's open box and portrait, Puppy at most
 ##    half under them.
@@ -532,6 +538,11 @@ func _run() -> void:
 	_expect(dissolving != null and dissolving.can_instantiate(), "dissolving checks compile", "")
 	if dissolving != null and dissolving.can_instantiate():
 		await dissolving.new(self, _expect).run()
+	print("== 되돌릴 수 있을까? (#158): Curie Island's third lab, its lines, model, judging, handle, pour, tables, view and piece ==")
+	var melt_cook: GDScript = load("res://tests/melt_cook_checks.gd")
+	_expect(melt_cook != null and melt_cook.can_instantiate(), "melt-cook checks compile", "")
+	if melt_cook != null and melt_cook.can_instantiate():
+		await melt_cook.new(self, _expect).run()
 	print("== the hutton cast (#114): Puppy and his bubble clear of Dugi's box in every lab ==")
 	var hutton_cast: GDScript = load("res://tests/hutton_cast_checks.gd")
 	_expect(hutton_cast != null and hutton_cast.can_instantiate(), "hutton cast checks compile", "")
