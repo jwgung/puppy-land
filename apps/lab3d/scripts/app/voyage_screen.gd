@@ -4,7 +4,7 @@
 ## next island goes dark and bright again while they look at it (at night it stays dark, below), and they land on its beach where its
 ## keeper (the island's: the fox, or the curie island's yaongi; the fox's speaker `fox_stranger` 여우친구 until it says who it is, then `fox` 섬지기, #118) waits. The words are the next island's story `voyage` pages (Story:
 ## who, face, shot); each page's `shot` (Story.VOYAGE_SHOTS) sets the camera and how far the boat has
-## come. A tap turns the page (anywhere), 건너뛰기 or Android back skips to the end. At the end the
+## come. A tap anywhere is a tap on the box (DialogueBox.tap), 건너뛰기 or Android back skips to the end. At the end the
 ## voyage counts as seen (Story.mark_voyage_seen), the next island becomes the island in use and
 ## `finished` asks App for its map (which then plays that island's prologue).
 ##

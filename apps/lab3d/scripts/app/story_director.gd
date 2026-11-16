@@ -3,7 +3,7 @@
 ## - the prologue (first launch, or 이야기 다시 보기 in the settings): 8 pages in the dialogue box, the
 ##   camera gliding from the far sea of 퍼피랜드 to 과학섬, night falling, the guiding star breaking into
 ##   11 pieces that land at the 11 spots, the dark sea and the lost boats' lanterns, a sweep over the
-##   island, then the bread cat on the square as the day comes back. A tap turns the page; 건너뛰기
+##   island, then the bread cat on the square as the day comes back. A tap is a tap on the box (DialogueBox.tap); 건너뛰기
 ##   skips it all. Afterwards the map is as it was (no piece on it, the day, the child's camera).
 ##   Another island's prologue (#75: the hutton island's lines after the voyage) is its words over its
 ##   square by day (after a voyage at night, Story.voyage_at_night, from the night of the beach), the camera easing between a few views of it; the map's night comes on the last page.

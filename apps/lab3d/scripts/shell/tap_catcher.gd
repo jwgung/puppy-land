@@ -1,6 +1,6 @@
 ## A see-through layer that takes a tap where `wants` says so (2026-10-31 user: a child could not get
 ## past a dialogue box when tapping beside it). The screens put it over the 3D view, under their other
-## overlays: while a box waits for a tap, a tap on the view turns its page (`on_tap`) instead of
+## overlays: while a box is open, a tap on the view is a tap on the box (`on_tap`: DialogueBox.tap) instead of
 ## reaching the view; anywhere `wants` is false (no box, a press on a lab's object) the view gets
 ## the touch as before. It draws nothing.
 class_name TapCatcher

@@ -529,12 +529,12 @@ func _run() -> void:
 	_expect(hand != null and hand.can_instantiate(), "hand guide checks compile", "")
 	if hand != null and hand.can_instantiate():
 		await hand.new(self, _expect).run()
-	print("== a young child's way through the talk (2026-10-31: the pictures shown, slower words; 2026-11-16: no tap turns a page) ==")
+	print("== a young child's way through the talk (2026-10-31: the pictures shown, slower words; 2026-11-16: a tap shows the page whole, then turns it after the lock) ==")
 	var kid_flow: GDScript = load("res://tests/kid_flow_checks.gd")
 	_expect(kid_flow != null and kid_flow.can_instantiate(), "kid flow checks compile", "")
 	if kid_flow != null and kid_flow.can_instantiate():
 		await kid_flow.new(self, _expect).run()
-	print("== the talk plays by itself (2026-11-16: no tap turns a page; the read time does; hold waits; 건너뛰기 still ends) ==")
+	print("== the talk plays by itself (2026-11-16: the read time turns the pages; a tap shows a page whole, then turns it after the lock; hold waits; 건너뛰기 still ends) ==")
 	var autoplay: GDScript = load("res://tests/dialogue_autoplay_checks.gd")
 	_expect(autoplay != null and autoplay.can_instantiate(), "dialogue autoplay checks compile", "")
 	if autoplay != null and autoplay.can_instantiate():
