@@ -86,7 +86,7 @@ func run() -> void:
 	await check_tables()
 	await check_condition_button()
 	await check_no_numbers()
-	await check_dots()
+	await check_clouds()
 	await check_in_view()
 	check_spot()
 	await check_pictures()
@@ -635,7 +635,7 @@ func check_no_numbers() -> void:
 ## water, swaying, reaching deeper sooner in hot water and growing from the drop's blob; the smell's haze
 ## along its way, none past its front, only on the bread table after a drop; their colours and the
 ## glass's draw order (water, cloud, shell, steam). No particles in the scene (2026-11-16 user).
-func check_dots() -> void:
+func check_clouds() -> void:
 	var lab := _lab()
 	tree.root.add_child(lab)
 	await tree.process_frame

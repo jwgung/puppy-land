@@ -267,6 +267,7 @@ static func _sea(canvas: Control, r: Rect2, heat: int) -> void:
 			wisp.append(foot + Vector2(4.0 * sin(k * TAU), -k * r.size.y * 0.42))
 		canvas.draw_polyline(wisp, Color("9fb3c8"), 3.0, true)
 
+
 ## A glass of water (Curie Island's kitchen labs, #156; the approved mockup's colours): cold, blue water
 ## with an ice cube and a snowflake beside it; hot, orange-red water with three wisps of steam over it.
 static func water_glass(canvas: Control, r: Rect2, hot: bool) -> void:

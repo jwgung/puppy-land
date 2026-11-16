@@ -25,7 +25,7 @@
 ## Its status names what the stages judge: "ready" (no drop yet), "spreading" (the thing judged is still
 ## on its way), "full" (the cup is coloured all through; on the PAIR table both cups at once: the same
 ## water), "faster" (PAIR: the cup filled before the cold cup beside it), "smell" (BREAD: the smell
-## reached Puppy's nose). No number is shown: the lab draws ink dots and smell puffs ("자세히" has the
+## reached Puppy's nose). No number is shown: the lab draws the ink cloud and the smell haze ("자세히" has the
 ## graph with units).
 class_name DiffusionModel
 extends EarthModel
