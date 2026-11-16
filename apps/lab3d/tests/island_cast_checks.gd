@@ -184,7 +184,7 @@ static func apparatus_cells(lab: Experiment) -> Dictionary:
 	var cells := {}
 	for m in lab.find_children("*", "MeshInstance3D", true, false):
 		var mi := m as MeshInstance3D
-		if mi.name in ["Island", "IslandShadows"] or String(mi.name).contains("Shadow") or not mi.is_visible_in_tree():
+		if mi.mesh == null or mi.name in ["Island", "IslandShadows"] or String(mi.name).contains("Shadow") or not mi.is_visible_in_tree():
 			continue
 		var xf := mi.global_transform
 		for si in mi.mesh.get_surface_count():
