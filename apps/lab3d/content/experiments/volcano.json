@@ -112,14 +112,14 @@
   },
   "cast": {
     "dugi": {
-      "at": [9.6, 4.8],
+      "at": [7.6, 4.4],
       "explain_on": ["wide", "tall", "sea"],
       "delay_s": 0.6
     },
     "puppy": {
       "at": [-8.4, 3.2]
     },
-    "fox": { "at": [7.6, 3.6] }
+    "fox": { "at": [3.6, 0.6] }
   },
   "observations": [
     { "id": "state" },

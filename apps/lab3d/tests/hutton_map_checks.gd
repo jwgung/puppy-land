@@ -36,6 +36,13 @@ const MECHANICS_LAB_PIN := {
 	"buoyancy": {"n": 30270, "sum": [-339337.9750, 128087.8913, -985499.1554], "sq": [155067808.1291, 3082774.5279, 172166593.5703],
 		"lo": [-400.0, -60.6, -400.0], "hi": [400.0, 42.008, 400.0]},
 }
+## The fox keeper's walk (2026-11-16): on the way within OFF_WAY_MAX m between its start and end steps
+## (IslandHomeScreen.FOX_LINE off the middle, 0.15), never farther than FOX_GAP_MAX m from the cat (it leads
+## 1.2 m ahead; its start at the row's end is 1.7 m off), into its place at the end within SNAP_MAX m.
+const OFF_WAY_MAX := 0.3
+const FOX_GAP_MAX := 2.0
+const SNAP_MAX := 0.01
+const FPS_SAME_MAX := 0.001
 const LAB_SUM_TOL := 0.5
 const LAB_SQ_TOL := 50.0
 const LAB_BOX_TOL := 1e-3
@@ -383,6 +390,8 @@ func check_keeper_walk() -> void:
 			var last_p := Vector2(screen.fox.position.x, screen.fox.position.z)
 			var closest := INF
 			var flips := 0
+			var off_way := 0.0   # the most the fox strays from the walk's way between its start and its end steps
+			var farthest := 0.0   # the farthest the fox gets from the cat
 			for f in 600:
 				if not screen._walking:
 					break
@@ -408,6 +417,10 @@ func check_keeper_walk() -> void:
 				var cat := Vector2(screen.cat.position.x, screen.cat.position.z)
 				if p.distance_to(to_goal) < cat.distance_to(to_goal) - 0.05:
 					ahead += 1
+				if screen._walking and screen.fox_settle(screen._walk_t) <= 0.0:   # (on its line; in its place it waits)
+					farthest = maxf(farthest, p.distance_to(cat))
+				if screen._walking and screen._walk_t > screen.fox_join_seconds() and screen.fox_settle(screen._walk_t) <= 0.0:
+					off_way = maxf(off_way, _off_way(screen._route, p))
 			if screen._walking:
 				problems.append("the walk to %s never ended" % screen._spots[i].id)
 				break
@@ -419,11 +432,20 @@ func check_keeper_walk() -> void:
 				problems.append("the fox did not lead to %s (%d of %d frames ahead)" % [screen._spots[i].id, ahead, frames])
 			var place: Vector3 = screen.group_at(screen._spots[i])[screen.fox]
 			var fp := Vector2(place.x, place.z)
+			# 2026-11-16 user: it lagged far behind the cat, off the path, and jumped to its place at the end.
+			var last: Vector3 = screen._walk_last.get(screen.fox, Vector3.INF)
+			if Vector2(last.x, last.z).distance_to(fp) > SNAP_MAX:
+				problems.append("the fox jumped %.2f m into its place at %s" % [Vector2(last.x, last.z).distance_to(fp), screen._spots[i].id])
+			if off_way > OFF_WAY_MAX:
+				problems.append("walking to %s the fox strayed %.2f m off the way" % [screen._spots[i].id, off_way])
+			if farthest > FOX_GAP_MAX:
+				problems.append("walking to %s the fox got %.2f m from the cat" % [screen._spots[i].id, farthest])
 			if screen.fox.position.distance_to(place) > 0.01 or not screen._clear_ground(fp):
 				problems.append("the fox at %s not on its clear place" % screen._spots[i].id)
 			for other: Node3D in screen.trio():
 				if Vector2(other.position.x, other.position.z).distance_to(fp) < IslandHomeScreen.KEEP_APART * 0.95:
 					problems.append("the fox at %s too near %s" % [screen._spots[i].id, other.name])
+		problems.append_array(_keeper_frame_rate(screen))
 		# The stroll from the beach (after the voyage): past its first second the four keep apart.
 		screen.stroll_home(VoyageScreen.keeper_spot(screen.map), StoryDirector.STROLL_S)
 		var closest := INF
@@ -441,8 +463,70 @@ func check_keeper_walk() -> void:
 			problems.append("strolling from the beach two of the four came %.2f m close" % closest)
 	await _free(screen)
 	Island.use_for_run(ProgressStore.FIRST_ISLAND)
-	expect.call(problems.is_empty(), "hutton map: the fox keeper stands in the row on the square, leads the walk to every spot (on land, the four at least 0.5 m apart every frame, no jerking back) and stands by the group there, clear; the stroll from the beach keeps the four apart; the first island has none (#120)",
-		"; ".join(problems.slice(0, 8)))
+	expect.call(problems.is_empty(), "hutton map: the fox keeper stands in the row on the square, leads the walk to every spot (on land, the four at least 0.5 m apart every frame, no jerking back, on the way within %.2f m, never over %.1f m from the cat, into its place with no jump; the same at 20 fps) and stands by the group there, clear; the stroll from the beach keeps the four apart; the first island has none (#120)" % [OFF_WAY_MAX, FOX_GAP_MAX],
+		"; ".join(problems.slice(0, 40)))
+
+
+## The fox's walk is a function of the walk's time (2026-11-16, IslandHomeScreen.fox_walk_point): every
+## walk in turn stepped at 60 and at 20 fps puts it at the same places at the same instants (within
+## FPS_SAME_MAX), and at 20 fps too it stays on the way, near the cat, apart from the others and steps into
+## its place with no jump.
+func _keeper_frame_rate(screen: Control) -> Array:
+	var out := []
+	screen.set_process(false)
+	for i in screen._spots.size():
+		var tracks := []
+		for fps: float in [60.0, 20.0]:
+			screen.rest_spot = i - 1
+			screen.reset_trio()
+			screen._walk_to_spot(i)
+			var every := int(fps / 20.0)
+			var track := {}
+			var frames := 0
+			while screen._walking and frames < 2000:
+				screen._step_walk(1.0 / fps)
+				frames += 1
+				var p := Vector2(screen.fox.position.x, screen.fox.position.z)
+				if not screen._walking:
+					break
+				if frames % every == 0:
+					track[frames / every] = p
+				if fps > 30.0:
+					continue
+				for other: Node3D in [screen.cat, screen.puppy, screen.dugi]:
+					var near := Vector2(other.position.x, other.position.z).distance_to(p)
+					if near < 0.5:
+						out.append("at 20 fps walking to %s the fox came %.2f m near %s" % [screen._spots[i].id, near, other.name])
+				if screen.fox_settle(screen._walk_t) <= 0.0 and p.distance_to(Vector2(screen.cat.position.x, screen.cat.position.z)) > FOX_GAP_MAX:
+					out.append("at 20 fps walking to %s the fox got far from the cat" % screen._spots[i].id)
+				if screen._walk_t > screen.fox_join_seconds() and screen.fox_settle(screen._walk_t) <= 0.0 \
+						and _off_way(screen._route, p) > OFF_WAY_MAX:
+					out.append("at 20 fps walking to %s the fox strayed %.2f m off the way" % [screen._spots[i].id, _off_way(screen._route, p)])
+			if screen._walking:
+				out.append("at %d fps the walk to %s never ended" % [int(fps), screen._spots[i].id])
+			var last: Vector3 = screen._walk_last.get(screen.fox, Vector3.INF)
+			var place: Vector3 = screen.group_at(screen._spots[i])[screen.fox]
+			if Vector2(last.x, last.z).distance_to(Vector2(place.x, place.z)) > SNAP_MAX:
+				out.append("at %d fps the fox jumped into its place at %s" % [int(fps), screen._spots[i].id])
+			tracks.append(track)
+		var worst := 0.0
+		for n in tracks[1]:
+			if tracks[0].has(n):
+				worst = maxf(worst, (tracks[0][n] as Vector2).distance_to(tracks[1][n]))
+		if worst > FPS_SAME_MAX:
+			out.append("walking to %s the fox is %.3f m elsewhere at 20 fps than at 60 fps" % [screen._spots[i].id, worst])
+	screen.set_process(true)
+	return out
+
+
+## How far `p` is from the way (its nearest segment).
+static func _off_way(way: PackedVector2Array, p: Vector2) -> float:
+	if way.size() == 1:
+		return p.distance_to(way[0])
+	var best := INF
+	for k in way.size() - 1:
+		best = minf(best, Geometry2D.get_closest_point_to_segment(p, way[k], way[k + 1]).distance_to(p))
+	return best
 
 
 ## A lab on the coast and one in the valley: their world is one mesh within the labs' vertices, flat
