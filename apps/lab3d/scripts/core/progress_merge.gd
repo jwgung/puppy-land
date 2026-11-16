@@ -1,6 +1,6 @@
 ## Merging two copies of the progress file (#103, ADR 0006: 기기 사이 기록 맞추기): this device's
 ## (ProgressStore's file text) and the one kept in the cloud (Play Games Saved Games). Pure: text in,
-## text out, nothing read or written here.
+## text out, nothing read or written here (only the clock, for the erase times).
 ##
 ## A child's progress only grows, so the copies are joined and no one is asked which to keep:
 ##   [progress]          stamps: the larger
@@ -15,6 +15,15 @@
 ##   [sync] reset        when 처음부터 다시 하기 was last done (unix seconds, 0: never): the copy reset
 ##                       later wins over the other's progress altogether (the reset reaches the
 ##                       other device instead of being undone by it)
+##   [reset]             when one spot or one island was erased (ProgressStore.reset_spot / reset_island,
+##                       "spot:<id>" / "island:<id>" = unix seconds): for that group's keys
+##                       (ProgressStore.group_keys) the copy that erased it later is taken whole, the
+##                       other copy's keys of the group dropped; the same time on both sides (the erase
+##                       already shared) joins as above. A time not after the latest 처음부터 다시 하기
+##                       is dropped (that reset erased everything before it). Limit: a copy that never
+##                       saw the erase cannot tell what it did after it, so its record of that group
+##                       is dropped too (the erase wins). A time more than a day ahead of this
+##                       device's clock is not taken (FUTURE_SLACK_S: it would win for good).
 ##   any other section   (a future one) this device's keys, then the other's keys it lacks
 class_name ProgressMerge
 extends RefCounted
@@ -26,6 +35,11 @@ const RESET := "reset"
 const MAX_SECTIONS := ["progress"]
 const MARK_SECTIONS := ["story", "clues", "guides"]
 const PENDING_SECTIONS := ["flags", "pieces"]
+## The partial erases' times (ProgressStore.RESET). An erase time more than FUTURE_SLACK_S seconds ahead
+## of this device's clock is not taken: a copy with a far future time would win over that group's record
+## for good.
+const TOMBSTONES := ProgressStore.RESET
+const FUTURE_SLACK_S := 86400
 
 
 ## The progress text to send: the file without its device-only sections.
@@ -61,9 +75,36 @@ static func merge(local: String, remote: String) -> String:
 			for key in a.get_section_keys(section):
 				out.set_value(section, key, a.get_value(section, key))
 	var reset := maxi(reset_a, reset_b)
+	_apply_erases(a, b, out, reset)
 	if reset > 0:
 		out.set_value(SYNC, RESET, reset)
 	return out.encode_to_text()
+
+
+## [reset]: per erased group, the copy with the later erase time gives the group's keys (its own record
+## since the erase, or none); the times later than the full reset `full` are kept, the later of the two.
+static func _apply_erases(a: ConfigFile, b: ConfigFile, out: ConfigFile, full: int) -> void:
+	if out.has_section(TOMBSTONES):
+		out.erase_section(TOMBSTONES)
+	var now := ProgressStore.now_time()
+	for key in _keys(a, b, TOMBSTONES):
+		var parts: PackedStringArray = str(key).split(":", true, 1)
+		if parts.size() != 2 or parts[0] not in [ProgressStore.KIND_SPOT, ProgressStore.KIND_ISLAND]:
+			continue
+		var ta := _erase_time(a, key, now)
+		var tb := _erase_time(b, key, now)
+		var later := maxi(ta, tb)
+		if later <= full:
+			continue   # (the full reset came after: it already erased that record)
+		out.set_value(TOMBSTONES, key, later)
+		if ta == tb:
+			continue   # (the erase is on both copies: their records since then joined)
+		var from := a if ta > tb else b
+		for pair in ProgressStore.group_keys(parts[0], parts[1]):
+			if out.has_section_key(pair[0], pair[1]):
+				out.erase_section_key(pair[0], pair[1])
+			if from.has_section_key(pair[0], pair[1]):
+				out.set_value(pair[0], pair[1], from.get_value(pair[0], pair[1]))
 
 
 static func _join(a: ConfigFile, b: ConfigFile, out: ConfigFile) -> void:
@@ -124,6 +165,12 @@ static func _copy_sections(from: ConfigFile, out: ConfigFile, skip: Array) -> vo
 			continue
 		for key in from.get_section_keys(section):
 			out.set_value(section, key, from.get_value(section, key))
+
+
+## A copy's erase time of `key` (0: none, or more than FUTURE_SLACK_S after `now`: not taken).
+static func _erase_time(config: ConfigFile, key: String, now: int) -> int:
+	var t := _int(config.get_value(TOMBSTONES, key, 0))
+	return 0 if t > now + FUTURE_SLACK_S else t
 
 
 static func _keys(a: ConfigFile, b: ConfigFile, section: String) -> Array:

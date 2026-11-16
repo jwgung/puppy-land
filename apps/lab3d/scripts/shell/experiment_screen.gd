@@ -9,6 +9,9 @@ class_name ExperimentScreen
 extends Control
 
 signal back_requested
+## This lab's record was erased (이 실험 처음부터 다시 하기, after the parental gate and the question): App opens
+## the lab again from its start.
+signal record_erased
 
 const UI_REFRESH_HZ := 10.0
 ## The note's width (2026-11-11 user: "자세히 화면이 좀 좁은거같기도해" → about half the screen; 470
@@ -95,6 +98,10 @@ var _graph: GraphView
 var _sections: Dictionary = {}          # section id -> card (for --scroll-to)
 var _more: VBoxContainer                # 더 보기's contents (collapsed when the screen opens)
 var _more_button: Button
+## 이 실험 처음부터 다시 하기 at the note's end, under its last card (none in a measurement).
+var reset_record_button: Button
+const RESET_RECORD_HEIGHT := 56.0
+const RESET_RECORD_FONT := 22
 ## "AI에게 더 물어보기" (ScienceNote, 2026-10-28; the system chooser with the AI apps only since
 ## 2026-10-29): a tap hands this run's question and the AI apps' packages (content/ai_apps.json) to
 ## this handler ((packages, text) -> "chooser" | "clipboard"); tests put a recorder here. The
@@ -2207,6 +2214,10 @@ func _build_sidebar() -> void:
 	_sidebar = Ui.panel("SideSheet")
 	_sidebar.visible = false
 	add_child(_sidebar)
+	# An old bug (found 2026-11-16): the header's question wraps after the sheet took its height, so the sheet stayed taller than the screen and its end (이 실험 처음부터 다시 하기) went under it; the screen's height again (tests/island_reset_checks.gd: the sheet inside the view).
+	_sidebar.minimum_size_changed.connect(func() -> void:
+		if _sidebar.size.y > size.y and size.y > 0.0:
+			_sidebar.size = Vector2(_sidebar.size.x, size.y))
 	var sheet := Ui.vbox(0)
 	_sidebar.add_child(sheet)
 
@@ -2237,8 +2248,10 @@ func _build_sidebar() -> void:
 	pad.add_theme_constant_override("margin_top", 8)
 	pad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_scroll.add_child(pad)
+	var page := Ui.vbox(24)   # the note's cards, then 이 실험 처음부터 다시 하기 at the page's end
+	pad.add_child(page)
 	var column := Ui.vbox(16)
-	pad.add_child(column)
+	page.add_child(column)
 
 	# The note for a guardian or teacher (2026-11-11 user, plan A: "애초에 그 목적이긴 했어"): first 조건
 	# 바꾸기 (to try the lab again another way after its missions; none when the lab has no conditions),
@@ -2301,6 +2314,16 @@ func _build_sidebar() -> void:
 		_sections["copy"] = _build_copy()
 		_sections.copy.name = "Note_copy"
 		column.add_child(_sections.copy)
+	# The page's very end (2026-11-16 user): 이 실험 처음부터 다시 하기, the red of the question's 다시 하기,
+	# as wide as the cards (2026-11-16 user: "너비 꽉채우자"); a guardian's (the parental gate first), none
+	# in a measurement.
+	if not measurement:
+		reset_record_button = Ui.button(Locale.t("screen.reset_record"), "TitleStartButton", RESET_RECORD_HEIGHT)
+		reset_record_button.name = "ResetRecord"
+		reset_record_button.size_flags_horizontal = Control.SIZE_FILL
+		reset_record_button.add_theme_font_size_override("font_size", RESET_RECORD_FONT)
+		reset_record_button.pressed.connect(open_reset)
+		page.add_child(reset_record_button)
 
 
 ## The note's last card: one button that opens the system chooser of the AI apps, and a line when
@@ -2368,6 +2391,21 @@ func ask_web() -> void:
 	web_handler.call(ScienceNote.question(definition, experiment, _hidden_answers(experiment.observations())))
 	_ask_status.text = Locale.t("note.copied_web")
 	_ask_status.visible = true
+
+
+## 이 실험 처음부터 다시 하기 (2026-11-16 user: one lab's record is erased in the lab itself): the parental
+## gate, then the question (ResetConfirm); 다시 하기 erases this spot's record, gives today's new spot of
+## an island not bought to it when it is the map's next spot now (the child is in it again; a spot
+## after it that was next waits again, its own stamps kept) and asks for the lab from its start
+## (record_erased).
+func open_reset() -> ParentalGate:
+	return ResetConfirm.open_for_guardian(self, ResetConfirm.SPOT, definition.id(), _on_record_erased)
+
+
+func _on_record_erased() -> void:
+	if Story.next_spot(ProgressStore.load()) == definition.id():   # (an earlier spot not found: it waits as before)
+		DailyLimit.use(Island.current_id(), definition.id())
+	record_erased.emit.call_deferred()   # (after the question's tap: the screen is replaced then)
 
 
 ## Opens or folds 더 보기 (closed when the screen opens).
