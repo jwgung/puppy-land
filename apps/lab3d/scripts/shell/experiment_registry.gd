@@ -493,7 +493,8 @@ static func _validate_key_observations(keys: Variant, observations: Array) -> Pa
 
 ## Optional `manipulation` (Task 2b): {"objects": [{"id", "surface", "snap" (m, optional),
 ## "height": false | {"max" (m, > 0, a multiple of step), "step" (m, optional)}} or a hold object
-## {"id", "hold": true} (2026-10-28: press and hold, no surface); optional "guide": "drag" | "tap" and
+## {"id", "hold": true} (2026-10-28: press and hold, no surface); optional "guide": "drag" | "tap" | "stir"
+## (#157: round the surface's middle) and
 ## "guide_to": "min" | "max" (the hand guide's gesture and drag end, Manipulator.guide); optional
 ## "marker": false (#74: no footprint marker while dragged: a knob that turns something, not a place)],
 ## "demo_action" (optional, an action id: what the --auto-drag demo does after putting an object down)}.
@@ -535,8 +536,8 @@ static func _validate_manipulation(manipulation: Variant, actions: Array = []) -
 			problems.append("manipulation %s.drag must be true or false" % object.id)
 		if not object.get("marker", true) is bool:
 			problems.append("manipulation %s.marker must be true or false" % object.id)
-		if not object.get("guide", "drag") in ["drag", "tap"]:
-			problems.append("manipulation %s.guide must be \"drag\" or \"tap\"" % object.id)
+		if not object.get("guide", "drag") in ["drag", "tap", "stir"]:
+			problems.append("manipulation %s.guide must be \"drag\", \"tap\" or \"stir\"" % object.id)
 		if not object.get("guide_to", "min") in ["min", "max"]:
 			problems.append("manipulation %s.guide_to must be \"min\" or \"max\"" % object.id)
 	var grab: Variant = manipulation.get("grab_radius", 1.0)   # (Manipulator.PICK_RADIUS when absent)

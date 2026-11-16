@@ -865,8 +865,8 @@ func _process(delta: float) -> void:
 const GUIDE_REACH := 0.6
 
 ## The gesture the hand guide (HandGuide) shows for this lab, read only (nothing is pressed or moved):
-## {"kind": "pull" | "hold" | "tap" | "drag", "id", "from": world point the finger presses now (guide_point),
-## "to": world point the drag or the pull ends at}, or {} when the lab has no object a finger takes now.
+## {"kind": "pull" | "hold" | "tap" | "drag" | "stir", "id", "from": world point the finger presses now (guide_point),
+## "to": world point the drag or the pull ends at, or a stir goes round}, or {} when the lab has no object a finger takes now.
 ## The object is the slingshot's, else the first one a finger may pick up now. A pull ends where the demo's
 ## pull (slingshot_demo) lands on the slingshot's surface, so it stays the throw's direction when the
 ## camera turns. The rule says what the lab really takes (2026-11-03 playtest: the hand showed a drag
@@ -895,6 +895,8 @@ func guide() -> Dictionary:
 	var surface := _surface_for(id)
 	if surface == null:
 		return {}
+	if rules[id].get("guide", "") == "stir":   # (#157: round and round the surface's middle, its frame origin)
+		return {"kind": "stir", "id": id, "from": from, "to": surface.pose(Vector2.ZERO, surface.height_of(from)).origin}
 	var at := surface.to_plane(from)
 	var ends := [surface.nearest_inside(surface.region_min), surface.nearest_inside(surface.region_max)]
 	var far: Vector2 = ends[0] if at.distance_to(ends[0]) > at.distance_to(ends[1]) else ends[1]

@@ -7,19 +7,24 @@
 ## - "drag": the finger presses on `from`, carries it to `to` and lifts (끌었다 놓기),
 ## - "pull": the same, then a short arrow from `from` away from the pull shows where it flies (the slingshot),
 ## - "hold": the finger presses on `from` and stays while a ring fills (꾹 누르기),
-## - "tap": the finger taps `from` (지도의 장소 누르기).
+## - "tap": the finger taps `from` (지도의 장소 누르기),
+## - "stir": the finger presses on `from` and goes round `to` (the circle's middle) twice, a dotted ring
+##   with an arrow showing the way round (#157: 숟가락으로 빙글빙글 젓기).
 ## `from` and `to` are callables returning view points (UI units), read every frame, so the hand stays
 ## on the object while the camera eases. One play shows the gesture `cycles` times, then the hand goes.
 class_name HandGuide
 extends Control
 
-const KINDS := ["drag", "pull", "hold", "tap"]
+const KINDS := ["drag", "pull", "hold", "tap", "stir"]
 const FADE_S := 0.25
 const PRESS_S := 0.2
 const MOVE_S := 1.0
 const HOLD_S := 1.4
 const LIFT_S := 0.25
 const REST_S := 0.35
+## A stir goes round this many times (in STIR_S) per cycle.
+const STIR_TURNS := 2.0
+const STIR_S := 2.0
 ## The picture: the bread cat's front paw (tools/render_guide_paw.gd makes it from the
 ## cat's model), one image so its see-through is even. PAW_TIP is the touch point in it: the middle of the
 ## paw's white tip.
@@ -54,9 +59,9 @@ func _init() -> void:
 	visible = false
 
 
-## Shows `gesture` (KINDS) `cycles` times. `to` is needed for "drag" and "pull".
+## Shows `gesture` (KINDS) `cycles` times. `to` is needed for "drag", "pull" and "stir".
 func play(gesture: String, from: Callable, to := Callable(), cycles := 2) -> void:
-	if gesture not in KINDS or not from.is_valid() or (gesture in ["drag", "pull"] and not to.is_valid()):
+	if gesture not in KINDS or not from.is_valid() or (gesture in ["drag", "pull", "stir"] and not to.is_valid()):
 		return
 	kind = gesture
 	_from = from
@@ -84,6 +89,8 @@ func cycle_s() -> float:
 	match kind:
 		"drag", "pull":
 			return FADE_S + PRESS_S + MOVE_S + LIFT_S + FADE_S + REST_S
+		"stir":
+			return FADE_S + PRESS_S + STIR_S + LIFT_S + FADE_S + REST_S
 		"hold":
 			return FADE_S + PRESS_S + HOLD_S + LIFT_S + FADE_S + REST_S
 	return FADE_S + PRESS_S + LIFT_S + FADE_S + REST_S
@@ -110,7 +117,7 @@ func _pose() -> Array:
 	var start: Vector2 = _from.call()
 	var goal: Vector2 = _to.call() if _to.is_valid() else start
 	var moves := kind in ["drag", "pull"]
-	var middle := MOVE_S if moves else (HOLD_S if kind == "hold" else 0.0)
+	var middle := MOVE_S if moves else (HOLD_S if kind == "hold" else (STIR_S if kind == "stir" else 0.0))
 	var marks: Array[float] = [FADE_S, FADE_S + PRESS_S, FADE_S + PRESS_S + middle, FADE_S + PRESS_S + middle + LIFT_S,
 		FADE_S + PRESS_S + middle + LIFT_S + FADE_S]
 	if c < marks[0]:
@@ -120,6 +127,8 @@ func _pose() -> Array:
 	if c < marks[2]:
 		var k: float = (c - marks[1]) / middle
 		var eased := k * k * (3.0 - 2.0 * k)
+		if kind == "stir":
+			return [stir_point(start, goal, k), 1.0, 1.0, k]
 		return [start.lerp(goal, eased) if moves else start, 1.0, 1.0, k]
 	var end := goal if moves else start
 	if c < marks[3]:
@@ -127,6 +136,13 @@ func _pose() -> Array:
 	if c < marks[4]:
 		return [end + Vector2(0.0, 10.0 * (c - marks[3]) / FADE_S), 1.0 - (c - marks[3]) / FADE_S, 0.0, 1.0]
 	return [end, 0.0, 0.0, 1.0]
+
+
+## Where a stir's finger is at `k` (0..1 of its move) going round `middle` from `start` (STIR_TURNS
+## times, the way a clock's hands go on the screen: down the front of the glass from its right side).
+static func stir_point(start: Vector2, middle: Vector2, k: float) -> Vector2:
+	var arm := start - middle
+	return middle + arm.rotated(TAU * STIR_TURNS * k)
 
 
 func _place() -> void:
@@ -150,6 +166,14 @@ func _draw() -> void:
 			# Where the throw goes: away from the pull.
 			var away := (start - goal).normalized() * ARROW_LENGTH
 			_arrow(start, start + away)
+	if kind == "stir" and _to.is_valid():
+		var middle: Vector2 = _to.call()
+		var radius := start.distance_to(middle)
+		var n := maxi(12, int(TAU * radius / 14.0))
+		for i in n:
+			draw_circle(middle + (start - middle).rotated(TAU * i / n), 3.0, TRAIL)
+		var ahead := stir_point(start, middle, 0.08)
+		_arrow(stir_point(start, middle, 0.02), ahead)
 	if kind == "hold" and pressed > 0.0:
 		draw_arc(start, RING_RADIUS, -PI / 2.0, -PI / 2.0 + TAU * progress, 32, RING, 6.0, true)
 	if pressed > 0.0 and kind != "hold":

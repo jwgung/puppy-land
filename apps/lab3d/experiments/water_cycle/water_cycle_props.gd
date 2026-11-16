@@ -104,7 +104,6 @@ const DAY_BAR := Vector2(1.6, 0.3)
 const DAY_TRACK := Color("23306e")
 const DAY_FILL := Color("ffc61a")
 const DAY_FILL_TOP := Color("ffe36a")
-const MOON := Color("f4f1d0")
 const CAT_AT := Vector3(5.5, LAND_TOP, 1.7)
 ## The lab's corner of the island (its trees stand clear of the table).
 const WORLD_CENTER := Vector3(0.0, 0.0, -6.5)
@@ -515,30 +514,16 @@ func _sign_posts_mesh() -> Mesh:
 	return b.commit()
 
 
-## The sign's wooden frame round the bar and its two ends (local to the sign, centred on the bar).
+## The sign's wooden frame round the bar and its two ends (local to the sign, centred on the bar): the
+## time sign's (TimeSign, shared with the kitchen labs' fast-forward sign).
 static func _sign_frame_mesh() -> Mesh:
-	var b := ArtKit.builder()
-	b.ao_min = 1.0
-	WindowArt.add_frame(b, Rect2(Vector2(-DAY_BAR.x * 0.5 - 0.5, -DAY_BAR.y * 0.5 - 0.14), Vector2(DAY_BAR.x + 1.0, DAY_BAR.y + 0.28)), 0.1, 0.1, 0.025, 0.2)
-	return b.commit()
+	return TimeSign.frame_mesh(DAY_BAR)
 
 
-## The bar's track, the sun at its left end and the moon at its right (local to the sign: bright,
-## facing the camera).
+## The bar's track (one colour), the sun at its left end and the moon at its right (local to the sign:
+## bright, facing the camera): TimeSign's face with one track colour.
 static func _sign_face_mesh() -> Mesh:
-	var b := ArtKit.builder()
-	b.ao_min = 1.0
-	b.add_rounded_box(Transform3D(Basis(), Vector3(0.0, 0.0, 0.02)), Vector3(DAY_BAR.x, DAY_BAR.y, 0.03), DAY_BAR.y * 0.49, 3, DAY_TRACK)
-	var left := Vector3(-DAY_BAR.x * 0.5 - 0.25, 0.0, 0.05)
-	ArtKit.disc(b, left, DAY_BAR.y * 0.42, DAY_FILL_TOP, 14)
-	for k in 8:
-		var a := TAU * k / 8.0
-		var d := Vector3(cos(a), sin(a), 0.0)
-		_strip(b, left + d * DAY_BAR.y * 0.5, left + d * DAY_BAR.y * 0.68, 0.045, DAY_FILL, 0.0)
-	var right := Vector3(DAY_BAR.x * 0.5 + 0.25, 0.0, 0.05)
-	ArtKit.disc(b, right, DAY_BAR.y * 0.48, MOON, 14)
-	ArtKit.disc(b, right + Vector3(DAY_BAR.y * 0.2, DAY_BAR.y * 0.1, 0.003), DAY_BAR.y * 0.4, WindowArt.FRAME_COLOR.darkened(0.15), 14)
-	return b.commit()
+	return TimeSign.face_mesh(DAY_BAR, DAY_TRACK, DAY_TRACK)
 
 
 ## The bar's fill (local to the sign): the day's sunshine left, from the sun's end.
