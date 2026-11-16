@@ -9,8 +9,8 @@ extends GuardianModal
 
 signal confirmed
 
-const ISLAND := "island"
-const SPOT := "spot"
+const ISLAND := ProgressStore.KIND_ISLAND
+const SPOT := ProgressStore.KIND_SPOT
 const WIDTH := 560.0
 const GAP := 12
 const NAME_SIZE := 30
@@ -31,7 +31,7 @@ var no_button: Button
 
 
 ## The parental gate over `host`, then (passed) the question for `kind` (ISLAND / SPOT) `id`; its
-## 지우기 erases and calls `on_erased`. Nothing is erased before both.
+## 다시 하기 erases and calls `on_erased`. Nothing is erased before both.
 static func open_for_guardian(host: Control, what: String, id: String, on_erased := Callable()) -> ParentalGate:
 	var gate := ParentalGate.new()
 	host.add_child(gate)

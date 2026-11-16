@@ -255,6 +255,9 @@ static func reset_all() -> void:
 ## devices (ProgressMerge) lets the later erase win over the other copy's older record of that group
 ## instead of bringing it back.
 const RESET := "reset"
+## The two kinds of erased group (group_keys, the [reset] keys "<kind>:<id>").
+const KIND_SPOT := "spot"
+const KIND_ISLAND := "island"
 ## The sections keyed by spot id (a spot's record).
 const SPOT_SECTIONS := ["progress", CLEARED, FLAGS, PIECES, CLUES, GUIDES]
 ## An island's own story marks (island_key).
@@ -263,15 +266,15 @@ const ISLAND_PARTS := ["prologue", "finale", "voyage", "unlock"]
 static var now_override := 0
 
 
-## The [section, key] pairs of a group: "spot" (`id` a spot: its key in every spot section) or
-## "island" (`id` an island: its story marks and its day limit; its spots are groups of their own).
+## The [section, key] pairs of a group: KIND_SPOT (`id` a spot: its key in every spot section) or
+## KIND_ISLAND (`id` an island: its story marks and its day limit; its spots are groups of their own).
 ## The map's last spot is device-only (not a synced group).
 static func group_keys(kind: String, id: String) -> Array:
 	var out := []
-	if kind == "spot":
+	if kind == KIND_SPOT:
 		for section in SPOT_SECTIONS:
 			out.append([section, id])
-	elif kind == "island":
+	elif kind == KIND_ISLAND:
 		for part in ISLAND_PARTS:
 			out.append([STORY, island_key(id, part)])
 		out.append([DAY, "%s.spot" % id])
@@ -289,34 +292,11 @@ static func erased_at(kind: String, id: String) -> int:
 	return _as_int(_read().get_value(RESET, reset_key(kind, id), 0))
 
 
-## The spot has something to erase (a stamp, a cleared run, a flag, a piece, a clue, a guide).
-static func spot_has_record(spot: String) -> bool:
-	return _has_group(_read(), "spot", spot)
-
-
-## The island has something to erase: any of its spots, its story marks, its day limit or its map spot.
-static func island_has_record(island_id: String) -> bool:
-	var config := _read()
-	if _has_group(config, "island", island_id) or config.has_section_key(MAP, island_key(island_id, "last_spot")):
-		return true
-	for spot in Island.by_id(island_id).spots():
-		if _has_group(config, "spot", spot):
-			return true
-	return false
-
-
-static func _has_group(config: ConfigFile, kind: String, id: String) -> bool:
-	for pair in group_keys(kind, id):
-		if config.has_section_key(pair[0], pair[1]):
-			return true
-	return false
-
-
 ## One spot's record is erased (its stamps, cleared run, flag, piece, clue and hand guide).
 static func reset_spot(spot: String) -> void:
 	var config := _read()
-	var now := _now()
-	_erase_group(config, "spot", spot, now)
+	var now := now_time()
+	_erase_group(config, KIND_SPOT, spot, now)
 	_write(config)
 	Island.forget_current()   # (an island after this spot's may be closed now)
 
@@ -326,10 +306,10 @@ static func reset_spot(spot: String) -> void:
 ## one; an island that opened after this one closes again by itself (Island.is_open reads the stamps).
 static func reset_island(island_id: String) -> void:
 	var config := _read()
-	var now := _now()
+	var now := now_time()
 	for spot in Island.by_id(island_id).spots():
-		_erase_group(config, "spot", spot, now)
-	_erase_group(config, "island", island_id, now)
+		_erase_group(config, KIND_SPOT, spot, now)
+	_erase_group(config, KIND_ISLAND, island_id, now)
 	var last := island_key(island_id, "last_spot")
 	if config.has_section_key(MAP, last):
 		config.erase_section_key(MAP, last)
@@ -346,5 +326,6 @@ static func _erase_group(config: ConfigFile, kind: String, id: String, now: int)
 	config.set_value(RESET, reset_key(kind, id), now)
 
 
-static func _now() -> int:
+## The erase time now (unix seconds; tests: now_override).
+static func now_time() -> int:
 	return now_override if now_override > 0 else int(Time.get_unix_time_from_system())

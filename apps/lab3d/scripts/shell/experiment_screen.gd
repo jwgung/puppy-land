@@ -2214,9 +2214,7 @@ func _build_sidebar() -> void:
 	_sidebar = Ui.panel("SideSheet")
 	_sidebar.visible = false
 	add_child(_sidebar)
-	# The header's wrapped question is tall until it has its width: the sheet set to the screen's height
-	# then stayed taller (its end, the last card and 이 실험 처음부터 다시 하기, below the screen). Its
-	# height again once the minimum settles.
+	# An old bug (found 2026-11-16): the header's question wraps after the sheet took its height, so the sheet stayed taller than the screen and its end (이 실험 처음부터 다시 하기) went under it; the screen's height again (tests/island_reset_checks.gd: the sheet inside the view).
 	_sidebar.minimum_size_changed.connect(func() -> void:
 		if _sidebar.size.y > size.y and size.y > 0.0:
 			_sidebar.size = Vector2(_sidebar.size.x, size.y))
@@ -2396,7 +2394,7 @@ func ask_web() -> void:
 
 
 ## 이 실험 처음부터 다시 하기 (2026-11-16 user: one lab's record is erased in the lab itself): the parental
-## gate, then the question (ResetConfirm); 지우기 erases this spot's record, gives today's new spot of
+## gate, then the question (ResetConfirm); 다시 하기 erases this spot's record, gives today's new spot of
 ## an island not bought to it when it is the map's next spot now (the child is in it again; a spot
 ## after it that was next waits again, its own stamps kept) and asks for the lab from its start
 ## (record_erased).

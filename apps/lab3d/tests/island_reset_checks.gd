@@ -8,9 +8,9 @@
 ## - the gear: on every open island's tag (right of 보호자 when not bought), none on a locked one, clear
 ##   of the tag's words; nothing is erased without the parental gate (closed, or three wrong answers);
 ##   the question names the island and, when the next island is open, says it closes; 아니 keeps
-##   everything; 지우기 erases and the tags redraw (출발!, the lock);
+##   everything; 다시 하기 erases and the tags redraw (출발!, the lock);
 ## - the lab: 이 실험 처음부터 다시 하기, red, at the note's very end under its last card (none in a
-##   measurement), narrower than the cards, inside the sheet and the view, clear of 다시; the gate, the question (아니: nothing), 지우기 erases that spot only and the app
+##   measurement), as wide as the cards, inside the sheet and the view, clear of 다시; the gate, the question (아니: nothing), 다시 하기 erases that spot only and the app
 ##   opens the lab again from its start (no stamps, the clue again);
 ## - phone, tablet and zoomed phone; the new words: 반말, no numbers.
 ## Only the test store (ProgressStore.TEST_PATH) and the test settings are written.
@@ -103,6 +103,24 @@ static func _snapshot() -> Dictionary:
 	return out
 
 
+## Any key of the group left in the store (ProgressStore.group_keys); an island's: its own keys, its
+## map spot and every spot of it.
+static func _has_record(kind: String, id: String) -> bool:
+	var config := ConfigFile.new()
+	config.load(ProgressStore.path)
+	var groups := [[kind, id]]
+	if kind == ProgressStore.KIND_ISLAND:
+		if config.has_section_key(ProgressStore.MAP, ProgressStore.island_key(id, "last_spot")):
+			return true
+		for spot in Island.by_id(id).spots():
+			groups.append([ProgressStore.KIND_SPOT, spot])
+	for group in groups:
+		for pair in ProgressStore.group_keys(group[0], group[1]):
+			if config.has_section_key(pair[0], pair[1]):
+				return true
+	return false
+
+
 ## The keys of `before` gone or changed in `after` (and the keys new in it), as "section/key".
 static func _changed(before: Dictionary, after: Dictionary) -> Array:
 	var out := []
@@ -132,8 +150,8 @@ func check_store() -> void:
 	var changed := _changed(before, _snapshot())
 	if changed != want:
 		problems.append("spot: changed %s, not %s" % [changed, want])
-	if ProgressStore.erased_at("spot", "spring") != NOW or ProgressStore.spot_has_record("spring") or not ProgressStore.spot_has_record("orbit"):
-		problems.append("spot: erase time %d / records" % ProgressStore.erased_at("spot", "spring"))
+	if ProgressStore.erased_at(ProgressStore.KIND_SPOT, "spring") != NOW or _has_record(ProgressStore.KIND_SPOT, "spring") or not _has_record(ProgressStore.KIND_SPOT, "orbit"):
+		problems.append("spot: erase time %d / records" % ProgressStore.erased_at(ProgressStore.KIND_SPOT, "spring"))
 	if Island.is_open("hutton", ProgressStore.load()) or Island.current_id() != "mechanics":
 		problems.append("spot: the hutton island still open (%s) or in use (%s)" % [Island.is_open("hutton", ProgressStore.load()), Island.current_id()])
 	# One island: every spot of it, its story, day limit and map spot; the first island's keys and the
@@ -154,17 +172,17 @@ func check_store() -> void:
 			bad.append(key)
 	if not bad.is_empty():
 		problems.append("island: other keys changed %s" % [bad])
-	if ProgressStore.island_has_record("hutton") or Story.voyage_seen("hutton") or ProgressStore.last_spot("hutton") != "" \
+	if _has_record(ProgressStore.KIND_ISLAND, "hutton") or Story.voyage_seen("hutton") or ProgressStore.last_spot("hutton") != "" \
 			or ProgressStore.text(ProgressStore.DAY, "hutton.spot") != "" or ProgressStore.current_island() != "" or Island.current_id() != "mechanics":
 		problems.append("island: the hutton record stays")
 	if not ProgressStore.mark(ProgressStore.GUIDES, "map") or not ProgressStore.mark(ProgressStore.STORY, "finale") or ProgressStore.last_spot("mechanics") == "" \
 			or not Island.by_id("mechanics").complete(ProgressStore.load()) or not Island.is_open("hutton", ProgressStore.load()):
 		problems.append("island: the first island's record changed")
-	if ProgressStore.erased_at("island", "hutton") != NOW or ProgressStore.erased_at("spot", str(Island.by_id("hutton").spots()[0])) != NOW:
+	if ProgressStore.erased_at(ProgressStore.KIND_ISLAND, "hutton") != NOW or ProgressStore.erased_at(ProgressStore.KIND_SPOT, str(Island.by_id("hutton").spots()[0])) != NOW:
 		problems.append("island: erase times")
 	# The first island erased: the hutton island closes again.
 	ProgressStore.reset_island("mechanics")
-	if Island.is_open("hutton", ProgressStore.load()) or ProgressStore.island_has_record("mechanics"):
+	if Island.is_open("hutton", ProgressStore.load()) or _has_record(ProgressStore.KIND_ISLAND, "mechanics"):
 		problems.append("the first island erased: the hutton island open")
 	if FileAccess.get_file_as_string(SoundBoard.path) != settings:
 		problems.append("the settings changed")
@@ -256,22 +274,22 @@ func check_cards(size: Vector2, size_name: String) -> void:
 	elif question != null:
 		question.close()
 	await _frames(1)
-	# 지우기: the first island's record goes; its tag says 출발!, the hutton island is locked again.
+	# 다시 하기: the first island's record goes; its tag says 출발!, the hutton island is locked again.
 	question = await _passed(cards, cards.open_reset("mechanics"))
 	if question != null:
 		question.yes_button.pressed.emit()
 	await _frames(4)
 	var go: Button = cards.buttons.get("mechanics")
-	if ProgressStore.island_has_record("mechanics") or go == null or go.text != Locale.t("islands.go") \
-			or cards.buttons.get("hutton") != null or cards.gears.has("hutton") or ProgressStore.erased_at("island", "mechanics") != NOW:
-		problems.append("지우기: record %s, go %s, hutton %s" % [ProgressStore.island_has_record("mechanics"), go.text if go != null else "none", cards.buttons.get("hutton")])
+	if _has_record(ProgressStore.KIND_ISLAND, "mechanics") or go == null or go.text != Locale.t("islands.go") \
+			or cards.buttons.get("hutton") != null or cards.gears.has("hutton") or ProgressStore.erased_at(ProgressStore.KIND_ISLAND, "mechanics") != NOW:
+		problems.append("다시 하기: record %s, go %s, hutton %s" % [_has_record(ProgressStore.KIND_ISLAND, "mechanics"), go.text if go != null else "none", cards.buttons.get("hutton")])
 	await _focus(cards, "mechanics")
 	var tag := (cards.cards["mechanics"] as Control).get_global_rect()
 	if not cards.cards["mechanics"].visible or not view.encloses(tag):
 		problems.append("the redrawn tag %s off the view" % tag)
 	host.queue_free()
 	await _frames(1)
-	expect.call(problems.is_empty(), "island reset (%s): the gear on open islands' tags (top right, right of 보호자, clear of the words); no gate, no erase; the question names the island and warns when the next one closes; 아니 keeps all; 지우기 erases and the tags redraw" % size_name,
+	expect.call(problems.is_empty(), "island reset (%s): the gear on open islands' tags (top right, right of 보호자, clear of the words); no gate, no erase; the question names the island and warns when the next one closes; 아니 keeps all; 다시 하기 erases and the tags redraw" % size_name,
 		"; ".join(problems))
 
 
@@ -303,11 +321,11 @@ func _passed(host: Node, gate: ParentalGate) -> ResetConfirm:
 static func _check_question(problems: Array, question: ResetConfirm, view: Rect2) -> void:
 	var r := question.card.get_global_rect()
 	_inside(problems, "the question", r, view)
-	_inside(problems, "지우기", question.yes_button.get_global_rect(), r)
+	_inside(problems, "다시 하기", question.yes_button.get_global_rect(), r)
 	_inside(problems, "아니", question.no_button.get_global_rect(), r)
 	_inside(problems, "×", question.close_button.get_global_rect(), r)
 	if question.yes_button.get_global_rect().intersects(question.no_button.get_global_rect()):
-		problems.append("아니 and 지우기 overlap")
+		problems.append("아니 and 다시 하기 overlap")
 
 
 ## `inner` inside `outer`, or the problem.
@@ -328,7 +346,7 @@ func _lab(host: Control, id: String) -> ExperimentScreen:
 
 
 ## The lab's button: red at the note's end, inside the sheet and the view, clear of 다시; the gate, the
-## question, 아니, then 지우기: this spot only, and record_erased.
+## question, 아니, then 다시 하기: this spot only, and record_erased.
 func check_lab(size: Vector2, size_name: String) -> void:
 	var problems := []
 	_store()
@@ -392,7 +410,7 @@ func check_lab(size: Vector2, size_name: String) -> void:
 		want.sort()
 		var changed := _changed(full, _snapshot())
 		if changed != want or erased[0] != 1:
-			problems.append("지우기: changed %s, erased %d" % [changed, erased[0]])
+			problems.append("다시 하기: changed %s, erased %d" % [changed, erased[0]])
 	host.queue_free()
 	await _frames(1)
 	# A measurement has no button.
@@ -406,11 +424,11 @@ func check_lab(size: Vector2, size_name: String) -> void:
 		problems.append("a measurement has the button")
 	host.queue_free()
 	await _frames(1)
-	expect.call(problems.is_empty(), "lab reset (%s): 이 실험 처음부터 다시 하기, red at the note's end under its last card (narrower, in the middle, inside the sheet, clear of 다시, none in a measurement); the gate, the question (아니: nothing), 지우기 erases this spot only" % size_name,
+	expect.call(problems.is_empty(), "lab reset (%s): 이 실험 처음부터 다시 하기, red at the note's end under its last card (as wide as the cards, inside the sheet, clear of 다시, none in a measurement); the gate, the question (아니: nothing), 다시 하기 erases this spot only" % size_name,
 		"; ".join(problems))
 
 
-## In the app: 지우기 opens the lab again from its start (a new screen, no stamps, the clue again).
+## In the app: 다시 하기 opens the lab again from its start (a new screen, no stamps, the clue again).
 func check_lab_in_app() -> void:
 	var quality_script: GDScript = load("res://scripts/core/quality.gd")
 	var saved_args = quality_script.get("_args_cache")
@@ -445,7 +463,7 @@ func check_lab_in_app() -> void:
 	Locale.set_language("ko")
 	TitleScreen.app_may_show = false
 	Story.enabled = false
-	expect.call(problems.is_empty(), "lab reset in the app: 지우기 opens the lab again from its start (no stamps, its clue again); the other spots and the island's marks stay",
+	expect.call(problems.is_empty(), "lab reset in the app: 다시 하기 opens the lab again from its start (no stamps, its clue again); the other spots and the island's marks stay",
 		"; ".join(problems))
 
 

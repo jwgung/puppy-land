@@ -114,7 +114,7 @@ func mark_reset() -> void:
 	_send_now()
 
 
-## A spot or an island was erased (`kind` "spot" / "island", `id`; the erase time is already in the
+## A spot or an island was erased (`kind` ProgressStore.KIND_SPOT / KIND_ISLAND, `id`; the erase time is already in the
 ## device's file, ProgressStore): with the sync on the copy goes now, not SAVE_DELAY_S later.
 func mark_partial_reset(kind: String, id: String) -> void:
 	if not is_on() or ProgressStore.path != ProgressStore.sync_path:

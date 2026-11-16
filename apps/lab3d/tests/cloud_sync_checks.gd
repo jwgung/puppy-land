@@ -192,7 +192,17 @@ func check_partial_merge() -> void:
 	if m7.has_section_key("story", "hutton.prologue") or m7.has_section_key("story", "hutton.voyage") or m7.has_section_key("day", "hutton.spot") \
 			or not m7.get_value("story", "prologue", false) or m7.get_value("progress", "strata", 0) != 2:
 		problems.append("an island's erase: %s" % m7.encode_to_text().replace("\n", " "))
-	expect.call(problems.is_empty(), "cloud sync: a spot's or island's erase is not undone by the other copy's older record, reaches the other device, joins when shared, loses to a later full reset and holds after an earlier one",
+	# A time far in the future (more than a day ahead of this clock) is not taken: the record stays as
+	# the join gives it and the time is dropped; one inside the day still counts.
+	var now := int(Time.get_unix_time_from_system())
+	var future := now + ProgressMerge.FUTURE_SLACK_S + 3600
+	var m8 := _config(ProgressMerge.merge(_text({"progress": {"spring": 2}}), _text({"reset": {"spot:spring": future}})))
+	if m8.get_value("progress", "spring", 0) != 2 or m8.has_section("reset"):
+		problems.append("a far future erase: %s" % m8.encode_to_text().replace("\n", " "))
+	var m9 := _config(ProgressMerge.merge(_text({"progress": {"spring": 2}}), _text({"reset": {"spot:spring": now + 600}})))
+	if m9.has_section_key("progress", "spring") or m9.get_value("reset", "spot:spring", 0) != now + 600:
+		problems.append("an erase a little ahead not taken")
+	expect.call(problems.is_empty(), "cloud sync: a spot's or island's erase is not undone by the other copy's older record, reaches the other device, joins when shared, a time over a day ahead is ignored, loses to a later full reset and holds after an earlier one",
 		"; ".join(problems))
 
 
@@ -211,7 +221,7 @@ func check_partial_flow() -> void:
 	var old_device := ProgressMerge.for_cloud(ProgressStore.file_text())   # another device, synced before the erase
 	var saves := cloud.saves
 	ProgressStore.reset_spot("spring")
-	sync.mark_partial_reset("spot", "spring")
+	sync.mark_partial_reset(ProgressStore.KIND_SPOT, "spring")
 	var sent := _config(cloud.copy)
 	if cloud.saves != saves + 1 or sent.has_section_key("progress", "spring") or int(sent.get_value("reset", "spot:spring", 0)) <= 0 \
 			or sent.get_value("progress", "free-fall", 0) != 2:

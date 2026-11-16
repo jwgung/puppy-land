@@ -1,6 +1,6 @@
 ## Merging two copies of the progress file (#103, ADR 0006: 기기 사이 기록 맞추기): this device's
 ## (ProgressStore's file text) and the one kept in the cloud (Play Games Saved Games). Pure: text in,
-## text out, nothing read or written here.
+## text out, nothing read or written here (only the clock, for the erase times).
 ##
 ## A child's progress only grows, so the copies are joined and no one is asked which to keep:
 ##   [progress]          stamps: the larger
@@ -22,7 +22,8 @@
 ##                       already shared) joins as above. A time not after the latest 처음부터 다시 하기
 ##                       is dropped (that reset erased everything before it). Limit: a copy that never
 ##                       saw the erase cannot tell what it did after it, so its record of that group
-##                       is dropped too (the erase wins).
+##                       is dropped too (the erase wins). A time more than a day ahead of this
+##                       device's clock is not taken (FUTURE_SLACK_S: it would win for good).
 ##   any other section   (a future one) this device's keys, then the other's keys it lacks
 class_name ProgressMerge
 extends RefCounted
@@ -34,8 +35,10 @@ const RESET := "reset"
 const MAX_SECTIONS := ["progress"]
 const MARK_SECTIONS := ["story", "clues", "guides"]
 const PENDING_SECTIONS := ["flags", "pieces"]
-## The partial erases' times (ProgressStore.RESET).
-const TOMBSTONES := "reset"
+## The partial erases' times (ProgressStore.RESET); one more than this much in the future (s) is not
+## taken: a copy with a far future time would win over that group's record for good.
+const TOMBSTONES := ProgressStore.RESET
+const FUTURE_SLACK_S := 86400
 
 
 ## The progress text to send: the file without its device-only sections.
@@ -82,12 +85,13 @@ static func merge(local: String, remote: String) -> String:
 static func _apply_erases(a: ConfigFile, b: ConfigFile, out: ConfigFile, full: int) -> void:
 	if out.has_section(TOMBSTONES):
 		out.erase_section(TOMBSTONES)
+	var now := ProgressStore.now_time()
 	for key in _keys(a, b, TOMBSTONES):
 		var parts: PackedStringArray = str(key).split(":", true, 1)
-		if parts.size() != 2 or parts[0] not in ["spot", "island"]:
+		if parts.size() != 2 or parts[0] not in [ProgressStore.KIND_SPOT, ProgressStore.KIND_ISLAND]:
 			continue
-		var ta := _int(a.get_value(TOMBSTONES, key, 0))
-		var tb := _int(b.get_value(TOMBSTONES, key, 0))
+		var ta := _erase_time(a, key, now)
+		var tb := _erase_time(b, key, now)
 		var later := maxi(ta, tb)
 		if later <= full:
 			continue   # (the full reset came after: it already erased that record)
@@ -160,6 +164,12 @@ static func _copy_sections(from: ConfigFile, out: ConfigFile, skip: Array) -> vo
 			continue
 		for key in from.get_section_keys(section):
 			out.set_value(section, key, from.get_value(section, key))
+
+
+## A copy's erase time of `key` (0: none, or more than FUTURE_SLACK_S after `now`: not taken).
+static func _erase_time(config: ConfigFile, key: String, now: int) -> int:
+	var t := _int(config.get_value(TOMBSTONES, key, 0))
+	return 0 if t > now + FUTURE_SLACK_S else t
 
 
 static func _keys(a: ConfigFile, b: ConfigFile, section: String) -> Array:
