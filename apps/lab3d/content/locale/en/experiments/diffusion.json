@@ -1,0 +1,90 @@
+{
+  "title": "Where does ink spread first?",
+  "category": "Matter and change",
+  "question": "Does ink spread first in cold water or in hot water?",
+  "steps": [
+    "Tap the dropper's red bulb to put a drop of ink in the water.",
+    "Don't stir: watch the ink's particles spread through the glass.",
+    "Use the button at the bottom left to switch between cold and hot water."
+  ],
+  "observe": "Everything is made of particles too small to see, and they never stop moving. So a drop of ink spreads through the water by itself without stirring (diffusion). The warmer the water, the harder the particles move and the faster it spreads, and in air, where the particles are far apart, a smell spreads much faster than ink in water.",
+  "terms": [
+    { "name": "Particles", "description": "The tiny bits everything is made of, too small to see. They wiggle all the time." },
+    { "name": "Diffusion", "description": "Things spreading out evenly by themselves because their particles move." },
+    { "name": "Gases and liquids", "description": "In a gas like air the particles are far apart; in a liquid like water they are packed close together." }
+  ],
+  "law": {
+    "equation": "warmer, or in air = spreads faster",
+    "title": "Diffusion",
+    "description": "Particles keep moving every which way, so a substance spreads by itself from where there is a lot of it to where there is little. When it is warmer the particles move faster and it spreads faster, and in a gas, where the particles are far apart, it spreads much faster than in a liquid."
+  },
+  "tip": "Tap the dropper's red bulb and a drop of ink falls into the water. Each tap starts again with a new drop. Pick hot water and the glass steams.",
+  "tip_short": "Tap the dropper to drop some ink",
+  "controls": [{ "label": "Water", "options": [{ "label": "Cold water" }, { "label": "Hot water" }] }],
+  "actions": [{ "label": "Start over" }],
+  "predict": {
+    "question": "Does ink spread first in cold water or in hot water?",
+    "choices": [{ "label": "Cold water", "guess": "I think it spreads first in cold water!" }, { "label": "Hot water", "guess": "I think it spreads first in hot water!" }],
+    "reason": "When it's warm, the particles move harder. So it spreads faster.",
+    "bridge": "Let's drop some and see!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Turn the whole glass blue with one drop of ink!",
+        "say": "Without stirring, the ink's particles slowly spread out between the water's particles.",
+        "win": "The whole glass is blue!",
+        "miss": "Wait a little longer!",
+        "miss_conditions": "Pick the cold water!"
+      },
+      {
+        "text": "Switch to hot water and spread it faster!",
+        "say": "In hot water the particles move harder. So the ink spreads faster.",
+        "win": "Wow, it spread in no time!",
+        "miss": "Watch until the glass is all blue!",
+        "miss_conditions": "Pick the hot water!"
+      },
+      {
+        "text": "Ink or the bread's smell: which spreads first?",
+        "say": "Particles in air are much farther apart than in water. So the smell spreads faster than the ink.",
+        "win": "Sniff sniff! The kitchen! And a piece!",
+        "miss": "Wait till the smell gets here!",
+        "miss_conditions": "Pick the hot water!"
+      }
+    ]
+  },
+  "story": {
+    "keeper": "With the lighthouse out, the path is so dark at night. My kitchen is around here somewhere, but where was it…",
+    "before": [
+      {
+        "text": "Don't worry. A kitchen smells of bread. Let's follow the smell!"
+      }
+    ],
+    "clue": "They saw a piece fall in the kitchen! Let's hurry there.",
+    "map_clue": "The kitchen village, where it smells of fresh bread!"
+  },
+  "kid": {
+    "intro": "This is the spreading lab. Everything is made of **particles** too small to see. Particles never sit still: they wiggle all the time.",
+    "intro_more": [{ "text": "So a drop of ink, or the smell of bread, spreads all by itself without stirring." }],
+    "title": "Tap the dropper and spread the ink!",
+    "place": "Spreading ink",
+    "say": "Particles always move, so things spread by themselves. Faster when warm, and much faster in air.",
+    "tip": "Tap the dropper.",
+    "cards": { "cup": "Glass", "smell": "Smell", "water": "Water" },
+    "picks": { "water": [{ "label": "Cold" }, { "label": "Hot" }] }
+  },
+  "note": {
+    "law": "Particles always move, so things spread by themselves. The warmer, and in air, the faster.",
+    "learn": "A drop of ink spreads without stirring. It spreads faster in hot water, and the smell of bread spreads much faster than ink in water.",
+    "talk": ["If you put sugar in water and don't stir, does the water get sweet?", "When bread bakes in the kitchen, why can you smell it at the other end of the room?"],
+    "formula": "distance² ≈ 4 × diffusion coefficient × time",
+    "numbers": [{ "label": "Glass" }, { "label": "Smell" }, { "label": "Water" }]
+  },
+  "observations": [{ "label": "Glass" }, { "label": "Smell" }, { "label": "Water" }],
+  "graph": {
+    "title": "Time and how far it spread",
+    "x": { "label": "Time (sped up)" },
+    "y": { "label": "How far it spread" },
+    "series": [{ "label": "Ink in cold water" }, { "label": "Ink in hot water" }, { "label": "Bread smell" }, { "label": "Now" }]
+  }
+}

@@ -63,11 +63,11 @@ func check_field() -> void:
 	var found := Array(ExperimentRegistry.validate(bad))
 	var named := ["kid.intro_picture", "kid.say_picture", "missions.stages[0].say_picture", "predict.bridge_picture", "predict.reason_picture"]
 	var missed := named.filter(func(key: String) -> bool: return not found.any(func(p: String) -> bool: return p.begins_with(key)))
-	var known: bool = ExplainPictures.KINDS == ["axis", "morning_evening", "sea_breeze", "river"] \
+	var known: bool = ExplainPictures.KINDS == ["axis", "morning_evening", "sea_breeze", "river", "particles"] \
 		and ExplainPictures.picture_or_none("axis") == "axis" and ExplainPictures.picture_or_none("bogus") == "" \
 		and ExplainPictures.picture_or_none(null) == ""
 	expect.call(valid.is_empty() and missed.is_empty() and known,
-		"explain pictures: a lab line's picture (kid.say / intro, a stage's say, the reason, the bridge) must be one of the 4 kinds; the registry rejects an unknown one",
+		"explain pictures: a lab line's picture (kid.say / intro, a stage's say, the reason, the bridge) must be one of the 5 kinds; the registry rejects an unknown one",
 		"valid %s; not rejected %s" % [str(valid), str(missed)])
 	# Story pages: the island's own content is valid; an unknown picture or one on Puppy's page is not.
 	var story := {"prologue": [{"who": "dugi", "face": "explain", "picture": "axis"}, {"who": "puppy", "picture": "river"},

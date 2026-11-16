@@ -2,8 +2,8 @@
 ## (three zones: the kitchen village on a meadow, the spring village round its pond, the lighthouse
 ## hill; 12 spots in the story's order; the lighthouse), its map is laid out on land (every stage on
 ## the grass and out of the pond, 2.5 m apart, the paths on the grass, the trees and rocks clear),
-## and while its spots are not labs yet it is an island in the making: never open, even after the
-## hutton island, and its card says 곧 만나요 (docs/islands/curie.md). The island is a flask lying on its
+## and while its spots are not all labs yet (LABS: #156 the first) it is an island in the making: never
+## open, even after the hutton island, and its card says 곧 만나요 (docs/islands/curie.md). The island is a flask lying on its
 ## side (2026-11-13 user "섬 모양 자체를 플라스크로"): its neck reaches out to the mouth where the rainbow
 ## lighthouse stands on the rock lip, not on the sand; broken neck or village data says what is wrong.
 extends RefCounted
@@ -13,6 +13,8 @@ const PHONE := Vector2(1560, 720)
 const ORDER := ["diffusion", "dissolving", "melt-cook", "dough", "clean-water", "soap", "cabbage", "tooth",
 	"fizz", "candle", "rust", "flame-color"]
 const ZONES := {"kitchen": "meadow", "spring": "pond", "lighthouse": "hill"}
+## The spots that are labs already (#156 on): the others are places in the making.
+const LABS := ["diffusion"]
 
 var tree: SceneTree
 var expect: Callable
@@ -137,8 +139,8 @@ func check_map() -> void:
 		for other in screen._spots:
 			if other.id != spot.id and at.distance_to(Vector2(other.at.x, other.at.z)) < 2.5:
 				problems.append("%s and %s closer than 2.5 m" % [spot.id, other.id])
-		if not screen.in_making(spot):
-			problems.append("%s is a lab already" % spot.id)
+		if screen.in_making(spot) == (spot.id in LABS):
+			problems.append("%s is %s" % [spot.id, "not a lab yet" if spot.id in LABS else "a lab already"])
 	for q in map.path_points:
 		if not on_grass.call(q, MapIsland.PATH_WIDTH * 0.5) or map.water_at(q.x, q.y):
 			problems.append("path point %s off the grass or in the pond" % str(q))
@@ -153,7 +155,7 @@ func check_map() -> void:
 	if Vector2(float(light[0]), float(light[1])).distance_to(Vector2(screen._spots[11].at.x, screen._spots[11].at.z)) > 4.0:
 		problems.append("the lighthouse is not by the flame spot")
 	await _free(screen)
-	expect.call(problems.is_empty(), "curie map: 12 stages on the grass, out of the pond, 2.5 m apart and not labs yet; the paths on the grass; trees and rocks clear; the lighthouse on the shore by the flame spot",
+	expect.call(problems.is_empty(), "curie map: 12 stages on the grass, out of the pond, 2.5 m apart, the labs so far (%s) labs and the others not yet; the paths on the grass; trees and rocks clear; the lighthouse on the shore by the flame spot" % ", ".join(LABS),
 		"; ".join(problems.slice(0, 8)))
 
 

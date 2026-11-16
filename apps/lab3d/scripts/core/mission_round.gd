@@ -131,7 +131,7 @@ var _asking := false
 ## (kid.intro and kid.intro_more, 2026-10-31 user: "처음에 이 실험이 무슨 실험인지, 어떤 힘을 보고 싶은
 ## 건지": every visit while stages are left, with the story). The first is in the box while _clue_open.
 var _opening: Array = []
-## How many of them are the first visit's (keeper, clue, story.more and keeper_reply): told once (store.mark_clue).
+## How many of them are the first visit's (keeper, story.before, clue, story.more and keeper_reply): told once (store.mark_clue).
 var _first_visit := 0
 var _clue_open := false
 var _question := ""
@@ -738,13 +738,17 @@ func clue_read() -> void:
 
 
 ## The lines of a spot's first visit (dialogue_line() each): the island keeper's (story.keeper, #74:
-## the fox tells what is wrong there), Puppy's clue (story.clue), more lines after it (story.more, #98)
-## and the keeper's answer to it (story.keeper_reply, #86); [] without them.
+## the fox tells what is wrong there; spoken by the spot's island keeper, Story.keeper_of: the curie
+## island's 야옹이), the lines before the clue (story.before, #156), Puppy's clue (story.clue), more lines
+## after it (story.more, #98) and the keeper's answer to it (story.keeper_reply, #86); [] without them.
 static func first_visit_lines(definition: Dictionary) -> Array:
 	var out := []
+	var who := Story.keeper_of(definition)
 	var keeper := Story.keeper(definition)
 	if keeper != "":
-		out.append(dialogue_line(keeper, Story.keeper_face(definition), "", Story.KEEPER))
+		out.append(dialogue_line(keeper, Story.keeper_face(definition), "", who))
+	for line: Dictionary in Story.before(definition):
+		out.append(dialogue_line(line.text, line.face, "", line.speaker))
 	var clue := Story.clue(definition)
 	if clue != "":
 		out.append(dialogue_line(clue, Story.clue_face(definition), "", "puppy"))
@@ -752,7 +756,7 @@ static func first_visit_lines(definition: Dictionary) -> Array:
 		out.append(dialogue_line(line.text, line.face, "", line.speaker))
 	var reply := Story.keeper_reply(definition)
 	if reply != "":
-		out.append(dialogue_line(reply, Story.keeper_reply_face(definition), "", Story.KEEPER))
+		out.append(dialogue_line(reply, Story.keeper_reply_face(definition), "", who))
 	return out
 
 

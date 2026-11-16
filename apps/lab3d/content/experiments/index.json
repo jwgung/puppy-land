@@ -29,6 +29,9 @@
       "strata.json",
       "earthquake.json",
       "volcano.json"
+    ],
+    "curie": [
+      "diffusion.json"
     ]
   }
 }

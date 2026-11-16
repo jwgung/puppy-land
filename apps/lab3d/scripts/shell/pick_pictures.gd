@@ -6,7 +6,8 @@
 ## a small or a big ball (blue, orange, the free fall's red), a big or a small drum, a weight, a short
 ## or a long string, a short or a long stick (#86), the Earth with its axis tilted or upright (#87), a weak
 ## or a strong sun (#91), a humid or a dry day's air (#92), a cold, warm or very warm sea (#94), rock or
-## sand ground and the block house without or with its brace (#97), runny, normal or sticky magma (#98).
+## sand ground and the block house without or with its brace (#97), runny, normal or sticky magma (#98),
+## a glass of cold or hot water (#156).
 ## `size` (0..1) and `count` say how much the drawing shows (kid.picks entries). The words under the
 ## picture say the same thing.
 ## A mass's picture (a ball, a box, a weight) is drawn like the lab draws the body (2026-10-28,
@@ -21,9 +22,12 @@ const KINDS := ["earth", "moon", "jupiter", "box", "slide_steel", "slide_wood", 
 	"stick", "earth_tilted", "earth_upright", "sun_weak", "sun_strong", "air_humid", "air_dry",
 	"coast_day", "coast_night", "sea_cold", "sea_warm", "sea_hot",
 	"ground_rock", "ground_sand", "house_plain", "house_brace",
-	"magma_runny", "magma_normal", "magma_sticky"]
+	"magma_runny", "magma_normal", "magma_sticky",
+	"water_cold", "water_hot"]
 const OUTLINE := Color("8a6a46")   # PredictPictures.GROUND: the brown of the storybook lines
 const STEEL := ArtPalette.STEEL
+const COLD_WATER := Color("6fb7ea")   # the glasses of #156's water buttons (the mockup's)
+const HOT_WATER := Color("f08a5a")
 
 
 ## Draws `kind` filling `canvas` (an unknown kind draws nothing).
@@ -140,6 +144,8 @@ static func draw(canvas: Control, kind: String, size := 0.5, count := 1) -> void
 			_sun(canvas, c, r.size.y, kind == "sun_strong")
 		"coast_day", "coast_night":   # #93 (바닷바람): the coast under the sun, or under the moon and stars
 			_coast(canvas, r, kind == "coast_night")
+		"water_cold", "water_hot":   # #156 (퍼지는 냄새와 잉크): a glass of cold or of hot water
+			water_glass(canvas, r, kind == "water_hot")
 		"magma_runny", "magma_normal", "magma_sticky":   # #98 (화산): how the magma pours and piles
 			_magma(canvas, r, ["magma_runny", "magma_normal", "magma_sticky"].find(kind))
 		"stick":   # #86 (그림자 시계): the yard's stick, `size` of the picture's height (short / long)
@@ -260,6 +266,40 @@ static func _sea(canvas: Control, r: Rect2, heat: int) -> void:
 			var k := i / 8.0
 			wisp.append(foot + Vector2(4.0 * sin(k * TAU), -k * r.size.y * 0.42))
 		canvas.draw_polyline(wisp, Color("9fb3c8"), 3.0, true)
+
+
+## A glass of water (Curie Island's kitchen labs, #156; the approved mockup's colours): cold, blue water
+## with an ice cube and a snowflake beside it; hot, orange-red water with three wisps of steam over it.
+static func water_glass(canvas: Control, r: Rect2, hot: bool) -> void:
+	var c := r.get_center()
+	var h := r.size.y * 0.78
+	var w := minf(r.size.x * 0.5, h * 0.8)
+	var foot := c.y + h * 0.5
+	var lip := foot - h
+	var glass := PackedVector2Array([Vector2(c.x - w * 0.5, lip), Vector2(c.x + w * 0.5, lip), Vector2(c.x + w * 0.4, foot), Vector2(c.x - w * 0.4, foot)])
+	var level := lip + h * 0.28
+	var k := (level - lip) / h
+	var water := PackedVector2Array([Vector2(c.x - w * (0.5 - 0.1 * k), level), Vector2(c.x + w * (0.5 - 0.1 * k), level), glass[2], glass[3]])
+	canvas.draw_colored_polygon(glass, Color("eaf6ff"))
+	canvas.draw_colored_polygon(water, HOT_WATER if hot else COLD_WATER)
+	canvas.draw_line(water[0], water[1], (HOT_WATER if hot else COLD_WATER).lightened(0.4), 2.0, true)
+	var outline := glass.duplicate()
+	outline.append(glass[0])
+	canvas.draw_polyline(outline, OUTLINE, 2.0, true)
+	if hot:
+		for i in 3:
+			var at := Vector2(c.x + (i - 1) * w * 0.3, lip - 3.0)
+			var wisp := PackedVector2Array()
+			for j in 9:
+				var u := j / 8.0
+				wisp.append(at + Vector2(3.5 * sin(u * TAU), -u * r.size.y * 0.2))
+			canvas.draw_polyline(wisp, Color("c4402a"), 2.5, true)
+	else:
+		var cube := Rect2(c.x - w * 0.14, level - 2.0, w * 0.26, w * 0.26)
+		canvas.draw_rect(cube, Color("e3f4ff"))
+		canvas.draw_rect(cube, Color("7fb0e0"), false, 1.5)
+		PredictPictures._snowflake(canvas, Vector2(c.x + w * 0.62, lip + h * 0.1), Color("7fb0e0"), 1.0)
+
 
 ## A slab of ground (the 지진 lab's): grey rock with lighter stones on it, or a soft yellow sand heap
 ## with ripple lines.

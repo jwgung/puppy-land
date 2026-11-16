@@ -2,10 +2,10 @@
 ## (DugiActor) who explains and Puppy (PuppyActor) with the flag, placed per experiment by its
 ## definition's `cast` (content/experiments/<id>.json):
 ##   "cast": {"dugi": {"at": [x, z], "explain_on": [status, ...], "delay_s": s},
-##            "puppy": {"at": [x, z]}, "fox": {"at": [x, z]}}
+##            "puppy": {"at": [x, z]}, "fox": {"at": [x, z]}, "yaongi": {"at": [x, z]}}
 ## The island's keeper, the fox, stands with them in the hutton island's labs (`fox`, 2026-11-11 user:
 ## "여우친구가 실험내내 안따라다니네? 따라다니게 해줘"; the same model as at the voyage's landing,
-## fox_model). All face the experiment's front camera. The shell (ExperimentScreen) adds the cast next to the
+## fox_model), and the curie island's keeper, the lighthouse keeper 야옹이, in its labs (`yaongi`, #156). All face the experiment's front camera. The shell (ExperimentScreen) adds the cast next to the
 ## lab under the 3D view, not inside it: the lab's own tree, bodies and physics are the same with or
 ## without it (tests/island_cast_checks.gd). The cast only reads the lab's status() and
 ## explain_point(); it never touches a body or a displayed value.
@@ -24,7 +24,8 @@ const DEFAULT_DELAY_S := 0.6
 var experiment: Experiment
 var dugi: DugiActor
 var puppy: PuppyActor
-var fox: Node3D                    # the island's keeper (null in a lab without one)
+var fox: Node3D                    # the hutton island's keeper (null in a lab without one)
+var yaongi: Node3D                 # the curie island's keeper (null in a lab without one)
 var explain_on: Array = []
 var delay_s := DEFAULT_DELAY_S
 ## The words of the dialogue: the lab's kid `say` text (ExperimentRegistry.kid_text; the shared
@@ -62,6 +63,10 @@ static func create(definition: Dictionary, lab: Experiment) -> IslandCast:
 		cast.fox = fox_model()
 		_stand(cast.fox, spec.fox.at, eye)
 		cast.add_child(cast.fox)
+	if spec.has("yaongi"):
+		cast.yaongi = keeper_model("yaongi")
+		_stand(cast.yaongi, spec.yaongi.at, eye)
+		cast.add_child(cast.yaongi)
 	return cast
 
 

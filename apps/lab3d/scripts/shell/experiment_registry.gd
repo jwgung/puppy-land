@@ -266,8 +266,9 @@ static func _validate_intro_more(lines: Variant) -> PackedStringArray:
 ## The story's words for this lab (`story`, optional, 2026-10-28 "별 조각 찾기"): {"clue": <Puppy's
 ## clue, told once on the first visit before Dugi's question>, "map_clue": <Puppy's riddle on the
 ## night map while this spot is the next to find>, "keeper": <the island keeper's line before the
-## clue on the first visit (#74, Story.KEEPER)>, "keeper_reply": <the keeper's answer after the clue
-## (#86)>, "more": [<more lines after the clue (#98): {"speaker", "text", "face"?}>], "clue_face"?,
+## clue on the first visit (#74, Story.keeper_of)>, "keeper_reply": <the keeper's answer after the clue
+## (#86)>, "before": [<lines between the keeper's and the clue (#156), as "more">], "more": [<more lines
+## after the clue (#98): {"speaker", "text", "face"?}>], "clue_face"?,
 ## "map_clue_face"?, "keeper_face"?, "keeper_reply_face"?: <Story.FACES>} (Story.clue, Story.map_clue,
 ## Story.keeper, Story.keeper_reply, Story.more, their portraits' faces).
 static func _validate_story(story: Variant) -> PackedStringArray:
@@ -278,33 +279,33 @@ static func _validate_story(story: Variant) -> PackedStringArray:
 		problems.append("story must be an object")
 		return problems
 	for key in story:
-		if key == "more":
-			problems.append_array(_validate_story_more(story.more))
+		if key in ["more", "before"]:
+			problems.append_array(_validate_story_more(story[key], key))
 		elif key in ["clue_face", "map_clue_face", "keeper_face", "keeper_reply_face"]:
 			if not story[key] in Story.FACES:
 				problems.append("story.%s must be one of Story.FACES" % key)
 		elif not key in ["clue", "map_clue", "keeper", "keeper_reply"]:
-			problems.append("story.%s unknown (clue, map_clue, keeper, keeper_reply, more and their _face)" % key)
+			problems.append("story.%s unknown (clue, map_clue, keeper, keeper_reply, before, more and their _face)" % key)
 		elif not (story[key] is String and story[key] != ""):
 			problems.append("story.%s must be a text" % key)
 	return problems
 
 
-## story.more (#98): more first-visit lines after the clue, each {"speaker": <Story.SPEAKERS>, "text",
-## "face"?: <Story.FACES>}.
-static func _validate_story_more(lines: Variant) -> PackedStringArray:
+## story.more (#98) and story.before (#156): first-visit lines after the clue / before it, each
+## {"speaker": <Story.SPEAKERS>, "text", "face"?: <Story.FACES>}.
+static func _validate_story_more(lines: Variant, key := "more") -> PackedStringArray:
 	var problems := PackedStringArray()
 	if not lines is Array:
-		problems.append("story.more must list lines")
+		problems.append("story.%s must list lines" % key)
 		return problems
 	for i in lines.size():
 		var line: Variant = lines[i]
 		if not line is Dictionary or not (line.get("text") is String and line.text != ""):
-			problems.append("story.more[%d] needs a text" % i)
+			problems.append("story.%s[%d] needs a text" % [key, i])
 		elif not Story.SPEAKERS.has(str(line.get("speaker", ""))):
-			problems.append("story.more[%d].speaker must be one of Story.SPEAKERS" % i)
+			problems.append("story.%s[%d].speaker must be one of Story.SPEAKERS" % [key, i])
 		elif line.has("face") and not line.face in Story.FACES:
-			problems.append("story.more[%d].face must be one of Story.FACES" % i)
+			problems.append("story.%s[%d].face must be one of Story.FACES" % [key, i])
 	return problems
 
 
@@ -457,7 +458,7 @@ static func _validate_cast(cast: Variant) -> PackedStringArray:
 		return problems
 	for who in cast:
 		var spec: Variant = cast[who]
-		if who not in ["dugi", "puppy", "fox"] or not spec is Dictionary:
+		if who not in ["dugi", "puppy", "fox", "yaongi"] or not spec is Dictionary:
 			problems.append("cast.%s unknown" % who)
 			continue
 		var at: Variant = spec.get("at")

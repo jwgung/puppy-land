@@ -16,7 +16,7 @@
 class_name ExplainPictures
 extends RefCounted
 
-const KINDS := ["axis", "morning_evening", "sea_breeze", "river"]
+const KINDS := ["axis", "morning_evening", "sea_breeze", "river", "particles"]
 ## The card's width : height (DialogueBox.CARD_SIZE has it too) and its drawing space (the mockup's).
 const ASPECT := 1.5
 const DESIGN := Vector2(432.0, 432.0 / ASPECT)
@@ -69,6 +69,12 @@ const GRASSL := Color8(120, 214, 86)
 const GRASSD := Color8(52, 150, 44)
 const SAND := Color8(243, 216, 140)
 const WHITE := Color(1, 1, 1)
+## The particles card's ink beads and haze: each bead a blue between the light and the deep one, its
+## size this range of the water particles' radius.
+const INK_BEAD_LIGHT := Color("6f9bff")
+const INK_BEAD_DEEP := Color("1f3cc4")
+const INK_BEAD_SIZE := Vector2(0.75, 1.3)
+const INK_HAZE := Color("4f7cf0")
 
 ## Filled shapes drawn, and those whose polygon could not be triangulated
 ## (tests/explain_picture_checks.gd counts both: every picture draws shapes, none fails).
@@ -104,6 +110,8 @@ static func draw_card(canvas: CanvasItem, kind: String, rect: Rect2) -> void:
 			pen.mirror(false)
 		"river":
 			_river(pen)
+		"particles":
+			_particles(pen)
 	pen.card_front()
 	canvas.draw_set_transform_matrix(Transform2D.IDENTITY)
 
@@ -310,6 +318,72 @@ static func _river(p: Pen) -> void:
 	p.arrow(fast, ORG)
 	# The slow water inside: a shorter, thinner arrow.
 	p.arrow(arc_points(c, mid - 16, mid - 16, 228, 292, 0.0, 40), WHITE, ARROW_WIDTH * 0.7, Color8(120, 166, 204), Color8(70, 130, 186))
+
+
+## A glass of water seen up close (#156, curie-lines.md 1: "컵 속 물 알갱이들 사이로 잉크 알갱이가 흩어지는
+## 모양"): the water is pale blue particles packed close together; the ink's particles came in at the top
+## and scatter down between them in a soft blue haze, each with a little wiggle line (they keep moving).
+## The ink's particles are shiny beads (2026-11-16 user; the lab itself shows only the spreading cloud):
+## round, each its own size (INK_BEAD_SIZE) and blue (INK_BEAD_LIGHT..INK_BEAD_DEEP), shaded on the
+## lower right, a white shine.
+static func _particles(p: Pen) -> void:
+	p.sky(Color8(255, 240, 214), Color8(246, 222, 184))
+	# The table top under the glass.
+	p.fill(rect_points(Rect2(0, 236, DESIGN.x, DESIGN.y - 236)), Color8(201, 141, 79))
+	p.fill(rect_points(Rect2(0, 236, DESIGN.x, 6)), Color8(219, 164, 104))
+	var glass := PackedVector2Array([Vector2(126, 34), Vector2(306, 34), Vector2(290, 246), Vector2(142, 246)])
+	var water := PackedVector2Array([Vector2(131, 62), Vector2(301, 62), Vector2(287, 240), Vector2(145, 240)])
+	p.fill(glass, Color8(234, 246, 255))
+	p.fill(water, Color8(178, 222, 248))
+	var water_dot := Color8(120, 184, 236)
+	var water_rim := Color8(88, 150, 214)
+	var ink := INK_BEAD_DEEP
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 156
+	# The water's particles: a loose grid, every one nudged a little.
+	var r := 7.5
+	var row := 0
+	var y := 76.0
+	while y < 232.0:
+		var x := 146.0 + (8.0 if row % 2 == 1 else 0.0)
+		while x < 290.0:
+			var at := Vector2(x + rng.randf_range(-2.5, 2.5), y + rng.randf_range(-2.5, 2.5))
+			if Geometry2D.is_point_in_polygon(at, water):
+				p.ellipse(at, r, r, water_dot)
+				p.ring(at, r, r, water_rim, 1.2)
+			x += 17.0
+		y += 15.0
+		row += 1
+	# The ink's soft haze where it went in, spreading down (the lab's SoftCloud).
+	p.glow(Vector2(216, 120), 56.0, INK_HAZE, 40.0)
+	p.glow(Vector2(216, 180), 50.0, INK_HAZE, 24.0)
+	# The ink's particles: thick at the top middle, scattering down and out, with wiggle lines.
+	for i in 22:
+		var k := i / 21.0
+		var spread := lerpf(10.0, 62.0, k)
+		var at := Vector2(216.0 + rng.randf_range(-spread, spread), lerpf(78.0, 214.0, k * k) + rng.randf_range(-8.0, 8.0))
+		at.x = clampf(at.x, 152.0, 280.0)
+		var size := r * rng.randf_range(INK_BEAD_SIZE.x, INK_BEAD_SIZE.y)
+		bead(p, at, size, INK_BEAD_LIGHT.lerp(INK_BEAD_DEEP, rng.randf()))
+		if i % 3 == 0:
+			var a := rng.randf_range(0.0, TAU)
+			var side := Vector2.from_angle(a)
+			var from := at + side * (r + 4.0)
+			p.line(arc_points(from + side * 6.0, 6.0, 6.0, rad_to_deg(a) + 150.0, rad_to_deg(a) + 210.0, 0.0, 8), Color8(226, 104, 60), 2.0, false)
+	# The glass's outline and shine.
+	p.ring_points(glass, OUT, 3.0)
+	p.line(PackedVector2Array([Vector2(146, 52), Vector2(156, 220)]), Color(1, 1, 1, 0.75), 4.0)
+	# The drop that brought them, falling in at the top.
+	p.ellipse(Vector2(216, 22), 7, 9, ink)
+
+
+## A shiny bead of radius `r` at `c` in `color`: a deeper rim and lower right, a lighter upper left,
+## a white shine.
+static func bead(p: Pen, c: Vector2, r: float, color: Color) -> void:
+	p.ellipse(c, r, r, color.darkened(0.3))
+	p.ellipse(c + Vector2(-0.12, -0.12) * r, r * 0.86, r * 0.86, color)
+	p.ellipse(c + Vector2(-0.25, -0.25) * r, r * 0.5, r * 0.5, color.lightened(0.2))
+	p.ellipse(c + Vector2(-0.38, -0.4) * r, r * 0.26, r * 0.26, Color(1, 1, 1, 0.9))
 
 
 # --- shapes ---------------------------------------------------------------------------------------
