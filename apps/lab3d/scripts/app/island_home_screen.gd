@@ -24,7 +24,7 @@ var dugi: DugiActor
 var _back_nudge: Tween              # ← 돌아가기's nudge (nudge_back), null: none
 var puppy: PuppyActor
 ## The island's keeper (the fox on the hutton island, Island.keeper; null on an island without one):
-## the guide walks FOLLOW_LAG ahead of the cat along the way and stands with the trio (#120).
+## the guide walks FOX_LEAD x FOLLOW_LAG (1.2 m) ahead of the cat along the way and stands with the trio (#120).
 var fox: Node3D
 var map: MapIsland
 var world: Node3D
@@ -718,8 +718,8 @@ const FOX_SIDE := 1.25
 ## (fox_walk_point), never of the frames: the same at 20 and 60 fps. Over FOX_JOIN_S at the start it steps
 ## from where it stood onto the way, passing Dugi, Puppy and the cat FOX_WIDE m to its own side; it then walks FOX_LINE m
 ## off the way's middle (on the path), never on past the point beside its place; over the walk's last
-## FOX_TAIL_SHARE (FOX_TAIL_S s at least and at most) it steps into its place by the group, arriving when
-## the cat does (no snap).
+## FOX_TAIL_SHARE (FOX_TAIL_S s at least and at most) it steps into its place by the group: it is in it
+## before the cat stops (fox_settle: from FOX_TAIL_M m before it) and waits there (no snap).
 const FOX_LEAD := 1.5
 const FOX_JOIN_S := 0.7
 const FOX_WIDE := 0.9

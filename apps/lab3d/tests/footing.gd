@@ -104,15 +104,15 @@ static func _bary(p: Vector2, a: Vector2, b: Vector2, c: Vector2) -> Vector3:
 	return Vector3(u, v, w)
 
 
-## What the feet at (x, z) on y = `feet` stand on: "dry", "sunk" (a surface above the feet: in a stage, a
-## basin's water, a cloud), "over" (the topmost surface below the feet: over the sea, a pond, a river),
-## "water" (a water mesh at the feet's height), "floor" (a lab's flat floor at the feet's height: standing
-## ground too) or "nothing"; with the worst sample's surface [y, name].
 ## Feet that stand: on the island's ground or a lab's floor.
 static func stands(kind: String) -> bool:
 	return kind in ["dry", "floor"]
 
 
+## What the feet at (x, z) on y = `feet` stand on: "dry", "sunk" (a surface above the feet: in a stage, a
+## basin's water, a cloud), "over" (the topmost surface below the feet: over the sea, a pond, a river),
+## "water" (a water mesh at the feet's height), "floor" (a lab's flat floor at the feet's height: standing
+## ground too) or "nothing"; with the worst sample's surface [y, name].
 func footing(x: float, z: float, feet := 0.0) -> Array:
 	var worst := ["dry", []]
 	var rank := {"dry": 0, "floor": 1, "over": 2, "water": 3, "nothing": 4, "sunk": 5}
