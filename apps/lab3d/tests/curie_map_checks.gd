@@ -16,7 +16,7 @@ const ORDER := ["diffusion", "dissolving", "melt-cook", "dough", "clean-water", 
 	"fizz", "candle", "rust", "flame-color"]
 const ZONES := {"kitchen": "meadow", "spring": "pond", "lighthouse": "hill"}
 ## The spots that are labs already (#156 on): the others are places in the making.
-const LABS := ["diffusion"]
+const LABS := ["diffusion", "dissolving"]
 ## The island's turn (curie.json turn_deg, 2026-11-16 user pick A): the flask's neck this far round from +x.
 const TURN := -25.0
 

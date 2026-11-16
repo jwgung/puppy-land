@@ -31,7 +31,8 @@
       "volcano.json"
     ],
     "curie": [
-      "diffusion.json"
+      "diffusion.json",
+      "dissolving.json"
     ]
   }
 }

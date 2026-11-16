@@ -1267,6 +1267,25 @@ python3 -I apps/lab3d/tools/device_gesture.py orbit  # orbit | pinch | pinch-fix
 - **단계마다 바뀌는 탁자**: `set_game_stage`에서 단계 → 자리(`DiffusionLab.site_of`), 깬 단계는 `_site_due`로 다음 `처음으로`까지 둔다.
 - **지도와 시험**: `scripts/art/map_landmarks.gd`에 `"<이름>"` 항목과 모양 함수, `tests/<이름>_checks.gd`와 `tests/run_tests.gd`(머리 주석·등록 블록), `tests/curie_map_checks.gd`의 `LABS`에 이름 추가. 한국어 글이 늘면 마지막에 `tools/subset_font.sh` 후 `godot --import`.
 
+### 퀴리섬 2: 녹으면 사라질까? (#157, 2026-11-17)
+
+퀴리섬 둘째 장소([미션](../../docs/islands/curie-missions.md) 2절, [대사](../../docs/islands/curie-lines.md) 2절, 승인 목업 "2-1. #157 소금"). `experiments/dissolving/`: `DissolvingLab`(`EarthLab`), `DissolvingModel`, `DissolvingProps`, `DissolvingGame`. 데이터 `content/experiments/dissolving.json`, 말 `content/locale/<언어>/experiments/dissolving.json`(영어 임시, #169), 목록 `index.json`의 `islands.curie` 둘째.
+
+- **탁자(단계마다)**: 1단계 물 컵(바닥에 소금 한 숟가락, 숟가락), 왼쪽 소금 접시, 빵고양이 나무 상자 더미, 오른쪽 햇볕 판과 바닷물 통. 2단계 컵·접시가 바늘 저울 위(숫자 없는 눈금판, 흐린 바늘 = 녹이기 전 자리, 빨간 바늘 = 지금). 3단계와 다 깬 뒤는 바닷물 통·햇볕 판·시간 팻말. 깬 단계의 탁자는 다음 `처음으로`까지 남는다.
+- **손**: 1·2단계 숟가락(조작 규칙 `"guide": "stir"`: 컵 위 세운 면에서 손가락이 컵 가운데를 도는 각이 숟가락 자리, 한 바퀴(어느 쪽이든)가 한 바퀴 젓기). 3단계 바닷물 통(끌기, 햇볕 판 위에서 기울고 놓으면 부음, 못 미치면 제자리). 조건 단추 없음. 손 안내 `stir`는 새 손짓(`HandGuide`·`Manipulator.guide`·`ExperimentRegistry` 검사에 더함).
+- **모델**(교과서 값): 소금 용해도 20 °C 35.9 g/물 100 g(한 숟가락 6 g은 컵 200 g에 다 녹음), 저울 = 컵 + 물 + 바닥 소금 + 녹은 소금 + 접시(늘 같음), 바닷물 소금 3.5 %(1 kg → 35 g), 햇볕 판 15 mm를 낮에만 하루 6 mm 말림 → 2.25일(밤 둘)에 마름. 소금 껍질은 남은 물이 소금을 다 못 품을 때(끝 10 %쯤)부터 나온다. 상태 `bottom`·`dissolving`·`clear`(1)·`same`(2)·`ready`·`drying`·`salt`(3). 판정은 상태로만, 핵심 카드는 단계마다 `소금`·`저울`·`햇볕 판`(말만).
+- **조각**: 바닷물 통 바닥(통 앞 등 셋, 도장마다 하나). 부으면 햇볕 판 물 아래로, 마지막 도장에 소금 속에서 솟아 빵고양이 앞으로.
+- 시험: `tests/dissolving_checks.gd`.
+
+#### 시간 빨리 감기 (공통 부품, #157에서 만듦, #159 반죽이 다시 씀)
+
+결정 1(안 A): 아이가 할 일(붓기·그릇 놓기)을 마치면 시간이 저절로 흐르고 판정 상태에서 멈춘다. 팻말은 보기만 하는 물체다.
+
+- **`FastClock`**(`scripts/core/fast_clock.gd`, 순수 상태): 모델이 하나 갖고 `step(dt)`에서 `advance(dt)`(놀이 초)를 부른다. `start()` 흐름 시작(조건 단추 잠김 시작), `stop()` 그 자리에서 멈춤(다시 `start()`로 이어감), `until`(일) 그 시각에 저절로 멈춤, `reset()` 첫 아침·멈춤·잠금 풀림(`다시`). 읽기: `days`(흐른 날), `share()`(팻말 표시 0 해 끝 .. 1 달 끝), `nights()`(달 도장 수), `night()`(장면 어둠 0..1), `is_night()`, `running`, `locks_conditions()`(처음 `start()`부터 `reset()`까지 true: 화면이 조건 단추를 흐리게 잠글 신호. 화면 쪽 잠금 그리기는 조건 단추가 있는 #159에서 붙인다), `sunshine(a, b)`·`days_for_sunshine()`(낮에만 일어나는 일). 하루 = `day_s` 놀이 초(기본 4초).
+- **`TimeSign`**(`scripts/art/time_sign.gd`, Node3D): 물의 여행 해·달 팻말과 같은 나무 틀·해·달, 막대 왼쪽 반 낮(연노랑)·오른쪽 반 밤(남색), 흰 표시(빨간 테)가 해 → 달, 흐르는 동안만 빨간 ▶▶ 등, 밤마다 아래 판에 달 도장(최대 4). `TimeSign.new(기둥 길이)`, `show_clock(clock)` 또는 `show_time(share, nights, running)`. 물의 여행(`WaterCycleProps`)도 `TimeSign.frame_mesh`·`face_mesh`(한 색)로 그린다(메시 바이트 같음).
+- **`SceneNight`**(`scripts/art/scene_night.gd`): `attach(lab)`(세계를 만든 뒤), `set_amount(clock.night())`, 실험이 나갈 때 `clear()`(전역 story_tint). 하늘색·섬 땅 어둡게, 별과 초승달.
+
+
 ## 6. 한계
 
 - 조작은 물체를 면에 똑바로 세워 놓는다(면 좌표계 방향). 물체 회전·줄·용수철 연결·도구 팔레트는 Task 5다. 조작 대상의 충돌 모양은 바디의 첫 `CollisionShape3D`(상자·구·원기둥·캡슐, 원점에 놓인 것)로 본다.

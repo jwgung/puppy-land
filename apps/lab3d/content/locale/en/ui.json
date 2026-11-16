@@ -364,5 +364,13 @@
   "water_cycle.status.full": "Pond full",
   "water_cycle.status.rain": "Raining",
   "water_cycle.status.ready": "Cool sea",
-  "water_cycle.status.vapour": "Vapor rising"
+  "water_cycle.status.vapour": "Vapor rising",
+  "dissolving.salt.bottom": "Salt at the bottom",
+  "dissolving.salt.clear": "All dissolved",
+  "dissolving.salt.melting": "Dissolving",
+  "dissolving.scale.same": "The needle stays",
+  "dissolving.tray.drying": "The water is drying",
+  "dissolving.tray.empty": "Still empty",
+  "dissolving.tray.full": "Full of water",
+  "dissolving.tray.salt": "Salt is left"
 }

@@ -72,6 +72,8 @@ static func add(b: ArtMeshBuilder, id: String, xf: Transform3D) -> float:
 			return _lava_model(b, xf)
 		"diffusion":
 			return _diffusion(b, xf)
+		"dissolving":
+			return _dissolving(b, xf)
 	_rod(b, xf, Vector3.ZERO, Vector3(0.0, 1.0, 0.0), 0.08, ArtPalette.BLUE)
 	_ball(b, xf, Vector3(0.0, 1.15, 0.0), 0.2, ArtPalette.WHITE)
 	return 1.35
@@ -678,6 +680,20 @@ static func _diffusion(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	b.add_sphere(xf * Transform3D(Basis.from_scale(Vector3(1.0, 0.6, 0.7)), loaf + Vector3(0.0, 0.04, 0.0)), 0.17, 3, 8, DiffusionProps.BREAD)
 	for puff: Array in [[Vector3(0.36, 0.42, 0.18), 0.06], [Vector3(0.44, 0.58, 0.16), 0.075]]:
 		_ball(b, xf, puff[0], puff[1], DiffusionProps.SMELL_HAZE)
+	return 1.35
+
+
+## The curie island's 녹으면 사라질까? (#157, "소금 항아리가 있는 곳"): a little wooden table with a glass of
+## clear water, a white salt heap in a blue dish and a wooden seawater bucket beside it.
+static func _dissolving(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.add_cylinder(xf, 0.5, 0.42, 0.12, 10, ArtPalette.WOOD_GRAIN, true, ArtPalette.WOOD)
+	var cup := Vector3(-0.12, 0.12, 0.0)
+	b.add_cylinder(xf * Transform3D(Basis(), cup), 0.22, 0.27, 0.58, 12, Color("cdeeff"), true, Color("8fd3ff"))
+	var dish := Vector3(0.22, 0.12, 0.22)
+	b.add_cylinder(xf * Transform3D(Basis(), dish), 0.1, 0.15, 0.08, 10, DissolvingProps.DISH_RIM, true, Color.WHITE)
+	_ball(b, xf, dish + Vector3(0.0, 0.1, 0.0), 0.1, DissolvingProps.SALT)
+	var bucket := Vector3(0.3, 0.12, -0.18)
+	b.add_cylinder(xf * Transform3D(Basis(), bucket), 0.13, 0.17, 0.32, 10, DissolvingProps.BUCKET_WOOD, true, Color("2f86d6"))
 	return 1.35
 
 
