@@ -6,8 +6,8 @@ extends EditorPlugin
 ##   - only the AARs, the LICENSE and this file are kept: its GDScript wrappers need its autoload, which
 ##     this app does not use (CloudSync talks to the Android singleton itself), so no autoload is added;
 ##   - the AAR, its dependencies and the APP_ID manifest entry go in only in a Gradle build with the
-##     export option godot_play_game_services/game_id set (the "Android Play" preset once Play Console
-##     has the games project): elsewhere the app is built without Play Games at all.
+##     export option godot_play_game_services/game_id set (the "Android Play" preset: its id is set
+##     since 2026-11-16, from the Play Console games project): elsewhere the app is built without Play Games at all.
 
 var _export_plugin: AndroidExportPlugin
 
