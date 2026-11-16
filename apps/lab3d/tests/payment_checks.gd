@@ -5,6 +5,7 @@
 extends RefCounted
 
 const UI_THEME := "res://scripts/app/ui_theme.gd"
+const Reading := preload("res://tests/dialogue_reading.gd")   # the pages read untouched (the read timer)
 const QualityScript := preload("res://scripts/core/quality.gd")
 const SIZES := {"phone": Vector2(1560, 720), "tablet": Vector2(1152, 720), "desktop": Vector2(1280, 720)}
 const CACHE := "user://purchases-test.cfg"
@@ -444,7 +445,9 @@ func check_today_box() -> void:
 
 ## The whole way on the map (#77 Q7): today's new spot used, the next spot tapped: Puppy says today is
 ## done with 보호자 at his box's end; 보호자 opens the check, the right answer the island's offer;
-## Android back closes the offer and then nothing is left over the map.
+## Android back closes the offer and then nothing is left over the map. The today box holds (2026-11-16:
+## its read timer never closes it, 보호자 stays to be pressed); back closes it, and a tap on Puppy (his
+## riddle, which reads and closes by itself) replaces it: the map is never stuck.
 func check_map_flow() -> void:
 	var was_enabled := Story.enabled
 	Island.use_index(_paid_index())
@@ -478,6 +481,10 @@ func check_map_flow() -> void:
 		if guardian == null or story.riddle.text != Story.today_line():
 			problems.append("Puppy's today box: words %s, 보호자 %s" % [story.riddle.text if story.riddle != null else "none", guardian])
 		else:
+			for i in 600:   # a minute untouched: it waits with 보호자
+				story.riddle.step(0.1)
+			if not story.riddle.active or not story.riddle.hold or story.riddle.side_button != guardian:
+				problems.append("the today box closed by itself (active %s)" % story.riddle.active)
 			guardian.pressed.emit()
 			await _frames(1)
 			var gates := screen.find_children("ParentalGate", "", true, false)
@@ -495,6 +502,18 @@ func check_map_flow() -> void:
 				await _frames(1)
 				if not screen.get_tree().get_nodes_in_group(GuardianModal.GROUP).filter(func(n: Node) -> bool: return not n.is_queued_for_deletion()).is_empty():
 					problems.append("a guardian screen stays after back")
+				# Back again: the today box closes (the map is free).
+				if not story.riddle.active or not screen.handle_back() or story.riddle.active:
+					problems.append("back does not close the today box after the offer")
+		# Again, then a tap on Puppy: his riddle replaces it (no hold) and closes by its read time.
+		screen._walk_to_spot(index)
+		await _frames(2)
+		var again: bool = story.riddle.active and story.riddle.hold and story.riddle.text == Story.today_line()
+		story.say_riddle()
+		var replaced: bool = story.riddle.active and not story.riddle.hold and story.riddle.side_button == null
+		Reading.read_all(story.riddle)
+		if not again or not replaced or story.riddle.active:
+			problems.append("today box again %s, Puppy's riddle replaces it %s, then closes by itself %s" % [again, replaced, not story.riddle.active])
 	host.queue_free()
 	await _frames(2)
 	Story.enabled = was_enabled
@@ -503,5 +522,5 @@ func check_map_flow() -> void:
 	Story.forget_loaded()
 	ProgressStore.reset_all()
 	Island.use_index([])
-	expect.call(problems.is_empty(), "payment: on the map, the next spot tapped after today's: Puppy's box with 보호자, the check, the offer, back closes it", "; ".join(problems))
+	expect.call(problems.is_empty(), "payment: on the map, the next spot tapped after today's: Puppy's box with 보호자 (it waits, never closing by itself), the check, the offer, back closes it; back or a tap on Puppy frees the map", "; ".join(problems))
 

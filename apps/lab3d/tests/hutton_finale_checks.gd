@@ -8,6 +8,8 @@
 ## (tests/story_checks.gd).
 extends RefCounted
 
+const Reading := preload("res://tests/dialogue_reading.gd")   # the pages read untouched (the read timer)
+
 var tree: SceneTree
 var expect: Callable
 const UI_THEME := "res://scripts/app/ui_theme.gd"
@@ -226,7 +228,7 @@ func check_finale() -> void:
 			and (story.ribbon.get_child(0) as Label).text == Locale.t("story.island_done") % IslandCards.island_name("hutton"))
 		if p == 3:
 			grass_grew = home.new_land_grass != null and home.new_land_grass.visible
-		_tap_through(story.dialogue)
+		_read_through(story.dialogue)
 		if p == 3:
 			# The dial the wedges filled glints (no assembly any more, #114): it swells a little and back.
 			var swell := 0.0
@@ -297,7 +299,7 @@ func check_skip() -> void:
 			break
 		story.advance(0.05)
 		if story.dialogue.active:
-			_tap_through(story.dialogue)
+			_read_through(story.dialogue)
 	var waited := story.plant_waits
 	story.skip()
 	await tree.process_frame
@@ -348,7 +350,7 @@ func _until_plant(story: StoryDirector) -> void:
 			return
 		story.advance(0.05)
 		if story.dialogue.active:
-			_tap_through(story.dialogue)
+			_read_through(story.dialogue)
 
 
 # --- helpers ---------------------------------------------------------------------------------------
@@ -358,12 +360,12 @@ func _advance(story: StoryDirector, seconds: float) -> void:
 		story.advance(0.05)
 
 
-func _tap_through(box: DialogueBox) -> void:
+func _read_through(box: DialogueBox) -> void:
 	var words := box.text
 	for i in 6:
 		if not box.active or box.text != words:
 			return
-		box.advance()
+		Reading.read_page(box)
 
 
 ## A finger on the shield: presses at `from`, drags to `to`, lets go.

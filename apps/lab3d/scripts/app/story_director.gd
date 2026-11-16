@@ -342,6 +342,8 @@ func say_wrong() -> void:
 
 ## The next spot waits for tomorrow (#77): Puppy's calm "that's all for today" with the small 보호자
 ## button at his box's right end (the guardian's check, then the island's offer). Nothing urges buying.
+## The box holds (2026-11-16: it never closes by its read timer or a tap, so 보호자 stays to be pressed);
+## it goes with back (close_riddle), a tap on another spot or on Puppy (hush / another line), or a cinematic.
 func say_today() -> void:
 	if cinematic():
 		return
@@ -349,7 +351,7 @@ func say_today() -> void:
 	_riddle_open = false
 	if Story.today_line() == "":
 		return
-	_say(Story.today_line(), Story.today_face())
+	_say(Story.today_line(), Story.today_face(), true)
 	var guardian := GuardianModal.guardian_button()
 	guardian.name = "GuardianButton"
 	guardian.pressed.connect(guardian_requested.emit)
@@ -372,7 +374,7 @@ func hush() -> void:
 func tap_riddle() -> bool:
 	if riddle == null or not riddle.active:
 		return false
-	riddle.advance()
+	riddle.tap()
 	return true
 
 
@@ -409,12 +411,15 @@ func _step_spot_glow(delta: float) -> void:
 	spot_glow.step(delta)
 
 
-func _say(words: String, face := "") -> void:
+## Puppy's box on the map with `words`; `hold`: it waits on its last page (the today line) instead of
+## closing by its read timer or a tap.
+func _say(words: String, face := "", hold := false) -> void:
 	if riddle == null:
 		riddle = DialogueBox.new("")
 		riddle.name = "PuppyRiddle"
 		home.add_child(riddle)
 	riddle.set_speaker("puppy", face)
+	riddle.hold = hold
 	riddle.open(words)
 	_layout()
 
@@ -1522,7 +1527,7 @@ func _launch_event(event: InputEvent) -> void:
 
 func tap_page() -> void:
 	if dialogue != null and dialogue.active:
-		dialogue.advance()
+		dialogue.tap()
 
 
 func _layout() -> void:

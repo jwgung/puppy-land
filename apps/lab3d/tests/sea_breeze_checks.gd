@@ -29,6 +29,8 @@
 ##   can play.
 extends RefCounted
 
+const Reading := preload("res://tests/dialogue_reading.gd")   # the pages read untouched (the read timer)
+
 const ID := "sea-breeze"
 const LINES_PATH := "res://../../docs/islands/hutton-lines.md"
 const MISSIONS_PATH := "res://../../docs/islands/hutton-missions.md"
@@ -715,14 +717,14 @@ func check_saved_night() -> void:
 	screen._predict_pick_choice("sea")
 	var talked := 0
 	var waited_through := true
-	for i in 1200:   # through Dugi's lines (tapped on), 20 s at most
+	for i in 1200:   # through Dugi's lines (read by time), 20 s at most
 		await tree.physics_frame
 		if screen.dialogue != null and screen.dialogue.active:
 			talked += 1
 			if lab.model.input("land") != SeaBreezeModel.EVENING_LAND or screen.mission_round.stamps != 1:
 				waited_through = false
 			if i % 20 == 0:
-				screen.dialogue.advance()
+				Reading.read_page(screen.dialogue)
 		elif lab.play_open:
 			break
 	if talked == 0 or not waited_through or not lab.play_open:

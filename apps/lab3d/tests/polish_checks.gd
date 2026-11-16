@@ -15,6 +15,8 @@
 ## Only the test stores (ProgressStore.TEST_PATH, SoundBoard.TEST_PATH) are written.
 extends RefCounted
 
+const Reading := preload("res://tests/dialogue_reading.gd")   # the pages read untouched (the read timer)
+
 var tree: SceneTree
 var expect: Callable
 const UI_THEME := "res://scripts/app/ui_theme.gd"
@@ -621,7 +623,7 @@ func check_story_places() -> void:
 		for k in 6:
 			if not box.active or box.text != words:
 				break
-			box.advance()
+			Reading.read_page(box)
 	for i in 40:
 		story.advance(0.05)
 	if not cat_seen:
@@ -661,7 +663,7 @@ func check_story_places() -> void:
 		if story._lift and story._star != null:
 			lift_gap.append(story._star.position.y - home.cat.position.y)   # the last: where it rides
 		if story.dialogue != null and story.dialogue.active:
-			story.dialogue.advance()
+			Reading.read_page(story.dialogue)
 		elif story.launch_waits:
 			waited += 1
 			if waited > 40:   # the child looks a moment, then pulls the whole way (it reaches the sky)

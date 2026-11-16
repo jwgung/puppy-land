@@ -1,15 +1,21 @@
 ## A young child's way through the talk (2026-10-31 user, watching a child play: "뭘 어떻게 눌러야 할지 잘
 ## 몰라", "대화창도 자꾸 못 넘어감", "설명이 너무 휙 지나감"), through the real input path:
-## - a tap anywhere behind Puppy's clue turns its page (the question follows), as a tap on his box does,
+## - a tap anywhere behind Puppy's clue is a tap on his box (2026-11-16 user: "누르면 완성되게 하고,
+##   넘어갈 수도 있게는 해"): the page whole, then (after DialogueBox.TAP_LOCK_S) the next; the
+##   question follows,
 ## - while Dugi asks, a tap beside the picture buttons makes them hop and the paw taps one; so does
 ##   waiting NUDGE_S; the question still waits for a pick,
-## - a tap on the 3D view while Dugi's box waits turns its page and takes nothing of the lab; a press
-##   on the lab's object still takes it,
-## - on the map, a tap beside Puppy's riddle (not on a spot) turns its page,
+## - a tap on the 3D view while Dugi's box is open is the same tap and takes nothing of the lab; a
+##   press on the lab's object still takes it,
+## - on the map, a tap beside Puppy's riddle (not on a spot) is the same tap,
 ## - the words type slower and Puppy's result line stays longer than before,
 ## - Dugi tells what the lab is and which force it shows (kid.intro) before his question,
 ## - a won stage sets the lab up again for the next one (as 다시 does) once Dugi has explained.
 extends RefCounted
+
+const Reading := preload("res://tests/dialogue_reading.gd")
+## Frames past DialogueBox.TAP_LOCK_S: a tap after them turns a fully shown page.
+const LOCK_FRAMES := 40
 
 var tree: SceneTree
 var expect: Callable
@@ -93,20 +99,26 @@ func check_clue_tap_anywhere() -> void:
 	var r: MissionRound = screen.mission_round
 	var box: DialogueBox = screen.dialogue
 	var clue_up: bool = box.active and box.speaker == "puppy" and r.clue_open()
-	for i in 4:
+	var words := box.text
+	await _tap(_empty(screen))
+	var whole: bool = box.active and box.speaker == "puppy" and box.text == words and box.page == 0 and box.typed()
+	await _tap(_empty(screen))   # at once again: locked
+	var locked: bool = box.active and box.speaker == "puppy" and box.text == words and box.page == 0
+	for i in 6:
 		if box.speaker != "puppy":
 			break
+		await _frames(LOCK_FRAMES)
 		await _tap(_empty(screen))
 	await _frames(3)
 	var intro_up: bool = box.active and box.speaker == "dugi" and box.text == MissionRound.intro(screen.definition.raw).text
-	for i in 6:
+	for i in 12:
 		if r.phase() == MissionRound.Phase.ASKING:
 			break
 		await _tap(_empty(screen))
-	await _frames(3)
+		await _frames(LOCK_FRAMES)
 	var asked: bool = box.active and box.speaker == "dugi" and r.phase() == MissionRound.Phase.ASKING
-	expect.call(clue_up and intro_up and asked, "kid flow: a tap anywhere behind Puppy's clue turns it, Dugi's introduction follows (turned the same way), then his question",
-		"clue %s, intro %s, then asking %s (%s)" % [clue_up, intro_up, asked, box.speaker])
+	expect.call(clue_up and whole and locked and intro_up and asked, "kid flow: a tap anywhere behind Puppy's clue shows it whole, the next at once does nothing, after the lock it turns; Dugi's introduction follows (tapped the same way), then his question",
+		"clue %s, whole %s, locked %s, intro %s, then asking %s (%s)" % [clue_up, whole, locked, intro_up, asked, box.speaker])
 	await _close(screen)
 	Story.enabled = was
 
@@ -155,13 +167,20 @@ func check_box_tap_on_view() -> void:
 	var open: bool = box.active and box.visible and not box.hold
 	var lab: Experiment = screen.experiment
 	var status := lab.status()
-	var turns := 0
-	while box.active and turns < 6:
+	var words := box.text
+	var at := box.page
+	await _tap(_empty(screen))
+	var whole: bool = box.active and box.text == words and box.page == at and box.typed()
+	await _tap(_empty(screen))   # at once again: locked
+	var locked: bool = box.active and box.text == words and box.page == at
+	var turns := 2
+	while box.active and turns < 16:
+		await _frames(LOCK_FRAMES)
 		await _tap(_empty(screen))
 		turns += 1
 	var closed: bool = not box.active and screen.manipulator.mode == "" and lab.status() == status and screen._tap_catcher.taps == turns
-	expect.call(open and closed, "kid flow: a tap on the 3D view turns Dugi's page and closes his box; the lab is not touched",
-		"open %s, closed after %d taps %s" % [open, turns, closed])
+	expect.call(open and whole and locked and closed, "kid flow: a tap on the 3D view shows Dugi's page whole, the next at once does nothing, later taps turn it and close his box; the lab is not touched",
+		"open %s, whole %s, locked %s, closed after %d taps %s" % [open, whole, locked, turns, closed])
 	await _close(screen)
 
 
@@ -181,13 +200,20 @@ func check_map_riddle_tap() -> void:
 	story.advance(0.6)
 	var open: bool = story.riddle != null and story.riddle.active
 	var sea := Vector2(home.size.x * 0.06, home.size.y * 0.5)   # the sea at the left edge: no spot there
+	var words: String = story.riddle.text if open else ""
+	for i in 2:   # the page whole, then (at once) nothing
+		home._on_pointer("press", sea)
+		home._on_pointer("release", sea)
+	var kept: bool = open and story.riddle.active and story.riddle.text == words and story.riddle.typed()
 	for i in 4:
 		if not story.riddle.active:
 			break
+		story.riddle.step(DialogueBox.TAP_LOCK_S + 0.05)
 		home._on_pointer("press", sea)
 		home._on_pointer("release", sea)
-	expect.call(open and home._spot_at(sea) < 0 and not story.riddle.active and not home._walking,
-		"kid flow: on the map a tap beside Puppy's riddle (not on a spot) turns its page", "open %s" % open)
+	expect.call(open and kept and home._spot_at(sea) < 0 and not story.riddle.active and not home._walking,
+		"kid flow: on the map a tap beside Puppy's riddle (not on a spot) shows it whole, then (after the lock) closes it",
+		"open %s, whole and kept %s" % [open, kept])
 	host.queue_free()
 	await tree.process_frame
 	Story.enabled = was
@@ -264,15 +290,13 @@ func check_next_stage_reset() -> void:
 			went_at = i
 			break
 		if screen.dialogue.active:
-			screen.dialogue.advance()
-			screen.dialogue.advance()
+			Reading.read_page(screen.dialogue)
 	await _frames(int(DugiActor.RAISE_S * 60.0) + 6)
 	# (the stamp signal alone here: the round's current stage is the one told)
 	var told: bool = screen.dialogue.active and screen.dialogue.joined() == MissionRound.mission_line(screen.definition.raw, r.stage())
 	var waiting: bool = screen._mission_text.text == ""   # the strip waits for his box
 	var reset: bool = lab.status() == "ready" and screen.next_goes == 1 and not r.waiting_next
-	for i in 8:
-		screen.dialogue.advance()
+	Reading.read_all(screen.dialogue)
 	await _frames(3)
 	var strip: bool = screen._mission_text.text == r.text() and r.text() != ""
 	await _close(screen)
@@ -298,8 +322,7 @@ func check_next_stage_reset() -> void:
 			for i in 60 * 6:
 				await tree.process_frame
 				if screen.dialogue.active:
-					screen.dialogue.advance()
-					screen.dialogue.advance()
+					Reading.read_page(screen.dialogue)
 			screen.experiment_action("reset")
 			await _frames(2)
 	cast.rearm()
@@ -319,8 +342,7 @@ func check_next_stage_reset() -> void:
 		if screen.dialogue.active:
 			if explained_at >= 0:
 				read_at = i   # his box with the stage's explanation, read
-			screen.dialogue.advance()
-			screen.dialogue.advance()
+			Reading.read_page(screen.dialogue)
 	expect.call(explained_at >= 0 and read_at >= explained_at and went_at > read_at,
 		"kid flow: the next mission comes after Dugi's own explanation of the stage is read (a long delay_s), not before it",
 		"explained at frame %d, read at %d, went on at %d" % [explained_at, read_at, went_at])
@@ -354,8 +376,7 @@ func check_next_waits() -> void:
 			break
 		await tree.process_frame
 		if screen.dialogue.active:
-			screen.dialogue.advance()
-			screen.dialogue.advance()
+			Reading.read_page(screen.dialogue)
 	var goes_on: bool = screen.next_goes == 1 and not r.waiting_next
 	screen.cast.dugi.stop(true)   # a touch at once: his arm never got up, his box never opened
 	var missed: bool = not screen.dialogue.active and r.announcing() and screen._mission_text.text == ""
@@ -365,8 +386,7 @@ func check_next_waits() -> void:
 		if screen.dialogue.active:
 			told = screen.dialogue.joined() == MissionRound.mission_line(screen.definition.raw, r.stage())
 			break
-	for i in 8:
-		screen.dialogue.advance()
+	Reading.read_all(screen.dialogue)
 	await _frames(3)
 	var strip: bool = screen._mission_text.text == r.text() and r.text() != ""
 	await _close(screen)
@@ -412,8 +432,7 @@ func check_reason_waits() -> void:
 			screen.show_result(0, false)
 			await _frames(60)
 			waiting = box.active and box.text == reading and screen.reason_waits()
-			for i in 6:
-				box.advance()
+			Reading.read_all(box)
 		for i in 60 * 3:
 			await tree.process_frame
 			if box.active and box.joined() == reason:

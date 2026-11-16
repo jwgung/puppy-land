@@ -8,6 +8,8 @@
 ## the round).
 extends RefCounted
 
+const Reading := preload("res://tests/dialogue_reading.gd")   # the pages read untouched (the read timer)
+
 var tree: SceneTree
 var expect: Callable
 const UI_THEME := "res://scripts/app/ui_theme.gd"
@@ -73,7 +75,9 @@ func check_round() -> void:
 	# Held open: the read timer and a tap on the box do not close it; mouse motion over the view
 	# does not either.
 	box.step(30.0)
-	box.advance()
+	var box_tap := InputEventScreenTouch.new()
+	box_tap.pressed = true
+	box._gui_input(box_tap)
 	var motion := InputEventMouseMotion.new()
 	motion.position = screen.view_point(lab.ball_center()) + Vector2(30.0, -30.0)
 	screen.view._gui_input(motion)
@@ -175,11 +179,11 @@ func check_round() -> void:
 		if screen.cast.puppy.position.y > rest_y + 0.1:
 			hopped = true
 		if screen.dialogue.active and ProgressStore.stamps(ProgressStore.load(), "projectile") == 3:
-			# Dugi explains the last stage: nothing cheers until the child reads it (a tap).
+			# Dugi explains the last stage: nothing cheers until the child has read it (by time).
 			told = true
 			cheered_while_told = cheered_while_told or screen.cast.puppy.celebrating()
 			if i % 60 == 59:
-				screen.dialogue.advance()
+				Reading.read_page(screen.dialogue)
 		if hopped and ProgressStore.stamps(ProgressStore.load(), "projectile") == 3:
 			break
 	expect.call(ProgressStore.stamps(ProgressStore.load(), "projectile") == 3 and screen._mission_text.text == ExperimentScreen.DONE_TEXT,

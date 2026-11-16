@@ -980,16 +980,16 @@ func _ask(choices: Array) -> void:
 	_choices.visible = false   # _run_dialogue lays the box out, then shows both
 
 
-## A tap on the 3D view while Dugi's box (an explanation, the bridge, the reason) waits for a tap turns
-## its page, as a tap on the box does; a press on one of the lab's objects still takes the object
-## (the hand guide shows it while the bridge is open). Puppy's clue and the question have the shield.
+## A tap on the 3D view while Dugi's box (an explanation, the bridge, the reason) is open is a tap on
+## the box (DialogueBox.tap: the whole page, else the next); a press on one of the lab's objects still
+## takes the object (the hand guide shows it while the bridge is open). Puppy's clue and the question have the shield.
 func _setup_tap_catcher() -> void:
 	if dialogue == null:
 		return
 	_tap_catcher = TapCatcher.new(func(point: Vector2) -> bool:
 		return dialogue.active and dialogue.visible and not dialogue.hold and not _asking() \
 			and not (manipulator != null and manipulator.claims(point)),
-		dialogue.advance)
+		dialogue.tap)
 	view.add_child(_tap_catcher)
 	view.move_child(_tap_catcher, view.overlay_floor())   # over the 3D, under every overlay and button
 
@@ -1001,7 +1001,7 @@ func _on_shield_input(event: InputEvent) -> void:
 		return
 	_question_shield.accept_event()
 	if dialogue.active and not dialogue.hold:
-		dialogue.advance()
+		dialogue.tap()
 	elif _choices != null:
 		nudge_choices()
 
@@ -1717,7 +1717,7 @@ func _run_celebration(delta: float) -> void:
 ## or a device check, the ask button's own check included: their runs and screenshots stay as they
 ## were). The first guide comes once per lab (ProgressStore GUIDES); a lab without missions shows only
 ## that one. The hand draws over Dugi's box
-## (a pull may pass over it, the box waiting for a tap) and under every overlay added after it (the
+## (a pull may pass over it while the box is read) and under every overlay added after it (the
 ## mission strip, the picture buttons, the bubbles, the cards); without a box, right over the 3D.
 func _setup_guide() -> void:
 	if measurement or Story.measurement_run(Quality.all_args()) or manipulator == null \
@@ -1739,8 +1739,8 @@ func _poke_guide() -> void:
 
 
 ## Nothing else wants the child's eyes now: no question or clue, no open sidebar, no celebration,
-## piece or card. Dugi's bridge and explanations may stay open (his box waits for a tap that a child who
-## cannot read may never make; it says "try it", which the hand shows). The guide itself not playing.
+## piece or card. Dugi's bridge and explanations may stay open (a child who cannot read
+## still needs the hand; the box says "try it", which the hand shows). The guide itself not playing.
 func _guide_quiet() -> bool:
 	return not _guide_blocked() and not hand_guide.playing()
 

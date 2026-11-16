@@ -311,7 +311,7 @@ func finish() -> void:
 
 func tap_page() -> void:
 	if dialogue.active:
-		dialogue.advance()
+		dialogue.tap()
 
 
 func _on_shield_input(event: InputEvent) -> void:
