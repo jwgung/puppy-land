@@ -130,6 +130,12 @@
 ##    first), the island in use saved and opened again, an island open when every spot of the one before
 ##    is complete, the island-level saves keyed by island (an old save is the first island's), no
 ##    experiment on two islands, the island's story file.
+## 22b2. 섬·장소 기록 지우기 (tests/island_reset_checks.gd, 2026-11-16): one spot's or one island's record
+##    erased (only its keys; the rest, the purchases and the settings stay; the island after it closes),
+##    the gear on an open island's tag and the lab's button at the end of 더 보기, the parental gate and
+##    the question before every erase, the tags redrawn, the lab opened again from its start, phone /
+##    tablet / zoomed layouts, the words in 반말 with no numbers; the sync's erase rules are in
+##    tests/cloud_sync_checks.gd.
 ## 22c2. the curie island's map (tests/curie_map_checks.gd, #152 2026-11-13): content/islands/curie.json
 ##    (three zones, 12 spots in the story's order, the lighthouse), its stages and paths on land, an
 ##    island in the making (never open, 곧 만나요 on its card).
@@ -406,6 +412,11 @@ func _run() -> void:
 	_expect(cloud_sync != null and cloud_sync.can_instantiate(), "cloud sync checks compile", "")
 	if cloud_sync != null and cloud_sync.can_instantiate():
 		await cloud_sync.new(self, _expect).run()
+	print("== 섬·장소 기록 지우기 (2026-11-16): an island from its tag, a lab from its sheet, behind the parental gate ==")
+	var island_reset: GDScript = load("res://tests/island_reset_checks.gd")
+	_expect(island_reset != null and island_reset.can_instantiate(), "island reset checks compile", "")
+	if island_reset != null and island_reset.can_instantiate():
+		await island_reset.new(self, _expect).run()
 	print("== the hutton island's map (#72: its layout, grounds and features, open after the first island, never while in the making) ==")
 	var hutton: GDScript = load("res://tests/hutton_map_checks.gd")
 	_expect(hutton != null and hutton.can_instantiate(), "hutton map checks compile", "")

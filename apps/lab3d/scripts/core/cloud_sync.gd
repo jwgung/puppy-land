@@ -12,7 +12,10 @@
 ##   - SAVE_DELAY_S after the progress changes (ProgressStore.written), and when the app goes to the
 ##     back: the device's copy is sent (only its progress, ProgressMerge.for_cloud);
 ##   - 처음부터 다시 하기 marks the reset time (mark_reset), so the other devices drop their progress
-##     instead of bringing it back.
+##     instead of bringing it back;
+##   - 섬·장소 기록 지우기 (ProgressStore.reset_spot / reset_island) leaves its erase time in the file
+##     ([reset], ProgressMerge) and the copy goes at once (mark_partial_reset), so the other devices
+##     drop that spot's or island's older record instead of bringing it back.
 ## Purchases are not in it (Play's billing knows them), nor the settings or the map position.
 ##
 ## The backend is Play Games (the GodotPlayGameServices plugin, only in the "Android Play" preset's
@@ -108,6 +111,16 @@ func mark_reset() -> void:
 	var config := ConfigFile.new()
 	config.set_value(ProgressMerge.SYNC, ProgressMerge.RESET, int(Time.get_unix_time_from_system()))
 	ProgressStore.replace_text(config.encode_to_text())
+	_send_now()
+
+
+## A spot or an island was erased (`kind` "spot" / "island", `id`; the erase time is already in the
+## device's file, ProgressStore): with the sync on the copy goes now, not SAVE_DELAY_S later.
+func mark_partial_reset(kind: String, id: String) -> void:
+	if not is_on() or ProgressStore.path != ProgressStore.sync_path:
+		return
+	if ProgressStore.erased_at(kind, id) <= 0:
+		return   # (nothing was erased in this store)
 	_send_now()
 
 

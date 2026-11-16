@@ -240,6 +240,7 @@ func show_experiment(definition: Dictionary, state := {}, launch_args := false) 
 	var screen := ExperimentScreen.new()
 	screen.setup(definition, state, launch_args)
 	screen.back_requested.connect(show_list)
+	screen.record_erased.connect(func() -> void: show_experiment(definition))   # its start again (nothing kept)
 	_swap(screen, "")  # the screen resets Bench with the experiment's bench id
 
 

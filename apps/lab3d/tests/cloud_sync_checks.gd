@@ -4,6 +4,10 @@
 ## - merge: stamps the larger, marks either, a flag/piece played on either side played (a pending one
 ##   stays pending), the cleared controls of the copy with more stamps, the day limit of the later date,
 ##   the map position this device's only (never sent), a later reset wins over the other's progress;
+## - partial erases (섬·장소 기록 지우기, [reset] spot:<id> / island:<id>): the copy that erased a group
+##   later gives that group's keys (an erase here is not undone by the cloud's older record, the
+##   cloud's erase reaches this device), the same erase on both sides joins, a later 처음부터 다시 하기
+##   wins over an earlier erase, an erase after it still holds, other spots and islands stay;
 ## - off (the default): the cloud is never started and nothing is sent;
 ## - on: the cloud's copy joins the device's at once (a new device gets the progress), the joined copy
 ##   goes back when it differs, a write is sent once SAVE_DELAY_S later, 처음부터 다시 하기 reaches the
@@ -56,6 +60,8 @@ func run() -> void:
 	ProgressStore.sync_path = ProgressStore.TEST_PATH
 	CloudSync.settings_path = SETTINGS
 	check_merge()
+	check_partial_merge()
+	check_partial_flow()
 	await check_flow()
 	await check_settings()
 	ProgressStore.reset_all()
@@ -133,6 +139,96 @@ func check_merge() -> void:
 	if b.get_value("progress", "free-fall", 0) != 0 or b.get_value("progress", "orbit") != 1 or ProgressMerge.reset_time(ProgressMerge.merge(reset, old)) != 200:
 		problems.append("this device's later reset")
 	expect.call(problems.is_empty(), "cloud sync: the copies join (stamps the larger, marks either, played flags/pieces win, cleared of the copy with more stamps, the day of the later date, the map stays on the device, a later reset wins)",
+		"; ".join(problems))
+
+
+## 섬·장소 기록 지우기 between devices: ProgressMerge's [reset] rules.
+func check_partial_merge() -> void:
+	var problems := []
+	var spring_full := {"progress": {"spring": 3}, "cleared": {"spring": {"mass": "heavy"}}, "flags": {"spring": true},
+		"pieces": {"spring": true}, "clues": {"spring": true}, "guides": {"spring": true}}
+	# An erase here (spring at 500): the cloud's older record of spring does not come back; its other
+	# spot (orbit) and this device's other spot (free-fall) stay.
+	var here := _text({"reset": {"spot:spring": 500}, "progress": {"free-fall": 2}})
+	var there_sections := spring_full.duplicate(true)
+	(there_sections.progress as Dictionary)["orbit"] = 1
+	var there := _text(there_sections)
+	var m := _config(ProgressMerge.merge(here, there))
+	for section in spring_full:
+		if m.has_section_key(section, "spring"):
+			problems.append("an erase here: %s spring came back" % section)
+	if m.get_value("progress", "free-fall", 0) != 2 or m.get_value("progress", "orbit", 0) != 1 or m.get_value("reset", "spot:spring", 0) != 500:
+		problems.append("an erase here: the other spots or the time (%s)" % ProgressMerge.merge(here, there).replace("\n", " "))
+	# The cloud's erase reaches this device: its old record of spring goes.
+	var m2 := _config(ProgressMerge.merge(there, here))
+	if m2.has_section_key("progress", "spring") or m2.has_section_key("clues", "spring") or m2.get_value("reset", "spot:spring", 0) != 500 \
+			or m2.get_value("progress", "orbit", 0) != 1 or m2.get_value("progress", "free-fall", 0) != 2:
+		problems.append("the cloud's erase: %s" % ProgressMerge.merge(there, here).replace("\n", " "))
+	# The erase already on both copies: what each did since joins as before.
+	var a := _text({"reset": {"spot:spring": 500}, "progress": {"spring": 1}})
+	var b := _text({"reset": {"spot:spring": 500}, "progress": {"spring": 2}, "clues": {"spring": true}})
+	var m3 := _config(ProgressMerge.merge(a, b))
+	if m3.get_value("progress", "spring", 0) != 2 or not m3.get_value("clues", "spring", false):
+		problems.append("the same erase on both: not joined")
+	# A later erase on the other copy wins over this device's earlier one (both played since their own).
+	var m4 := _config(ProgressMerge.merge(_text({"reset": {"spot:spring": 400}, "progress": {"spring": 3}}), _text({"reset": {"spot:spring": 600}, "progress": {"spring": 1}})))
+	if m4.get_value("progress", "spring", 0) != 1 or m4.get_value("reset", "spot:spring", 0) != 600:
+		problems.append("the later of two erases: spring %s" % m4.get_value("progress", "spring", 0))
+	# A later 처음부터 다시 하기 wins over an earlier erase (and its time is dropped).
+	var m5 := _config(ProgressMerge.merge(_text({"reset": {"spot:spring": 500}, "progress": {"spring": 1, "free-fall": 3}}),
+		_text({"sync": {"reset": 900}, "progress": {"orbit": 1}})))
+	if m5.has_section_key("progress", "spring") or m5.has_section_key("progress", "free-fall") or m5.get_value("progress", "orbit", 0) != 1 \
+			or m5.has_section("reset") or m5.get_value("sync", "reset", 0) != 900:
+		problems.append("a later full reset: %s" % m5.encode_to_text().replace("\n", " "))
+	# An erase after the other copy's full reset still holds there.
+	var m6 := _config(ProgressMerge.merge(_text({"reset": {"spot:spring": 500}, "progress": {"free-fall": 3}}),
+		_text({"sync": {"reset": 300}, "progress": {"spring": 2, "orbit": 1}})))
+	if m6.has_section_key("progress", "spring") or m6.get_value("progress", "orbit", 0) != 1 or m6.get_value("reset", "spot:spring", 0) != 500:
+		problems.append("an erase after a full reset: %s" % m6.encode_to_text().replace("\n", " "))
+	# An island's erase: its story marks and day limit go, the first island's (bare keys) stay.
+	var m7 := _config(ProgressMerge.merge(_text({"reset": {"island:hutton": 500}}),
+		_text({"story": {"prologue": true, "hutton.prologue": true, "hutton.finale": true, "hutton.voyage": true},
+			"day": {"hutton.spot": "strata", "hutton.date": "2026-11-12"}, "progress": {"strata": 2}})))
+	if m7.has_section_key("story", "hutton.prologue") or m7.has_section_key("story", "hutton.voyage") or m7.has_section_key("day", "hutton.spot") \
+			or not m7.get_value("story", "prologue", false) or m7.get_value("progress", "strata", 0) != 2:
+		problems.append("an island's erase: %s" % m7.encode_to_text().replace("\n", " "))
+	expect.call(problems.is_empty(), "cloud sync: a spot's or island's erase is not undone by the other copy's older record, reaches the other device, joins when shared, loses to a later full reset and holds after an earlier one",
+		"; ".join(problems))
+
+
+## The erase through the store and a stand-in cloud: it goes at once, a device that still has the old
+## record drops it, and a pull of an old copy does not bring it back here.
+func check_partial_flow() -> void:
+	var problems := []
+	ProgressStore.reset_all()
+	if FileAccess.file_exists(SETTINGS):
+		DirAccess.remove_absolute(SETTINGS)
+	var cloud := FakeCloud.new()
+	var sync := _sync(cloud)
+	ProgressStore.save({"spring": 3, "free-fall": 2})
+	ProgressStore.set_mark(ProgressStore.CLUES, "spring", true)
+	sync.set_on(true)
+	var old_device := ProgressMerge.for_cloud(ProgressStore.file_text())   # another device, synced before the erase
+	var saves := cloud.saves
+	ProgressStore.reset_spot("spring")
+	sync.mark_partial_reset("spot", "spring")
+	var sent := _config(cloud.copy)
+	if cloud.saves != saves + 1 or sent.has_section_key("progress", "spring") or int(sent.get_value("reset", "spot:spring", 0)) <= 0 \
+			or sent.get_value("progress", "free-fall", 0) != 2:
+		problems.append("the erase not sent at once: %s" % cloud.copy.replace("\n", " "))
+	var other := _config(ProgressMerge.merge(old_device, cloud.copy))
+	if other.has_section_key("progress", "spring") or other.has_section_key("clues", "spring") or other.get_value("progress", "free-fall", 0) != 2:
+		problems.append("the other device keeps spring")
+	cloud.copy = old_device   # (the old device sent its copy before it saw the erase)
+	sync._pull()
+	if ProgressStore.load().has("spring") or ProgressStore.mark(ProgressStore.CLUES, "spring") or ProgressStore.load().get("free-fall") != 2:
+		problems.append("a pull of the old copy brought spring back: %s" % str(ProgressStore.load()))
+	if _config(cloud.copy).has_section_key("progress", "spring"):
+		problems.append("the joined copy sent back keeps spring")
+	_drop(sync)
+	CloudSync._store_on(false)
+	ProgressStore.reset_all()
+	expect.call(problems.is_empty(), "cloud sync: a spot's erase goes to the cloud at once, the other device drops it, a pull of an old copy does not bring it back",
 		"; ".join(problems))
 
 

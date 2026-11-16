@@ -247,3 +247,104 @@ static func reset_all() -> void:
 	if FileAccess.file_exists(path):
 		DirAccess.remove_absolute(path)
 	Island.forget_current()   # the saved island went with the file: the first island again
+
+
+## 섬·장소 기록 지우기 (2026-11-16, ResetConfirm behind the parental gate): one spot's or one island's
+## record is erased; the rest of the store, the purchases (IslandStore) and the settings stay.
+## Each erase leaves its time in [reset] (unix seconds: "spot:<id>", "island:<id>") so the sync between
+## devices (ProgressMerge) lets the later erase win over the other copy's older record of that group
+## instead of bringing it back.
+const RESET := "reset"
+## The sections keyed by spot id (a spot's record).
+const SPOT_SECTIONS := ["progress", CLEARED, FLAGS, PIECES, CLUES, GUIDES]
+## An island's own story marks (island_key).
+const ISLAND_PARTS := ["prologue", "finale", "voyage", "unlock"]
+## Tests: the erase time (0 = the device's clock).
+static var now_override := 0
+
+
+## The [section, key] pairs of a group: "spot" (`id` a spot: its key in every spot section) or
+## "island" (`id` an island: its story marks and its day limit; its spots are groups of their own).
+## The map's last spot is device-only (not a synced group).
+static func group_keys(kind: String, id: String) -> Array:
+	var out := []
+	if kind == "spot":
+		for section in SPOT_SECTIONS:
+			out.append([section, id])
+	elif kind == "island":
+		for part in ISLAND_PARTS:
+			out.append([STORY, island_key(id, part)])
+		out.append([DAY, "%s.spot" % id])
+		out.append([DAY, "%s.date" % id])
+	return out
+
+
+## The tombstone key of a group in [reset].
+static func reset_key(kind: String, id: String) -> String:
+	return "%s:%s" % [kind, id]
+
+
+## When the group was last erased here (unix seconds; 0: never).
+static func erased_at(kind: String, id: String) -> int:
+	return _as_int(_read().get_value(RESET, reset_key(kind, id), 0))
+
+
+## The spot has something to erase (a stamp, a cleared run, a flag, a piece, a clue, a guide).
+static func spot_has_record(spot: String) -> bool:
+	return _has_group(_read(), "spot", spot)
+
+
+## The island has something to erase: any of its spots, its story marks, its day limit or its map spot.
+static func island_has_record(island_id: String) -> bool:
+	var config := _read()
+	if _has_group(config, "island", island_id) or config.has_section_key(MAP, island_key(island_id, "last_spot")):
+		return true
+	for spot in Island.by_id(island_id).spots():
+		if _has_group(config, "spot", spot):
+			return true
+	return false
+
+
+static func _has_group(config: ConfigFile, kind: String, id: String) -> bool:
+	for pair in group_keys(kind, id):
+		if config.has_section_key(pair[0], pair[1]):
+			return true
+	return false
+
+
+## One spot's record is erased (its stamps, cleared run, flag, piece, clue and hand guide).
+static func reset_spot(spot: String) -> void:
+	var config := _read()
+	var now := _now()
+	_erase_group(config, "spot", spot, now)
+	_write(config)
+	Island.forget_current()   # (an island after this spot's may be closed now)
+
+
+## One island's record is erased: every spot of it, its story (prologue, finale, voyage, unlock), its
+## day limit and the trio's spot on its map. The island in use goes back to the first when it is this
+## one; an island that opened after this one closes again by itself (Island.is_open reads the stamps).
+static func reset_island(island_id: String) -> void:
+	var config := _read()
+	var now := _now()
+	for spot in Island.by_id(island_id).spots():
+		_erase_group(config, "spot", spot, now)
+	_erase_group(config, "island", island_id, now)
+	var last := island_key(island_id, "last_spot")
+	if config.has_section_key(MAP, last):
+		config.erase_section_key(MAP, last)
+	if str(config.get_value(MAP, "island", "")) == island_id and config.has_section_key(MAP, "island"):
+		config.erase_section_key(MAP, "island")
+	_write(config)
+	Island.forget_current()
+
+
+static func _erase_group(config: ConfigFile, kind: String, id: String, now: int) -> void:
+	for pair in group_keys(kind, id):
+		if config.has_section_key(pair[0], pair[1]):
+			config.erase_section_key(pair[0], pair[1])
+	config.set_value(RESET, reset_key(kind, id), now)
+
+
+static func _now() -> int:
+	return now_override if now_override > 0 else int(Time.get_unix_time_from_system())
