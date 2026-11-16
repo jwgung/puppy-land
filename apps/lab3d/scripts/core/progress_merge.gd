@@ -35,8 +35,9 @@ const RESET := "reset"
 const MAX_SECTIONS := ["progress"]
 const MARK_SECTIONS := ["story", "clues", "guides"]
 const PENDING_SECTIONS := ["flags", "pieces"]
-## The partial erases' times (ProgressStore.RESET); one more than this much in the future (s) is not
-## taken: a copy with a far future time would win over that group's record for good.
+## The partial erases' times (ProgressStore.RESET). An erase time more than FUTURE_SLACK_S seconds ahead
+## of this device's clock is not taken: a copy with a far future time would win over that group's record
+## for good.
 const TOMBSTONES := ProgressStore.RESET
 const FUTURE_SLACK_S := 86400
 
