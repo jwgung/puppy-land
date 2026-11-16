@@ -376,8 +376,9 @@ static func _mini_island_mesh(id: String) -> Mesh:
 		b.add_cylinder(Transform3D(Basis(), at), 0.16, 0.12, 0.5, 6, ArtPalette.TRUNK)
 		b.add_cylinder(Transform3D(Basis(), at + Vector3.UP * 0.4), 0.85, 0.0, 1.6, 7, ArtPalette.LEAF)
 	var k := MINI_SCALE
-	var place := func(x: float, z: float) -> Transform3D:
-		return Transform3D(Basis().scaled(Vector3.ONE * k), Vector3(x, top, z))
+	var place := func(x: float, z: float) -> Transform3D:   # (x, z) before the island's turn (Island.turn_deg), like its file
+		var at := island.turned(Vector2(x, z))
+		return Transform3D(Basis().scaled(Vector3.ONE * k), Vector3(at.x, top, at.y))
 	match id:
 		"hutton":
 			MapLandmarks.volcano(b, Transform3D(Basis(), Vector3(-1.6, top - 0.2, -2.0)), 3.4, 4.0, 0.2)
