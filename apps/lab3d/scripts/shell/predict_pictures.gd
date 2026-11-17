@@ -39,7 +39,9 @@ const KINDS := ["long_arc", "same_arc", "fall_together", "fall_heavy_first", "li
 	# #156 (퍼지는 냄새와 잉크): does ink spread first in cold water or in hot water?
 	"ink_cold_first", "ink_hot_first",
 	# #157 (녹으면 사라질까?): is the dissolved salt gone or still in the water?
-	"salt_gone", "salt_stays"]
+	"salt_gone", "salt_stays",
+	# #158 (되돌릴 수 있을까?): does melted chocolate set again when it cools?
+	"melt_sets", "melt_stays"]
 const STRONG := Color("e2683c")
 const PALE := Color("c9b892")
 const GROUND := Color("8a6a46")
@@ -118,6 +120,8 @@ static func draw(canvas: Control, kind: String) -> void:
 			_ink_glasses(canvas, r, kind == "ink_hot_first")
 		"salt_gone", "salt_stays":
 			_salt_glass(canvas, r, kind == "salt_stays")
+		"melt_sets", "melt_stays":
+			MeltCookPictures.predict(canvas, r, kind == "melt_sets", STRONG, PALE)
 		"breeze_from_sea", "breeze_from_land":
 			_breeze(canvas, r, kind == "breeze_from_sea")
 		"cloud_grows", "cloud_stays":

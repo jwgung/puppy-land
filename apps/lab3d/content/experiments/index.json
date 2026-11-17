@@ -32,7 +32,8 @@
     ],
     "curie": [
       "diffusion.json",
-      "dissolving.json"
+      "dissolving.json",
+      "melt-cook.json"
     ]
   }
 }

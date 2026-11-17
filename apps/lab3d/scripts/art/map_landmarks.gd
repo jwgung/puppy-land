@@ -74,6 +74,8 @@ static func add(b: ArtMeshBuilder, id: String, xf: Transform3D) -> float:
 			return _diffusion(b, xf)
 		"dissolving":
 			return _dissolving(b, xf)
+		"melt-cook":
+			return _melt_cook(b, xf)
 	_rod(b, xf, Vector3.ZERO, Vector3(0.0, 1.0, 0.0), 0.08, ArtPalette.BLUE)
 	_ball(b, xf, Vector3(0.0, 1.15, 0.0), 0.2, ArtPalette.WHITE)
 	return 1.35
@@ -694,6 +696,21 @@ static func _dissolving(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	_ball(b, xf, dish + Vector3(0.0, 0.1, 0.0), 0.1, DissolvingProps.SALT)
 	var bucket := Vector3(0.3, 0.12, -0.18)
 	b.add_cylinder(xf * Transform3D(Basis(), bucket), 0.13, 0.17, 0.32, 10, DissolvingProps.BUCKET_WOOD, true, Color("2f86d6"))
+	return 1.35
+
+
+## The curie island's 되돌릴 수 있을까? (#158, "초콜릿 냄비가 있는 곳"): a little iron stove with its red
+## handle on the front, a steel pot of melted chocolate on it and a star of set chocolate on a small tray
+## beside, an egg in front.
+static func _melt_cook(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	_box(b, xf, Vector3(0.0, 0.2, 0.0), Vector3(1.1, 0.4, 0.55), MeltCookProps.STOVE, MeltCookProps.STOVE_PLATE)
+	_ball(b, xf, Vector3(0.0, 0.2, 0.3), 0.09, MeltCookProps.HANDLE_RED)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(-0.22, 0.4, 0.0)), 0.2, 0.24, 0.2, 10, MeltCookProps.POT_METAL, true, MeltCookProps.CHOC_MELT)
+	_rod(b, xf, Vector3(-0.44, 0.55, 0.0), Vector3(-0.62, 0.58, 0.0), 0.03, MeltCookProps.POT_DARK)
+	_box(b, xf, Vector3(0.3, 0.42, 0.0), Vector3(0.36, 0.04, 0.36), MeltCookProps.MOLD_METAL)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.3, 0.44, 0.0)), 0.14, 0.12, 0.05, 5, MeltCookProps.CHOC_SET, true, MeltCookProps.CHOC_SET_TOP)
+	b.add_sphere(xf * Transform3D(Basis.from_scale(Vector3(0.8, 1.1, 0.8)), Vector3(0.1, 0.1, 0.55)), 0.13, 3, 8, MeltCookProps.SHELL)
+	_ball(b, xf, Vector3(-0.22, 0.85, 0.0), 0.07, Color(1.0, 1.0, 1.0))
 	return 1.35
 
 
