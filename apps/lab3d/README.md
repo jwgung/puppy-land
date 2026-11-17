@@ -1281,7 +1281,7 @@ python3 -I apps/lab3d/tools/device_gesture.py orbit  # orbit | pinch | pinch-fix
 
 결정 1(안 A): 아이가 할 일(붓기·그릇 놓기)을 마치면 시간이 저절로 흐르고 판정 상태에서 멈춘다. 팻말은 보기만 하는 물체다.
 
-- **`FastClock`**(`scripts/core/fast_clock.gd`, 순수 상태): 모델이 하나 갖고 `step(dt)`에서 `advance(dt)`(놀이 초)를 부른다. `start()` 흐름 시작(조건 단추 잠김 시작), `stop()` 그 자리에서 멈춤(다시 `start()`로 이어감), `until`(일) 그 시각에 저절로 멈춤, `reset()` 첫 아침·멈춤·잠금 풀림(`다시`). 읽기: `days`(흐른 날), `share()`(팻말 표시 0 해 끝 .. 1 달 끝), `nights()`(달 도장 수), `night()`(장면 어둠 0..1), `is_night()`, `running`, `locks_conditions()`(처음 `start()`부터 `until`에서 저절로 멈추거나 `reset()`될 때까지 true, 흐르는 도중 물체를 잡아 멈춘 동안도 true: 화면이 조건 단추를 흐리게 잠글 신호. #159부터 결과가 나오면 풀린다: 퍼피의 "다른 단추를 골라 봐"를 `다시` 없이 할 수 있게), `sunshine(a, b)`·`days_for_sunshine()`(낮에만 일어나는 일). 하루 = `day_s` 놀이 초(기본 4초).
+- **`FastClock`**(`scripts/core/fast_clock.gd`, 순수 상태): 모델이 하나 갖고 `step(dt)`에서 `advance(dt)`(놀이 초)를 부른다. `start()` 흐름 시작(조건 단추 잠김 시작), `stop()` 그 자리에서 멈춤(다시 `start()`로 이어감), `until`(일) 그 시각에 저절로 멈춤, `reset()` 첫 아침·멈춤·잠금 풀림(`다시`). 읽기: `days`(흐른 날), `share()`(팻말 표시 0 해 끝 .. 1 달 끝), `nights()`(달 도장 수), `night()`(장면 어둠 0..1), `is_night()`, `running`, `locks_conditions()`(처음 `start()`부터 `until`에서 저절로 멈추거나 `reset()`될 때까지 true, 흐르는 도중 물체를 잡아 멈춘 동안도 true: 화면이 조건 단추를 흐리게 잠글 신호. #159부터 결과가 나오면 풀린다: 퍼피의 "다른 단추를 골라 봐"를 `다시` 없이 할 수 있게. 목업은 "`다시`로 풀림"뿐이었으나 2026-11-17 사용자 결정으로 결과에서도 풀림), `sunshine(a, b)`·`days_for_sunshine()`(낮에만 일어나는 일). 하루 = `day_s` 놀이 초(기본 4초).
 - **`TimeSign`**(`scripts/art/time_sign.gd`, Node3D): 물의 여행 해·달 팻말과 같은 나무 틀·해·달, 막대 왼쪽 반 낮(연노랑)·오른쪽 반 밤(남색), 흰 표시(빨간 테)가 해 → 달, 흐르는 동안만 빨간 ▶▶ 등, 밤마다 아래 판에 달 도장(최대 4). `TimeSign.new(기둥 길이)`, `show_clock(clock)` 또는 `show_time(share, nights, running)`. 물의 여행(`WaterCycleProps`)도 `TimeSign.frame_mesh`·`face_mesh`(한 색)로 그린다(메시 바이트 같음).
 - **`SceneNight`**(`scripts/art/scene_night.gd`): `attach(lab)`(세계를 만든 뒤), `set_amount(clock.night())`, 실험이 나갈 때 `clear()`(전역 story_tint). 하늘색·섬 땅 어둡게, 별과 초승달.
 - **조건 단추 잠금**(#159): `Experiment.conditions_locked()`(기본 false, 반죽 실험은 `clock.locks_conditions()`). 화면(`ExperimentScreen._sync_picks_lock`)이 매 프레임 읽어 조건 그림 단추 줄을 흐리게(불투명도 40%) 하고 단추를 누를 수 없게 한다. 잠긴 동안 `_set_control`(그림 단추·사이드바)은 무시하고, 조건 단추를 가리키는 앞발과 손 안내는 풀릴 때까지 기다린다. 허턴섬 물의 여행은 `FastClock`을 쓰지 않아 그대로다.
@@ -1295,7 +1295,7 @@ python3 -I apps/lab3d/tools/device_gesture.py orbit  # orbit | pinch | pinch-fix
 - **모델**(교과서 값): 효모가 있으면 부피가 오븐 옆(27 °C쯤)에서 1시간, 냉장고(4 °C쯤)에서 12시간마다 두 배(효모가 없으면 그대로). 목표는 단계마다 두 배(1·2단계, 그릇의 주황 점선) 또는 선반(3단계, 부피 3배 = 반죽 꼭대기가 선반 밑에 닿음). 시간은 오븐 옆에서 목표까지 걸릴 만큼 흐른다: 오븐 옆은 목표에 닿고, 냉장고는 같은 시간에 조금만(공정한 비교). 효모 없는 반죽은 밤 하나(달 도장 하나)가 지나도록 본다. 빠르기: 효모 있으면 1시간 = 놀이 2초(팻말 표시가 조금만 움직임: 실제로도 한두 시간), 없으면 하루 = 8초. 상태 `ready`·`rising`·`waiting`·`doubled`(1)·`same`(2)·`shelf`(3)·`little`(냉장고). 판정은 상태로만, 핵심 카드 `반죽`(말만).
 - **다 깬 뒤**: 상태 칸이 처음("납작해")으로 돌아가지 않게, 마지막 도장 뒤의 `더 해 보기` 초기화와 다 깬 장소를 다시 열 때는 오븐 옆에서 선반까지 부푼 반죽("선반까지 닿았어")을 보여 준다. `다시`나 조건 단추로 처음부터.
 - **조각**: 선반 위(처음부터 보임, 선반 앞 등 셋, 도장마다 하나). 마지막 도장에 선반에서 톡 튀어 빵고양이 앞으로.
-- 그림: 질문 `dough_warm`/`dough_cold`(오븐 옆 부푼 그릇 / 냉장고 속 납작한 그릇, 목업대로), 조건 단추 `dough_yeast`/`dough_plain`, 두기두기 설명 그림 카드 `yeast`(반죽 속 효모 알갱이와 기체 거품).
+- 그림: 질문 `dough_warm`/`dough_cold`(오븐 옆 / 냉장고 앞에 같은 그릇·같은 반죽: 자리만 달라 답이 드러나지 않음. 목업은 부푼 그릇 / 납작한 그릇이었으나 2026-11-17 사용자 결정으로 소금 실험처럼 답을 숨김), 조건 단추 `dough_yeast`/`dough_plain`, 두기두기 설명 그림 카드 `yeast`(반죽 속 효모 알갱이와 기체 거품).
 - 시험: `tests/dough_checks.gd`.
 
 ### 퀴리섬 3: 되돌릴 수 있을까? (#158, 2026-11-17)

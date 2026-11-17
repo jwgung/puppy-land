@@ -821,8 +821,11 @@ func check_pictures() -> void:
 	canvas.queue_free()
 	var listed := "dough_warm" in PredictPictures.KINDS and "dough_cold" in PredictPictures.KINDS and "dough_yeast" in PickPictures.KINDS \
 		and "dough_plain" in PickPictures.KINDS and "yeast" in ExplainPictures.KINDS
+	# The question's two cards draw the same bowl and dough (only the place differs: no hint of the answer).
+	var same: Variant = (load("res://scripts/shell/predict_pictures.gd") as GDScript).get_script_constant_map().get("DOUGH_QUESTION_RISE")
+	listed = listed and same is float and float(same) > 1.0 and float(same) < 2.0
 	expect.call(listed and drawn == kinds.map(func(k: Array) -> String: return k[1]),
-		"dough pictures: the question's places (oven / fridge), the yeast buttons (puffy / flat) and Dugi's yeast card are listed and draw", str(drawn))
+		"dough pictures: the question's places (oven / fridge, the same bowl on both: no hint of the answer), the yeast buttons (puffy / flat) and Dugi's yeast card are listed and draw", str(drawn))
 
 
 func check_opening() -> void:
