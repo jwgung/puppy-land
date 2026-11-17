@@ -284,6 +284,15 @@ func graph_revision() -> int:
 	return _graph_revision
 
 
+## Puppy's result bubble keeps clear of the bowl and its dough (in the fridge it stands right under
+## the bubble's usual place).
+func keep_in_sight() -> Array[AABB]:
+	var s := props.bowl.scale.x
+	var top := DoughProps.dough_top((model as DoughModel).volume()) * s
+	var r := DoughProps.CAP_R.y * s
+	return [AABB(props.bowl.global_position - Vector3(r, 0.0, r), Vector3(r * 2.0, top, r * 2.0))]
+
+
 ## Dugi points at the dough.
 func explain_point() -> Vector3:
 	return props.bowl.global_position + Vector3.UP * DoughProps.dough_top((model as DoughModel).volume()) * props.bowl.scale.y
