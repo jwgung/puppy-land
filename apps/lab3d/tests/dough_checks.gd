@@ -74,6 +74,7 @@ func run() -> void:
 	await check_no_numbers()
 	await check_screen_lock()
 	await check_in_view()
+	await check_rings_on_table()
 	check_spot()
 	await check_pictures()
 	check_opening()
@@ -777,6 +778,53 @@ func check_in_view() -> void:
 		host.queue_free()
 		await tree.process_frame
 	expect.call(problems.is_empty(), "dough in view: the bowl (on the table, by the oven, in the fridge), the oven, the shelf with the piece, the fridge, the bread cat's head and the time sign (its lamp and stamps) between the top band and the bottom %.0f%% (phone, desktop and tablet)" % ((1.0 - BOTTOM_FREE) * 100.0),
+		"; ".join(problems.slice(0, 6)))
+
+
+## The two rings (the warm and the cold place) lie wholly on the table's top: in the world every point
+## of their outline inside the top's rectangle, and on the phone, the desktop and the tablet inside the
+## top's four corners as drawn (2026-11-17 user, the tablet: the cold ring stuck out past the table's
+## right edge); a let-go inside a ring is caught there, just outside it is not.
+func check_rings_on_table() -> void:
+	var problems := []
+	var half := KitchenSet.TABLE_SIZE * 0.5
+	var lo := Vector2(KitchenSet.TABLE_AT.x - half.x, KitchenSet.TABLE_AT.z - half.z)
+	var hi := Vector2(KitchenSet.TABLE_AT.x + half.x, KitchenSet.TABLE_AT.z + half.z)
+	var rings := {"warm": KitchenSet.table_point(DoughProps.WARM_X, DoughProps.BOWL_Z), "cold": KitchenSet.table_point(DoughProps.COLD_X, DoughProps.BOWL_Z)}
+	for name: String in rings:
+		for p: Vector3 in DoughProps.ring_outline(rings[name]):
+			if p.x < lo.x or p.x > hi.x or p.z < lo.y or p.z > hi.y:
+				problems.append("the %s ring at %s past the table" % [name, str(p)])
+				break
+	for size: Vector2 in [PHONE, DESKTOP, TABLET]:
+		var host := Control.new()
+		host.size = size
+		tree.root.add_child(host)
+		var view: View3D = load(VIEW_3D).new()
+		view.size = size
+		host.add_child(view)
+		var lab := _lab()
+		view.set_world(lab)
+		view.rig.configure(_definition().camera)
+		for i in 2:
+			await tree.process_frame
+		var at := func(world: Vector3) -> Vector2: return view.rig.unproject_position(world)
+		var y := KitchenSet.TABLE_TOP
+		var top := PackedVector2Array([at.call(Vector3(lo.x, y, lo.y)), at.call(Vector3(hi.x, y, lo.y)), at.call(Vector3(hi.x, y, hi.y)), at.call(Vector3(lo.x, y, hi.y))])
+		for name: String in rings:
+			for p: Vector3 in DoughProps.ring_outline(rings[name]):
+				if not Geometry2D.is_point_in_polygon(at.call(p), top):
+					problems.append("%s: the %s ring drawn past the table's top" % [str(size), name])
+					break
+		host.queue_free()
+		await tree.process_frame
+	for name: String in rings:
+		var x: float = rings[name].x
+		var want := DoughModel.WARM if name == "warm" else DoughModel.COLD
+		if DoughProps.spot_at(x + DoughProps.RING_R * 0.95) != want or DoughProps.spot_at(x - DoughProps.RING_R * 0.95) != want \
+				or DoughProps.spot_at(x + DoughProps.RING_R * 1.1) == want or DoughProps.spot_at(x - DoughProps.RING_R * 1.1) == want:
+			problems.append("the %s ring does not catch what it shows" % name)
+	expect.call(problems.is_empty(), "dough rings: the warm and the cold ring lie wholly on the table's top (the world and as drawn on the phone, the desktop and the tablet); a let-go is caught just inside a ring, not just outside",
 		"; ".join(problems.slice(0, 6)))
 
 

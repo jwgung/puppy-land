@@ -41,12 +41,16 @@ const SPECK := Color("c49a5a")
 const BUBBLES := 12
 ## The "twice" mark: an orange dashed line round the bowl's front at twice the start's height.
 const MARK := Color("ff7a2f")
-## The warm place (by the oven) and the cold place (in front of the fridge) on the table (x), how near
-## (m) a let-go counts as there, the rings' radius.
+## The warm place (by the oven) and the cold place (in front of the fridge) on the table (x), the
+## rings' radius (across; front to back RING_DEPTH of it) and their dashes; a let-go counts as there
+## within the ring (CATCH: the ring's half width, so what the ring shows is what catches the bowl).
+## Both rings lie wholly on the table's top (2026-11-17 user, the tablet: "책상에 동그라미가 삐져나오는데?").
 const WARM_X := -2.0
-const COLD_X := 2.75
-const CATCH := 0.75
+const COLD_X := 2.45
 const RING_R := 0.62
+const RING_DEPTH := 0.7
+const DASH := Vector2(0.18, 0.05)
+const CATCH := RING_R
 const WARM_RING := Color("ff7a2f")
 const COLD_RING := Color("4dabf7")
 ## The oven: its foot's middle on the grass, its size, colours.
@@ -72,8 +76,8 @@ const FRIDGE_EDGE := Color("9fb0c2")
 const FRIDGE_INSIDE := Color("cfe8ff")
 const FRIDGE_SCALE := 0.75
 const DOOR_OPEN_DEG := 62.0
-## The door opens once the carried bowl is this far right.
-const DOOR_FROM_X := 1.9
+## The door opens once the carried bowl is over the cold ring.
+const DOOR_FROM_X := COLD_X - CATCH
 ## The time sign (its bar's middle) and the bread cat (its base on its crates).
 const SIGN_AT := Vector3(1.2, 2.35, -0.55)
 const CAT_AT := Vector3(-0.75, KitchenSet.TABLE_TOP + 0.78, -0.45)
@@ -211,7 +215,7 @@ static func bowl_scale(spot: float) -> float:
 static func spot_at(x: float) -> float:
 	if absf(x - WARM_X) <= CATCH:
 		return DoughModel.WARM
-	if x >= COLD_X - CATCH:
+	if absf(x - COLD_X) <= CATCH:
 		return DoughModel.COLD
 	return -1.0
 
@@ -367,6 +371,17 @@ static func _mark_mesh() -> Mesh:
 	return b.commit()
 
 
+## The outline a ring's dashes reach (world, on the table's top) round its middle `at`: the ellipse
+## pushed out by half a dash.
+static func ring_outline(at: Vector3) -> PackedVector3Array:
+	var out := PackedVector3Array()
+	var reach := Vector2(DASH.x, DASH.y).length() * 0.5
+	for k in 48:
+		var a := TAU * k / 48.0
+		out.append(at + Vector3(cos(a) * (RING_R + reach), 0.0, sin(a) * (RING_R * RING_DEPTH + reach)))
+	return out
+
+
 ## A dashed ring on the table (a place to put the bowl down).
 static func _ring_mesh(color: Color) -> Mesh:
 	var b := ArtKit.builder()
@@ -374,8 +389,8 @@ static func _ring_mesh(color: Color) -> Mesh:
 	var dashes := 14
 	for k in dashes:
 		var a := TAU * k / dashes
-		var at := Vector3(cos(a) * RING_R, 0.0, sin(a) * RING_R * 0.7)
-		b.add_rounded_box(Transform3D(Basis(Vector3.UP, -a + PI * 0.5), at), Vector3(0.18, 0.012, 0.05), 0.0, 1, color)
+		var at := Vector3(cos(a) * RING_R, 0.0, sin(a) * RING_R * RING_DEPTH)
+		b.add_rounded_box(Transform3D(Basis(Vector3.UP, -a + PI * 0.5), at), Vector3(DASH.x, 0.012, DASH.y), 0.0, 1, color)
 	return b.commit()
 
 
