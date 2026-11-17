@@ -200,6 +200,13 @@ func control_value(id: String) -> Variant:
 	return definition.default_value(id)
 
 
+## The conditions may not change now (#159: while the fast-forward time flows, FastClock.locks_conditions):
+## the screen dims the condition picture buttons, ignores a tap on them or on the sidebar's controls,
+## holds the paw's tap on them and the hand guide until they are free. Default: never locked.
+func conditions_locked() -> bool:
+	return false
+
+
 ## Runs an action declared in definition.actions (buttons).
 func run_action(_id: String) -> void:
 	pass

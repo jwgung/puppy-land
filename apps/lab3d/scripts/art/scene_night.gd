@@ -19,7 +19,7 @@ const STARS := 46
 const STAR_FAR := 140.0
 const MOON_DIR := Vector3(-0.35, 0.42, -1.0)
 const MOON_R := 6.0
-const MOON := Color("f4f1d0")
+const MOON := TimeSign.MOON   # (the sign's moon and the stamps: one colour)
 
 ## How dark it is now (0 day .. 1 night).
 var amount := 0.0

@@ -39,6 +39,7 @@ const DONE_TEXT := ""
 const PICK_SIZE := Vector2(132.0, 112.0)    # a condition picture button (UI units, at least)
 const PICK_GAP := 10.0                      # between the buttons of one condition
 const PICK_GROUP_GAP := 22.0                # between two conditions' buttons
+const PICKS_LOCKED_ALPHA := 0.4             # the row while the lab locks its conditions (#159: dimmed)
 
 ## Set by App for the screen it opens from --experiment: then the launch args (--ctl-*, --camera,
 ## ...) apply to this screen only (a rebuilt screen with a saved state restores that state instead).
@@ -155,6 +156,7 @@ var _picks: Array = []                # [{"control": id, "preset": kid.picks ent
 var _picks_stage := -2                # the stage the row was built for
 var _picks_shown: Array = []          # and the controls it shows
 var _picks_for := Vector4(NAN, 0, 0, 0)   # view width, height, talking, asking the row was laid out for (_fit_picks)
+var _picks_locked := false   # the lab locks its conditions now (Experiment.conditions_locked, #159): the row dimmed
 ## The celebrations (2026-10-28): the stamp flying into its slot (StampSlam), the strip's filled
 ## stamps so far (a stamp in flight fills its slot when it lands), the whole-round confetti and the
 ## card that follows it (RoundDoneCard), the bread cat of the lab (it hops on a stamp).
@@ -414,6 +416,7 @@ func _process(delta: float) -> void:
 	_run_result_bubble(delta)
 	_run_strip_pulse(delta)
 	_sync_clue_glow()
+	_sync_picks_lock()
 	_run_guide(delta)
 
 
@@ -1069,7 +1072,7 @@ func _try_nudge_picks() -> void:
 
 ## The row shows and nothing covers it (Dugi's box or question).
 func _picks_free() -> bool:
-	return picks_shown() and not _asking() and not (dialogue != null and dialogue.active)
+	return picks_shown() and not _picks_locked and not _asking() and not (dialogue != null and dialogue.active)
 
 
 ## The first picture button that makes an unmet condition of stage `stage` hold (null when none).
@@ -1753,7 +1756,7 @@ func _guide_quiet() -> bool:
 ## Something the hand must not show over: the question or the clue, the sidebar, the celebration, the piece, the card.
 func _guide_blocked() -> bool:
 	return _asking() or is_sidebar_open() or _done_card != null or _round_wait >= 0.0 or _card_left >= 0.0 \
-		or _piece_wait >= 0.0
+		or _piece_wait >= 0.0 or (experiment != null and experiment.conditions_locked())   # (#159: the time flows)
 
 
 func _run_guide(delta: float) -> void:
@@ -1848,6 +1851,7 @@ func _build_picks(stage: int) -> void:
 		button.custom_minimum_size.x = maxf(PICK_SIZE.x, (button.get_meta("caption") as Label).get_minimum_size().x + 24.0)
 	for id in groups.map(func(group: Dictionary) -> String: return group.control):
 		_sync_picks(id)
+	_paint_picks_lock()
 	_picks_for = Vector4(NAN, 0, 0, 0)
 	_fit_overlays()
 
@@ -1890,6 +1894,29 @@ func _sync_picks(id: String) -> void:
 	for pick in _picks:
 		if pick.control == id:
 			(pick.button as Button).set_pressed_no_signal(ConditionPicks.selected(pick.preset, have))
+
+
+## The lab locks its conditions while its fast-forward time flows (Experiment.conditions_locked, #159;
+## the mockup's "흐르는 동안 조건 단추는 흐리게 잠김"): the row follows it every frame (one bool read).
+func _sync_picks_lock() -> void:
+	var locked := experiment != null and experiment.conditions_locked()
+	if locked == _picks_locked:
+		return
+	_picks_locked = locked
+	_paint_picks_lock()
+
+
+## The buttons dimmed and not taking taps while locked (the chosen one stays yellow under the dim).
+func _paint_picks_lock() -> void:
+	if _picks_row != null:
+		_picks_row.modulate.a = PICKS_LOCKED_ALPHA if _picks_locked else 1.0
+	for pick in _picks:
+		(pick.button as Button).disabled = _picks_locked
+
+
+## The condition buttons are locked now (tests).
+func picks_locked() -> bool:
+	return _picks_locked
 
 
 ## The row's place: the bottom left of the view. Hidden while a dialogue is open (an explanation, a
@@ -2582,6 +2609,10 @@ func _snap_camera_home() -> void:
 
 
 func _set_control(id: String, value: Variant) -> void:
+	if experiment.conditions_locked():
+		_sync_control(id)   # (#159: locked while the time flows; the sidebar's widget goes back)
+		_sync_picks(id)
+		return
 	_poke_guide()
 	_drop_held_object()
 	if mission_round != null:
