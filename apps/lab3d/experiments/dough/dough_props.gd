@@ -46,7 +46,7 @@ const MARK := Color("ff7a2f")
 ## within the ring (CATCH: the ring's half width, so what the ring shows is what catches the bowl).
 ## Both rings lie wholly on the table's top (2026-11-17 user, the tablet: "책상에 동그라미가 삐져나오는데?").
 const WARM_X := -2.0
-const COLD_X := 2.45
+const COLD_X := 2.0
 const RING_R := 0.62
 const RING_DEPTH := 0.7
 const DASH := Vector2(0.18, 0.05)

@@ -75,6 +75,7 @@ func run() -> void:
 	await check_screen_lock()
 	await check_in_view()
 	await check_rings_on_table()
+	await check_rings_clear_of_cast()
 	check_spot()
 	await check_pictures()
 	check_opening()
@@ -826,6 +827,50 @@ func check_rings_on_table() -> void:
 			problems.append("the %s ring does not catch what it shows" % name)
 	expect.call(problems.is_empty(), "dough rings: the warm and the cold ring lie wholly on the table's top (the world and as drawn on the phone, the desktop and the tablet); a let-go is caught just inside a ring, not just outside",
 		"; ".join(problems.slice(0, 6)))
+
+
+## The two rings stay clear of the cast as drawn on the phone, the desktop and the tablet: the screen
+## rectangle of each ring's outline overlaps neither Puppy (his flag's pole and cloth included), nor
+## 야옹이, nor Dugi (2026-11-17 user, the tablet: Puppy's flag stood over the cold ring's right end).
+func check_rings_clear_of_cast() -> void:
+	var problems := []
+	var rings := {"warm": KitchenSet.table_point(DoughProps.WARM_X, DoughProps.BOWL_Z), "cold": KitchenSet.table_point(DoughProps.COLD_X, DoughProps.BOWL_Z)}
+	for size: Vector2 in [PHONE, DESKTOP, TABLET]:
+		var host := Control.new()
+		host.size = size
+		tree.root.add_child(host)
+		var view: View3D = load(VIEW_3D).new()
+		view.size = size
+		host.add_child(view)
+		var lab := _lab()
+		view.set_world(lab)
+		view.rig.configure(_definition().camera)
+		var cast := IslandCast.create(_definition(), lab)
+		lab.add_child(cast)
+		for i in 2:
+			await tree.process_frame
+		var at := func(world: Vector3) -> Vector2: return view.rig.unproject_position(world)
+		var rect_of := func(points: Array) -> Rect2:
+			var r := Rect2(at.call(points[0]), Vector2.ZERO)
+			for p: Vector3 in points:
+				r = r.expand(at.call(p))
+			return r
+		var box_rect := func(b: AABB) -> Rect2:
+			var corners := []
+			for k in 8:
+				corners.append(b.get_endpoint(k))
+			return rect_of.call(corners)
+		var people := {"Puppy and his flag": cast.puppy.bounds(), "야옹이": IslandCast.drawn_bounds(cast.yaongi), "Dugi": IslandCast.drawn_bounds(cast.dugi)}
+		for name: String in rings:
+			var ring: Rect2 = rect_of.call(Array(DoughProps.ring_outline(rings[name])))
+			for who: String in people:
+				var other: Rect2 = box_rect.call(people[who])
+				if ring.intersects(other):
+					problems.append("%s: the %s ring %s under %s %s" % [str(size), name, str(ring), who, str(other)])
+		host.queue_free()
+		await tree.process_frame
+	expect.call(problems.is_empty(), "dough rings clear of the cast: neither ring under Puppy (his flag's pole and cloth), 야옹이 or Dugi on the phone, the desktop and the tablet",
+		"; ".join(problems.slice(0, 4)))
 
 
 # --- the spot, the pictures, the opening, the piece ------------------------------------------------
