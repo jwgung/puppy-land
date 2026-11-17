@@ -1,0 +1,79 @@
+{
+  "title": "Where does dissolved salt go?",
+  "category": "Matter and change",
+  "question": "Is salt gone once it dissolves in water?",
+  "steps": [
+    "Hold the spoon and go round and round over the glass to stir the salt.",
+    "Stir until the salt at the bottom is gone and the water is clear.",
+    "Drag the seawater bucket over the sun tray to pour it, and the time runs by itself."
+  ],
+  "observe": "Stir salt into water and its particles spread out between the water's particles until you can't see them (it dissolves). The salt is still in the water, so the weight stays the same, and when the water goes off in the sun the salt is left again. Seawater has salt dissolved in it too, so drying it in the sun gives salt.",
+  "terms": [
+    { "name": "Dissolve", "description": "When something like salt spreads out between the water's particles so finely you can't see it." },
+    { "name": "Evaporation", "description": "Water warmed by the sun turning into invisible water vapour and going off into the air." },
+    { "name": "Seawater", "description": "Seawater has salt dissolved in it: about 35 g in 1 kg of seawater." }
+  ],
+  "law": {
+    "equation": "weight before dissolving = weight after",
+    "title": "Dissolved but still there",
+    "description": "Dissolved salt has only spread out too finely to see; it is not gone. So the weight stays the same, and when the water goes off the salt shows up again."
+  },
+  "tip": "Hold the spoon and go round and round over the glass to stir. Stir on the scale the same way. Drag the seawater bucket over the sun tray to pour it, and time runs fast until the water dries.",
+  "tip_short": "Stir round and round with the spoon",
+  "actions": [{ "label": "Start over" }],
+  "predict": {
+    "question": "Is salt gone once it dissolves in water?",
+    "choices": [{ "label": "It's gone", "guess": "I think the salt is gone!" }, { "label": "It's still in the water", "guess": "I think the salt is still in the water!" }],
+    "reason": "It only spread out too small to see. Taste it and it's salty.",
+    "bridge": "Let's dissolve some and see!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Dissolve all the salt and make the water clear!",
+        "say": "The more you stir, the more the salt's particles spread between the water's. Once it all dissolves the water is clear.",
+        "win": "The water is clear!",
+        "miss": "Keep stirring!"
+      },
+      {
+        "text": "On the scale: same before and after dissolving?",
+        "say": "Dissolved salt is still in the water, so the weight stays the same. It didn't vanish.",
+        "win": "The needle didn't move!",
+        "miss": "Put the bowls on the scale!"
+      },
+      {
+        "text": "Pour seawater on the sun tray and get salt!",
+        "say": "Seawater has salt dissolved in it. The water goes off in the sun but the salt stays. Now we can make salt even without the ships.",
+        "win": "Salt! And a piece!",
+        "miss": "Watch until it's all dry!"
+      }
+    ]
+  },
+  "story": {
+    "keeper": "Oh no! I put my last spoonful of salt in the soup and the salt vanished! No ships are coming, so I can't buy more…",
+    "clue": "There's a piece at the bottom of the seawater bucket! It's too full to get it out.",
+    "map_clue": "In the kitchen village, where the salt jar is!"
+  },
+  "kid": {
+    "intro": "This is the dissolving lab. Put salt in water and stir, and its particles spread out between the water's until you can't see them. That's called **dissolving**.",
+    "title": "Dissolve the salt with the spoon!",
+    "place": "Dissolving",
+    "say": "Dissolved salt is still in the water. Its weight stays, and when the water goes off it shows up again.",
+    "tip": "Stir round and round with the spoon.",
+    "cards": { "salt": "Salt", "scale": "Scale", "tray": "Sun tray" }
+  },
+  "note": {
+    "law": "Salt dissolved in water is not gone. Its weight stays, and when the water goes off it is left again.",
+    "learn": "Stirred salt dissolves and the water clears. The scale's needle is the same before and after, and seawater dried in the sun leaves salt. A shallow tray of seawater really takes a few sunny days to dry.",
+    "talk": ["If you boil sugar water until the water is gone, what is left?", "Why do sweaty clothes get white marks when they dry?"],
+    "formula": "weight after = water + dissolved salt; salt left ≈ seawater weight × 3.5 %",
+    "numbers": [{ "label": "Salt" }, { "label": "Scale" }, { "label": "Sun tray" }]
+  },
+  "observations": [{ "label": "Salt" }, { "label": "Scale" }, { "label": "Sun tray" }],
+  "graph": {
+    "title": "Days gone by and the sun tray",
+    "x": { "label": "Days gone by (fast-forward)" },
+    "y": { "label": "How much" },
+    "series": [{ "label": "Water left" }, { "label": "Salt come out" }, { "label": "Now" }]
+  }
+}

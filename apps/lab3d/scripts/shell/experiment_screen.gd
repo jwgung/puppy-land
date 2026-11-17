@@ -1794,7 +1794,7 @@ func show_guide() -> bool:
 		return false
 	var at := func() -> Vector2: return _guide_view_point(manipulator.guide_point(id))
 	match str(spec.kind):
-		"drag", "pull":
+		"drag", "pull", "stir":
 			var to: Vector3 = spec.to
 			hand_guide.play(str(spec.kind), at, func() -> Vector2: return _guide_view_point(to))
 		"hold", "tap":

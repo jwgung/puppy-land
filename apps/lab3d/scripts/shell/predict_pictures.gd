@@ -37,7 +37,9 @@ const KINDS := ["long_arc", "same_arc", "fall_together", "fall_heavy_first", "li
 	# #98 (화산): what mountain does sticky lava make?
 	"mountain_tall", "mountain_wide",
 	# #156 (퍼지는 냄새와 잉크): does ink spread first in cold water or in hot water?
-	"ink_cold_first", "ink_hot_first"]
+	"ink_cold_first", "ink_hot_first",
+	# #157 (녹으면 사라질까?): is the dissolved salt gone or still in the water?
+	"salt_gone", "salt_stays"]
 const STRONG := Color("e2683c")
 const PALE := Color("c9b892")
 const GROUND := Color("8a6a46")
@@ -114,6 +116,8 @@ static func draw(canvas: Control, kind: String) -> void:
 			_dew(canvas, r, kind == "dew_from_air")
 		"ink_cold_first", "ink_hot_first":
 			_ink_glasses(canvas, r, kind == "ink_hot_first")
+		"salt_gone", "salt_stays":
+			_salt_glass(canvas, r, kind == "salt_stays")
 		"breeze_from_sea", "breeze_from_land":
 			_breeze(canvas, r, kind == "breeze_from_sea")
 		"cloud_grows", "cloud_stays":
@@ -779,6 +783,39 @@ static func _ink_glasses(canvas: Control, r: Rect2, hot_first: bool) -> void:
 				canvas.draw_polyline(wisp, Color("c4402a"), 2.0, true)
 		else:
 			_snowflake(canvas, mark, Color("7fb0e0"), 0.8)
+
+
+## One glass of water (#157): the salt gone (clear water, a question mark in it: drawn, not a letter)
+## or still in it (faint white specks all through the water).
+static func _salt_glass(canvas: Control, r: Rect2, stays: bool) -> void:
+	_ground(canvas, r)
+	var h := r.size.y * 0.7
+	var bottom := minf(r.size.x * 0.2, h * 0.4)
+	var top := bottom * 1.25
+	var c := Vector2(r.get_center().x, r.end.y - 2.0)
+	var level := -h * 0.8
+	var w := lerpf(bottom, top, 0.8)
+	var water := PackedVector2Array([c + Vector2(-bottom + 2.0, -2.0), c + Vector2(bottom - 2.0, -2.0), c + Vector2(w - 2.0, level), c + Vector2(-w + 2.0, level)])
+	canvas.draw_colored_polygon(water, WATER)
+	if stays:
+		for k in 14:
+			var u := fposmod(k * 0.618034, 1.0)
+			var v := fposmod(k * 0.414214 + 0.2, 1.0)
+			var y := lerpf(-4.0, level + 4.0, v)
+			var half := lerpf(bottom, w, v / 1.0) - 7.0
+			canvas.draw_circle(c + Vector2(lerpf(-half, half, u), y), 2.6, Color(1.0, 1.0, 1.0, 0.9))
+	else:
+		# A question mark in the empty water: a hook and a dot.
+		var q := c + Vector2(0.0, level * 0.3)
+		var hook := PackedVector2Array()
+		for j in 9:
+			var a := lerpf(PI * 1.1, PI * 2.45, j / 8.0)
+			hook.append(q + Vector2(cos(a), sin(a)) * 7.0 + Vector2(0.0, -14.0))
+		hook.append(q + Vector2(0.0, -3.0))
+		canvas.draw_polyline(hook, STRONG, 3.0, true)
+		canvas.draw_circle(q + Vector2(0.0, 3.0), 2.0, STRONG)
+	var glass := PackedVector2Array([c + Vector2(-top, -h), c + Vector2(-bottom, 0.0), c + Vector2(bottom, 0.0), c + Vector2(top, -h)])
+	canvas.draw_polyline(glass, STRONG, 3.0, true)   # (the same on both cards: no hint of the answer)
 
 
 ## A sunny coast as the 바닷바람 lab draws it (#93): the land on the left with a little house, the sea

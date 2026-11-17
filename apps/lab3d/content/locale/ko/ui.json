@@ -367,5 +367,13 @@
   "water_cycle.status.full": "연못이 가득",
   "water_cycle.status.rain": "비가 내려",
   "water_cycle.status.ready": "바다가 차가워",
-  "water_cycle.status.vapour": "수증기가 올라가"
+  "water_cycle.status.vapour": "수증기가 올라가",
+  "dissolving.salt.bottom": "바닥에 소금이 있어",
+  "dissolving.salt.clear": "다 녹았어",
+  "dissolving.salt.melting": "녹는 중",
+  "dissolving.scale.same": "바늘 그대로야",
+  "dissolving.tray.drying": "물이 마르는 중",
+  "dissolving.tray.empty": "아직 비어 있어",
+  "dissolving.tray.full": "물이 가득해",
+  "dissolving.tray.salt": "소금이 남았어"
 }

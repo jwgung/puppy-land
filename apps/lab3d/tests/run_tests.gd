@@ -217,6 +217,13 @@
 ##    wait and wrong-water lines), the dropper (a press is a drop), the tables per stage, the water button,
 ##    no number on the screen, the ink and smell clouds where the spread allows, what matters in view, the spot, the
 ##    opening and the piece (the bread box).
+## 25b. 녹으면 사라질까? (tests/dissolving_checks.gd, #157 2026-11-17): Curie Island's second lab and the
+##    shared fast-forward time (FastClock, TimeSign, SceneNight): its data and its lines against
+##    docs/islands/curie-lines.md 2 and curie-missions.md 2, the model against the textbook values (salt's
+##    solubility, the weight the same, seawater 3.5 %, the sun drying by day), the clock and the sign
+##    (물의 여행's sign drawn the same), the judging, the spoon stirred round, the bucket poured and the time
+##    run to the dry tray (night, moon stamps), the tables, no number, what matters in view, the spot,
+##    the opening and the piece.
 ## 24l. the hutton cast (tests/hutton_cast_checks.gd, #114 2026-11-10): in every Hutton lab on the
 ##    tablet and the phone, Puppy's result bubble clear of Dugi's open box and portrait, Puppy at most
 ##    half under them.
@@ -520,6 +527,11 @@ func _run() -> void:
 	_expect(diffusion != null and diffusion.can_instantiate(), "diffusion checks compile", "")
 	if diffusion != null and diffusion.can_instantiate():
 		await diffusion.new(self, _expect).run()
+	print("== 녹으면 사라질까? (#157): Curie Island's second lab, the fast-forward time, its lines, model, judging, stirring, pouring, tables and piece ==")
+	var dissolving: GDScript = load("res://tests/dissolving_checks.gd")
+	_expect(dissolving != null and dissolving.can_instantiate(), "dissolving checks compile", "")
+	if dissolving != null and dissolving.can_instantiate():
+		await dissolving.new(self, _expect).run()
 	print("== the hutton cast (#114): Puppy and his bubble clear of Dugi's box in every lab ==")
 	var hutton_cast: GDScript = load("res://tests/hutton_cast_checks.gd")
 	_expect(hutton_cast != null and hutton_cast.can_instantiate(), "hutton cast checks compile", "")
