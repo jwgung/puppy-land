@@ -41,7 +41,9 @@ const KINDS := ["long_arc", "same_arc", "fall_together", "fall_heavy_first", "li
 	# #157 (녹으면 사라질까?): is the dissolved salt gone or still in the water?
 	"salt_gone", "salt_stays",
 	# #158 (되돌릴 수 있을까?): does melted chocolate set again when it cools?
-	"melt_sets", "melt_stays"]
+	"melt_sets", "melt_stays",
+	# #159 (빵 반죽 부풀리기): does dough rise better somewhere warm or somewhere cold?
+	"dough_warm", "dough_cold"]
 const STRONG := Color("e2683c")
 const PALE := Color("c9b892")
 const GROUND := Color("8a6a46")
@@ -122,6 +124,8 @@ static func draw(canvas: Control, kind: String) -> void:
 			_salt_glass(canvas, r, kind == "salt_stays")
 		"melt_sets", "melt_stays":
 			MeltCookPictures.predict(canvas, r, kind == "melt_sets", STRONG, PALE)
+		"dough_warm", "dough_cold":
+			_dough_place(canvas, r, kind == "dough_warm")
 		"breeze_from_sea", "breeze_from_land":
 			_breeze(canvas, r, kind == "breeze_from_sea")
 		"cloud_grows", "cloud_stays":
@@ -820,6 +824,35 @@ static func _salt_glass(canvas: Control, r: Rect2, stays: bool) -> void:
 		canvas.draw_circle(q + Vector2(0.0, 3.0), 2.0, STRONG)
 	var glass := PackedVector2Array([c + Vector2(-top, -h), c + Vector2(-bottom, 0.0), c + Vector2(bottom, 0.0), c + Vector2(top, -h)])
 	canvas.draw_polyline(glass, STRONG, 3.0, true)   # (the same on both cards: no hint of the answer)
+
+
+## A bowl of dough by a warm oven, risen with bubbles, or in a cold fridge, flat (#159, the approved
+## mockup's question cards).
+static func _dough_place(canvas: Control, r: Rect2, warm: bool) -> void:
+	_ground(canvas, r)
+	var foot := Vector2(r.get_center().x + r.size.x * 0.12, r.end.y - 2.0)
+	var half := minf(r.size.x * 0.22, r.size.y * 0.42)
+	var back := Rect2(r.position.x + r.size.x * 0.08, r.position.y + r.size.y * 0.08, r.size.x * 0.3, r.size.y * 0.88)
+	if warm:
+		# The brick oven's dome with its dark mouth and a fire, and the warm glow round the bowl.
+		var dome := PackedVector2Array()
+		for j in 17:
+			var a := PI + PI * j / 16.0
+			dome.append(Vector2(back.get_center().x + cos(a) * back.size.x * 0.5, back.end.y + sin(a) * back.size.y * 0.8))
+		canvas.draw_colored_polygon(dome, Color("c8643c"))
+		canvas.draw_polyline(dome, Color("7a3520"), 2.0, true)
+		var mouth := back.get_center() + Vector2(0.0, back.size.y * 0.3)
+		canvas.draw_circle(mouth, back.size.x * 0.2, Color("3a1a10"))
+		canvas.draw_colored_polygon(PackedVector2Array([mouth + Vector2(-6, 6), mouth + Vector2(6, 6), mouth + Vector2(0, -8)]), Color("ff8a1a"))
+		canvas.draw_circle(foot + Vector2(0.0, -half * 0.8), half * 1.1, Color(1.0, 0.6, 0.2, 0.18))
+	else:
+		# The fridge: a white box with a line and a handle, a snowflake on it.
+		canvas.draw_rect(back, Color("f2f6fa"))
+		canvas.draw_rect(back, Color("9fb0c2"), false, 2.0)
+		canvas.draw_line(Vector2(back.position.x, back.position.y + back.size.y * 0.33), Vector2(back.end.x, back.position.y + back.size.y * 0.33), Color("9fb0c2"), 2.0)
+		canvas.draw_line(Vector2(back.end.x - 6.0, back.position.y + back.size.y * 0.45), Vector2(back.end.x - 6.0, back.position.y + back.size.y * 0.65), Color("9fb0c2"), 3.0)
+		_snowflake(canvas, back.get_center() + Vector2(0.0, -back.size.y * 0.15), Color("7fb0e0"), 1.0)
+	PickPictures.dough_bowl(canvas, foot, half, 2.0 if warm else 1.0, warm)
 
 
 ## A sunny coast as the 바닷바람 lab draws it (#93): the land on the left with a little house, the sea

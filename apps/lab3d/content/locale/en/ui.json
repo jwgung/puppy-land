@@ -387,5 +387,17 @@
   "dissolving.tray.drying": "The water is drying",
   "dissolving.tray.empty": "Still empty",
   "dissolving.tray.full": "Full of water",
-  "dissolving.tray.salt": "Salt is left"
+  "dissolving.tray.salt": "Salt is left",
+  "dough.dough.doubled": "Twice as big",
+  "dough.dough.little": "Only a little bigger",
+  "dough.dough.ready": "Flat",
+  "dough.dough.rising": "Rising",
+  "dough.dough.same": "Still the same",
+  "dough.dough.shelf": "Up to the shelf",
+  "dough.dough.waiting": "Still the same so far",
+  "dough.spot.cold": "In the fridge",
+  "dough.spot.table": "On the table",
+  "dough.spot.warm": "By the oven",
+  "dough.yeast.no": "No yeast",
+  "dough.yeast.yes": "Yeast in"
 }
