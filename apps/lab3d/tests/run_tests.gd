@@ -237,6 +237,15 @@
 ##    bowl dragged to the oven and the fridge (picked up where it stands, the time stopping and going on),
 ##    the night, the goals and the finished round's look, no number, the dimmed buttons on the screen, what
 ##    matters in view, the spot, the pictures, the opening and the piece.
+## 25e. the body-motion input (tests/motion_input_checks.gd, #160 2026-11-18): MotionFilter's low-pass tilt (still
+##    to 4 deg, full at 20, no more beyond, the rest pose, the hysteresis), its shake (the light threshold, two
+##    samples, the 0.5 s cool-down, the hard one), no sensor after a second of zeros, the same per sample rate;
+##    MotionInput's sources (touch over test over sensor) and its injected values; the hand guide's tilt and pump.
+## 25f. 깨끗한 물 만들기 (tests/clean_water_checks.gd, #160 2026-11-18): Curie Island's fifth lab, its lines against
+##    docs/islands/curie-lines.md 5 (the warnings, the first-use line), the model against the textbook (sand
+##    catches the soil, charcoal the colour and smell, only boiling clears the germs), the judging (a tilt and
+##    the touch stand-in judge the same), the bellows, the places, no number, what matters in view, the spot,
+##    the opening and the piece.
 ## 24l. the hutton cast (tests/hutton_cast_checks.gd, #114 2026-11-10): in every Hutton lab on the
 ##    tablet and the phone, Puppy's result bubble clear of Dugi's open box and portrait, Puppy at most
 ##    half under them.
@@ -555,6 +564,16 @@ func _run() -> void:
 	_expect(dough != null and dough.can_instantiate(), "dough checks compile", "")
 	if dough != null and dough.can_instantiate():
 		await dough.new(self, _expect).run()
+	print("== the body-motion input (#160): the accelerometer filter, its tilt, shake, cool-down, no sensor and the injected values ==")
+	var motion_checks: GDScript = load("res://tests/motion_input_checks.gd")
+	_expect(motion_checks != null and motion_checks.can_instantiate(), "motion input checks compile", "")
+	if motion_checks != null and motion_checks.can_instantiate():
+		await motion_checks.new(self, _expect).run()
+	print("== 깨끗한 물 만들기 (#160): Curie Island's fifth lab, its lines, model, judging, tilt, bellows, view and piece ==")
+	var clean_water: GDScript = load("res://tests/clean_water_checks.gd")
+	_expect(clean_water != null and clean_water.can_instantiate(), "clean-water checks compile", "")
+	if clean_water != null and clean_water.can_instantiate():
+		await clean_water.new(self, _expect).run()
 	print("== the hutton cast (#114): Puppy and his bubble clear of Dugi's box in every lab ==")
 	var hutton_cast: GDScript = load("res://tests/hutton_cast_checks.gd")
 	_expect(hutton_cast != null and hutton_cast.can_instantiate(), "hutton cast checks compile", "")

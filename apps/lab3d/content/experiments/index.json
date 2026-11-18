@@ -34,7 +34,8 @@
       "diffusion.json",
       "dissolving.json",
       "melt-cook.json",
-      "dough.json"
+      "dough.json",
+      "clean-water.json"
     ]
   }
 }

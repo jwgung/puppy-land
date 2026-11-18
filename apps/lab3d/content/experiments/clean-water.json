@@ -1,0 +1,127 @@
+{
+  "id": "clean-water",
+  "version": 1,
+  "icon": "☀",
+  "law": {},
+  "scene": "res://experiments/clean_water/clean_water.gd",
+  "bench_id": "CW",
+  "camera": {
+    "target": [0.5, 2.95, 0.0],
+    "distance": 10.5,
+    "distance_range": [1.5, 30.0],
+    "yaw_range_deg": [-100.0, 100.0],
+    "pitch_range_deg": [-89.0, -2.0],
+    "pan_radius": 7.0,
+    "default_mode": "front",
+    "views": {
+      "front": { "yaw_deg": 0.0, "pitch_deg": -6.0 },
+      "three_quarter": { "yaw_deg": 24.0, "pitch_deg": -18.0 },
+      "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 22.0 },
+      "side": { "yaw_deg": 90.0, "pitch_deg": -10.0, "distance": 20.0 },
+      "follow": { "yaw_deg": 0.0, "pitch_deg": -6.0, "distance": 10.5, "target": [0.5, 2.95, 0.0] }
+    }
+  },
+  "controls": [
+    {
+      "id": "filter",
+      "type": "choice",
+      "default": "sand",
+      "options": [{ "id": "empty" }, { "id": "sand" }, { "id": "charcoal" }]
+    }
+  ],
+  "actions": [
+    { "id": "reset", "style": "primary" }
+  ],
+  "key_observations": ["water", "germs", "fire"],
+  "predict": {
+    "question_face": "thinking",
+    "choices": [
+      { "id": "drink", "picture": "drink_ok" },
+      { "id": "boil", "picture": "drink_boil" }
+    ],
+    "answer": "boil",
+    "bridge_face": "happy"
+  },
+  "missions": {
+    "judge_on": ["filtered", "clear", "boiled"],
+    "stages": [
+      {
+        "observe": "",
+        "judge_on": ["filtered"],
+        "miss_on": ["little", "muddy", "clear"],
+        "conditions": { "filter": "sand" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["clear"],
+        "miss_on": ["little", "muddy", "filtered"],
+        "conditions": { "filter": "charcoal" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["boiled"],
+        "miss_on": ["unboiled", "boiled"],
+        "conditions": { "filter": "charcoal" },
+        "card": "germs",
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      }
+    ]
+  },
+  "story": {
+    "keeper_face": "worried",
+    "clue_face": "thinking",
+    "map_clue_face": "explain"
+  },
+  "kid": {
+    "intro_face": "explain",
+    "intro_more": [{ "face": "explain" }, { "face": "explain" }],
+    "first_use": { "face": "explain" },
+    "card": "water",
+    "say_face": "explain",
+    "picks": {
+      "filter": [
+        { "value": "empty", "picture": "filter_empty" },
+        { "value": "sand", "picture": "filter_sand" },
+        { "value": "charcoal", "picture": "filter_charcoal" }
+      ]
+    }
+  },
+  "note": {
+    "numbers": [{ "ids": ["water"] }, { "ids": ["germs"] }, { "ids": ["fire"] }],
+    "graph": true
+  },
+  "cast": {
+    "dugi": { "at": [-3.0, 1.3], "explain_on": ["filtered", "clear", "boiled"], "delay_s": 0.6 },
+    "puppy": { "at": [6.6, 1.2] },
+    "yaongi": { "at": [5.9, -0.6] }
+  },
+  "observations": [{ "id": "water" }, { "id": "germs" }, { "id": "fire" }],
+  "graph": {
+    "x": { "unit": "s", "max": 20.0 },
+    "y": { "unit": "°C", "min_max": 110.0 },
+    "series": [
+      { "id": "boil", "color": "#e0a400", "style": "line" },
+      { "id": "trace", "color": "#e0603a", "style": "line" },
+      { "id": "now", "color": "#ff3b3b", "style": "points" }
+    ]
+  },
+  "manipulation": {
+    "grab_radius": 72.0,
+    "objects": [
+      { "id": "tilt", "surface": "tilt", "guide": "tilt", "guide_to": "max", "marker": false },
+      { "id": "kettle", "surface": "kettle", "guide_to": "max", "marker": false },
+      { "id": "bellows", "surface": "bellows", "guide": "pump", "guide_to": "max", "marker": false }
+    ]
+  }
+}

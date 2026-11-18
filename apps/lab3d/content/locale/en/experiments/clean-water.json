@@ -1,0 +1,168 @@
+{
+  "title": "Making clean water",
+  "category": "Matter and change",
+  "question": "How can muddy water become water you can drink?",
+  "steps": [
+    "Hold the tablet with both hands and tip it gently to the left: the kettle tips too and pours the muddy water.",
+    "If tipping is hard, drag the yellow ball beside the kettle down: it pours the same way.",
+    "Pick the filter with the button at the bottom left: empty, sand, or sand and charcoal.",
+    "At the end, pump the bellows handle up and down to make the fire bigger and boil the water."
+  ],
+  "observe": "Sand lets the water through between its grains and holds the soil back. Charcoal is full of tiny holes that hold on to the colour and the smell. Tiny germs still go through the filter, so the water must be boiled.",
+  "terms": [
+    {
+      "name": "Filtering",
+      "description": "Separating a mixture by letting only the small bits pass."
+    },
+    {
+      "name": "Germs",
+      "description": "Living things too small to see. Some make your tummy ache. Boiling water gets rid of them."
+    }
+  ],
+  "law": {
+    "equation": "Sand catches soil, charcoal catches colour and smell, boiling gets rid of germs",
+    "title": "Separating mixtures",
+    "description": "A mixture can be filtered because its bits are different sizes. Sand holds back soil, charcoal holds on to colour and smell. Germs are too small to filter, so the water must be boiled."
+  },
+  "tip": "Tip the tablet gently to the left and the kettle pours; tip it more for a thicker stream. Dragging the yellow ball down does the same. At the end, pump the bellows handle up and down.",
+  "tip_short": "Tip the tablet gently",
+  "controls": [
+    {
+      "label": "Filter",
+      "options": [
+        {
+          "label": "Empty"
+        },
+        {
+          "label": "Sand"
+        },
+        {
+          "label": "Sand+charcoal"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "label": "Start over"
+    }
+  ],
+  "predict": {
+    "question": "If we filter muddy water through sand, can we drink it?",
+    "choices": [
+      {
+        "label": "Yes, we can drink it",
+        "guess": "I think we can drink it!"
+      },
+      {
+        "label": "No, we must boil it",
+        "guess": "I think we must boil it!"
+      }
+    ],
+    "reason": "Sand catches the soil but not the tiny germs. Boiling gets rid of them.",
+    "bridge": "Let's filter it!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Filter the muddy water with sand!",
+        "say": "The water goes between the sand grains and the soil stays behind.",
+        "win": "The soil is out!",
+        "miss": "Pour it into the filter!",
+        "miss_conditions": "Pick the sand!"
+      },
+      {
+        "text": "Add charcoal to take out colour and smell!",
+        "say": "Charcoal has lots of tiny holes that hold on to colour and smell.",
+        "win": "Clear, and no smell!",
+        "miss": "Filter it with charcoal!",
+        "miss_conditions": "Pick sand and charcoal!"
+      },
+      {
+        "text": "Clear water still has germs! Boil it in the pot!",
+        "say": "Germs can't live in boiling water. That's why boiled water is safe to drink.",
+        "win": "Clean spring water! A piece!",
+        "miss": "Until it bubbles!",
+        "miss_conditions": "Pick sand and charcoal!"
+      }
+    ]
+  },
+  "story": {
+    "keeper": "The drinking water the boats brought is all gone. All we have left is this muddy spring. I'm thirsty…",
+    "clue": "I can see a piece at the bottom of the spring, but the water is too muddy!",
+    "map_clue": "The spring village, where the muddy spring is!"
+  },
+  "kid": {
+    "intro": "This is the filtering lab. Muddy water is water and soil mixed. Mixed things have bits of different sizes, so we can filter them.",
+    "intro_more": [
+      {
+        "text": "(Careful) Even water that looks clear shouldn't be drunk just like that. It may have germs you can't see."
+      },
+      {
+        "text": "(Careful) Boiling water is very hot. Always do it with a grown-up."
+      }
+    ],
+    "first_use": {
+      "text": "Hold the tablet tight with both hands and tip it gently."
+    },
+    "title": "Tip the tablet and filter the muddy water!",
+    "place": "Spring",
+    "say": "Sand catches soil, charcoal catches colour and smell. Germs need boiling.",
+    "tip": "Tip the tablet gently.",
+    "cards": {
+      "water": "Water",
+      "germs": "Germs",
+      "fire": "Fire"
+    },
+    "picks": {
+      "filter": [
+        {
+          "label": "Empty"
+        },
+        {
+          "label": "Sand"
+        },
+        {
+          "label": "Sand+charcoal"
+        }
+      ]
+    }
+  },
+  "note": {
+    "law": "Mixtures can be filtered because their bits differ in size. Germs can't be filtered, so water must be boiled.",
+    "learn": "Sand filters soil, charcoal holds on to colour and smell. Even clear-looking water may have germs, so we boil it.",
+    "talk": [
+      "How does the water at home get clean?",
+      "How could you drink stream water when camping?"
+    ],
+    "formula": "Sand catches soil, charcoal catches colour and smell, boiling gets rid of germs",
+    "numbers": [
+      {
+        "label": "Water"
+      },
+      {
+        "label": "Germs"
+      },
+      {
+        "label": "Fire"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "label": "Water"
+    },
+    {
+      "label": "Germs"
+    },
+    {
+      "label": "Fire"
+    }
+  ],
+  "graph": {
+    "title": "Time and the pot's water temperature",
+    "x": { "label": "Time (sped up)" },
+    "y": { "label": "Temperature" },
+    "series": [{ "label": "Water boils" }, { "label": "Pot water" }, { "label": "Now" }]
+  }
+}
