@@ -50,7 +50,7 @@ apps/lab3d/
   assets/props/                       털실 공·택배 박스 glb + 텍스처(소스: art_src/props/yarn_ball.py, parcel_box.py)
   assets/ui/                          손 안내의 빵고양이 앞발 그림 guide_paw.png(소스: tools/render_guide_paw.gd, 빵고양이 모델을 게임 재질로 렌더함, 젤리 없음)
   art_src/                            캐릭터·소품 생성 Blender 스크립트(외부 .blend 없음)
-  assets/fonts/                       Noto Sans CJK KR 서브셋(Regular·Bold, SIL OFL 1.1), 기호 대체 글꼴
+  assets/fonts/                       Noto Sans CJK KR 한글 전체 글꼴(Regular·Bold, SIL OFL 1.1), 기호 대체 글꼴
   audio/sfx/, audio/music/            효과음 15개·배경 음악 1개(모두 CC0 ogg, 출처: audio/CREDITS.md)
                                       DejaVu Sans 서브셋(Lab3dSymbols, Bitstream Vera 라이선스)
   tests/                              헤드리스 테스트, TS 생성 parity 벡터
@@ -148,7 +148,7 @@ apps/lab3d/
 - 남은 것: `content/ai_apps.json`의 앱 이름(뤼튼)은 앱 자신의 이름이라 그대로 둔다. 영어 글은 초안이다(사용자 검토 전). 한글이 아닌 다른 문자(일본어 등)의 폰트는 아직 없다.
 
 - 예전(Task 4a ~ 2026-10-30)에는 웹 2D와 문구를 나누려고 `content/mechanics-labs.json`에 따로 두고 `ExperimentRegistry.resolve()`가 합쳤다. 웹 2D를 지우면서 합친 결과를 그대로 각 실험 파일에 옮겼다([ADR 0002](../../docs/adr/0002-drop-web-2d.md)). 옮기기 전후 레지스트리가 읽은 정의는 `content` 키 말고는 같다.
-- 문구의 기호 중 Noto Sans CJK에 없는 것(`x₀`의 아래 첨자, `⚖`·`⌁`·`▰` 아이콘)은 DejaVu Sans 서브셋을 대체 글꼴로 그린다(`tools/subset_font.sh`가 두 서브셋을 함께 만든다).
+- 문구의 기호 중 Noto Sans CJK에 없는 것(`x₀`의 아래 첨자, `⚖`·`⌁`·`▰` 아이콘)은 DejaVu Sans 서브셋을 대체 글꼴로 그린다(`tools/subset_font.sh`가 두 글꼴을 함께 만든다).
 
 ### 공식 보정 계층 (Task 3)
 
@@ -952,7 +952,7 @@ npm test                           # 루트: TS 테스트 + apps/lab3d/tools/{in
 | parity | `tests/run_tests.gd` | GDScript `PhysicsLaws`가 벡터와 같은 값(최대 차이 0) |
 | 빗면 공식 일치 | `tests/run_tests.gd` | 앱의 빗면 실험(Jolt + 공식 보정)이 측정 기준 4절 표(26° 정지, 27° 1초 안에 미끄러짐, 35° 가속도·이동 거리 ±1%, 20° 10초 ≤ 1 mm)를 재현. 재질별로 임계각 −0.5° 정지, +0.5° 미끄러짐, 40°에서 s(1s)·s(1.5s) ±1%, 그래프 점이 공식과 일치 |
 | 아트는 보이는 것만 | `tests/run_tests.gd` | 아트가 충돌 객체를 더하지 않음, 연출은 상자 메시만 바꾸고 충돌 모양은 그대로, 연출을 끈 실행과 운동·그래프·표시 값이 같음, 카메라 착지 반응이 모드·목표를 바꾸지 않음 |
-| 셸 | `tests/run_tests.gd` | 레지스트리 검증(`tip`·`tip_short`를 실험 파일에 직접 쓰면 거부), 글꼴 서브셋이 쓰는 글자를 모두 포함, 카메라 모드 전환·제한·정면 초기화·시점별 target·따라가기, 제스처 분류(한 손가락은 카메라 불변), 가로 레이아웃(폰 1560×720·태블릿 1152×720 단위: 3D 전체·사이드바 닫힘, `정면으로`·시점 칩 없음(3D 위·사이드바 모두), 제목·버튼·카드·액션이 뷰 안에서 안 겹침, 사이드바 슬라이드·뷰 한 번 축소·닫으면 복귀, 좁은 뷰 가로 시야 유지), `key_observations` 검증, 실험 11개 모두 정면 기본·카드 값 = 패널 값의 아이 말(`card_text`, 단위 기호 없음)·사이드바는 `format_observation` 그대로·열린 사이드바 폭 유지, 조작 안내를 다 보기 전 재구성하면 다시 뜸, `← 지도`의 사이드바 우선 닫기, 좁은 창(300~700 단위)에서 제목·버튼 안 겹침 |
+| 셸 | `tests/run_tests.gd` | 레지스트리 검증(`tip`·`tip_short`를 실험 파일에 직접 쓰면 거부), 글꼴이 쓰는 글자를 모두 포함하고 한글 완성형 11,172자가 전부 들어 있음, 카메라 모드 전환·제한·정면 초기화·시점별 target·따라가기, 제스처 분류(한 손가락은 카메라 불변), 가로 레이아웃(폰 1560×720·태블릿 1152×720 단위: 3D 전체·사이드바 닫힘, `정면으로`·시점 칩 없음(3D 위·사이드바 모두), 제목·버튼·카드·액션이 뷰 안에서 안 겹침, 사이드바 슬라이드·뷰 한 번 축소·닫으면 복귀, 좁은 뷰 가로 시야 유지), `key_observations` 검증, 실험 11개 모두 정면 기본·카드 값 = 패널 값의 아이 말(`card_text`, 단위 기호 없음)·사이드바는 `format_observation` 그대로·열린 사이드바 폭 유지, 조작 안내를 다 보기 전 재구성하면 다시 뜸, `← 지도`의 사이드바 우선 닫기, 좁은 창(300~700 단위)에서 제목·버튼 안 겹침 |
 | 조작 | `tests/manipulation_checks.gd`(`run_tests.gd`가 부름) | 투영(바로 아래, 물체 중심 높이, 스치는 광선·뒤쪽 광선은 무시, 선 위 가장 가까운 점), 격자 스냅·영역·여유 0.6 m, 레지스트리의 `manipulation` 검사와 숨은 개발 장면, 보조 시점(필요할 때만 돌고 되돌아옴, 따라가기 대상 고정, 기본 정면 시점에서 11개 실험의 모든 물체·높이 손잡이를 잡아도 카메라 불변, 시선과 나란한 선만 카메라를 돌림). 실제 입력 경로(View3D 터치 → Manipulator → 실험)로: 빗면 끌어 놓기·0.5 m 눈금 스냅·범위 밖으로 끌면 끝자리에 멈추고 거기에 놓임(2026-10-31 사용자 "상한을 최대로 보고 거기서 동작")·두 번째 손가락과 시스템 취소·마우스·미끄러지는 상자 집기·조작 중 조건 변경·화면 재구성 유지. 개발 장면: 바닥 격자, 높이 손잡이(높이만, 0.25 m 단위), 높이 조작 중 두 손가락 취소, 다른 상자·블록과 겹침 금지, 블록 위 높이에 놓기, 영역 밖으로 끌면 가장자리에 놓임, 빈 곳 탭으로 선택 해제, 떨어뜨리기. 리뷰 반영: 착지한 상자를 끌어 놓은 뒤 다시 착지 반응, 자동 놓기 타이머의 조작 취소, 높이 상한 초과 금지, 액션 때 손잡이 숨김, 떨어지는 상자 미저장, 손잡이 막대 기준 높이 끌기, 조작 중 사용자가 돌린 시점 유지, 보조 시점 탐색 횟수. 3차 리뷰 반영: 블록 위 상자 집기 높이 유지, 첫 목표가 막힌 곳이면 흔들지 않음, 눈금=스냅 격자·규칙 한 곳에서 읽기, 캡슐 축소, 놓기·취소 때 패널 갱신 1회, 데모 후속 액션 선언 |
 | 손으로 시작·결과 한 줄 (2026-10-29) | `tests/hands_on_checks.gd`(`run_tests.gd`가 부름) | 1절 "손으로 시작·결과 한 줄·예측 다리" |
 | 실험 정의 module (2026-10-30) | `tests/experiment_definition_checks.gd`(`run_tests.gd`가 부름) | `ExperimentDefinition`의 질의와 기본값: id로 조건·선택지·관찰값 찾기(없으면 빈 값·null), 슬라이더는 선언한 범위로만 자르고 NaN·Inf는 거부, 눈금 위 값만 64비트로 맞춤, 자릿수 기본 2, 조작 규칙 기본값·격자 간격·새총, 선택 블록이 없을 때의 기본값, `of()`, 질의가 `raw`를 바꾸지 않음, 실제 정의 전부의 조건 기본값·관찰값·조작 규칙. 붉은 확인: NaN 거부나 자릿수 기본값을 바꾸면 실패 |
@@ -977,7 +977,7 @@ npm test                           # 루트: TS 테스트 + apps/lab3d/tools/{in
 | 새 출발 위치의 표시 수치 | `tools/incline-vectors.test.ts` → `tests/incline_vectors.json` `runs`, `manipulation_checks.gd` | 재질·각도·출발 위치 4가지(1–6 m)에서 s(t) ±1%, 표시 `이동 거리`가 출발점에서 빗면 끝까지 거리에서 멈춤, 공식 곡선이 그 거리에서 끝남, 상자가 빗면을 떠나는 시각이 TS 공식 √(2L/a)와 3 step 안 |
 
 - TS 공식을 바꾸면 vitest가 먼저 깨진다. `UPDATE_INCLINE_VECTORS=1 UPDATE_FORMULA_VECTORS=1 UPDATE_UNIFORM_VECTORS=1 UPDATE_FRICTION_VECTORS=1 UPDATE_COLLISION_VECTORS=1 UPDATE_SPRING_VECTORS=1 UPDATE_BUOYANCY_VECTORS=1 UPDATE_ORBIT_VECTORS=1 UPDATE_CONSTRAINTS_VECTORS=1 UPDATE_ROTATION_VECTORS=1 UPDATE_PULLEY_VECTORS=1 npx vitest run apps/lab3d`로 벡터를 다시 만든 뒤 Godot 테스트로 GDScript 쪽 불일치를 확인한다.
-- UI 문구를 바꾸면 `apps/lab3d/tools/subset_font.sh`로 글꼴을 다시 만든다(fonttools가 없으면 `uvx`로 실행). 빠진 글자는 테스트가 잡는다. Noto Sans CJK에 없는 아래·위 첨자(ₛ, ₖ, ⁻¹)는 쓰지 않는다.
+- 글꼴(`assets/fonts/NotoSansKR-Lab3dSubset-*.otf`, 이름은 참조 때문에 그대로)에는 한글 완성형 11,172자·자모·ASCII/라틴·일반 문장부호·화살표·도형 기호가 모두 들어 있어, 한글 문구를 바꿔도 글꼴을 다시 만들 필요가 없다. 한글 밖 기호를 새로 쓸 때만 `apps/lab3d/tools/subset_font.sh`로 다시 만든다(fonttools가 없으면 `uvx`로 실행). 빠진 글자는 테스트가 잡는다. 한자는 넣지 않았고, 일본어·중국어 등 다른 언어를 직접 넣게 되면 그 글자는 따로 글꼴에 더해야 한다. 앱 용량은 글꼴 때문에 약 4MB 늘었다(Regular·Bold 각 약 2MB). Noto Sans CJK에 없는 아래·위 첨자(ₛ, ₖ, ⁻¹)는 쓰지 않는다.
 - `build.sh test`(앱·스파이크 둘 다)는 `SCRIPT ERROR`(스크립트 컴파일·실행 오류)나 `ERROR`로 시작하는 줄이 로그에 있으면 PASS여도 실패로 본다. 코루틴 안 오류로 멈춘 실행은 `GODOT_TEST_TIMEOUT`(기본 900초) 뒤 실패한다. Godot 경로는 `GODOT`로 바꾼다(기본 `~/.local/share/godot-spike/godot`).
 - `-s`로 실행하는 테스트에서는 autoload 이름이 컴파일 시점에 없어서, `Quality`·`Bench`를 쓰는 스크립트는 테스트에서 `load()`로 불러 쓴다.
 
@@ -1031,7 +1031,7 @@ python3 -I apps/lab3d/tools/device_gesture.py orbit  # orbit | pinch | pinch-fix
    - `cast`(선택, Task 4h): 두기두기·퍼피 자리 `at: [x, z]`, 허턴섬 실험은 섬지기 여우 자리 `fox.at`도(2026-11-11 사용자 "여우친구가 실험내내 안따라다니네? 따라다니게 해줘": 실험 내내 퍼피 곁에 서서 카메라를 봄, `tests/hutton_cast_checks.gd`가 화면 안·퍼피·두기두기·대화창·덮개와 겹치지 않음을 확인하고, 여우가 섬의 마른 땅(또는 실험 바닥)에 서며 바다·연못·무대에 묻히지 않음을 `tests/footing.gd`로 확인. 2026-11-16 사용자: 여우가 물에 잠겨 있다), 두기두기가 설명할 상태 `explain_on`과 지연 `delay_s`. 장치 오른쪽(가리킬 것이 그의 오른쪽)·뒤쪽에 두고 `tests/island_cast_checks.gd`의 자리·화면 시험을 통과시킨다([아트 디렉션 12절](docs/art-direction.md#12-두기두기와-퍼피-task-4h)). 가리킬 점이 따라가기 대상과 다르면 `explain_point()`를 재정의한다
 2. `content/experiments/index.json`의 `experiments`에 파일 이름을 더한다. 목록 화면은 이 순서와 `category`로 묶어 보여준다. 둘째 섬부터의 실험은 `islands`의 그 섬 목록에 더한다(#74: `"islands": {"hutton": ["day-night.json"]}`, `ExperimentRegistry.island_labs`). 첫 섬 목록(`load_all`)과 섞이지 않고, `find`는 모두 찾는다. 섬 지도의 장소는 그 id의 실험이 생기면 열린다(`Island.playable`은 섬의 모든 장소가 실험일 때).
 3. `experiments/<이름>/<이름>.gd`에 `extends Experiment` 스크립트를 만든다(공식 모델을 `BodyModelDriver`로 구동하는 안내형 실험은 `extends ModelDrivenLab`: `_ready()`·run 상태·그래프 장부·`release()`를 베이스가 맡고 `_build_world()`·`_load_model()`·`_graph_point()` 등을 채운다. 조건이 바뀌어 run을 다시 시작할 때는 `_restart()`와 `reset_run()`). `_ready()`에서 3D 월드를 만들고 `definition.controls()`의 기본값으로 `set_control()`을 부른다. 조건·선택지·범위·격자는 `definition.control()`·`option()`·`clamp_value()`·`grid_step()`으로 읽는다. 보이는 소품·환경·연출은 `<이름>_props.gd`로 나눠 [아트 디렉션 9절](docs/art-direction.md#9-새-실험-소품-만드는-법)을 따른다. 바닥·마찰 없는 재질·보정 바디 설정과 상태 변화 알림은 `Experiment` 베이스의 `_add_floor()`·`_frictionless_material()`·`_setup_free_body()`·`_update_status()`(반응은 `_status_changed()`를 재정의)를 쓰고, 공식의 중력은 베이스의 `engine_g`에서 읽는다. 화면 숫자는 공식(`PhysicsLaws`)에서 내고, 엔진 측정값은 따로 표시한다(공식 보정 원칙, [CONTEXT](../../CONTEXT.md)).
-4. 움직임은 [공식 보정](docs/formula-correction.md) 4절 표의 방식으로 보정한다(보정기를 붙이고 화면 숫자는 `formula_values()`에서). 새 법칙은 `tools/formula-vectors.test.ts`의 실험 그룹에 TS 사례를 더하고 `PhysicsLaws`에 포트한다(parity는 자동). 문구를 바꿨으면 글꼴 서브셋을 다시 만든다.
+4. 움직임은 [공식 보정](docs/formula-correction.md) 4절 표의 방식으로 보정한다(보정기를 붙이고 화면 숫자는 `formula_values()`에서). 새 법칙은 `tools/formula-vectors.test.ts`의 실험 그룹에 TS 사례를 더하고 `PhysicsLaws`에 포트한다(parity는 자동). 한글 밖 기호를 새로 썼으면 글꼴을 다시 만든다(`tools/subset_font.sh`).
 5. `tools/build.sh`로 테스트·APK를 만들고 `bench_device.sh`로 low 60 fps를 확인한다.
 
 `ExperimentRegistry.validate()`가 필수 필드·카메라 모드·조건 형식·`manipulation`·`cast` 규칙을 검사하고, 잘못된 실험은 목록에서 빼고 오류를 남긴다.
@@ -1265,7 +1265,7 @@ python3 -I apps/lab3d/tools/device_gesture.py orbit  # orbit | pinch | pinch-fix
 - **번짐 구름**: `SoftCloud.mesh()`(단위 공 안의 부드러운 덩어리)와 `SoftCloud.material(색, 진하기, 그리는 순서)`, 색·진하기는 `SoftCloud.set_look`. 여러 덩어리는 MultiMesh 하나로 그린다(컵 속 잉크, 빵 냄새). 덩어리 자리는 모델 값(퍼진 정도)으로 정하고, 시험은 "허용된 곳 안에 있음"만 본다(`check_clouds`).
 - **조건 그림 단추**: `kid.picks.<조건>`의 `picture`는 `PickPictures.KINDS`(물 컵은 `water_cold`·`water_hot`, `PickPictures.water_glass`를 다른 그림에서도 부를 수 있음). 예측 그림은 `PredictPictures.KINDS`, 설명 그림 카드는 `ExplainPictures.KINDS`에 하나씩 더한다.
 - **단계마다 바뀌는 탁자**: `set_game_stage`에서 단계 → 자리(`DiffusionLab.site_of`), 깬 단계는 `_site_due`로 다음 `처음으로`까지 둔다.
-- **지도와 시험**: `scripts/art/map_landmarks.gd`에 `"<이름>"` 항목과 모양 함수, `tests/<이름>_checks.gd`와 `tests/run_tests.gd`(머리 주석·등록 블록), `tests/curie_map_checks.gd`의 `LABS`에 이름 추가. 한국어 글이 늘면 마지막에 `tools/subset_font.sh` 후 `godot --import`.
+- **지도와 시험**: `scripts/art/map_landmarks.gd`에 `"<이름>"` 항목과 모양 함수, `tests/<이름>_checks.gd`와 `tests/run_tests.gd`(머리 주석·등록 블록), `tests/curie_map_checks.gd`의 `LABS`에 이름 추가. 새 한글 밖 기호를 쓰면 마지막에 `tools/subset_font.sh` 후 `godot --import`.
 
 ### 퀴리섬 2: 녹으면 사라질까? (#157, 2026-11-17)
 
