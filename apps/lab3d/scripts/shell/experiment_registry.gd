@@ -187,6 +187,8 @@ static func validate(definition: Dictionary) -> PackedStringArray:
 ##   "kid": {"title": <the title bar>, "place": <the map's spot name>, "say": <Dugi's dialogue>, "say_face": <its face>,
 ##           "intro": <Dugi's introduction of the lab before his question>, "intro_face": <its face>,
 ##           "intro_more": [<more lines of it: {"text", "face"?, "picture"?}> (#74)],
+##           "first_use": <a line {"text", "face"?} Dugi says once, after the introduction on the spot's first
+##                         visit: how to use a body motion the spot is the first to ask for (#160)>,
 ##           "say_picture", "intro_picture": <their explanation pictures, ExplainPictures.KINDS (#73)>,
 ##           "tip": <the short gesture hint>, "card": <the one key observation shown as a card>,
 ##           "cards": {<observation id>: <its key card's caption>},
@@ -233,13 +235,16 @@ static func _validate_kid(kid: Variant, ids: Array) -> PackedStringArray:
 			pass   # ConditionPicks.validate (it needs the controls and the missions)
 		elif key == "intro_more":
 			problems.append_array(_validate_intro_more(kid.intro_more))
+		elif key == "first_use":
+			for problem in _validate_intro_more([kid.first_use]):
+				problems.append(problem.replace("kid.intro_more[0]", "kid.first_use"))
 		elif key == "bars":
 			var bars: Variant = kid.bars
 			if not (bars is Dictionary and bars.keys().all(func(id: Variant) -> bool: return id in ids)
 					and bars.values().all(func(v: Variant) -> bool: return (v is float or v is int) and v > 0.0)):
 				problems.append("kid.bars must name observations with a full-bar value > 0 each")
 		elif not KID_TEXTS.has(key):
-			problems.append("kid.%s unknown (title, place, say, intro, tip, card, cards, states, minus, bars, picks)" % key)
+			problems.append("kid.%s unknown (title, place, say, intro, first_use, tip, card, cards, states, minus, bars, picks)" % key)
 		elif not (kid[key] is String and kid[key] != ""):
 			problems.append("kid.%s must be a text" % key)
 	return problems
@@ -494,7 +499,8 @@ static func _validate_key_observations(keys: Variant, observations: Array) -> Pa
 ## Optional `manipulation` (Task 2b): {"objects": [{"id", "surface", "snap" (m, optional),
 ## "height": false | {"max" (m, > 0, a multiple of step), "step" (m, optional)}} or a hold object
 ## {"id", "hold": true} (2026-10-28: press and hold, no surface); optional "guide": "drag" | "tap" | "stir"
-## (#157: round the surface's middle) and
+## (#157: round the surface's middle) | "tilt" (#160: the tablet tipping, this object its touch stand-in) |
+## "pump" (#160: dragged down and up a few times) and
 ## "guide_to": "min" | "max" (the hand guide's gesture and drag end, Manipulator.guide); optional
 ## "marker": false (#74: no footprint marker while dragged: a knob that turns something, not a place)],
 ## "demo_action" (optional, an action id: what the --auto-drag demo does after putting an object down)}.
@@ -536,8 +542,8 @@ static func _validate_manipulation(manipulation: Variant, actions: Array = []) -
 			problems.append("manipulation %s.drag must be true or false" % object.id)
 		if not object.get("marker", true) is bool:
 			problems.append("manipulation %s.marker must be true or false" % object.id)
-		if not object.get("guide", "drag") in ["drag", "tap", "stir"]:
-			problems.append("manipulation %s.guide must be \"drag\", \"tap\" or \"stir\"" % object.id)
+		if not object.get("guide", "drag") in ["drag", "tap", "stir", "tilt", "pump"]:
+			problems.append("manipulation %s.guide must be \"drag\", \"tap\", \"stir\", \"tilt\" or \"pump\"" % object.id)
 		if not object.get("guide_to", "min") in ["min", "max"]:
 			problems.append("manipulation %s.guide_to must be \"min\" or \"max\"" % object.id)
 	var grab: Variant = manipulation.get("grab_radius", 1.0)   # (Manipulator.PICK_RADIUS when absent)
