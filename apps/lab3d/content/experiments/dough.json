@@ -1,0 +1,139 @@
+{
+  "id": "dough",
+  "version": 1,
+  "icon": "◍",
+  "law": {},
+  "scene": "res://experiments/dough/dough.gd",
+  "bench_id": "DG",
+  "camera": {
+    "target": [0.3, 2.6, 0.3],
+    "distance": 8.5,
+    "distance_range": [1.5, 30.0],
+    "yaw_range_deg": [-100.0, 100.0],
+    "pitch_range_deg": [-89.0, -2.0],
+    "pan_radius": 6.0,
+    "default_mode": "front",
+    "views": {
+      "front": { "yaw_deg": 0.0, "pitch_deg": -12.0 },
+      "three_quarter": { "yaw_deg": 24.0, "pitch_deg": -20.0 },
+      "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 16.0 },
+      "side": { "yaw_deg": 90.0, "pitch_deg": -12.0, "distance": 14.0 },
+      "follow": { "yaw_deg": 0.0, "pitch_deg": -14.0, "distance": 9.0, "target": [0.0, 1.9, 0.3] }
+    }
+  },
+  "controls": [
+    {
+      "id": "yeast",
+      "type": "choice",
+      "default": "yes",
+      "options": [{ "id": "yes" }, { "id": "no" }]
+    }
+  ],
+  "actions": [
+    { "id": "reset", "style": "primary" }
+  ],
+  "key_observations": ["dough", "spot", "yeast"],
+  "predict": {
+    "question_face": "thinking",
+    "choices": [
+      { "id": "warm", "picture": "dough_warm" },
+      { "id": "cold", "picture": "dough_cold" }
+    ],
+    "answer": "warm",
+    "stage": 1,
+    "bridge_face": "happy"
+  },
+  "missions": {
+    "judge_on": ["doubled", "same", "shelf"],
+    "stages": [
+      {
+        "observe": "",
+        "judge_on": ["doubled"],
+        "miss_on": ["little", "same", "waiting"],
+        "conditions": { "yeast": "yes" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["same"],
+        "miss_on": ["waiting", "doubled", "little"],
+        "conditions": { "yeast": "no" },
+        "say_face": "explain",
+        "win_face": "surprised",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["shelf"],
+        "miss_on": ["little", "same", "waiting"],
+        "conditions": { "yeast": "yes" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      }
+    ]
+  },
+  "story": {
+    "keeper_face": "worried",
+    "before": [{ "speaker": "cat", "face": "happy" }],
+    "clue_face": "thinking",
+    "map_clue_face": "explain"
+  },
+  "kid": {
+    "intro_face": "explain",
+    "intro_picture": "yeast",
+    "card": "dough",
+    "say_face": "explain",
+    "picks": {
+      "yeast": [
+        { "value": "yes", "picture": "dough_yeast" },
+        { "value": "no", "picture": "dough_plain" }
+      ]
+    }
+  },
+  "note": {
+    "numbers": [
+      { "ids": ["dough"] },
+      { "ids": ["spot"] },
+      { "ids": ["yeast"] }
+    ],
+    "graph": true
+  },
+  "cast": {
+    "dugi": {
+      "at": [-4.8, -0.2],
+      "explain_on": ["doubled", "same", "shelf"],
+      "delay_s": 0.6
+    },
+    "puppy": {
+      "at": [4.0, 1.1]
+    },
+    "yaongi": { "at": [5.5, 0.2] }
+  },
+  "observations": [
+    { "id": "dough" },
+    { "id": "spot" },
+    { "id": "yeast" }
+  ],
+  "manipulation": {
+    "grab_radius": 72.0,
+    "objects": [
+      { "id": "bowl", "surface": "table", "snap": 0.0, "height": false, "marker": false, "guide_to": "min" }
+    ]
+  },
+  "graph": {
+    "x": { "unit": "h", "max": 4.0 },
+    "y": { "unit": "%", "min_max": 300.0 },
+    "series": [
+      { "id": "warm", "color": "#ff7a1a", "style": "line" },
+      { "id": "cold", "color": "#4aa8f5", "style": "line" },
+      { "id": "none", "color": "#9aa5b1", "style": "line" },
+      { "id": "now", "color": "#ff3b3b", "style": "points" }
+    ]
+  }
+}

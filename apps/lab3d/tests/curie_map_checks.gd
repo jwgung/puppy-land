@@ -15,8 +15,8 @@ const PHONE := Vector2(1560, 720)
 const ORDER := ["diffusion", "dissolving", "melt-cook", "dough", "clean-water", "soap", "cabbage", "tooth",
 	"fizz", "candle", "rust", "flame-color"]
 const ZONES := {"kitchen": "meadow", "spring": "pond", "lighthouse": "hill"}
-## The spots that are labs already (#156, #157, #158 on): the others are places in the making.
-const LABS := ["diffusion", "dissolving", "melt-cook"]
+## The spots that are labs already (#156, #157, #158, #159 on): the others are places in the making.
+const LABS := ["diffusion", "dissolving", "melt-cook", "dough"]
 ## The island's turn (curie.json turn_deg, 2026-11-16 user pick A): the flask's neck this far round from +x.
 const TURN := -25.0
 

@@ -1,0 +1,89 @@
+{
+  "title": "Where does dough rise well?",
+  "category": "Matter and change",
+  "question": "Does dough rise better somewhere warm or somewhere cold?",
+  "steps": [
+    "Drag the dough bowl to the oven or into the fridge.",
+    "Once the bowl is down the time runs by itself. While it runs the buttons at the bottom left are locked.",
+    "Use the buttons at the bottom left to put the yeast in or leave it out."
+  ],
+  "observe": "Yeast is a living thing too small to see. It eats the sugar in the dough and breathes out a gas, so bubbles form in the dough and it rises. Where it is warm the yeast works hard and the dough rises fast; in the cold fridge it rises very slowly. Without yeast it never rises, however long it waits.",
+  "terms": [
+    { "name": "Yeast", "description": "A living thing too small to see that goes into bread dough. It eats sugar and breathes out a gas." },
+    { "name": "Fermentation", "description": "When tiny living things like yeast eat their food and turn it into other things. Bread rising is fermentation." },
+    { "name": "Gas bubbles", "description": "Little pockets of the yeast's gas caught in the dough. They are the holes you see when you cut bread." }
+  ],
+  "law": {
+    "equation": "yeast + warmth → gas → rising",
+    "title": "Yeast makes dough rise",
+    "description": "Living yeast eats the sugar in the dough and makes a gas. The gas is trapped in the dough, so it rises. Yeast is busy when warm and almost rests when cold, so dough rises much better somewhere warm."
+  },
+  "tip": "Drag the dough bowl to the oven or the fridge and the time runs by itself. Drag the bowl again and the time stops; put it down and it goes on.",
+  "tip_short": "Drag the dough bowl",
+  "controls": [{ "label": "Yeast", "options": [{ "label": "In" }, { "label": "Left out" }] }],
+  "actions": [{ "label": "Start over" }],
+  "predict": {
+    "question": "Does dough rise better somewhere warm or somewhere cold?",
+    "choices": [{ "label": "Somewhere warm", "guess": "I think it rises better somewhere warm!" }, { "label": "Somewhere cold", "guess": "I think it rises better somewhere cold!" }],
+    "reason": "Yeast works hard when it's warm. When it's cold it dozes off.",
+    "bridge": "Let's put the dough down and see!"
+  },
+  "missions": {
+    "stages": [
+      {
+        "text": "Make the dough twice as big by the oven!",
+        "say": "Somewhere warm the yeast makes lots of gas, so the dough rises.",
+        "win": "The dough puffed up!",
+        "miss": "Put it by the warm oven!",
+        "miss_conditions": "Pick the dough with yeast!"
+      },
+      {
+        "text": "Without yeast? Does it rise even somewhere warm?",
+        "say": "Without yeast there's no friend to make the gas. So it doesn't rise, even when warm.",
+        "win": "It really stayed the same!",
+        "miss": "Watch until the night is over!",
+        "miss_conditions": "Pick the dough without yeast!"
+      },
+      {
+        "text": "Make the dough rise up to the piece on the shelf!",
+        "say": "Dough with yeast kept warm keeps rising. In the cold fridge it only rises a little.",
+        "win": "It reached the shelf! A piece!",
+        "miss": "Not the fridge, the oven!",
+        "miss_conditions": "Pick the dough with yeast!"
+      }
+    ]
+  },
+  "story": {
+    "keeper": "There's only this much flour left. How can the four of us share it? And the dough is flat…",
+    "before": [
+      {
+        "text": "Bread? Leave it to me! If the dough rises, a little makes a big loaf."
+      }
+    ],
+    "clue": "There's a piece up on the high shelf! If the dough rises that far it can reach it.",
+    "map_clue": "In the kitchen village, the bakery with the high shelf!"
+  },
+  "kid": {
+    "intro": "This is the dough lab. The **yeast** we put in dough is a living thing too small to see. It eats the sugar in the dough and breathes out a gas, and the dough rises.",
+    "title": "Put the dough somewhere warm!",
+    "place": "Rising dough",
+    "say": "Yeast makes a gas and the dough rises. It rises well when warm, and without yeast it stays the same.",
+    "tip": "Drag the dough bowl.",
+    "cards": { "dough": "Dough", "spot": "Place", "yeast": "Yeast" },
+    "picks": { "yeast": [{ "label": "Yeast in" }, { "label": "No yeast" }] }
+  },
+  "note": {
+    "law": "Living yeast makes a gas and the dough rises. The warmer, the better it rises; without yeast it doesn't rise.",
+    "learn": "Dough with yeast doubles by the oven and, left longer, rises up to the shelf. In the same time in the fridge it rises only a little, and without yeast it stays the same through the night. Really, dough takes about an hour to double somewhere warm (about 27 °C) and about 12 hours in the fridge (about 4 °C). The gas that raises it is carbon dioxide.",
+    "talk": ["Why does bread have lots of little holes when you cut it?", "On a cold winter day, where would you put dough to rise?"],
+    "formula": "volume = start volume × 2^(time ÷ doubling time); doubling time: 27 °C 1 h, 4 °C 12 h",
+    "numbers": [{ "label": "Dough" }, { "label": "Place" }, { "label": "Yeast" }]
+  },
+  "observations": [{ "label": "Dough" }, { "label": "Place" }, { "label": "Yeast" }],
+  "graph": {
+    "title": "Time gone by and the dough's size",
+    "x": { "label": "Time gone by (fast-forward)" },
+    "y": { "label": "Size compared with the start" },
+    "series": [{ "label": "By the oven" }, { "label": "Fridge" }, { "label": "No yeast" }, { "label": "Now" }]
+  }
+}

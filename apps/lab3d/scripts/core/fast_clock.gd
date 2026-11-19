@@ -15,8 +15,10 @@
 ## - advance(dt): the lab's model steps it (play seconds); returns the days that went by.
 ## - share() (0..1 the marker), nights() (moon stamps), night() (0 day .. 1 night: the scene's dark),
 ##   sunshine(a, b) (days of daylight between two times: what the sun dries).
-## - locks_conditions(): true from the first start() until reset() (the condition buttons are locked
-##   while the time flows and stay locked until 다시: the mockup's "흐르는 동안 잠김").
+## - locks_conditions(): true from the first start() until the time stops by itself at `until` or
+##   reset() (the condition buttons are locked while the time flows, also while the lab's object is
+##   held in the middle of it, and 다시 frees them: the mockup's "흐르는 동안 잠김". #159: free again
+##   once the result is in, so the miss line's "pick the other button" can be done without 다시).
 ## - reset(): the first morning again, stopped and unlocked (다시).
 class_name FastClock
 extends RefCounted
@@ -130,6 +132,7 @@ static func days_for_sunshine(need: float) -> float:
 	return whole + (need - whole * DUSK)
 
 
-## The condition buttons are locked: the time has flowed since the last reset.
+## The condition buttons are locked: the time has flowed since the last reset and has not yet stopped
+## by itself at `until`.
 func locks_conditions() -> bool:
-	return started
+	return started and (running or days < until)

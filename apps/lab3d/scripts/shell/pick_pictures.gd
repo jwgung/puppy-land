@@ -24,7 +24,8 @@ const KINDS := ["earth", "moon", "jupiter", "box", "slide_steel", "slide_wood", 
 	"ground_rock", "ground_sand", "house_plain", "house_brace",
 	"magma_runny", "magma_normal", "magma_sticky",
 	"water_cold", "water_hot",
-	"item_choc", "item_egg"]
+	"item_choc", "item_egg",
+	"dough_yeast", "dough_plain"]
 const OUTLINE := Color("8a6a46")   # PredictPictures.GROUND: the brown of the storybook lines
 const STEEL := ArtPalette.STEEL
 const COLD_WATER := Color("6fb7ea")   # the glasses of #156's water buttons (the mockup's)
@@ -149,6 +150,8 @@ static func draw(canvas: Control, kind: String, size := 0.5, count := 1) -> void
 			water_glass(canvas, r, kind == "water_hot")
 		"item_choc", "item_egg":   # #158 (되돌릴 수 있을까?): a bar of chocolate or an egg
 			MeltCookPictures.item(canvas, r, kind == "item_egg")
+		"dough_yeast", "dough_plain":   # #159 (빵 반죽 부풀리기): a bowl of dough with yeast (puffy, bubbles) or without (flat)
+			dough_bowl(canvas, Vector2(c.x, r.end.y - 2.0), minf(r.size.x * 0.32, r.size.y * 0.5), 1.6 if kind == "dough_yeast" else 1.0, kind == "dough_yeast")
 		"magma_runny", "magma_normal", "magma_sticky":   # #98 (화산): how the magma pours and piles
 			_magma(canvas, r, ["magma_runny", "magma_normal", "magma_sticky"].find(kind))
 		"stick":   # #86 (그림자 시계): the yard's stick, `size` of the picture's height (short / long)
@@ -273,6 +276,40 @@ static func _sea(canvas: Control, r: Rect2, heat: int) -> void:
 
 ## A glass of water (Curie Island's kitchen labs, #156; the approved mockup's colours): cold, blue water
 ## with an ice cube and a snowflake beside it; hot, orange-red water with three wisps of steam over it.
+## A cream bowl with a blue band and dough in it (#159, the mockup's buttons): its foot's middle at
+## `foot`, `half` its half width; the dough `rise` times its start's height (1 a flat lump), with the
+## yeast's gas bubbles in it or smooth.
+static func dough_bowl(canvas: Control, foot: Vector2, half: float, rise: float, bubbles: bool) -> void:
+	var h := half * 0.62
+	var lip := foot.y - h
+	var ry := half * 0.2 * rise
+	var rx := half * (0.86 + 0.08 * (rise - 1.0))
+	var centre := Vector2(foot.x, lip - ry * 0.35)
+	var dough := PackedVector2Array()
+	for j in 25:
+		var a := PI + PI * j / 24.0
+		dough.append(centre + Vector2(cos(a) * rx, sin(a) * ry))
+	dough.append(Vector2(foot.x + rx, lip + 2.0))
+	dough.append(Vector2(foot.x - rx, lip + 2.0))
+	canvas.draw_colored_polygon(dough, Color("f1d39b"))
+	if bubbles:
+		for b: Vector2 in [Vector2(-0.4, 0.5), Vector2(0.1, 0.75), Vector2(0.45, 0.4)]:
+			canvas.draw_circle(centre + Vector2(b.x * rx, -b.y * ry), maxf(half * 0.09, 2.5), Color("fff6dc"))
+			canvas.draw_arc(centre + Vector2(b.x * rx, -b.y * ry), maxf(half * 0.09, 2.5), 0.0, TAU, 12, Color("c79a6a"), 1.2, true)
+	var bowl := PackedVector2Array()
+	for j in 17:
+		var a := PI * j / 16.0
+		bowl.append(Vector2(foot.x + cos(a) * half, lip + sin(a) * h))
+	canvas.draw_colored_polygon(bowl, Color("f4ead8"))
+	canvas.draw_polyline(bowl, Color("c79a6a"), 2.0, true)
+	canvas.draw_line(Vector2(foot.x - half, lip), Vector2(foot.x + half, lip), Color("c79a6a"), 2.0, true)
+	var band := PackedVector2Array()
+	for j in 13:
+		var u := j / 12.0
+		band.append(Vector2(foot.x + lerpf(-half * 0.92, half * 0.92, u), lip + h * 0.32 + sin(PI * u) * h * 0.18))
+	canvas.draw_polyline(band, Color("4d8fd6"), maxf(half * 0.08, 2.0), true)
+
+
 static func water_glass(canvas: Control, r: Rect2, hot: bool) -> void:
 	var c := r.get_center()
 	var h := r.size.y * 0.78

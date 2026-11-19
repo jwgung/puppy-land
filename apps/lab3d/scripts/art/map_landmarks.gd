@@ -76,6 +76,8 @@ static func add(b: ArtMeshBuilder, id: String, xf: Transform3D) -> float:
 			return _dissolving(b, xf)
 		"melt-cook":
 			return _melt_cook(b, xf)
+		"dough":
+			return _dough(b, xf)
 	_rod(b, xf, Vector3.ZERO, Vector3(0.0, 1.0, 0.0), 0.08, ArtPalette.BLUE)
 	_ball(b, xf, Vector3(0.0, 1.15, 0.0), 0.2, ArtPalette.WHITE)
 	return 1.35
@@ -711,6 +713,20 @@ static func _melt_cook(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.3, 0.44, 0.0)), 0.14, 0.12, 0.05, 5, MeltCookProps.CHOC_SET, true, MeltCookProps.CHOC_SET_TOP)
 	b.add_sphere(xf * Transform3D(Basis.from_scale(Vector3(0.8, 1.1, 0.8)), Vector3(0.1, 0.1, 0.55)), 0.13, 3, 8, MeltCookProps.SHELL)
 	_ball(b, xf, Vector3(-0.22, 0.85, 0.0), 0.07, Color(1.0, 1.0, 1.0))
+	return 1.35
+
+
+## The curie island's 빵 반죽 부풀리기 (#159, "높은 선반이 있는 빵집"): a little brick oven, a bowl of
+## puffy dough before it and a high shelf on a post over the bowl.
+static func _dough(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	var oven := Vector3(-0.22, 0.0, -0.12)
+	b.add_cylinder(xf * Transform3D(Basis(), oven), 0.28, 0.24, 0.3, 10, DoughProps.BRICK, true, DoughProps.BRICK)
+	_ball(b, xf, oven + Vector3(0.0, 0.3, 0.0), 0.24, DoughProps.BRICK)
+	var bowl := Vector3(0.24, 0.0, 0.14)
+	b.add_cylinder(xf * Transform3D(Basis(), bowl), 0.12, 0.2, 0.18, 10, DoughProps.BOWL_COLOR, true, DoughProps.DOUGH)
+	_ball(b, xf, bowl + Vector3(0.0, 0.26, 0.0), 0.18, DoughProps.DOUGH_TOP)
+	_rod(b, xf, bowl + Vector3(0.0, 0.0, -0.3), bowl + Vector3(0.0, 0.95, -0.3), 0.04, ArtPalette.WOOD_GRAIN)
+	b.add_cylinder(xf * Transform3D(Basis(), bowl + Vector3(0.0, 0.95, -0.15)), 0.22, 0.22, 0.05, 8, ArtPalette.WOOD_GRAIN, true, ArtPalette.WOOD)
 	return 1.35
 
 

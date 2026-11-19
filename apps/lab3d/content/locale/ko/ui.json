@@ -390,5 +390,17 @@
   "dissolving.tray.drying": "물이 마르는 중",
   "dissolving.tray.empty": "아직 비어 있어",
   "dissolving.tray.full": "물이 가득해",
-  "dissolving.tray.salt": "소금이 남았어"
+  "dissolving.tray.salt": "소금이 남았어",
+  "dough.dough.doubled": "두 배가 됐어",
+  "dough.dough.little": "조금만 부풀었어",
+  "dough.dough.ready": "납작해",
+  "dough.dough.rising": "부푸는 중",
+  "dough.dough.same": "그대로야",
+  "dough.dough.shelf": "선반까지 닿았어",
+  "dough.dough.waiting": "아직 그대로야",
+  "dough.spot.cold": "냉장고 안",
+  "dough.spot.table": "식탁 위",
+  "dough.spot.warm": "오븐 옆",
+  "dough.yeast.no": "효모 안 넣음",
+  "dough.yeast.yes": "효모 넣음"
 }

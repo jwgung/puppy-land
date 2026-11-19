@@ -230,6 +230,13 @@
 ##    goes back), the judging of the three stages (the let-go lines, the wrong item's line), the stove handle
 ##    (a press is the fire on), the bread cat's pour at stage 2's reset, the tables per stage, the item button,
 ##    no number on the screen, what matters in view, the spot, the opening and the piece (the shiny egg).
+## 25d. 빵 반죽 부풀리기 (tests/dough_checks.gd, #159 2026-11-17): Curie Island's fourth lab and the screen's
+##    condition lock (Experiment.conditions_locked while the fast-forward time flows): its data and lines
+##    against docs/islands/curie-lines.md 4 and curie-missions.md 4, the model against the textbook values
+##    (an hour to double by the oven, twelve in the fridge, none without yeast), the lock, the judging, the
+##    bowl dragged to the oven and the fridge (picked up where it stands, the time stopping and going on),
+##    the night, the goals and the finished round's look, no number, the dimmed buttons on the screen, what
+##    matters in view, the spot, the pictures, the opening and the piece.
 ## 24l. the hutton cast (tests/hutton_cast_checks.gd, #114 2026-11-10): in every Hutton lab on the
 ##    tablet and the phone, Puppy's result bubble clear of Dugi's open box and portrait, Puppy at most
 ##    half under them.
@@ -543,6 +550,11 @@ func _run() -> void:
 	_expect(melt_cook != null and melt_cook.can_instantiate(), "melt-cook checks compile", "")
 	if melt_cook != null and melt_cook.can_instantiate():
 		await melt_cook.new(self, _expect).run()
+	print("== 빵 반죽 부풀리기 (#159): Curie Island's fourth lab, the condition lock, its lines, model, judging, bowl, night, goals and piece ==")
+	var dough: GDScript = load("res://tests/dough_checks.gd")
+	_expect(dough != null and dough.can_instantiate(), "dough checks compile", "")
+	if dough != null and dough.can_instantiate():
+		await dough.new(self, _expect).run()
 	print("== the hutton cast (#114): Puppy and his bubble clear of Dugi's box in every lab ==")
 	var hutton_cast: GDScript = load("res://tests/hutton_cast_checks.gd")
 	_expect(hutton_cast != null and hutton_cast.can_instantiate(), "hutton cast checks compile", "")

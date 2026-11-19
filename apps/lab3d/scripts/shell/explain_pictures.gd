@@ -16,7 +16,7 @@
 class_name ExplainPictures
 extends RefCounted
 
-const KINDS := ["axis", "morning_evening", "sea_breeze", "river", "particles"]
+const KINDS := ["axis", "morning_evening", "sea_breeze", "river", "particles", "yeast"]
 ## The card's width : height (DialogueBox.CARD_SIZE has it too) and its drawing space (the mockup's).
 const ASPECT := 1.5
 const DESIGN := Vector2(432.0, 432.0 / ASPECT)
@@ -112,6 +112,8 @@ static func draw_card(canvas: CanvasItem, kind: String, rect: Rect2) -> void:
 			_river(pen)
 		"particles":
 			_particles(pen)
+		"yeast":
+			_yeast(pen)
 	pen.card_front()
 	canvas.draw_set_transform_matrix(Transform2D.IDENTITY)
 
@@ -379,6 +381,49 @@ static func _particles(p: Pen) -> void:
 
 ## A shiny bead of radius `r` at `c` in `color`: a deeper rim and lower right, a lighter upper left,
 ## a white shine.
+## #159 (curie-lines.md 4, "[그림: 반죽 속 작은 효모 알갱이와 동그란 기체 거품]"): a bowl of dough cut
+## open; in the dough little brown yeast grains, each breathing out a trail of tiny bubbles that grow
+## into the dough's round gas bubbles (shiny, pale), more and bigger towards the top where the dough
+## swells. No letters.
+static func _yeast(p: Pen) -> void:
+	p.sky(Color8(255, 240, 214), Color8(246, 222, 184))
+	p.fill(rect_points(Rect2(0, 236, DESIGN.x, DESIGN.y - 236)), Color8(201, 141, 79))
+	p.fill(rect_points(Rect2(0, 236, DESIGN.x, 6)), Color8(219, 164, 104))
+	# The dough: a swelling dome over the bowl (cut open: its inside lighter).
+	var dough := arc_points(Vector2(216, 150), 150, 112, 180, 360, 0.0, 48)
+	dough.append(Vector2(366, 166))
+	dough.append(Vector2(66, 166))
+	p.fill(dough, Color8(241, 211, 155))
+	p.ring_points(dough, Color8(216, 176, 112), 3.0)
+	var inside := arc_points(Vector2(216, 152), 136, 98, 180, 360, 0.0, 48)
+	inside.append(Vector2(352, 166))
+	inside.append(Vector2(80, 166))
+	p.fill(inside, Color8(250, 228, 186))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 159
+	# The gas bubbles: round and pale with a dark rim and a shine.
+	for i in 24:
+		var at := Vector2(rng.randf_range(100, 332), rng.randf_range(72, 158))
+		if not Geometry2D.is_point_in_polygon(at, inside):
+			continue
+		var r := rng.randf_range(7.0, 15.0) * (1.25 - (at.y - 70.0) / 180.0)
+		p.ellipse(at, r, r, Color8(255, 249, 232))
+		p.ring(at, r, r, Color8(214, 178, 120), 1.6)
+		p.ellipse(at + Vector2(-0.35, -0.35) * r, r * 0.25, r * 0.25, Color(1, 1, 1, 0.95))
+	# The yeast grains: little brown ovals low in the dough, each with a trail of tiny bubbles going up.
+	for g: Vector2 in [Vector2(130, 150), Vector2(196, 156), Vector2(262, 148), Vector2(318, 154), Vector2(160, 118), Vector2(286, 112)]:
+		p.ellipse(g, 6.0, 4.5, Color8(150, 104, 52))
+		p.ellipse(g + Vector2(-1.5, -1.5), 2.5, 1.8, Color8(196, 154, 90))
+		for k in 3:
+			var b := g + Vector2(4.0 + k * 3.0, -9.0 - k * 9.0)
+			p.ring(b, 2.0 + k * 1.2, 2.0 + k * 1.2, Color8(196, 154, 90), 1.4)
+	# The bowl in front: cream with a blue band, cut at the dough's foot.
+	var bowl := arc_points(Vector2(216, 166), 168, 74, 0, 180, 0.0, 40)
+	p.fill(bowl, Color8(244, 234, 216))
+	p.ring_points(bowl, Color8(199, 154, 106), 3.0)
+	p.line(arc_points(Vector2(216, 176), 150, 40, 15, 165, 0.0, 30), Color8(77, 143, 214), 8.0, false)
+
+
 static func bead(p: Pen, c: Vector2, r: float, color: Color) -> void:
 	p.ellipse(c, r, r, color.darkened(0.3))
 	p.ellipse(c + Vector2(-0.12, -0.12) * r, r * 0.86, r * 0.86, color)
