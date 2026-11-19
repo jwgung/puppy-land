@@ -941,7 +941,7 @@ adb shell am start -n jwgung.puppyland/com.godot.game.GodotAppLauncher \
 ```bash
 apps/lab3d/tools/build.sh          # all: import → 헤드리스 테스트 → APK
 apps/lab3d/tools/build.sh test     # 헤드리스 테스트만 (exports/test.log)
-apps/lab3d/tools/build.sh android  # exports/android/puppy-land.apk (약 32 MB, 개발용 키 서명: 기기 확인용)
+apps/lab3d/tools/build.sh android  # exports/android/puppy-land.apk (글꼴을 한글 전체로 넓히기 전 약 32 MB, 이후 글꼴 증가분 약 4 MB 더, 개발용 키 서명: 기기 확인용)
 apps/lab3d/tools/build.sh play     # exports/android/puppy-land-<versionName>-v<versionCode>.aab (Play용, 업로드 키 필요: docs/release/README.md)
 npm test                           # 루트: TS 테스트 + apps/lab3d/tools/{incline,formula}-vectors.test.ts
 ```
@@ -977,7 +977,7 @@ npm test                           # 루트: TS 테스트 + apps/lab3d/tools/{in
 | 새 출발 위치의 표시 수치 | `tools/incline-vectors.test.ts` → `tests/incline_vectors.json` `runs`, `manipulation_checks.gd` | 재질·각도·출발 위치 4가지(1–6 m)에서 s(t) ±1%, 표시 `이동 거리`가 출발점에서 빗면 끝까지 거리에서 멈춤, 공식 곡선이 그 거리에서 끝남, 상자가 빗면을 떠나는 시각이 TS 공식 √(2L/a)와 3 step 안 |
 
 - TS 공식을 바꾸면 vitest가 먼저 깨진다. `UPDATE_INCLINE_VECTORS=1 UPDATE_FORMULA_VECTORS=1 UPDATE_UNIFORM_VECTORS=1 UPDATE_FRICTION_VECTORS=1 UPDATE_COLLISION_VECTORS=1 UPDATE_SPRING_VECTORS=1 UPDATE_BUOYANCY_VECTORS=1 UPDATE_ORBIT_VECTORS=1 UPDATE_CONSTRAINTS_VECTORS=1 UPDATE_ROTATION_VECTORS=1 UPDATE_PULLEY_VECTORS=1 npx vitest run apps/lab3d`로 벡터를 다시 만든 뒤 Godot 테스트로 GDScript 쪽 불일치를 확인한다.
-- 글꼴(`assets/fonts/NotoSansKR-Lab3dSubset-*.otf`, 이름은 참조 때문에 그대로)에는 한글 완성형 11,172자·자모·ASCII/라틴·일반 문장부호·화살표·도형 기호가 모두 들어 있어, 한글 문구를 바꿔도 글꼴을 다시 만들 필요가 없다. 한글 밖 기호를 새로 쓸 때만 `apps/lab3d/tools/subset_font.sh`로 다시 만든다(fonttools가 없으면 `uvx`로 실행). 빠진 글자는 테스트가 잡는다. 한자는 넣지 않았고, 일본어·중국어 등 다른 언어를 직접 넣게 되면 그 글자는 따로 글꼴에 더해야 한다. 앱 용량은 글꼴 때문에 약 4MB 늘었다(Regular·Bold 각 약 2MB). Noto Sans CJK에 없는 아래·위 첨자(ₛ, ₖ, ⁻¹)는 쓰지 않는다.
+- 글꼴(`assets/fonts/NotoSansKR-Lab3dSubset-*.otf`, 이름은 참조 때문에 그대로)에는 한글 완성형 11,172자·자모·ASCII/라틴·일반 문장부호·화살표·도형 기호가 모두 들어 있어, 한글 문구를 바꿔도 글꼴을 다시 만들 필요가 없다. `subset_font.sh`의 `unicodes` 범위 밖 기호를 새로 쓸 때만 `apps/lab3d/tools/subset_font.sh`로 다시 만든다(fonttools가 없으면 `uvx`로 실행). 빠진 글자는 테스트가 잡는다. 한자는 넣지 않았고, 일본어·중국어 등 다른 언어를 직접 넣게 되면 그 글자는 따로 글꼴에 더해야 한다. 앱 용량은 글꼴 때문에 약 4MB 늘었다(Regular 177,036B→1,979,088B, Bold 180,508B→2,093,048B). Noto Sans CJK에 없는 아래·위 첨자(ₛ, ₖ, ⁻¹)는 쓰지 않는다.
 - `build.sh test`(앱·스파이크 둘 다)는 `SCRIPT ERROR`(스크립트 컴파일·실행 오류)나 `ERROR`로 시작하는 줄이 로그에 있으면 PASS여도 실패로 본다. 코루틴 안 오류로 멈춘 실행은 `GODOT_TEST_TIMEOUT`(기본 900초) 뒤 실패한다. Godot 경로는 `GODOT`로 바꾼다(기본 `~/.local/share/godot-spike/godot`).
 - `-s`로 실행하는 테스트에서는 autoload 이름이 컴파일 시점에 없어서, `Quality`·`Bench`를 쓰는 스크립트는 테스트에서 `load()`로 불러 쓴다.
 
@@ -1031,7 +1031,7 @@ python3 -I apps/lab3d/tools/device_gesture.py orbit  # orbit | pinch | pinch-fix
    - `cast`(선택, Task 4h): 두기두기·퍼피 자리 `at: [x, z]`, 허턴섬 실험은 섬지기 여우 자리 `fox.at`도(2026-11-11 사용자 "여우친구가 실험내내 안따라다니네? 따라다니게 해줘": 실험 내내 퍼피 곁에 서서 카메라를 봄, `tests/hutton_cast_checks.gd`가 화면 안·퍼피·두기두기·대화창·덮개와 겹치지 않음을 확인하고, 여우가 섬의 마른 땅(또는 실험 바닥)에 서며 바다·연못·무대에 묻히지 않음을 `tests/footing.gd`로 확인. 2026-11-16 사용자: 여우가 물에 잠겨 있다), 두기두기가 설명할 상태 `explain_on`과 지연 `delay_s`. 장치 오른쪽(가리킬 것이 그의 오른쪽)·뒤쪽에 두고 `tests/island_cast_checks.gd`의 자리·화면 시험을 통과시킨다([아트 디렉션 12절](docs/art-direction.md#12-두기두기와-퍼피-task-4h)). 가리킬 점이 따라가기 대상과 다르면 `explain_point()`를 재정의한다
 2. `content/experiments/index.json`의 `experiments`에 파일 이름을 더한다. 목록 화면은 이 순서와 `category`로 묶어 보여준다. 둘째 섬부터의 실험은 `islands`의 그 섬 목록에 더한다(#74: `"islands": {"hutton": ["day-night.json"]}`, `ExperimentRegistry.island_labs`). 첫 섬 목록(`load_all`)과 섞이지 않고, `find`는 모두 찾는다. 섬 지도의 장소는 그 id의 실험이 생기면 열린다(`Island.playable`은 섬의 모든 장소가 실험일 때).
 3. `experiments/<이름>/<이름>.gd`에 `extends Experiment` 스크립트를 만든다(공식 모델을 `BodyModelDriver`로 구동하는 안내형 실험은 `extends ModelDrivenLab`: `_ready()`·run 상태·그래프 장부·`release()`를 베이스가 맡고 `_build_world()`·`_load_model()`·`_graph_point()` 등을 채운다. 조건이 바뀌어 run을 다시 시작할 때는 `_restart()`와 `reset_run()`). `_ready()`에서 3D 월드를 만들고 `definition.controls()`의 기본값으로 `set_control()`을 부른다. 조건·선택지·범위·격자는 `definition.control()`·`option()`·`clamp_value()`·`grid_step()`으로 읽는다. 보이는 소품·환경·연출은 `<이름>_props.gd`로 나눠 [아트 디렉션 9절](docs/art-direction.md#9-새-실험-소품-만드는-법)을 따른다. 바닥·마찰 없는 재질·보정 바디 설정과 상태 변화 알림은 `Experiment` 베이스의 `_add_floor()`·`_frictionless_material()`·`_setup_free_body()`·`_update_status()`(반응은 `_status_changed()`를 재정의)를 쓰고, 공식의 중력은 베이스의 `engine_g`에서 읽는다. 화면 숫자는 공식(`PhysicsLaws`)에서 내고, 엔진 측정값은 따로 표시한다(공식 보정 원칙, [CONTEXT](../../CONTEXT.md)).
-4. 움직임은 [공식 보정](docs/formula-correction.md) 4절 표의 방식으로 보정한다(보정기를 붙이고 화면 숫자는 `formula_values()`에서). 새 법칙은 `tools/formula-vectors.test.ts`의 실험 그룹에 TS 사례를 더하고 `PhysicsLaws`에 포트한다(parity는 자동). 한글 밖 기호를 새로 썼으면 글꼴을 다시 만든다(`tools/subset_font.sh`).
+4. 움직임은 [공식 보정](docs/formula-correction.md) 4절 표의 방식으로 보정한다(보정기를 붙이고 화면 숫자는 `formula_values()`에서). 새 법칙은 `tools/formula-vectors.test.ts`의 실험 그룹에 TS 사례를 더하고 `PhysicsLaws`에 포트한다(parity는 자동). `subset_font.sh`의 `unicodes` 범위 밖 기호를 새로 썼으면 글꼴을 다시 만든다(`tools/subset_font.sh`).
 5. `tools/build.sh`로 테스트·APK를 만들고 `bench_device.sh`로 low 60 fps를 확인한다.
 
 `ExperimentRegistry.validate()`가 필수 필드·카메라 모드·조건 형식·`manipulation`·`cast` 규칙을 검사하고, 잘못된 실험은 목록에서 빼고 오류를 남긴다.

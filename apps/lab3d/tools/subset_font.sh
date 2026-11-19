@@ -2,12 +2,12 @@
 # Rebuilds the Hangul UI fonts in assets/fonts/ from Noto Sans CJK KR (SIL OFL 1.1, Regular + Bold).
 # Each face holds all of Hangul (11,172 syllables + Jamo + compatibility Jamo), ASCII/Latin-1, general
 # punctuation, CJK symbols/punctuation, fullwidth forms, arrows, geometric shapes and misc symbols
-# (UNICODES below; Hanja is left out), plus every character used in scripts/**/*.gd, experiments/**/*.gd
+# (unicodes below; Hanja is left out), plus every character used in scripts/**/*.gd, experiments/**/*.gd
 # and content/**/*.json (tools/used_chars.py), so UI text can change without rebuilding the font and
 # every build (Android, later Web) renders Korean without system fonts.
 # The file names keep "Lab3dSubset" because assets/fonts/*.import and the references use them; the
 # faces are no longer text-only subsets. Japanese/Chinese text or Hanja would need its own glyphs.
-# Run again only when a non-Hangul symbol outside UNICODES is newly used; tests/run_tests.gd fails when
+# Run again only when a non-Hangul symbol outside the unicodes range is newly used; tests/run_tests.gd fails when
 # a used character is missing, and when any of the 11,172 syllables is missing.
 # Symbols Noto Sans CJK lacks (subscripts such as x₀ in the experiment texts, ⚖ ⌁ ▰ list icons) come
 # from a DejaVu Sans subset (Bitstream Vera licence, assets/fonts/DejaVu-LICENSE.txt) that UiTheme
