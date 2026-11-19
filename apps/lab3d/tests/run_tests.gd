@@ -1332,6 +1332,11 @@ func _check_fonts() -> void:
 			var code := c.unicode_at(0)
 			if code > 126 and code != 0xFEFF and (not covers.call(regular, code) or not covers.call(bold, code)) and c not in missing:
 				missing += c
+	var hangul_missing := 0
+	for code in range(0xAC00, 0xD7A4):
+		if not regular.has_char(code) or not bold.has_char(code):
+			hangul_missing += 1
+	_expect(hangul_missing == 0, "UI fonts hold all 11,172 Hangul syllables", "missing: %d (run tools/subset_font.sh)" % hangul_missing if hangul_missing > 0 else "")
 	_expect(missing == "", "UI fonts cover every used character", "missing: %s (run tools/subset_font.sh)" % missing if missing != "" else "")
 
 
