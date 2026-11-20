@@ -1225,10 +1225,16 @@ func strip_pulsing() -> bool:
 ## A finger came down on one of the lab's objects (a drag, a pull, a press): a new attempt that waits
 ## for its line.
 func _watch_touch() -> void:
-	var touching := manipulator != null and manipulator.mode != ""
+	var touching := _touching()
 	if touching and not _was_touching and mission_round != null:
 		mission_round.touched()
 	_was_touching = touching
+
+
+## A finger holds one of the lab's objects, or the child acts through the tablet itself (#160: tilting it,
+## Experiment.body_input_active).
+func _touching() -> bool:
+	return (manipulator != null and manipulator.mode != "") or (experiment != null and experiment.body_input_active())
 
 
 ## Puppy's `win` (after its stamp) or `miss` line of stage `stage` (MissionRound.tell; tests). Nothing
@@ -1762,7 +1768,7 @@ func _guide_blocked() -> bool:
 func _run_guide(delta: float) -> void:
 	if _coach == null:
 		return
-	var used := manipulator != null and manipulator.mode != ""
+	var used := _touching()
 	var touched := _guide_touched or used
 	_guide_touched = false
 	_try_nudge_picks()
@@ -1796,10 +1802,13 @@ func show_guide() -> bool:
 	if not Rect2(Vector2.ZERO, view.size).has_point(_guide_view_point(manipulator.guide_point(id))):
 		return false
 	var at := func() -> Vector2: return _guide_view_point(manipulator.guide_point(id))
-	match str(spec.kind):
-		"drag", "pull", "stir":
+	var kind := str(spec.kind)
+	if kind == "tilt" and (experiment.motion_input() == null or not experiment.motion_input().has_sensor()):
+		kind = "drag"   # (#160: no sensor here: the touch stand-in's drag alone)
+	match kind:
+		"drag", "pull", "stir", "tilt", "pump":
 			var to: Vector3 = spec.to
-			hand_guide.play(str(spec.kind), at, func() -> Vector2: return _guide_view_point(to))
+			hand_guide.play(kind, at, func() -> Vector2: return _guide_view_point(to))
 		"hold", "tap":
 			hand_guide.play(str(spec.kind), at)
 	return hand_guide.playing()
@@ -2797,7 +2806,7 @@ func _poll() -> void:
 	_apply_auto_conditions()
 	_judge()   # a run can end between state_changed events (the engine's settled report)
 	if mission_round != null:
-		mission_round.check_miss(manipulator != null and manipulator.mode != "")   # Puppy's hint after a miss
+		mission_round.check_miss(_touching())   # Puppy's hint after a miss
 
 
 ## The observation ids a mission round hides now (MissionRound.hidden_observations: its

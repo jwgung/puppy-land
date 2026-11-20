@@ -78,6 +78,8 @@ static func add(b: ArtMeshBuilder, id: String, xf: Transform3D) -> float:
 			return _melt_cook(b, xf)
 		"dough":
 			return _dough(b, xf)
+		"clean-water":
+			return _clean_water(b, xf)
 	_rod(b, xf, Vector3.ZERO, Vector3(0.0, 1.0, 0.0), 0.08, ArtPalette.BLUE)
 	_ball(b, xf, Vector3(0.0, 1.15, 0.0), 0.2, ArtPalette.WHITE)
 	return 1.35
@@ -727,6 +729,20 @@ static func _dough(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	_ball(b, xf, bowl + Vector3(0.0, 0.26, 0.0), 0.18, DoughProps.DOUGH_TOP)
 	_rod(b, xf, bowl + Vector3(0.0, 0.0, -0.3), bowl + Vector3(0.0, 0.95, -0.3), 0.04, ArtPalette.WOOD_GRAIN)
 	b.add_cylinder(xf * Transform3D(Basis(), bowl + Vector3(0.0, 0.95, -0.15)), 0.22, 0.22, 0.05, 8, ArtPalette.WOOD_GRAIN, true, ArtPalette.WOOD)
+	return 1.35
+
+
+## The curie island's 깨끗한 물 만들기 (#160, "흙탕물 샘이 있는 곳"): a little stone well of muddy water with its
+## roof, a see-through filter column with its sand on a clay jar, a copper kettle tipped over it.
+static func _clean_water(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(-0.35, 0.0, 0.0)), 0.3, 0.3, 0.32, 10, CleanWaterProps.STONE, true, CleanWaterProps.MUD_TOP)
+	_rod(b, xf, Vector3(-0.6, 0.3, 0.0), Vector3(-0.6, 0.75, 0.0), 0.03, CleanWaterProps.WOOD)
+	_rod(b, xf, Vector3(-0.1, 0.3, 0.0), Vector3(-0.1, 0.75, 0.0), 0.03, CleanWaterProps.WOOD)
+	_box(b, xf, Vector3(-0.35, 0.8, 0.0), Vector3(0.62, 0.08, 0.4), CleanWaterProps.ROOF, CleanWaterProps.ROOF.lightened(0.15))
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.3, 0.0, 0.1)), 0.14, 0.18, 0.28, 10, CleanWaterProps.CLAY, true, CleanWaterProps.CLAY_TOP)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.3, 0.28, 0.1)), 0.12, 0.12, 0.42, 10, Color("dceefa"), true, CleanWaterProps.SAND)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.3, 0.36, 0.1)), 0.125, 0.125, 0.14, 10, CleanWaterProps.SAND, false)
+	b.add_cylinder(xf * Transform3D(Basis(Vector3.BACK, deg_to_rad(30.0)), Vector3(0.55, 0.85, 0.1)), 0.16, 0.13, 0.24, 10, CleanWaterProps.KETTLE, true, CleanWaterProps.KETTLE_DARK)
 	return 1.35
 
 

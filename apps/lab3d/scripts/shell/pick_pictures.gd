@@ -7,7 +7,8 @@
 ## or a long string, a short or a long stick (#86), the Earth with its axis tilted or upright (#87), a weak
 ## or a strong sun (#91), a humid or a dry day's air (#92), a cold, warm or very warm sea (#94), rock or
 ## sand ground and the block house without or with its brace (#97), runny, normal or sticky magma (#98),
-## a glass of cold or hot water (#156), chocolate or an egg (#158).
+## a glass of cold or hot water (#156), chocolate or an egg (#158), an empty, sand or sand-and-charcoal filter
+## column (#160).
 ## `size` (0..1) and `count` say how much the drawing shows (kid.picks entries). The words under the
 ## picture say the same thing.
 ## A mass's picture (a ball, a box, a weight) is drawn like the lab draws the body (2026-10-28,
@@ -25,7 +26,9 @@ const KINDS := ["earth", "moon", "jupiter", "box", "slide_steel", "slide_wood", 
 	"magma_runny", "magma_normal", "magma_sticky",
 	"water_cold", "water_hot",
 	"item_choc", "item_egg",
-	"dough_yeast", "dough_plain"]
+	"dough_yeast", "dough_plain",
+	# #160 (깨끗한 물 만들기): what does a filter hold: nothing, sand, or sand and charcoal?
+	"filter_empty", "filter_sand", "filter_charcoal"]
 const OUTLINE := Color("8a6a46")   # PredictPictures.GROUND: the brown of the storybook lines
 const STEEL := ArtPalette.STEEL
 const COLD_WATER := Color("6fb7ea")   # the glasses of #156's water buttons (the mockup's)
@@ -148,6 +151,8 @@ static func draw(canvas: Control, kind: String, size := 0.5, count := 1) -> void
 			_coast(canvas, r, kind == "coast_night")
 		"water_cold", "water_hot":   # #156 (퍼지는 냄새와 잉크): a glass of cold or of hot water
 			water_glass(canvas, r, kind == "water_hot")
+		"filter_empty", "filter_sand", "filter_charcoal":   # #160 (깨끗한 물 만들기): the filter column
+			CleanWaterPictures.column(canvas, r, ["filter_empty", "filter_sand", "filter_charcoal"].find(kind))
 		"item_choc", "item_egg":   # #158 (되돌릴 수 있을까?): a bar of chocolate or an egg
 			MeltCookPictures.item(canvas, r, kind == "item_egg")
 		"dough_yeast", "dough_plain":   # #159 (빵 반죽 부풀리기): a bowl of dough with yeast (puffy, bubbles) or without (flat)

@@ -43,7 +43,9 @@ const KINDS := ["long_arc", "same_arc", "fall_together", "fall_heavy_first", "li
 	# #158 (되돌릴 수 있을까?): does melted chocolate set again when it cools?
 	"melt_sets", "melt_stays",
 	# #159 (빵 반죽 부풀리기): does dough rise better somewhere warm or somewhere cold? (the same bowl on both)
-	"dough_warm", "dough_cold"]
+	"dough_warm", "dough_cold",
+	# #160 (깨끗한 물 만들기): is sand-filtered water fine to drink, or must it be boiled?
+	"drink_ok", "drink_boil"]
 const STRONG := Color("e2683c")
 const PALE := Color("c9b892")
 const GROUND := Color("8a6a46")
@@ -122,6 +124,8 @@ static func draw(canvas: Control, kind: String) -> void:
 			_ink_glasses(canvas, r, kind == "ink_hot_first")
 		"salt_gone", "salt_stays":
 			_salt_glass(canvas, r, kind == "salt_stays")
+		"drink_ok", "drink_boil":
+			CleanWaterPictures.predict(canvas, r, kind == "drink_boil", STRONG, PALE)
 		"melt_sets", "melt_stays":
 			MeltCookPictures.predict(canvas, r, kind == "melt_sets", STRONG, PALE)
 		"dough_warm", "dough_cold":

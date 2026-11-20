@@ -670,11 +670,14 @@ func open(dugi: bool) -> void:
 		return
 	var id := str(definition.get("id", ""))
 	_opening = []
-	if Story.enabled and not store.clue_seen(id):
+	var first: bool = Story.enabled and not store.clue_seen(id)
+	if first:
 		_opening = first_visit_lines(definition)
 	_first_visit = _opening.size()
 	if Story.enabled:
 		_opening.append_array(intro_lines(definition))
+	if first:
+		_opening.append_array(first_use_lines(definition))
 	var question := predict(definition)
 	if question.is_empty():
 		predict_ended = true   # no question: the clue and the introduction alone, if any
@@ -782,6 +785,17 @@ static func intro_lines(definition: Dictionary) -> Array:
 		if more is Dictionary and str(more.get("text", "")) != "":
 			out.append(dialogue_line(str(more.text), Story.face_or_default(more.get("face")), ExplainPictures.picture_or_none(more.get("picture"))))
 	return out
+
+
+## Dugi's line on how to use the body motion the spot asks for (kid.first_use, #160: "태블릿을 두 손으로 꼭 잡고
+## 살살 기울여 봐."): said once, after the introduction on the spot's first visit (kept with the first
+## visit's lines: store.mark_clue); [] without one.
+static func first_use_lines(definition: Dictionary) -> Array:
+	var kid: Variant = definition.get("kid")
+	var line: Variant = kid.get("first_use") if kid is Dictionary else null
+	if not (line is Dictionary and str(line.get("text", "")) != ""):
+		return []
+	return [dialogue_line(str(line.text), Story.face_or_default(line.get("face")))]
 
 
 ## Dugi's question (dialogue_line(); the text "" when the clue came alone). It has no picture:

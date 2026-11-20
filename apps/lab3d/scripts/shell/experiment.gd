@@ -327,6 +327,19 @@ func set_play_open(_open: bool) -> void:
 	pass
 
 
+## The child is acting on the lab through the device itself now (#160: the tablet tilted past its still
+## band, MotionInput.active): an attempt like a finger on an object (the screen arms Puppy's line with it
+## and holds the miss line and the hand guide while it lasts). False by default.
+func body_input_active() -> bool:
+	return false
+
+
+## The lab's body-motion input (#160, MotionInput), or null when the lab is not played by tilting or
+## shaking the tablet (the hand guide shows a "tilt" as a plain drag on a tablet without a sensor).
+func motion_input() -> MotionInput:
+	return null
+
+
 ## A finger presses and holds the hold object `id` (rule `"hold": true`, 2026-10-28): the lab ramps
 ## its applied force from 0 (HoldRamp) until hold_ended.
 func hold_started(_id: String) -> void:

@@ -865,7 +865,7 @@ func _process(delta: float) -> void:
 const GUIDE_REACH := 0.6
 
 ## The gesture the hand guide (HandGuide) shows for this lab, read only (nothing is pressed or moved):
-## {"kind": "pull" | "hold" | "tap" | "drag" | "stir", "id", "from": world point the finger presses now (guide_point),
+## {"kind": "pull" | "hold" | "tap" | "drag" | "stir" | "tilt" | "pump", "id", "from": world point the finger presses now (guide_point),
 ## "to": world point the drag or the pull ends at, or a stir goes round}, or {} when the lab has no object a finger takes now.
 ## The object is the slingshot's, else the first one a finger may pick up now. A pull ends where the demo's
 ## pull (slingshot_demo) lands on the slingshot's surface, so it stays the throw's direction when the
@@ -906,7 +906,10 @@ func guide() -> Dictionary:
 		"max":
 			far = ends[1]
 	var goal := at.lerp(far, GUIDE_REACH)
-	return {"kind": "drag", "id": id, "from": from, "to": surface.pose(goal, surface.height_of(from)).origin}
+	# (#160: a tilt's touch stand-in and a pump handle are dragged too; the hand shows the tablet tipping
+	# with the drag, or the drag down and up a few times.)
+	var kind := str(rules[id].get("guide", ""))
+	return {"kind": kind if kind in ["tilt", "pump"] else "drag", "id": id, "from": from, "to": surface.pose(goal, surface.height_of(from)).origin}
 
 
 ## Where a finger takes object `id` now (world): the slingshot's launch point once a run has started
