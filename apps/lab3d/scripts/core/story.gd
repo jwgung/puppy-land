@@ -30,9 +30,13 @@ const SPEAKERS := {
 	# The same fox before it says who it is (the voyage's landing, #118: its tag 여우친구 there, 섬지기
 	# once it told the trio it keeps the island).
 	"fox_stranger": ["speaker.fox_stranger", "res://assets/characters/portraits/fox_%s.webp"],
+	# The third island's lighthouse keeper (#153, 2026-11-13 look chosen by the user: the chemist cat,
+	# yaongi.py), who calls itself 야옹이 (docs/islands/curie-lines.md; its tag: ui.json speaker.yaongi).
+	"yaongi": ["speaker.yaongi", "res://assets/characters/portraits/yaongi_%s.webp"],
 }
 ## The island keeper who speaks a spot's first line on Hutton Island (#74: story.keeper, before Puppy's
-## clue). Its name tag is the speaker's (ui.json speaker.fox), never written here.
+## clue). Its name tag is the speaker's (ui.json speaker.fox), never written here. Another island's
+## keeper is its own (Island.keeper: the curie island's 야옹이, keeper_of()).
 const KEEPER := "fox"
 ## The portraits' expressions (2026-10-29 user request "대화시 표정을 좀 더 다양하게"), one picture per
 ## speaker and face (art_src/characters/*_portrait.py). Each line of the content may name its face
@@ -79,9 +83,14 @@ static func pages(part: String) -> Array:
 static func pages_of(island: String, part: String) -> Array:
 	if island == Island.current_id():
 		return pages(part)
+	return _read_of(island).get(part, [])
+
+
+## The story file of another island with its words (an island without a story: {}).
+static func _read_of(island: String) -> Dictionary:
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(content_path(island))) if FileAccess.file_exists(content_path(island)) else null
 	parsed = Locale.overlay(parsed, Locale.words("story/%s.json" % island)) if parsed is Dictionary else null
-	return parsed.get(part, []) if parsed is Dictionary else []
+	return parsed if parsed is Dictionary else {}
 
 
 # --- the voyage to the next island (#75, 2026-11-06 user-approved: a short 3D scene on a boat) -----
@@ -95,6 +104,13 @@ static func pages_of(island: String, part: String) -> Array:
 
 ## A voyage page's camera and the boat's place on the way (VoyageScreen).
 const VOYAGE_SHOTS := ["depart", "sea", "flicker", "arrive"]
+
+
+## The voyage to `island` is made at night (its story's `voyage_at_night`, the curie island #155: the
+## lighthouse is out): the sea turns night from the "sea" shot on and the island stays dark instead of
+## flickering. Its prologue then starts at night on the beach.
+static func voyage_at_night(island: String) -> bool:
+	return _read_of(island).get("voyage_at_night", false) == true
 
 
 ## The island `island` has a voyage to it (its story's voyage pages).
@@ -212,13 +228,27 @@ static func clue(definition: Dictionary) -> String:
 
 
 ## The island keeper's line on the spot's first visit, before Puppy's clue ("" when it has none: the
-## mechanics island has no keeper). #74: the fox tells what is wrong at the spot.
+## mechanics island has no keeper). #74: the spot's island keeper tells what is wrong there (keeper_of: the fox, 야옹이).
 static func keeper(definition: Dictionary) -> String:
 	return _story_text(definition, "keeper")
 
 
 static func keeper_face(definition: Dictionary) -> String:
 	return face_or_default(_story_text(definition, "keeper_face"))
+
+
+## Who speaks the keeper's lines of `definition`'s spot (#156): its island's keeper (Island.keeper, a
+## SPEAKERS key: the curie island's "yaongi"), else KEEPER (the hutton island's fox).
+static func keeper_of(definition: Dictionary) -> String:
+	var island := ExperimentRegistry.island_of(str(definition.get("id", "")))
+	var who := Island.by_id(island).keeper if island != "" else ""
+	return who if SPEAKERS.has(who) else KEEPER
+
+
+## The first-visit lines between the keeper's line and Puppy's clue (#156, curie-lines.md: "빵고양이:
+## 걱정 마 …" before Puppy's clue): [{"speaker": SPEAKERS key, "face", "text"}], [] when it has none.
+static func before(definition: Dictionary) -> Array:
+	return _lines(definition, "before")
 
 
 ## The keeper's answer after Puppy's clue on the first visit ("" when it has none). #86: the fox tells
@@ -234,8 +264,13 @@ static func keeper_reply_face(definition: Dictionary) -> String:
 ## More first-visit lines after Puppy's clue (#98: the volcano's talk, Puppy and the keeper in turn):
 ## [{"speaker": Story.SPEAKERS key, "face", "text"}], [] when it has none.
 static func more(definition: Dictionary) -> Array:
+	return _lines(definition, "more")
+
+
+## The story's line list `key` ("more", "before"): its lines with a known speaker and a text.
+static func _lines(definition: Dictionary, key: String) -> Array:
 	var story: Variant = definition.get("story")
-	var lines: Variant = story.get("more", []) if story is Dictionary else []
+	var lines: Variant = story.get(key, []) if story is Dictionary else []
 	var out := []
 	for line: Variant in (lines if lines is Array else []):
 		if line is Dictionary and str(line.get("text", "")) != "" and SPEAKERS.has(str(line.get("speaker", ""))):

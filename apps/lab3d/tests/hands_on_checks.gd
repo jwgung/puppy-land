@@ -15,6 +15,8 @@
 ## 6. the pulley's rope round the wheels' rims (n = 1, 2, 4), following the load.
 extends RefCounted
 
+const Reading := preload("res://tests/dialogue_reading.gd")   # the pages read untouched (the read timer)
+
 var tree: SceneTree
 var expect: Callable
 const UI_THEME := "res://scripts/app/ui_theme.gd"
@@ -392,8 +394,7 @@ func check_bridge_and_reason() -> void:
 			or screen.cast.dugi.speaking() or box.portrait.texture != DialogueBox.portrait_texture("cat", box.face):
 		problems.append("cat: said '%s' (want '%s'), face %s, Dugi speaking %s" % [cat_said,
 			picked_guess, box.face, screen.cast.dugi.speaking()])
-	box.advance()
-	box.advance()   # (the first tap shows the whole page, the next closes it)
+	Reading.read_page(box)
 	var said := ""
 	for i in 30:
 		await tree.process_frame

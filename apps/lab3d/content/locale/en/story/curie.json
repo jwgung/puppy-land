@@ -1,0 +1,24 @@
+{
+  "voyage": [
+    { "text": "Have a good trip. I'll take good care of the sundial." },
+    { "text": "Thank you! We'll help the next island too, for sure!" },
+    { "text": "Next is Curie Island. They say it welcomes the boats with a rainbow light every night." },
+    { "text": "Huh? It's so dark. I can't see any rainbow light at all." },
+    { "text": "That's strange. The lighthouse must have gone out." },
+    { "text": "Oh, a boat! A boat came! How did you find us with no light?" }
+  ],
+  "prologue": [
+    { "text": "Hi! We came from Hutton Island. We barely made it by following the starlight. Who are you?" },
+    { "text": "I'm Yaongi! I'm the keeper of the lighthouse up on that hill." },
+    { "text": "But a few days ago the lighthouse light began to fade, and last night it went out completely. I went up and there wasn't a single crystal lens piece." },
+    { "text": "A crystal lens gathers a small light and sends it far out over the sea. Without the lens, the boats can't find the island." },
+    { "text": "I think the sea wind blew them away. I saw something sparkling in Kitchen Village, in Spring Village, and all over this hill." },
+    { "text": "The lighthouse is out, so the boats can't come. We're running out of salt, flour and drinking water." },
+    { "text": "If the boats lose their way, it's a big problem… You must have felt so sad all alone." },
+    { "text": "But why did the lens pieces come off?" },
+    { "text": "I don't know. I polished it until it sparkled every day… Maybe there was some red powder on the lens rim." },
+    { "text": "Red powder… That sounds suspicious." },
+    { "text": "Don't worry. We'll find all the pieces and light the lighthouse again! Until then, let's make what you need together." },
+    { "text": "Really? Wow, I'm so excited! I'll show you the way. Let's start with Kitchen Village!" }
+  ]
+}

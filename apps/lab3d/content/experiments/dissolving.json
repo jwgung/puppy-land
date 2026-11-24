@@ -1,0 +1,120 @@
+{
+  "id": "dissolving",
+  "version": 1,
+  "icon": "◍",
+  "law": {},
+  "scene": "res://experiments/dissolving/dissolving.gd",
+  "bench_id": "DS",
+  "camera": {
+    "target": [0.3, 2.6, 0.3],
+    "distance": 8.5,
+    "distance_range": [1.5, 30.0],
+    "yaw_range_deg": [-100.0, 100.0],
+    "pitch_range_deg": [-89.0, -2.0],
+    "pan_radius": 6.0,
+    "default_mode": "front",
+    "views": {
+      "front": { "yaw_deg": 0.0, "pitch_deg": -12.0 },
+      "three_quarter": { "yaw_deg": 24.0, "pitch_deg": -20.0 },
+      "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 16.0 },
+      "side": { "yaw_deg": 90.0, "pitch_deg": -12.0, "distance": 14.0 },
+      "follow": { "yaw_deg": 0.0, "pitch_deg": -14.0, "distance": 9.0, "target": [0.0, 1.9, 0.3] }
+    }
+  },
+  "controls": [],
+  "actions": [
+    { "id": "reset", "style": "primary" }
+  ],
+  "key_observations": ["salt", "scale", "tray"],
+  "predict": {
+    "question_face": "thinking",
+    "choices": [
+      { "id": "gone", "picture": "salt_gone" },
+      { "id": "stays", "picture": "salt_stays" }
+    ],
+    "answer": "stays",
+    "stage": 1,
+    "bridge_face": "happy"
+  },
+  "missions": {
+    "judge_on": ["clear", "same", "salt"],
+    "stages": [
+      {
+        "observe": "",
+        "judge_on": ["clear"],
+        "miss_on": ["dissolving"],
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["same"],
+        "miss_on": ["dissolving"],
+        "card": "scale",
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["salt"],
+        "miss_on": ["drying"],
+        "card": "tray",
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking"
+      }
+    ]
+  },
+  "story": {
+    "keeper_face": "surprised",
+    "clue_face": "thinking",
+    "map_clue_face": "explain"
+  },
+  "kid": {
+    "intro_face": "explain",
+    "card": "salt",
+    "say_face": "explain"
+  },
+  "note": {
+    "numbers": [
+      { "ids": ["salt"] },
+      { "ids": ["scale"] },
+      { "ids": ["tray"] }
+    ],
+    "graph": true
+  },
+  "cast": {
+    "dugi": {
+      "at": [-4.8, -0.2],
+      "explain_on": ["clear", "same", "salt"],
+      "delay_s": 0.6
+    },
+    "puppy": {
+      "at": [4.0, 1.1]
+    },
+    "yaongi": { "at": [5.5, 0.2] }
+  },
+  "observations": [
+    { "id": "salt" },
+    { "id": "scale" },
+    { "id": "tray" }
+  ],
+  "manipulation": {
+    "grab_radius": 72.0,
+    "objects": [
+      { "id": "spoon", "surface": "stir", "snap": 0.0, "height": false, "marker": false, "guide": "stir" },
+      { "id": "bucket", "surface": "pour", "snap": 0.0, "height": false, "marker": false, "guide_to": "max" }
+    ]
+  },
+  "graph": {
+    "x": { "unit": "", "max": 2.5 },
+    "y": { "unit": "%", "min_max": 100.0 },
+    "series": [
+      { "id": "water", "color": "#4aa8f5", "style": "line" },
+      { "id": "crust", "color": "#9aa5b1", "style": "line" },
+      { "id": "now", "color": "#ff3b3b", "style": "points" }
+    ]
+  }
+}

@@ -12,6 +12,8 @@
 ## - Puppy's lines (clues, riddles, the wrong-spot line, his story pages) use no science words.
 extends RefCounted
 
+const Reading := preload("res://tests/dialogue_reading.gd")   # the pages read untouched (the read timer)
+
 var tree: SceneTree
 var expect: Callable
 const UI_THEME := "res://scripts/app/ui_theme.gd"
@@ -135,7 +137,7 @@ func check_box() -> void:
 	box.open("다시 같은 얼굴이야.", "explain")
 	if box.swaps != swaps or box.portrait.scale != Vector2.ONE:
 		problems.append("same face re-popped")
-	for who in ["dugi", "puppy", "fox"]:
+	for who in ["dugi", "puppy", "fox", "yaongi"]:
 		for face in Story.FACES:
 			box.set_speaker(who, face)
 			box.layout(Rect2(Vector2.ZERO, TABLET), TABLET.x - 300.0, 16.0)
@@ -198,7 +200,7 @@ func check_story_faces() -> void:
 		for k in 6:
 			if not story.dialogue.active or story.dialogue.text != words:
 				break
-			story.dialogue.advance()
+			Reading.read_page(story.dialogue)
 	expect.call(str(shown) == str(want), "faces: the prologue's pages show their speakers' tagged faces", str(shown))
 	host.queue_free()
 	await tree.process_frame
@@ -231,7 +233,7 @@ func check_lab_faces() -> void:
 		for k in 6:
 			if box.speaker != "puppy":
 				break
-			box.advance()
+			Reading.read_page(box)
 		await tree.process_frame
 		await tree.process_frame
 		# Dugi's introduction (its own face, kid.intro_face), then the question.
@@ -240,7 +242,7 @@ func check_lab_faces() -> void:
 		for k in 8:
 			if not box.active or box.hold:
 				break
-			box.advance()
+			Reading.read_page(box)
 		await tree.process_frame
 		await tree.process_frame
 		clue_ok = clue_ok and intro_ok

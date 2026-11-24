@@ -11,6 +11,8 @@
 ##   stamp only, and handed to the bread cat from where it lies; a finished spot has no piece.
 extends RefCounted
 
+const Reading := preload("res://tests/dialogue_reading.gd")   # the pages read untouched (the read timer)
+
 var tree: SceneTree
 var expect: Callable
 const UI_THEME := "res://scripts/app/ui_theme.gd"
@@ -827,7 +829,7 @@ func check_incline_hit_view() -> void:
 					covers.append_array(screen.dialogue.rects())
 					told = told or screen.dialogue.text == str(predict.reason)
 					if screen.dialogue.joined() != str(predict.reason) and screen.dialogue.typed():
-						screen.dialogue.advance()   # the child reads Dugi's explanation and taps on (the reason waits for it)
+						Reading.read_page(screen.dialogue)   # the child reads Dugi's explanation, it turns by itself (the reason waits for it)
 				var bubble: ResultBubble = screen.result_bubble()
 				if bubble != null:
 					covers.append(bubble.get_rect())

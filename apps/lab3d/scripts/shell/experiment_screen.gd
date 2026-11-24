@@ -9,6 +9,9 @@ class_name ExperimentScreen
 extends Control
 
 signal back_requested
+## This lab's record was erased (이 실험 처음부터 다시 하기, after the parental gate and the question): App opens
+## the lab again from its start.
+signal record_erased
 
 const UI_REFRESH_HZ := 10.0
 ## The note's width (2026-11-11 user: "자세히 화면이 좀 좁은거같기도해" → about half the screen; 470
@@ -36,6 +39,7 @@ const DONE_TEXT := ""
 const PICK_SIZE := Vector2(132.0, 112.0)    # a condition picture button (UI units, at least)
 const PICK_GAP := 10.0                      # between the buttons of one condition
 const PICK_GROUP_GAP := 22.0                # between two conditions' buttons
+const PICKS_LOCKED_ALPHA := 0.4             # the row while the lab locks its conditions (#159: dimmed)
 
 ## Set by App for the screen it opens from --experiment: then the launch args (--ctl-*, --camera,
 ## ...) apply to this screen only (a rebuilt screen with a saved state restores that state instead).
@@ -95,6 +99,10 @@ var _graph: GraphView
 var _sections: Dictionary = {}          # section id -> card (for --scroll-to)
 var _more: VBoxContainer                # 더 보기's contents (collapsed when the screen opens)
 var _more_button: Button
+## 이 실험 처음부터 다시 하기 at the note's end, under its last card (none in a measurement).
+var reset_record_button: Button
+const RESET_RECORD_HEIGHT := 56.0
+const RESET_RECORD_FONT := 22
 ## "AI에게 더 물어보기" (ScienceNote, 2026-10-28; the system chooser with the AI apps only since
 ## 2026-10-29): a tap hands this run's question and the AI apps' packages (content/ai_apps.json) to
 ## this handler ((packages, text) -> "chooser" | "clipboard"); tests put a recorder here. The
@@ -148,6 +156,7 @@ var _picks: Array = []                # [{"control": id, "preset": kid.picks ent
 var _picks_stage := -2                # the stage the row was built for
 var _picks_shown: Array = []          # and the controls it shows
 var _picks_for := Vector4(NAN, 0, 0, 0)   # view width, height, talking, asking the row was laid out for (_fit_picks)
+var _picks_locked := false   # the lab locks its conditions now (Experiment.conditions_locked, #159): the row dimmed
 ## The celebrations (2026-10-28): the stamp flying into its slot (StampSlam), the strip's filled
 ## stamps so far (a stamp in flight fills its slot when it lands), the whole-round confetti and the
 ## card that follows it (RoundDoneCard), the bread cat of the lab (it hops on a stamp).
@@ -407,6 +416,7 @@ func _process(delta: float) -> void:
 	_run_result_bubble(delta)
 	_run_strip_pulse(delta)
 	_sync_clue_glow()
+	_sync_picks_lock()
 	_run_guide(delta)
 
 
@@ -973,16 +983,16 @@ func _ask(choices: Array) -> void:
 	_choices.visible = false   # _run_dialogue lays the box out, then shows both
 
 
-## A tap on the 3D view while Dugi's box (an explanation, the bridge, the reason) waits for a tap turns
-## its page, as a tap on the box does; a press on one of the lab's objects still takes the object
-## (the hand guide shows it while the bridge is open). Puppy's clue and the question have the shield.
+## A tap on the 3D view while Dugi's box (an explanation, the bridge, the reason) is open is a tap on
+## the box (DialogueBox.tap: the whole page, else the next); a press on one of the lab's objects still
+## takes the object (the hand guide shows it while the bridge is open). Puppy's clue and the question have the shield.
 func _setup_tap_catcher() -> void:
 	if dialogue == null:
 		return
 	_tap_catcher = TapCatcher.new(func(point: Vector2) -> bool:
 		return dialogue.active and dialogue.visible and not dialogue.hold and not _asking() \
 			and not (manipulator != null and manipulator.claims(point)),
-		dialogue.advance)
+		dialogue.tap)
 	view.add_child(_tap_catcher)
 	view.move_child(_tap_catcher, view.overlay_floor())   # over the 3D, under every overlay and button
 
@@ -994,7 +1004,7 @@ func _on_shield_input(event: InputEvent) -> void:
 		return
 	_question_shield.accept_event()
 	if dialogue.active and not dialogue.hold:
-		dialogue.advance()
+		dialogue.tap()
 	elif _choices != null:
 		nudge_choices()
 
@@ -1016,9 +1026,12 @@ func nudge_choices() -> void:
 		return
 	view.move_child(hand_guide, -1)   # over the dim and the buttons while it shows them
 	_nudging = true
-	var first := _choices.get_child(0) as Control
+	# A WeakRef, not the button: the answer rebuilds the row and frees it while the paw still draws, and a
+	# lambda holding a freed node raises an engine ERROR on the call (failed CI's script-error check).
+	var first: WeakRef = weakref(_choices.get_child(0))
 	hand_guide.play("tap", func() -> Vector2:
-		return _choices.position + first.position + first.size * 0.5 if _choices != null and is_instance_valid(first) else HandGuide.OFF_VIEW)
+		var button := first.get_ref() as Control
+		return _choices.position + button.position + button.size * 0.5 if _choices != null and button != null else HandGuide.OFF_VIEW)
 
 
 ## After a miss of stage `stage` with its conditions off (2026-11-05 user: children do not find the
@@ -1050,14 +1063,16 @@ func _try_nudge_picks() -> void:
 	_picks_nudge_stage = -1
 	view.move_child(hand_guide, -1)   # over the buttons while it shows them
 	_nudging = true
+	var target: WeakRef = weakref(button)   # see the answer buttons' paw above: never capture a node that can be freed
 	hand_guide.play("tap", func() -> Vector2:
-		return _picks_row.position + button.position + button.size * 0.5 \
-			if _picks_row != null and is_instance_valid(button) else HandGuide.OFF_VIEW)
+		var tapped := target.get_ref() as Control
+		return _picks_row.position + tapped.position + tapped.size * 0.5 \
+			if _picks_row != null and tapped != null else HandGuide.OFF_VIEW)
 
 
 ## The row shows and nothing covers it (Dugi's box or question).
 func _picks_free() -> bool:
-	return picks_shown() and not _asking() and not (dialogue != null and dialogue.active)
+	return picks_shown() and not _picks_locked and not _asking() and not (dialogue != null and dialogue.active)
 
 
 ## The first picture button that makes an unmet condition of stage `stage` hold (null when none).
@@ -1210,10 +1225,16 @@ func strip_pulsing() -> bool:
 ## A finger came down on one of the lab's objects (a drag, a pull, a press): a new attempt that waits
 ## for its line.
 func _watch_touch() -> void:
-	var touching := manipulator != null and manipulator.mode != ""
+	var touching := _touching()
 	if touching and not _was_touching and mission_round != null:
 		mission_round.touched()
 	_was_touching = touching
+
+
+## A finger holds one of the lab's objects, or the child acts through the tablet itself (#160: tilting it,
+## Experiment.body_input_active).
+func _touching() -> bool:
+	return (manipulator != null and manipulator.mode != "") or (experiment != null and experiment.body_input_active())
 
 
 ## Puppy's `win` (after its stamp) or `miss` line of stage `stage` (MissionRound.tell; tests). Nothing
@@ -1590,7 +1611,7 @@ func _show_piece() -> void:
 		_piece.queue_free()
 	var cat := lab_cat()
 	var height := cat.bounds().size.y if cat != null else 1.4
-	_piece = PieceArt.make(piece_kind(), clampf(height * 0.32, 0.25, 1.0))   # big enough to see its face
+	_piece = PieceArt.make(piece_kind(), clampf(height * 0.32, 0.25, 1.0), PieceArt.slot_of(definition.id()))   # big enough to see its face
 	_piece.name = "FoundPiece"
 	_piece_t = 0.0
 	# The piece game's piece (LabGame, 2026-10-29): the one the child got out flies from where it lies
@@ -1663,7 +1684,7 @@ func _show_done_card() -> void:
 	if is_sidebar_open():
 		close_sidebar(false)
 	_hide_tip()
-	_done_card = RoundDoneCard.new(_stamp_labels.size(), Story.enabled, piece_kind())
+	_done_card = RoundDoneCard.new(_stamp_labels.size(), Story.enabled, piece_kind(), PieceArt.slot_of(definition.id()))
 	if _piece != null and is_instance_valid(_piece):
 		_piece.queue_free()   # the card shows the piece now
 	_piece = null
@@ -1710,7 +1731,7 @@ func _run_celebration(delta: float) -> void:
 ## or a device check, the ask button's own check included: their runs and screenshots stay as they
 ## were). The first guide comes once per lab (ProgressStore GUIDES); a lab without missions shows only
 ## that one. The hand draws over Dugi's box
-## (a pull may pass over it, the box waiting for a tap) and under every overlay added after it (the
+## (a pull may pass over it while the box is read) and under every overlay added after it (the
 ## mission strip, the picture buttons, the bubbles, the cards); without a box, right over the 3D.
 func _setup_guide() -> void:
 	if measurement or Story.measurement_run(Quality.all_args()) or manipulator == null \
@@ -1732,8 +1753,8 @@ func _poke_guide() -> void:
 
 
 ## Nothing else wants the child's eyes now: no question or clue, no open sidebar, no celebration,
-## piece or card. Dugi's bridge and explanations may stay open (his box waits for a tap that a child who
-## cannot read may never make; it says "try it", which the hand shows). The guide itself not playing.
+## piece or card. Dugi's bridge and explanations may stay open (a child who cannot read
+## still needs the hand; the box says "try it", which the hand shows). The guide itself not playing.
 func _guide_quiet() -> bool:
 	return not _guide_blocked() and not hand_guide.playing()
 
@@ -1741,13 +1762,13 @@ func _guide_quiet() -> bool:
 ## Something the hand must not show over: the question or the clue, the sidebar, the celebration, the piece, the card.
 func _guide_blocked() -> bool:
 	return _asking() or is_sidebar_open() or _done_card != null or _round_wait >= 0.0 or _card_left >= 0.0 \
-		or _piece_wait >= 0.0
+		or _piece_wait >= 0.0 or (experiment != null and experiment.conditions_locked())   # (#159: the time flows)
 
 
 func _run_guide(delta: float) -> void:
 	if _coach == null:
 		return
-	var used := manipulator != null and manipulator.mode != ""
+	var used := _touching()
 	var touched := _guide_touched or used
 	_guide_touched = false
 	_try_nudge_picks()
@@ -1781,10 +1802,13 @@ func show_guide() -> bool:
 	if not Rect2(Vector2.ZERO, view.size).has_point(_guide_view_point(manipulator.guide_point(id))):
 		return false
 	var at := func() -> Vector2: return _guide_view_point(manipulator.guide_point(id))
-	match str(spec.kind):
-		"drag", "pull":
+	var kind := str(spec.kind)
+	if kind == "tilt" and (experiment.motion_input() == null or not experiment.motion_input().has_sensor()):
+		kind = "drag"   # (#160: no sensor here: the touch stand-in's drag alone)
+	match kind:
+		"drag", "pull", "stir", "tilt", "pump":
 			var to: Vector3 = spec.to
-			hand_guide.play(str(spec.kind), at, func() -> Vector2: return _guide_view_point(to))
+			hand_guide.play(kind, at, func() -> Vector2: return _guide_view_point(to))
 		"hold", "tap":
 			hand_guide.play(str(spec.kind), at)
 	return hand_guide.playing()
@@ -1836,6 +1860,7 @@ func _build_picks(stage: int) -> void:
 		button.custom_minimum_size.x = maxf(PICK_SIZE.x, (button.get_meta("caption") as Label).get_minimum_size().x + 24.0)
 	for id in groups.map(func(group: Dictionary) -> String: return group.control):
 		_sync_picks(id)
+	_paint_picks_lock()
 	_picks_for = Vector4(NAN, 0, 0, 0)
 	_fit_overlays()
 
@@ -1878,6 +1903,29 @@ func _sync_picks(id: String) -> void:
 	for pick in _picks:
 		if pick.control == id:
 			(pick.button as Button).set_pressed_no_signal(ConditionPicks.selected(pick.preset, have))
+
+
+## The lab locks its conditions while its fast-forward time flows (Experiment.conditions_locked, #159;
+## the mockup's "흐르는 동안 조건 단추는 흐리게 잠김"): the row follows it every frame (one bool read).
+func _sync_picks_lock() -> void:
+	var locked := experiment != null and experiment.conditions_locked()
+	if locked == _picks_locked:
+		return
+	_picks_locked = locked
+	_paint_picks_lock()
+
+
+## The buttons dimmed and not taking taps while locked (the chosen one stays yellow under the dim).
+func _paint_picks_lock() -> void:
+	if _picks_row != null:
+		_picks_row.modulate.a = PICKS_LOCKED_ALPHA if _picks_locked else 1.0
+	for pick in _picks:
+		(pick.button as Button).disabled = _picks_locked
+
+
+## The condition buttons are locked now (tests).
+func picks_locked() -> bool:
+	return _picks_locked
 
 
 ## The row's place: the bottom left of the view. Hidden while a dialogue is open (an explanation, a
@@ -2207,6 +2255,10 @@ func _build_sidebar() -> void:
 	_sidebar = Ui.panel("SideSheet")
 	_sidebar.visible = false
 	add_child(_sidebar)
+	# An old bug (found 2026-11-16): the header's question wraps after the sheet took its height, so the sheet stayed taller than the screen and its end (이 실험 처음부터 다시 하기) went under it; the screen's height again (tests/island_reset_checks.gd: the sheet inside the view).
+	_sidebar.minimum_size_changed.connect(func() -> void:
+		if _sidebar.size.y > size.y and size.y > 0.0:
+			_sidebar.size = Vector2(_sidebar.size.x, size.y))
 	var sheet := Ui.vbox(0)
 	_sidebar.add_child(sheet)
 
@@ -2237,8 +2289,10 @@ func _build_sidebar() -> void:
 	pad.add_theme_constant_override("margin_top", 8)
 	pad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_scroll.add_child(pad)
+	var page := Ui.vbox(24)   # the note's cards, then 이 실험 처음부터 다시 하기 at the page's end
+	pad.add_child(page)
 	var column := Ui.vbox(16)
-	pad.add_child(column)
+	page.add_child(column)
 
 	# The note for a guardian or teacher (2026-11-11 user, plan A: "애초에 그 목적이긴 했어"): first 조건
 	# 바꾸기 (to try the lab again another way after its missions; none when the lab has no conditions),
@@ -2301,6 +2355,16 @@ func _build_sidebar() -> void:
 		_sections["copy"] = _build_copy()
 		_sections.copy.name = "Note_copy"
 		column.add_child(_sections.copy)
+	# The page's very end (2026-11-16 user): 이 실험 처음부터 다시 하기, the red of the question's 다시 하기,
+	# as wide as the cards (2026-11-16 user: "너비 꽉채우자"); a guardian's (the parental gate first), none
+	# in a measurement.
+	if not measurement:
+		reset_record_button = Ui.button(Locale.t("screen.reset_record"), "TitleStartButton", RESET_RECORD_HEIGHT)
+		reset_record_button.name = "ResetRecord"
+		reset_record_button.size_flags_horizontal = Control.SIZE_FILL
+		reset_record_button.add_theme_font_size_override("font_size", RESET_RECORD_FONT)
+		reset_record_button.pressed.connect(open_reset)
+		page.add_child(reset_record_button)
 
 
 ## The note's last card: one button that opens the system chooser of the AI apps, and a line when
@@ -2368,6 +2432,21 @@ func ask_web() -> void:
 	web_handler.call(ScienceNote.question(definition, experiment, _hidden_answers(experiment.observations())))
 	_ask_status.text = Locale.t("note.copied_web")
 	_ask_status.visible = true
+
+
+## 이 실험 처음부터 다시 하기 (2026-11-16 user: one lab's record is erased in the lab itself): the parental
+## gate, then the question (ResetConfirm); 다시 하기 erases this spot's record, gives today's new spot of
+## an island not bought to it when it is the map's next spot now (the child is in it again; a spot
+## after it that was next waits again, its own stamps kept) and asks for the lab from its start
+## (record_erased).
+func open_reset() -> ParentalGate:
+	return ResetConfirm.open_for_guardian(self, ResetConfirm.SPOT, definition.id(), _on_record_erased)
+
+
+func _on_record_erased() -> void:
+	if Story.next_spot(ProgressStore.load()) == definition.id():   # (an earlier spot not found: it waits as before)
+		DailyLimit.use(Island.current_id(), definition.id())
+	record_erased.emit.call_deferred()   # (after the question's tap: the screen is replaced then)
 
 
 ## Opens or folds 더 보기 (closed when the screen opens).
@@ -2539,6 +2618,10 @@ func _snap_camera_home() -> void:
 
 
 func _set_control(id: String, value: Variant) -> void:
+	if experiment.conditions_locked():
+		_sync_control(id)   # (#159: locked while the time flows; the sidebar's widget goes back)
+		_sync_picks(id)
+		return
 	_poke_guide()
 	_drop_held_object()
 	if mission_round != null:
@@ -2723,7 +2806,7 @@ func _poll() -> void:
 	_apply_auto_conditions()
 	_judge()   # a run can end between state_changed events (the engine's settled report)
 	if mission_round != null:
-		mission_round.check_miss(manipulator != null and manipulator.mode != "")   # Puppy's hint after a miss
+		mission_round.check_miss(_touching())   # Puppy's hint after a miss
 
 
 ## The observation ids a mission round hides now (MissionRound.hidden_observations: its

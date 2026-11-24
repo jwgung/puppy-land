@@ -13,7 +13,11 @@
 ## `chosen` (App makes it the island in use and opens its map). ← 돌아가기 emits `back_requested`
 ## (TitleScreen closes the map); Android back closes it too, through App (TitleScreen.hide_islands, no
 ## signal). The payment (#77): an open island not bought has a small 보호자 in its tag's top right corner
-## (ADR 0005: IslandOffer; its button takes its own taps, never the tag's).
+## (ADR 0005: IslandOffer; its button takes its own taps, never the tag's). Every open island's tag has a
+## small gear in its top right (right of 보호자 when there is one; 2026-11-16 user-approved mock): the
+## parental gate, then the question whether to erase the island's record (ResetConfirm); after an
+## erase the tags and the islands' colours are drawn again (refresh). One lab's record is erased in
+## that lab (ExperimentScreen).
 ## The name stays IslandCards (the title, the offer and the tests know it by it); its `cards` are the
 ## islands' tags.
 class_name IslandCards
@@ -51,6 +55,8 @@ const GO_FONT := 24
 const STORY_HEIGHT := 40.0         # 이야기 다시 보기 under it, small
 const STORY_FONT := 17
 const BACK_HEIGHT := 56.0
+## Between 보호자 and the gear in a tag's corner.
+const CORNER_GAP := 6
 ## The world: the islands' little models (_mini_island_mesh) SLOT m apart along x (the row centred on
 ## the origin); the camera looks down at the row from PITCH_DEG and backs off until VIEW_SLOTS slots
 ## round the island in focus and the tags under them fit (see the carousel below); a tag hangs under
@@ -143,6 +149,8 @@ var cards: Dictionary = {}
 var story_buttons: Dictionary = {}
 ## Island id -> its 보호자 button (an open island not bought, #77; tests).
 var guardians: Dictionary = {}
+## Island id -> its gear (an open island; tests).
+var gears: Dictionary = {}
 ## The sail now: {to: id, from: Vector3, to_at: Vector3, t} (empty: none).
 var sail := {}
 var _entries: Array = []
@@ -190,7 +198,9 @@ static func island_name(id: String) -> String:
 ## The line under a locked island's name: what opens it; 다음 섬 promises nothing yet (2026-11-09: no
 ## island opens after the last one, so not "collect them all and it opens").
 static func locked_line(entry: Dictionary) -> String:
-	if str(entry.id) == "":
+	# The 다음 섬 card, and an island still in the making (its spots not all labs yet: it would not
+	# open even after the island before it, #151): 곧 만나요.
+	if str(entry.id) == "" or not Island.by_id(str(entry.id)).playable():
 		return Locale.t("islands.soon")
 	return Locale.t("islands.locked") % str(entry.after)
 
@@ -204,6 +214,9 @@ func _ready() -> void:
 	view.name = "WorldView"
 	view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(view)
+	# Its own 3D world (#152): the title's turning island under it is in the shared world and showed
+	# through between the islands' models once a row had an even count (four with curie).
+	view.viewport.own_world_3d = true
 	view.rig.set_process(false)   # the map frames the camera itself
 	view.single_pointer.connect(_on_pointer)
 	focus = _index(Island.current_id())
@@ -215,11 +228,7 @@ func _ready() -> void:
 	view.viewport.add_child(MapIsland.make_environment())
 	_build_world()
 	focus_x = _focus_at(focus)
-	for entry in _entries:
-		var tag := _tag(entry)
-		tag.mouse_filter = Control.MOUSE_FILTER_PASS   # a drag on a tag slides the row too (_gui_input)
-		cards[entry.id] = tag
-		add_child(tag)
+	_add_tags()
 	if not unlock.is_empty():
 		_start_unlock()
 	heading = _heading()
@@ -237,6 +246,46 @@ func _ready() -> void:
 
 func _exit_tree() -> void:
 	MapIsland.light_no_spots()
+
+
+## The islands' tags, over the world and under everything else (the heading, a guardian's screen).
+func _add_tags() -> void:
+	var at := view.get_index() + 1
+	for entry in _entries:
+		var tag := _tag(entry)
+		tag.mouse_filter = Control.MOUSE_FILTER_PASS   # a drag on a tag slides the row too (_gui_input)
+		cards[entry.id] = tag
+		add_child(tag)
+		move_child(tag, at)
+		at += 1
+
+
+## The progress changed under the open map (an island's record erased, ResetConfirm):
+## the entries read again, the islands' colours (locked or not), the boat and the tags drawn again;
+## the row stays on the island in focus. No unlock plays now (the next open of the map plays it).
+func refresh() -> void:
+	_entries = entries(ProgressStore.load())
+	if unlock.has("lock") and is_instance_valid(unlock.lock):
+		(unlock.lock as Node).queue_free()
+	unlock = {}
+	_unlocking = ""
+	for tag: Control in cards.values():
+		remove_child(tag)
+		tag.queue_free()
+	cards.clear()
+	buttons.clear()
+	story_buttons.clear()
+	guardians.clear()
+	gears.clear()
+	for child in world.get_children():
+		world.remove_child(child)
+		child.queue_free()
+	_middles.clear()
+	_reach.clear()
+	_build_world()
+	_add_tags()
+	_layout()
+	_settle()
 
 
 ## 퍼피랜드 (#116, 2026-11-10 user: "퍼피랜드 지도를 하나 만들어 둘까" → 3D): one sea with a little
@@ -312,13 +361,14 @@ static func _mini_island_mesh(id: String) -> Mesh:
 	var island := Island.by_id(id)
 	var map := MapIsland.new(island)
 	var widest := 0.0
-	for i in COAST_SIDES:
-		widest = maxf(widest, map.coast_radius(TAU * i / COAST_SIDES))
+	var sides := map.sectors if not island.coast_necks.is_empty() else COAST_SIDES   # (a flask's neck needs the map's finer sectors)
+	for i in sides:
+		widest = maxf(widest, map.coast_radius(TAU * i / sides))
 	var shrink := r / maxf(widest, 0.001)
 	var coast := func(a: float) -> float: return map.coast_radius(a) * shrink
-	_add_shape(b, coast, 1.12, sea - 0.05, sea + 0.01, MapIsland.sea_color().lightened(0.35), MapIsland.sea_color().lightened(0.35))
-	_add_shape(b, coast, 1.0, sea - 0.3, sea + 0.2, ArtPalette.SAND.darkened(0.08), ArtPalette.SAND)
-	_add_shape(b, coast, MapIsland.grass_edge(), sea + 0.2, sea + 0.5, ArtPalette.GRASS, ArtPalette.GRASS_TOP)
+	_add_shape(b, coast, 1.12, sea - 0.05, sea + 0.01, MapIsland.sea_color().lightened(0.35), MapIsland.sea_color().lightened(0.35), sides)
+	_add_shape(b, coast, 1.0, sea - 0.3, sea + 0.2, ArtPalette.SAND.darkened(0.08), ArtPalette.SAND, sides)
+	_add_shape(b, coast, MapIsland.grass_edge(), sea + 0.2, sea + 0.5, ArtPalette.GRASS, ArtPalette.GRASS_TOP, sides)
 	var top := sea + 0.5
 	for t in MINI_TREES:   # trees round the edge of the grass
 		var a := TAU * (float(t) + 0.35) / MINI_TREES
@@ -326,13 +376,18 @@ static func _mini_island_mesh(id: String) -> Mesh:
 		b.add_cylinder(Transform3D(Basis(), at), 0.16, 0.12, 0.5, 6, ArtPalette.TRUNK)
 		b.add_cylinder(Transform3D(Basis(), at + Vector3.UP * 0.4), 0.85, 0.0, 1.6, 7, ArtPalette.LEAF)
 	var k := MINI_SCALE
-	var place := func(x: float, z: float) -> Transform3D:
-		return Transform3D(Basis().scaled(Vector3.ONE * k), Vector3(x, top, z))
+	var place := func(x: float, z: float) -> Transform3D:   # (x, z) before the island's turn (Island.turn_deg), like its file
+		var at := island.turned(Vector2(x, z))
+		return Transform3D(Basis().scaled(Vector3.ONE * k), Vector3(at.x, top, at.y))
 	match id:
 		"hutton":
 			MapLandmarks.volcano(b, Transform3D(Basis(), Vector3(-1.6, top - 0.2, -2.0)), 3.4, 4.0, 0.2)
 			MapLandmarks.lighthouse(b, place.call(4.0, 1.4))
 			MapLandmarks.sundial(b, place.call(-0.6, 2.6))
+		"curie":   # (the rainbow lighthouse on its hill: the lighthouse until #154 / #167)
+			MapLandmarks.lighthouse(b, place.call(7.6, 0.0), true)   # the rainbow one at the flask's mouth
+			MapLandmarks.house(b, place.call(-3.4, -1.6), 0)
+			MapLandmarks.potion(b, place.call(-1.0, 2.8), 0.8, 1)
 		"mechanics":
 			MapLandmarks.add(b, "orbit", place.call(-2.2, -1.6))
 			MapLandmarks.add(b, "spring", place.call(2.4, -0.8))
@@ -347,14 +402,14 @@ static func _mini_island_mesh(id: String) -> Mesh:
 
 ## A flat shape round the origin, `share` of the radius `radius(theta)` at every angle (COAST_SIDES of
 ## them), from `y0` to its top at `y1`: its side in `side`, its top in `top_color`.
-static func _add_shape(b: ArtMeshBuilder, radius: Callable, share: float, y0: float, y1: float, side: Color, top_color: Color) -> void:
+static func _add_shape(b: ArtMeshBuilder, radius: Callable, share: float, y0: float, y1: float, side: Color, top_color: Color, sides := COAST_SIDES) -> void:
 	var ring: Array[Vector3] = []
-	for i in COAST_SIDES:
-		var a := TAU * i / COAST_SIDES
+	for i in sides:
+		var a := TAU * i / sides
 		ring.append(Vector3(cos(a), 0.0, sin(a)) * float(radius.call(a)) * share)
-	for i in COAST_SIDES:
+	for i in sides:
 		var p0 := ring[i]
-		var p1 := ring[(i + 1) % COAST_SIDES]
+		var p1 := ring[(i + 1) % sides]
 		b.add_triangle([Vector3(0.0, y1, 0.0), p1 + Vector3.UP * y1, p0 + Vector3.UP * y1], [top_color, top_color, top_color])
 		var out := ((p0 + p1) * 0.5).normalized()
 		b.add_triangle([p0 + Vector3.UP * y1, p1 + Vector3.UP * y1, p1 + Vector3.UP * y0], [side, side, side], out)
@@ -465,8 +520,8 @@ func _tag(entry: Dictionary) -> PanelContainer:
 		holder.name = "Pieces"
 		var emblem := PieceArt.emblem(str(entry.piece), int(entry.total))
 		emblem.set_filled(int(entry.pieces))
-		if emblem is SundialEmblem and entry.get("finale", false):
-			(emblem as SundialEmblem).set_whole(true)   # #106: the sundial is whole after its finale
+		if not emblem is StarEmblem and entry.get("finale", false):
+			emblem.set_whole(true)   # #106, #154: the sundial's or the lens's middle after its finale
 		emblem.pivot_offset = Vector2.ZERO
 		emblem.scale = Vector2.ONE * EMBLEM_SCALE
 		holder.custom_minimum_size = emblem.get_combined_minimum_size() * EMBLEM_SCALE
@@ -482,9 +537,22 @@ func _tag(entry: Dictionary) -> PanelContainer:
 		col.add_child(buttons[entry.id])
 		story_buttons[entry.id] = _story_button(entry)
 		col.add_child(story_buttons[entry.id])
-		if not IslandStore.owns(entry.id):
-			tag.add_child(_guardian_button(entry.id))
+		tag.add_child(_corner(str(entry.id)))
 	return tag
+
+
+## The tag's top right corner of an open island: 보호자 (not bought yet) and the gear, side by side.
+func _corner(id: String) -> HBoxContainer:
+	var corner := HBoxContainer.new()
+	corner.name = "Corner"
+	corner.add_theme_constant_override("separation", CORNER_GAP)
+	corner.size_flags_horizontal = Control.SIZE_SHRINK_END
+	corner.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	corner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if not IslandStore.owns(id):
+		corner.add_child(_guardian_button(id))
+	corner.add_child(_gear_button(id))
+	return corner
 
 
 ## A tap on the map during a sail ends it (the boat lands at once). Only an island's button sails
@@ -563,6 +631,27 @@ func _guardian_button(id: String) -> Button:
 	guardian.pressed.connect(func() -> void: IslandOffer.open_for_guardian(self, id))
 	guardians[id] = guardian
 	return guardian
+
+
+## The small gear (the island's settings): the parental gate first, then the question (ResetConfirm);
+## an erase redraws the tags (refresh).
+func _gear_button(id: String) -> Button:
+	var gear := Ui.button("", "TitleButton", GuardianModal.GUARDIAN_HEIGHT)
+	gear.name = "Gear"
+	gear.custom_minimum_size = Vector2(GuardianModal.GUARDIAN_HEIGHT, GuardianModal.GUARDIAN_HEIGHT)
+	gear.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	var icon := Gear.new()
+	icon.name = "Icon"
+	icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	gear.add_child(icon)
+	gear.pressed.connect(func() -> void: open_reset(id))
+	gears[id] = gear
+	return gear
+
+
+## The gear of island `id` was pressed: the parental gate, then (passed) the question.
+func open_reset(id: String) -> ParentalGate:
+	return ResetConfirm.open_for_guardian(self, ResetConfirm.ISLAND, id, refresh)
 
 
 ## The store changed (a purchase): a bought island's 보호자 goes.
@@ -856,3 +945,29 @@ class Lock extends Control:
 		draw_rect(Rect2(c + Vector2(-21, 3) * s, Vector2(42, 7) * s), ArtPalette.YELLOW_TOP)
 		draw_circle(c + Vector2(0, 14) * s, 5.5 * s, line, true, -1.0, true)
 		draw_line(c + Vector2(0, 16) * s, c + Vector2(0, 26) * s, line, 5.0 * s, true)
+
+
+## A gear (the island's settings) in the storybook brown, drawn into its button (no glyph: the font has
+## none). Its drawing is in units of a 48-unit square.
+class Gear extends Control:
+	const DESIGN := 48.0
+	const TEETH := 8
+	const OUTER := 15.0
+	const INNER := 11.5
+	const HOLE := 4.5
+	const COLOR := Color("6b5a4c")
+
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		var s := minf(size.x, size.y) / DESIGN
+		var c := size * 0.5
+		var points := PackedVector2Array()
+		for i in TEETH * 4:   # each tooth: two points out, two points in
+			var a := TAU * (float(i) - 0.5) / (TEETH * 4)
+			var r := OUTER if (i % 4) in [0, 1] else INNER
+			points.append(c + Vector2(cos(a), sin(a)) * r * s)
+		draw_colored_polygon(points, COLOR)
+		draw_circle(c, INNER * 0.9 * s, COLOR, true, -1.0, true)
+		draw_circle(c, HOLE * s, UiTheme.DIALOGUE_PAPER, true, -1.0, true)

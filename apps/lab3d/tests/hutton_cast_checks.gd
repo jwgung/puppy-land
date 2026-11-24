@@ -2,7 +2,8 @@
 ## 실험해서, 퍼피 말풍선이 대화창을 가림"): on the real screen of the tablet and the phone, with Dugi's box
 ## open (his explanation) and Puppy's result bubble shown, the bubble is clear of the box and Dugi's
 ## portrait, and Puppy himself is at most HIDDEN_MAX under them (in 계절 he stood in the bottom left
-## corner where the portrait goes: his bubble had no side left but over the box).
+## corner where the portrait goes: his bubble had no side left but over the box). The fox keeper stands on
+## the island's dry ground (2026-11-16, tests/footing.gd), not in the sea, a pond or a stage.
 extends RefCounted
 
 const EXPERIMENT_SCREEN := "res://scripts/shell/experiment_screen.gd"
@@ -12,6 +13,7 @@ const SIZES := {"tablet": Vector2(1152, 720), "phone": Vector2(1560, 720)}
 const HIDDEN_MAX := 0.5
 ## The share of the fox's drawn rect any other thing on the screen may cover.
 const FOX_COVER_MAX := 0.05
+const FOOTING := preload("res://tests/footing.gd")
 
 var tree: SceneTree
 var expect: Callable
@@ -38,7 +40,7 @@ func run() -> void:
 	DirAccess.remove_absolute(ProgressStore.path)
 	ProgressStore.path = saved_path
 	expect.call(problems.is_empty() and seen == ExperimentRegistry.island_labs("hutton").size() * SIZES.size(),
-		"hutton cast: in every lab (tablet, phone), with Dugi's box open, Puppy's result bubble is clear of the box and his portrait, Puppy is at most %d%% under them, and the fox stands with them clear of everything (%d screens)" % [int(HIDDEN_MAX * 100.0), seen],
+		"hutton cast: in every lab (tablet, phone), with Dugi's box open, Puppy's result bubble is clear of the box and his portrait, Puppy is at most %d%% under them, and the fox stands with them on dry ground, clear of everything (%d screens)" % [int(HIDDEN_MAX * 100.0), seen],
 		"; ".join(problems))
 
 
@@ -89,6 +91,10 @@ func _check(definition: Dictionary, size: Vector2) -> Variant:
 	if cast.fox == null:
 		problems.append("no fox")
 	else:
+		# On dry ground (2026-11-16 user: it stood in the sea, a pond, sunk in a stage): tests/footing.gd.
+		var feet: Array = FOOTING.new(screen.experiment, [cast]).footing(cast.fox.global_position.x, cast.fox.global_position.z, cast.fox.global_position.y)
+		if not FOOTING.stands(feet[0]):
+			problems.append("the fox at %s %s (%s)" % [str(Vector2(cast.fox.global_position.x, cast.fox.global_position.z)), feet[0], str(feet[1])])
 		var fox: Rect2 = screen.view_rect_of(IslandCast.drawn_bounds(cast.fox))
 		if fox.size.x < 8.0 or not Rect2(Vector2.ZERO, screen.view.size).grow(-4.0).encloses(fox):
 			problems.append("the fox %s not in the view" % str(fox))

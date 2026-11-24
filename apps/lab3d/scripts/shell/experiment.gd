@@ -200,6 +200,13 @@ func control_value(id: String) -> Variant:
 	return definition.default_value(id)
 
 
+## The conditions may not change now (#159: while the fast-forward time flows, FastClock.locks_conditions):
+## the screen dims the condition picture buttons, ignores a tap on them or on the sidebar's controls,
+## holds the paw's tap on them and the hand guide until they are free. Default: never locked.
+func conditions_locked() -> bool:
+	return false
+
+
 ## Runs an action declared in definition.actions (buttons).
 func run_action(_id: String) -> void:
 	pass
@@ -318,6 +325,19 @@ func manipulation_pick_point(id: String) -> Vector3:
 ## itself (the 바닷바람 night) waits for it before it starts; the others ignore it.
 func set_play_open(_open: bool) -> void:
 	pass
+
+
+## The child is acting on the lab through the device itself now (#160: the tablet tilted past its still
+## band, MotionInput.active): an attempt like a finger on an object (the screen arms Puppy's line with it
+## and holds the miss line and the hand guide while it lasts). False by default.
+func body_input_active() -> bool:
+	return false
+
+
+## The lab's body-motion input (#160, MotionInput), or null when the lab is not played by tilting or
+## shaking the tablet (the hand guide shows a "tilt" as a plain drag on a tablet without a sensor).
+func motion_input() -> MotionInput:
+	return null
 
 
 ## A finger presses and holds the hold object `id` (rule `"hold": true`, 2026-10-28): the lab ramps

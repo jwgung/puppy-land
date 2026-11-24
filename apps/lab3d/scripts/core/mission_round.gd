@@ -131,7 +131,7 @@ var _asking := false
 ## (kid.intro and kid.intro_more, 2026-10-31 user: "처음에 이 실험이 무슨 실험인지, 어떤 힘을 보고 싶은
 ## 건지": every visit while stages are left, with the story). The first is in the box while _clue_open.
 var _opening: Array = []
-## How many of them are the first visit's (keeper, clue, story.more and keeper_reply): told once (store.mark_clue).
+## How many of them are the first visit's (keeper, story.before, clue, story.more and keeper_reply): told once (store.mark_clue).
 var _first_visit := 0
 var _clue_open := false
 var _question := ""
@@ -670,11 +670,14 @@ func open(dugi: bool) -> void:
 		return
 	var id := str(definition.get("id", ""))
 	_opening = []
-	if Story.enabled and not store.clue_seen(id):
+	var first: bool = Story.enabled and not store.clue_seen(id)
+	if first:
 		_opening = first_visit_lines(definition)
 	_first_visit = _opening.size()
 	if Story.enabled:
 		_opening.append_array(intro_lines(definition))
+	if first:
+		_opening.append_array(first_use_lines(definition))
 	var question := predict(definition)
 	if question.is_empty():
 		predict_ended = true   # no question: the clue and the introduction alone, if any
@@ -738,13 +741,17 @@ func clue_read() -> void:
 
 
 ## The lines of a spot's first visit (dialogue_line() each): the island keeper's (story.keeper, #74:
-## the fox tells what is wrong there), Puppy's clue (story.clue), more lines after it (story.more, #98)
-## and the keeper's answer to it (story.keeper_reply, #86); [] without them.
+## the fox tells what is wrong there; spoken by the spot's island keeper, Story.keeper_of: the curie
+## island's 야옹이), the lines before the clue (story.before, #156), Puppy's clue (story.clue), more lines
+## after it (story.more, #98) and the keeper's answer to it (story.keeper_reply, #86); [] without them.
 static func first_visit_lines(definition: Dictionary) -> Array:
 	var out := []
+	var who := Story.keeper_of(definition)
 	var keeper := Story.keeper(definition)
 	if keeper != "":
-		out.append(dialogue_line(keeper, Story.keeper_face(definition), "", Story.KEEPER))
+		out.append(dialogue_line(keeper, Story.keeper_face(definition), "", who))
+	for line: Dictionary in Story.before(definition):
+		out.append(dialogue_line(line.text, line.face, "", line.speaker))
 	var clue := Story.clue(definition)
 	if clue != "":
 		out.append(dialogue_line(clue, Story.clue_face(definition), "", "puppy"))
@@ -752,7 +759,7 @@ static func first_visit_lines(definition: Dictionary) -> Array:
 		out.append(dialogue_line(line.text, line.face, "", line.speaker))
 	var reply := Story.keeper_reply(definition)
 	if reply != "":
-		out.append(dialogue_line(reply, Story.keeper_reply_face(definition), "", Story.KEEPER))
+		out.append(dialogue_line(reply, Story.keeper_reply_face(definition), "", who))
 	return out
 
 
@@ -778,6 +785,17 @@ static func intro_lines(definition: Dictionary) -> Array:
 		if more is Dictionary and str(more.get("text", "")) != "":
 			out.append(dialogue_line(str(more.text), Story.face_or_default(more.get("face")), ExplainPictures.picture_or_none(more.get("picture"))))
 	return out
+
+
+## Dugi's line on how to use the body motion the spot asks for (kid.first_use, #160: "태블릿을 두 손으로 꼭 잡고
+## 살살 기울여 봐."): said once, after the introduction on the spot's first visit (kept with the first
+## visit's lines: store.mark_clue); [] without one.
+static func first_use_lines(definition: Dictionary) -> Array:
+	var kid: Variant = definition.get("kid")
+	var line: Variant = kid.get("first_use") if kid is Dictionary else null
+	if not (line is Dictionary and str(line.get("text", "")) != ""):
+		return []
+	return [dialogue_line(str(line.text), Story.face_or_default(line.get("face")))]
 
 
 ## Dugi's question (dialogue_line(); the text "" when the clue came alone). It has no picture:

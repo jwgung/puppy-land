@@ -49,15 +49,20 @@ const CARD_HEIGHT := 2.0
 ## Rounding of the three corners (edges split to this length, then Chaikin corner cutting twice).
 const ROUND_STEP := 0.09
 
-static var _rim: Array = []
+static var _rims: Dictionary = {}   # wedge angle (deg) -> rim
 static var _meshes: Array = []
 
 
 ## The wedge's rim in the xy plane (Vector2, y up, counter-clockwise): the point at the bottom (APEX),
 ## the arc at the top (SPAN from it), all three corners softly rounded.
 static func rim() -> Array:
-	if _rim.is_empty():
-		var half := deg_to_rad(WEDGE_DEG * 0.5)
+	return rim_of(WEDGE_DEG)
+
+
+## The same rim for a wedge of `deg` degrees (the curie island's lens cuts its disc in eleven: LensArt).
+static func rim_of(deg: float) -> Array:
+	if not _rims.has(deg):
+		var half := deg_to_rad(deg * 0.5)
 		var apex := APEX
 		var raw: Array = [apex]
 		for i in ARC_STEPS + 1:
@@ -78,8 +83,8 @@ static func rim() -> Array:
 				out.append(q0.lerp(q1, 0.25))
 				out.append(q0.lerp(q1, 0.75))
 			dense = out
-		_rim = dense
-	return _rim
+		_rims[deg] = dense
+	return _rims[deg]
 
 
 ## The rim pushed out by `w` along its normals (the outline).
@@ -165,14 +170,7 @@ static func _pillow(points: Array, depth: float, dress: bool) -> ArrayMesh:
 static func _dress(b: ArtMeshBuilder, z: float, side: float) -> void:
 	var facing := Vector3(0.0, 0.0, side)
 	var zb := z + side * 0.003
-	var poly := band(shrunk(rim(), SHRINK), SHRINK)
-	for i in (poly.size() >> 1) - 1:   # the band as a strip: outer i, i + 1 against their inner points
-		var o0 := poly[i]
-		var o1 := poly[i + 1]
-		var i0 := poly[poly.size() - 1 - i]
-		var i1 := poly[poly.size() - 2 - i]
-		b.add_triangle([Vector3(o0.x, o0.y, zb), Vector3(o1.x, o1.y, zb), Vector3(i1.x, i1.y, zb)], [RIM_3D, RIM_3D, RIM_3D], facing)
-		b.add_triangle([Vector3(o0.x, o0.y, zb), Vector3(i1.x, i1.y, zb), Vector3(i0.x, i0.y, zb)], [RIM_3D, RIM_3D, RIM_3D], facing)
+	strip(b, band(shrunk(rim(), SHRINK), SHRINK), zb, RIM_3D, facing)
 	var zl := z + side * 0.005
 	for pair: Array in hour_lines(SHRINK):
 		var a: Vector2 = pair[0]
@@ -182,6 +180,19 @@ static func _dress(b: ArtMeshBuilder, z: float, side: float) -> void:
 		b.add_triangle([v[0], v[1], v[2]], [LINE_3D, LINE_3D, LINE_3D], facing)
 		b.add_triangle([v[0], v[2], v[3]], [LINE_3D, LINE_3D, LINE_3D], facing)
 	StarArt.add_face(b, z + side * 0.01, side, FACE_AT, FACE_K)
+
+
+## A strip polygon (its outer run, then its inner run backwards, as band gives) laid flat at height z:
+## outer i, i + 1 against their inner points (also the lens's ring and band, LensArt).
+static func strip(b: ArtMeshBuilder, poly: PackedVector2Array, z: float, color: Color, facing: Vector3) -> void:
+	var colors := [color, color, color]
+	for i in (poly.size() >> 1) - 1:
+		var o0 := poly[i]
+		var o1 := poly[i + 1]
+		var i0 := poly[poly.size() - 1 - i]
+		var i1 := poly[poly.size() - 2 - i]
+		b.add_triangle([Vector3(o0.x, o0.y, z), Vector3(o1.x, o1.y, z), Vector3(i1.x, i1.y, z)], colors, facing)
+		b.add_triangle([Vector3(o0.x, o0.y, z), Vector3(i1.x, i1.y, z), Vector3(i0.x, i0.y, z)], colors, facing)
 
 
 static func _lit(n: Vector3, sun: Vector3) -> Color:

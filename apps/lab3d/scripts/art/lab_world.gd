@@ -542,7 +542,7 @@ func _add_marks(b: ArtMeshBuilder) -> void:
 			continue
 		var xf := Transform3D(lab_basis().scaled(Vector3.ONE * LANDMARK_SCALE), Vector3(at.x, ground_y(at), at.y))
 		if mark[0] == "lighthouse":
-			MapLandmarks.lighthouse(b, xf)
+			MapLandmarks.lighthouse(b, xf, map.island.features.get("lighthouse_rainbow", false))
 		else:
 			# Broken until the island's finale put it back together (#106), as on the map.
 			MapLandmarks.sundial(b, xf, ProgressStore.mark(ProgressStore.STORY, ProgressStore.island_key(map.island.id, "finale")))

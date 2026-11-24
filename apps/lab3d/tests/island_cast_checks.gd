@@ -23,8 +23,8 @@
 ##    nor Dugi (phone, tablet); the dialogue box and portrait inside the view, clear of the overlays
 ##    and Dugi (it may cover Puppy for a while), none beside the open sidebar (Dugi points all the same).
 ##    Dialogue: pages split at spaces, at most 2 lines that fit, joining back to the observe text in
-##    every experiment; typewriter, tap = whole page / next / close (Dugi lowers), the read timer,
-##    the sidebar closes it.
+##    every experiment; typewriter, a tap = whole page / (after TAP_LOCK_S) next / close (Dugi lowers),
+##    untouched the read timer turns the pages and closes it, the sidebar closes it.
 ## 5-6 again at the stage-1 entry (2026-11-03): the labs that open on other conditions than their
 ##    start case (ENTRY_LABS: the friction's light box, the lever's near point, the orbit's 4 m) are
 ##    placed and laid out as the child first sees them. A yard lab's Puppy stands inside the yard's
@@ -36,6 +36,8 @@
 ##    missions done, so no stamp moves the round on (#130).
 extends RefCounted
 
+const Reading := preload("res://tests/dialogue_reading.gd")   # the pages read untouched (the read timer)
+
 const EXPERIMENT_SCREEN := "res://scripts/shell/experiment_screen.gd"
 const FIRST_ENTRY := preload("res://tests/first_entry_checks.gd")   # start_case: the definition's start on a screen
 const UI_THEME := "res://scripts/app/ui_theme.gd"
@@ -46,6 +48,7 @@ const POINT_TOL_DEG := 1.0
 const DUGI_VERTS_MAX := 3300        # 3,050 model vertices + the shadow
 const PUPPY_VERTS_MAX := 3450       # 3,199 + the shadow
 const FOX_VERTS_MAX := 3150         # 2,866 (the island keeper, #71: no actor yet, the model only)
+const YAONGI_VERTS_MAX := 3400       # 3,166 (the third island keeper, #153: no actor yet, the model only)
 const TRIS_MAX := 6000
 const CELL := 0.25                  # m: apparatus meshes are voxelised at this size
 const CLEARANCE := 0.2              # m: cast bounds grown by this must touch no apparatus cell
@@ -183,7 +186,7 @@ static func apparatus_cells(lab: Experiment) -> Dictionary:
 	var cells := {}
 	for m in lab.find_children("*", "MeshInstance3D", true, false):
 		var mi := m as MeshInstance3D
-		if mi.name in ["Island", "IslandShadows"] or String(mi.name).contains("Shadow") or not mi.is_visible_in_tree():
+		if mi.mesh == null or mi.name in ["Island", "IslandShadows"] or String(mi.name).contains("Shadow") or not mi.is_visible_in_tree():
 			continue
 		var xf := mi.global_transform
 		for si in mi.mesh.get_surface_count():
@@ -240,7 +243,8 @@ func _motion(screen: Control) -> Array:
 func check_models() -> void:
 	for spec in [["res://assets/characters/dugi.glb", "Dugi", ["Body", "Body/ArmL/HandL", "Body/ArmR/HandR", "Body/ArmR/Pointer/PointerTip", "Body/Head/EarL", "Body/Head/EarR"], DUGI_VERTS_MAX],
 			["res://assets/characters/puppy.glb", "Puppy", ["Body", "Body/ArmL/HandL", "Body/ArmR/HandR", "Body/ArmR/Flag/FlagCloth", "Body/Head/EarL", "Body/Head/EarR"], PUPPY_VERTS_MAX],
-			["res://assets/characters/fox.glb", "Fox", ["Body", "Body/ArmL/HandL", "Body/ArmR/HandR", "Body/Head/EarL", "Body/Head/EarR"], FOX_VERTS_MAX]]:
+			["res://assets/characters/fox.glb", "Fox", ["Body", "Body/ArmL/HandL", "Body/ArmR/HandR", "Body/Head/EarL", "Body/Head/EarR"], FOX_VERTS_MAX],
+			["res://assets/characters/yaongi.glb", "Yaongi", ["Body", "Body/ArmL/HandL", "Body/ArmR/HandR", "Body/ArmR/Flask", "Body/Pocket", "Body/Head/EarL", "Body/Head/EarR", "Body/Head/Goggles"], YAONGI_VERTS_MAX]]:
 		var model: Node = (load(spec[0]) as PackedScene).instantiate()
 		var root := model.get_node(spec[1])
 		var missing := []
@@ -698,20 +702,25 @@ func check_dialogue() -> void:
 		"dialogue: takes taps only on the box and the bust; the band above the box passes them to the 3D view", "")
 	box.step(0.1)
 	var partial := box.label.visible_characters > 0 and not box.typed()
-	box.advance()   # tap: the whole page
+	var touch := InputEventScreenTouch.new()
+	touch.pressed = true
+	touch.position = on_box
+	box._gui_input(touch)   # a tap while it types: the whole page
 	var full := box.typed() and box.page == 0 and box.label.visible_characters == -1
+	box._gui_input(touch)   # at once again: locked (DialogueBox.TAP_LOCK_S)
+	var stays := box.page == 0 and box.active
 	var pages := box.pages().size()
-	box.advance()   # tap: next page
+	box.step(DialogueBox.TAP_LOCK_S + 0.05)
+	box._gui_input(touch)   # then: the next page
 	var second := pages > 1 and box.page == 1 and not box.typed()
-	for k in pages:
-		box.advance()
-		box.advance()
+	var tapped := full
+	Reading.read_all(box)   # untouched, the rest reads and closes by itself
 	for k in int(DugiActor.LOWER_S * 60.0) + 4:
 		await tree.process_frame
 	var closed := not box.active and not box.visible and cast.dugi.state == "rest"
-	expect.call(opened and partial and full and second and closed,
-		"dialogue (collision, %d pages): types out, a tap shows the page, the next turns it, past the last it closes and Dugi lowers his arm" % pages,
-		"opened %s, typing %s, full %s, page 2 %s, closed %s" % [opened, partial, full, second, closed])
+	expect.call(opened and partial and tapped and full and stays and second and closed,
+		"dialogue (collision, %d pages): types out, a tap shows the page, at once again nothing, after TAP_LOCK_S it turns; untouched the rest reads by itself, past the last it closes and Dugi lowers his arm" % pages,
+		"opened %s, typing %s, tapped %s, full %s, locked %s, page 2 %s, closed %s" % [opened, partial, tapped, full, stays, second, closed])
 	# The box keeps its width while Dugi raises, points and lowers his arm: its right end may move
 	# left (to clear him) but never back (it grew and shrank every frame, 2026-10-27 user report).
 	for screen_size in [PHONE, TABLET]:
@@ -734,26 +743,23 @@ func check_dialogue() -> void:
 		expect.call(widths.size() > 60 and not grew, "dialogue (rotation, %s): the box never widens again while open (Dugi's arm moving)" % ("phone" if screen_size == PHONE else "tablet"),
 			"%d frames, widened %.2f in all, widths %s .. %s" % [widths.size(), grown, str(widths.slice(0, 3)), str(widths.slice(-3))])
 		await _close(wide)
-	# Untouched: it waits on its first page, typed out, for a tap (2026-10-28 user: pages turn only
-	# on a tap); Dugi points all the while.
+	# Untouched: it reads through by itself, page by page, and closes (2026-11-16 user: "대화를 다
+	# 출력시켜주자"); Dugi points while it is open.
 	cast.dugi.explain(screen.experiment.explain_point)
 	for k in 3:
 		await tree.process_frame
 	var pointing := true
+	var last_page := 0
 	var t := 0.0
-	while t < 20.0:
+	while t < 60.0 and box.active:
+		last_page = box.page
+		pointing = pointing and (cast.dugi.state == "point" or cast.dugi.state == "raise")
 		box.step(0.1)
 		t += 0.1
 		await tree.process_frame
-		pointing = pointing and (cast.dugi.state == "point" or cast.dugi.state == "raise")
-	expect.call(box.active and box.page == 0 and box.typed() and pointing,
-		"dialogue: untouched it stays on its first page, typed out, and waits for a tap (Dugi pointing all the while)",
-		"active %s page %d typed %s pointing %s" % [box.active, box.page, box.typed(), pointing])
-	for k in 40:   # taps read it through and close it
-		if not box.active:
-			break
-		box.advance()
-		await tree.process_frame
+	expect.call(not box.active and last_page == box.pages().size() - 1 and last_page > 0 and pointing,
+		"dialogue: untouched it reads through every page by itself and closes (Dugi pointing while it is open)",
+		"active %s last page %d of %d pointing %s after %.1f s" % [box.active, last_page, box.pages().size(), pointing, t])
 	# The sidebar closes it.
 	cast.dugi.stop(true)
 	await tree.process_frame

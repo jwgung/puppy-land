@@ -8,6 +8,8 @@
 ## Story.enabled is on only inside these checks (and restored).
 extends RefCounted
 
+const Reading := preload("res://tests/dialogue_reading.gd")   # the pages read untouched (the read timer)
+
 var tree: SceneTree
 var expect: Callable
 const UI_THEME := "res://scripts/app/ui_theme.gd"
@@ -151,7 +153,7 @@ func check_prologue() -> void:
 			expect.call(story.night > 0.95 and story.tint.x < 0.5 and home.env.environment.background_color.v < MapIsland.sea_color().v
 				and story._star != null and story.sea.lanterns.all(func(l: Node3D) -> bool: return l.visible),
 				"prologue: page 3 brings the night (tint, a darker sea) and the guiding star; the boats' lanterns show", "night %.2f" % story.night)
-		_tap_through(story.dialogue)
+		_read_through(story.dialogue)
 	expect.call(str(speakers) == str(PROLOGUE), "prologue: the 9 pages in order with their speakers' portraits (Dugi / Puppy / the bread cat)", str(speakers))
 	expect.call(max_pitch > 15.0 and min_dist < 10.0 and eye_moves > 400 and max_night > 1.9,
 		"prologue: the camera moves on every page (tilts up to the star, comes close to the square) and the night darkens after the break",
@@ -215,7 +217,7 @@ func check_skip() -> void:
 	for p in 4:
 		for i in 60:
 			story.advance(0.05)
-		_tap_through(story.dialogue)
+		_read_through(story.dialogue)
 	var mid: bool = story.cinematic() and story.night > 0.5 and not story._pieces.is_empty()
 	story.skip_button.pressed.emit()
 	await tree.process_frame
@@ -238,13 +240,13 @@ func check_clue() -> void:
 		and screen._question_shield != null and screen._choices != null and not screen._choices.visible and Story.clue_seen("projectile")
 	expect.call(first, "clue: the first visit opens with Puppy's clue (his portrait and name) over the question's shield, before the question",
 		"%s %s" % [box.speaker, box.text])
-	_tap_through(box)
+	_read_through(box)
 	await tree.process_frame
 	await tree.process_frame
 	# Dugi tells what the lab is and which force it shows (kid.intro, 2026-10-31), then asks.
 	var intro: String = MissionRound.intro(screen.definition.raw).text
 	var introduced: bool = box.active and box.speaker == "dugi" and not box.hold and box.text == intro and not screen._choices.visible
-	_tap_through(box)
+	_read_through(box)
 	await tree.process_frame
 	await tree.process_frame
 	var asked: bool = introduced and box.active and box.speaker == "dugi" and box.name_label.text == "두기두기" and box.hold \
@@ -381,7 +383,7 @@ func check_finale() -> void:
 		words.append([story.dialogue.speaker, story.dialogue.text])
 		for i in 20:
 			story.advance(0.05)
-		_tap_through(story.dialogue)
+		_read_through(story.dialogue)
 	var lifted := false
 	for i in 40:
 		story.advance(0.05)
@@ -405,7 +407,7 @@ func check_finale() -> void:
 	var want_top: float = StoryDirector.launch_top(from_y, StoryDirector.launch_speed(60.0))
 	var came_back: bool = story._retry_open and story.dialogue.text == Story.finale_retry_line() and story.dialogue.speaker == "dugi" \
 		and absf(weak_top - want_top) < 0.15 and weak_top < StoryDirector.SKY_HIGH.y and story.night > 0.0
-	_tap_through(story.dialogue)
+	_read_through(story.dialogue)
 	story.advance(0.05)
 	# A strong pull (the whole way): it reaches the sky.
 	at = home._world_to_screen(story._star.global_position)
@@ -485,7 +487,7 @@ func check_finale_leave_and_help() -> void:
 			if story._retry_open:
 				break
 		backs += 1 if story._retry_open else 0
-		_tap_through(story.dialogue)
+		_read_through(story.dialogue)
 		story.advance(0.05)
 	var helped := story.helped() and backs == StoryDirector.HELP_AFTER_MISSES
 	_pull(story, home._world_to_screen(story._star.global_position), weak)
@@ -525,7 +527,7 @@ func _until_pull(story: StoryDirector) -> void:
 			return
 		story.advance(0.05)
 		if story.dialogue != null and story.dialogue.active:
-			_tap_through(story.dialogue)
+			_read_through(story.dialogue)
 
 
 ## Measurements never play the story: their launch args turn it off; with it off the map has no
@@ -561,8 +563,7 @@ func _pull(story: StoryDirector, at: Vector2, down: float) -> void:
 		story.advance(0.016)
 
 
-## Taps until this page is gone (the next page may open at once: it is not tapped).
-## The star finale's words after the sky (#118), tapped through one by one: their texts.
+## The star finale's words after the sky (#118), read through one by one: their texts.
 func _words_after(story: StoryDirector) -> Array:
 	var said := []
 	for i in 400:
@@ -571,17 +572,17 @@ func _words_after(story: StoryDirector) -> Array:
 		story.advance(0.05)
 		if story._after >= 0 and story.dialogue.active and (said.is_empty() or said[-1] != story.dialogue.text):
 			said.append(story.dialogue.text)
-			_tap_through(story.dialogue)
+			_read_through(story.dialogue)
 	await tree.process_frame
 	return said
 
 
-func _tap_through(box: DialogueBox) -> void:
+func _read_through(box: DialogueBox) -> void:
 	var words := box.text
 	for i in 6:
 		if not box.active or box.text != words:
 			return
-		box.advance()
+		Reading.read_page(box)
 
 
 ## The map camera's own default (the child's view when nothing turned it).
@@ -639,7 +640,7 @@ func _free(screen: Control) -> void:
 
 ## One finger tap on Android arrives twice: the touch and its emulated click
 ## (emulate_mouse_from_touch). The dialogue box takes one step for it: the next page, not the next
-## page already typed out (2026-10-28, SM-X115 prologue check).
+## page already typed out (2026-10-28, SM-X115 prologue check; the turn after DialogueBox.TAP_LOCK_S).
 func check_one_tap() -> void:
 	var words := "퍼피랜드에는 섬이 많아. 그중 하나가 우리 뉴턴섬이야."
 	for i in 16:
@@ -651,6 +652,7 @@ func check_one_tap() -> void:
 	box.open()
 	await tree.process_frame
 	box.advance()   # the first page all typed
+	box.step(DialogueBox.TAP_LOCK_S + 0.05)   # (past the lock after it became whole)
 	var before := box.page
 	var touch := InputEventScreenTouch.new()
 	touch.pressed = true

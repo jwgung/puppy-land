@@ -1,7 +1,7 @@
 ## The island map's spot landmarks (2026-10-27 user decision "지도 전체 손보기"): one small,
 ## chunky model per lab, readable from the map camera (about 1-2 m), so a child sees what is done
-## there before reading its name. Built into the caller's builder (MapIsland merges all 11 into one
-## mesh); the shapes echo each lab's own props and colours (experiments/*/..._props.gd).
+## there before reading its name. Built into the caller's builder (MapIsland merges all of an island's
+## landmarks into one mesh); the shapes echo each lab's own props and colours (experiments/*/..._props.gd).
 ## Visual only: the labs' physics never sees these.
 class_name MapLandmarks
 extends RefCounted
@@ -70,6 +70,16 @@ static func add(b: ArtMeshBuilder, id: String, xf: Transform3D) -> float:
 			return _shake_house(b, xf)
 		"volcano":
 			return _lava_model(b, xf)
+		"diffusion":
+			return _diffusion(b, xf)
+		"dissolving":
+			return _dissolving(b, xf)
+		"melt-cook":
+			return _melt_cook(b, xf)
+		"dough":
+			return _dough(b, xf)
+		"clean-water":
+			return _clean_water(b, xf)
 	_rod(b, xf, Vector3.ZERO, Vector3(0.0, 1.0, 0.0), 0.08, ArtPalette.BLUE)
 	_ball(b, xf, Vector3(0.0, 1.15, 0.0), 0.2, ArtPalette.WHITE)
 	return 1.35
@@ -302,25 +312,83 @@ static func volcano(b: ArtMeshBuilder, xf: Transform3D, radius: float, height: f
 
 
 ## A lighthouse on its rock: a red and white striped tower, a white gallery, the yellow lamp and a
-## red roof (about 2.4 m).
-static func lighthouse(b: ArtMeshBuilder, xf: Transform3D) -> void:
+## red roof (about 2.4 m). `rainbow` (the curie island's, Island
+## lighthouse_rainbow): six rainbow bands, a little taller, its lamp dark (the crystal lens is in
+## pieces until the finale, docs/islands/curie.md).
+static func lighthouse(b: ArtMeshBuilder, xf: Transform3D, rainbow := false) -> void:
 	b.ao_min = 0.8
 	b.ao_height = 0.3
 	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, -0.2, 0.0)), 0.58, 0.48, 0.42, 8, ArtPalette.ROCK)
-	var bands := 4
-	var tower := 1.5
+	var bands := RAINBOW.size() if rainbow else 4
+	var tower := 1.9 if rainbow else 1.5
 	for k in bands:
 		var t0 := float(k) / bands
 		var t1 := float(k + 1) / bands
 		var r0 := lerpf(0.33, 0.24, t0)
 		var r1 := lerpf(0.33, 0.24, t1)
-		b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, 0.2 + tower * t0, 0.0)), r0, r1, tower / bands, 10,
-			ArtPalette.RED if k % 2 == 0 else ArtPalette.WHITE, false)
+		var band: Color = RAINBOW[k] if rainbow else (ArtPalette.RED if k % 2 == 0 else ArtPalette.WHITE)
+		b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, 0.2 + tower * t0, 0.0)), r0, r1, tower / bands, 10, band, false)
 	var deck := 0.2 + tower
 	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, deck, 0.0)), 0.36, 0.36, 0.08, 10, ArtPalette.WHITE)
 	b.ao_min = 1.0
-	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, deck + 0.08, 0.0)), 0.2, 0.2, 0.26, 8, ArtPalette.YELLOW, false)
-	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, deck + 0.34, 0.0)), 0.3, 0.0, 0.32, 10, ArtPalette.RED)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, deck + 0.08, 0.0)), 0.2, 0.2, 0.26, 8, LAMP_DARK if rainbow else ArtPalette.YELLOW, false)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.0, deck + 0.34, 0.0)), 0.3, 0.0, 0.32, 10, RAINBOW[5] if rainbow else ArtPalette.RED)
+
+
+# --- the curie island's things (2026-11-13 user "화학섬 느낌이 나게"): the kitchen village's houses
+# with coloured chimney smoke, potion bottles standing in the grass, the spring's washing place.
+
+const RAINBOW := [Color("ff5a5a"), Color("ff9a3c"), Color("ffd84a"), Color("5fd38a"), Color("4fa8ff"), Color("9b6bff")]
+const LAMP_DARK := Color("8a94a6")
+const POTIONS := [Color("ff5fa2"), Color("36c2b4"), Color("9b6bff"), Color("ff9a3c")]
+const GLASS := Color("c9f1ff")
+const HOUSE_WALL := Color("fff1d6")
+const HOUSE_ROOFS := [Color("ff7b6b"), Color("4fa8ff"), Color("9b6bff")]
+const SMOKES := [Color("ffb3d9"), Color("b9f2e4"), Color("d8c8ff")]
+
+
+## A kitchen house (about 1.2 m): cream walls, a door, a pyramid roof (HOUSE_ROOFS[k]) and a brick
+## chimney puffing three balls of coloured smoke (SMOKES[k]: something cooking).
+static func house(b: ArtMeshBuilder, xf: Transform3D, k: int) -> void:
+	b.ao_min = 0.8
+	b.ao_height = 0.4
+	_box(b, xf, Vector3(0.0, 0.42, 0.0), Vector3(1.2, 0.84, 1.0), HOUSE_WALL)
+	_box(b, xf, Vector3(0.0, 0.26, 0.505), Vector3(0.32, 0.52, 0.02), ArtPalette.WOOD)
+	for s in [-1.0, 1.0]:
+		_box(b, xf, Vector3(s * 0.36, 0.52, 0.505), Vector3(0.2, 0.2, 0.02), ArtPalette.WATER_TOP)
+	b.add_cylinder(xf * Transform3D(Basis(Vector3.UP, PI * 0.25), Vector3(0.0, 0.84, 0.0)), 0.95, 0.0, 0.62, 4, HOUSE_ROOFS[k % HOUSE_ROOFS.size()])
+	_box(b, xf, Vector3(0.3, 1.2, -0.15), Vector3(0.2, 0.5, 0.2), ArtPalette.CLAY)
+	b.ao_min = 1.0
+	var smoke: Color = SMOKES[k % SMOKES.size()]
+	for p in [[0.32, 1.62, -0.15, 0.15], [0.42, 1.9, -0.2, 0.19], [0.58, 2.22, -0.26, 0.23]]:
+		_ball(b, xf, Vector3(p[0], p[1], p[2]), p[3], smoke)
+
+
+## A potion bottle standing in the grass (`size` 1 = about 1.3 m): a round glass bulb of coloured
+## potion (POTIONS[k]), a glass neck, a cork, a bubble over it.
+static func potion(b: ArtMeshBuilder, xf: Transform3D, size: float, k: int) -> void:
+	var s := Transform3D(Basis().scaled(Vector3.ONE * size), Vector3.ZERO)
+	var liquid: Color = POTIONS[k % POTIONS.size()]
+	b.ao_min = 0.85
+	b.ao_height = 0.3
+	_ball(b, xf * s, Vector3(0.0, 0.42, 0.0), 0.42, liquid)
+	b.add_cylinder(xf * s * Transform3D(Basis(), Vector3(0.0, 0.74, 0.0)), 0.13, 0.13, 0.36, 8, GLASS)
+	b.add_cylinder(xf * s * Transform3D(Basis(), Vector3(0.0, 1.08, 0.0)), 0.17, 0.15, 0.12, 8, ArtPalette.WOOD)
+	b.ao_min = 1.0
+	_ball(b, xf * s, Vector3(0.12, 1.36, 0.0), 0.08, liquid.lightened(0.3))
+	_ball(b, xf * s, Vector3(-0.06, 1.55, 0.0), 0.05, liquid.lightened(0.3))
+
+
+## The spring's washing place: a flat stone slab by the water, a wooden tub of soapy water and
+## soap bubbles over it.
+static func washing(b: ArtMeshBuilder, xf: Transform3D) -> void:
+	b.ao_min = 0.85
+	b.ao_height = 0.3
+	_box(b, xf, Vector3(0.0, 0.08, 0.0), Vector3(1.5, 0.16, 0.7), ArtPalette.ROCK_TOP)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.45, 0.16, 0.0)), 0.3, 0.36, 0.34, 10, ArtPalette.WOOD, true, ArtPalette.WATER_TOP)
+	b.ao_min = 1.0
+	for p in [[0.35, 0.68, 0.05, 0.11], [0.6, 0.86, -0.05, 0.08], [0.42, 1.04, 0.1, 0.06], [-0.3, 0.4, 0.0, 0.09]]:
+		_ball(b, xf, Vector3(p[0], p[1], p[2]), p[3], ArtPalette.WHITE)
 
 
 ## The sundial's dial (#106, #110): the stone plate's top at DIAL_Y over the base's foot, the dial
@@ -601,6 +669,81 @@ static func _lava_model(b: ArtMeshBuilder, xf: Transform3D) -> float:
 	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.55, 0.0, 0.45)), 0.16, 0.16, 0.3, 8, ArtPalette.IRON)
 	_ball(b, xf, Vector3(0.55, 0.33, 0.45), 0.12, ArtPalette.RED)
 	return 1.25
+
+
+## The curie island's 퍼지는 냄새와 잉크 (#156, "빵 냄새가 솔솔 나는 곳"): a glass of water on a little
+## wooden table, the ink's blue cloud in its top half, a dropper with its red bulb over it and a small
+## golden loaf beside it with a puff of its smell.
+static func _diffusion(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.add_cylinder(xf, 0.5, 0.42, 0.12, 10, ArtPalette.WOOD_GRAIN, true, ArtPalette.WOOD)
+	var cup := Vector3(-0.1, 0.12, 0.0)
+	b.add_cylinder(xf * Transform3D(Basis(), cup), 0.22, 0.27, 0.58, 12, Color("cdeeff"), true, Color("8fd3ff"))
+	b.add_cylinder(xf * Transform3D(Basis(), cup + Vector3(0.0, 0.3, 0.0)), 0.26, 0.275, 0.24, 12, DiffusionProps.INK_CLOUD, true, Color("4a5cd0"))
+	_ball(b, xf, cup + Vector3(0.03, 0.42, 0.18), 0.07, DiffusionProps.INK_DEEP)
+	_rod(b, xf, cup + Vector3(0.0, 0.66, 0.0), cup + Vector3(0.0, 0.98, 0.0), 0.035, Color("e9f4fa"))
+	_ball(b, xf, cup + Vector3(0.0, 1.05, 0.0), 0.09, DiffusionProps.BULB_RED)
+	var loaf := Vector3(0.3, 0.12, 0.18)
+	b.add_sphere(xf * Transform3D(Basis.from_scale(Vector3(1.0, 0.6, 0.7)), loaf + Vector3(0.0, 0.04, 0.0)), 0.17, 3, 8, DiffusionProps.BREAD)
+	for puff: Array in [[Vector3(0.36, 0.42, 0.18), 0.06], [Vector3(0.44, 0.58, 0.16), 0.075]]:
+		_ball(b, xf, puff[0], puff[1], DiffusionProps.SMELL_HAZE)
+	return 1.35
+
+
+## The curie island's 녹으면 사라질까? (#157, "소금 항아리가 있는 곳"): a little wooden table with a glass of
+## clear water, a white salt heap in a blue dish and a wooden seawater bucket beside it.
+static func _dissolving(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.add_cylinder(xf, 0.5, 0.42, 0.12, 10, ArtPalette.WOOD_GRAIN, true, ArtPalette.WOOD)
+	var cup := Vector3(-0.12, 0.12, 0.0)
+	b.add_cylinder(xf * Transform3D(Basis(), cup), 0.22, 0.27, 0.58, 12, Color("cdeeff"), true, Color("8fd3ff"))
+	var dish := Vector3(0.22, 0.12, 0.22)
+	b.add_cylinder(xf * Transform3D(Basis(), dish), 0.1, 0.15, 0.08, 10, DissolvingProps.DISH_RIM, true, Color.WHITE)
+	_ball(b, xf, dish + Vector3(0.0, 0.1, 0.0), 0.1, DissolvingProps.SALT)
+	var bucket := Vector3(0.3, 0.12, -0.18)
+	b.add_cylinder(xf * Transform3D(Basis(), bucket), 0.13, 0.17, 0.32, 10, DissolvingProps.BUCKET_WOOD, true, Color("2f86d6"))
+	return 1.35
+
+
+## The curie island's 되돌릴 수 있을까? (#158, "초콜릿 냄비가 있는 곳"): a little iron stove with its red
+## handle on the front, a steel pot of melted chocolate on it and a star of set chocolate on a small tray
+## beside, an egg in front.
+static func _melt_cook(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	_box(b, xf, Vector3(0.0, 0.2, 0.0), Vector3(1.1, 0.4, 0.55), MeltCookProps.STOVE, MeltCookProps.STOVE_PLATE)
+	_ball(b, xf, Vector3(0.0, 0.2, 0.3), 0.09, MeltCookProps.HANDLE_RED)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(-0.22, 0.4, 0.0)), 0.2, 0.24, 0.2, 10, MeltCookProps.POT_METAL, true, MeltCookProps.CHOC_MELT)
+	_rod(b, xf, Vector3(-0.44, 0.55, 0.0), Vector3(-0.62, 0.58, 0.0), 0.03, MeltCookProps.POT_DARK)
+	_box(b, xf, Vector3(0.3, 0.42, 0.0), Vector3(0.36, 0.04, 0.36), MeltCookProps.MOLD_METAL)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.3, 0.44, 0.0)), 0.14, 0.12, 0.05, 5, MeltCookProps.CHOC_SET, true, MeltCookProps.CHOC_SET_TOP)
+	b.add_sphere(xf * Transform3D(Basis.from_scale(Vector3(0.8, 1.1, 0.8)), Vector3(0.1, 0.1, 0.55)), 0.13, 3, 8, MeltCookProps.SHELL)
+	_ball(b, xf, Vector3(-0.22, 0.85, 0.0), 0.07, Color(1.0, 1.0, 1.0))
+	return 1.35
+
+
+## The curie island's 빵 반죽 부풀리기 (#159, "높은 선반이 있는 빵집"): a little brick oven, a bowl of
+## puffy dough before it and a high shelf on a post over the bowl.
+static func _dough(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	var oven := Vector3(-0.22, 0.0, -0.12)
+	b.add_cylinder(xf * Transform3D(Basis(), oven), 0.28, 0.24, 0.3, 10, DoughProps.BRICK, true, DoughProps.BRICK)
+	_ball(b, xf, oven + Vector3(0.0, 0.3, 0.0), 0.24, DoughProps.BRICK)
+	var bowl := Vector3(0.24, 0.0, 0.14)
+	b.add_cylinder(xf * Transform3D(Basis(), bowl), 0.12, 0.2, 0.18, 10, DoughProps.BOWL_COLOR, true, DoughProps.DOUGH)
+	_ball(b, xf, bowl + Vector3(0.0, 0.26, 0.0), 0.18, DoughProps.DOUGH_TOP)
+	_rod(b, xf, bowl + Vector3(0.0, 0.0, -0.3), bowl + Vector3(0.0, 0.95, -0.3), 0.04, ArtPalette.WOOD_GRAIN)
+	b.add_cylinder(xf * Transform3D(Basis(), bowl + Vector3(0.0, 0.95, -0.15)), 0.22, 0.22, 0.05, 8, ArtPalette.WOOD_GRAIN, true, ArtPalette.WOOD)
+	return 1.35
+
+
+## The curie island's 깨끗한 물 만들기 (#160, "흙탕물 샘이 있는 곳"): a little stone well of muddy water with its
+## roof, a see-through filter column with its sand on a clay jar, a copper kettle tipped over it.
+static func _clean_water(b: ArtMeshBuilder, xf: Transform3D) -> float:
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(-0.35, 0.0, 0.0)), 0.3, 0.3, 0.32, 10, CleanWaterProps.STONE, true, CleanWaterProps.MUD_TOP)
+	_rod(b, xf, Vector3(-0.6, 0.3, 0.0), Vector3(-0.6, 0.75, 0.0), 0.03, CleanWaterProps.WOOD)
+	_rod(b, xf, Vector3(-0.1, 0.3, 0.0), Vector3(-0.1, 0.75, 0.0), 0.03, CleanWaterProps.WOOD)
+	_box(b, xf, Vector3(-0.35, 0.8, 0.0), Vector3(0.62, 0.08, 0.4), CleanWaterProps.ROOF, CleanWaterProps.ROOF.lightened(0.15))
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.3, 0.0, 0.1)), 0.14, 0.18, 0.28, 10, CleanWaterProps.CLAY, true, CleanWaterProps.CLAY_TOP)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.3, 0.28, 0.1)), 0.12, 0.12, 0.42, 10, Color("dceefa"), true, CleanWaterProps.SAND)
+	b.add_cylinder(xf * Transform3D(Basis(), Vector3(0.3, 0.36, 0.1)), 0.125, 0.125, 0.14, 10, CleanWaterProps.SAND, false)
+	b.add_cylinder(xf * Transform3D(Basis(Vector3.BACK, deg_to_rad(30.0)), Vector3(0.55, 0.85, 0.1)), 0.16, 0.13, 0.24, 10, CleanWaterProps.KETTLE, true, CleanWaterProps.KETTLE_DARK)
+	return 1.35
 
 
 # --- helpers ---------------------------------------------------------------------------------

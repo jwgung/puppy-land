@@ -865,8 +865,8 @@ func _process(delta: float) -> void:
 const GUIDE_REACH := 0.6
 
 ## The gesture the hand guide (HandGuide) shows for this lab, read only (nothing is pressed or moved):
-## {"kind": "pull" | "hold" | "tap" | "drag", "id", "from": world point the finger presses now (guide_point),
-## "to": world point the drag or the pull ends at}, or {} when the lab has no object a finger takes now.
+## {"kind": "pull" | "hold" | "tap" | "drag" | "stir" | "tilt" | "pump", "id", "from": world point the finger presses now (guide_point),
+## "to": world point the drag or the pull ends at, or a stir goes round}, or {} when the lab has no object a finger takes now.
 ## The object is the slingshot's, else the first one a finger may pick up now. A pull ends where the demo's
 ## pull (slingshot_demo) lands on the slingshot's surface, so it stays the throw's direction when the
 ## camera turns. The rule says what the lab really takes (2026-11-03 playtest: the hand showed a drag
@@ -888,13 +888,15 @@ func guide() -> Dictionary:
 	if id == slingshot_id:
 		var to: Variant = _pull_end(from)
 		return {"kind": "pull", "id": id, "from": from, "to": to} if to is Vector3 else {}
+	if rules[id].get("guide", "") == "tap":   # (a hold object pressed once, #156's dropper: a tap)
+		return {"kind": "tap", "id": id, "from": from}
 	if rules[id].hold:
 		return {"kind": "hold", "id": id, "from": from}
-	if rules[id].get("guide", "") == "tap":
-		return {"kind": "tap", "id": id, "from": from}
 	var surface := _surface_for(id)
 	if surface == null:
 		return {}
+	if rules[id].get("guide", "") == "stir":   # (#157: round and round the surface's middle, its frame origin)
+		return {"kind": "stir", "id": id, "from": from, "to": surface.pose(Vector2.ZERO, surface.height_of(from)).origin}
 	var at := surface.to_plane(from)
 	var ends := [surface.nearest_inside(surface.region_min), surface.nearest_inside(surface.region_max)]
 	var far: Vector2 = ends[0] if at.distance_to(ends[0]) > at.distance_to(ends[1]) else ends[1]
@@ -904,7 +906,10 @@ func guide() -> Dictionary:
 		"max":
 			far = ends[1]
 	var goal := at.lerp(far, GUIDE_REACH)
-	return {"kind": "drag", "id": id, "from": from, "to": surface.pose(goal, surface.height_of(from)).origin}
+	# (#160: a tilt's touch stand-in and a pump handle are dragged too; the hand shows the tablet tipping
+	# with the drag, or the drag down and up a few times.)
+	var kind := str(rules[id].get("guide", ""))
+	return {"kind": kind if kind in ["tilt", "pump"] else "drag", "id": id, "from": from, "to": surface.pose(goal, surface.height_of(from)).origin}
 
 
 ## Where a finger takes object `id` now (world): the slingshot's launch point once a run has started

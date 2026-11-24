@@ -45,7 +45,7 @@
 ##    the push framed closer and back, 처음으로 at once, the physics timeline unchanged.
 ## 15. key cards (Task 2d): every listed experiment opens in the front view with 2-3 key cards that
 ##    show the panel's text.
-## 16. island cast (Task 4h, tests/island_cast_checks.gd): the Dugi / Puppy models' mesh contract,
+## 16. island cast (Task 4h, tests/island_cast_checks.gd): the Dugi / Puppy / fox / yaongi models' mesh contract,
 ##    the explain cycle (rest -> point -> rest, the stick hidden at rest), the status trigger, placement
 ##    and layout in every experiment, physics and panels unchanged with the cast.
 ## 17. game G1 (tests/mission_checks.gd): the missions / predict blocks of the content, the
@@ -130,6 +130,16 @@
 ##    first), the island in use saved and opened again, an island open when every spot of the one before
 ##    is complete, the island-level saves keyed by island (an old save is the first island's), no
 ##    experiment on two islands, the island's story file.
+## 22b2. 섬·장소 기록 지우기 (tests/island_reset_checks.gd, 2026-11-16): one spot's or one island's record
+##    erased (only its keys; the rest, the purchases and the settings stay; the island after it closes),
+##    the gear on an open island's tag and the lab's button at the end of 더 보기, the parental gate and
+##    the question before every erase, the tags redrawn, the lab opened again from its start, phone /
+##    tablet / zoomed layouts, the words in 반말 with no numbers; the sync's erase rules are in
+##    tests/cloud_sync_checks.gd.
+## 22c2. the curie island's map (tests/curie_map_checks.gd, #152 2026-11-13): content/islands/curie.json
+##    (three zones, 12 spots in the story's order, the lighthouse), its stages and paths on land, an
+##    island in the making (never open, 곧 만나요 on its card); the whole island turned by turn_deg -25
+##    (2026-11-16: the flask's neck up and to the right, every place the unturned one turned).
 ## 22c. the hutton island's map (tests/hutton_map_checks.gd, #72 2026-11-06): content/islands/hutton.json
 ##    (11 spots once in the order, the lookout on the square, the features checked), open after the
 ##    first island, now that every spot is a lab (an island in the making never opens), its map (one
@@ -140,6 +150,9 @@
 ##    sundial, mechanics star), the 36° wedge (on its point, band, hour lines and face inside,
 ##    two draws), the 10-wedge dial emblem, every hutton lab's piece, the cat's piece and the card, the
 ##    map's emblem and flying pieces, the island cards; the mechanics ones stay stars.
+## 22e. the curie island's pieces (tests/lens_piece_checks.gd, #154 2026-11-13): Island.piece lens, the
+##    12th spot's flame held (never flies) like the gnomon, the 360/11° rainbow wedges by slot and the
+##    flame piece (two draws), the 11-wedge lens emblem with the flame lit at set_whole, the card picture.
 ## 23c. UI polish (tests/polish_checks.gd, 2026-10-29): 자세히's header (닫기) stays above the scrolled
 ##    note; a vertical drag from a button, check box or slider scrolls the settings and the note
 ##    (DragScroll) and presses nothing; check boxes instead of switches; 처음부터 다시 하기 asks first and
@@ -197,11 +210,49 @@
 ##    and hold), the judging of the three stages (the wrong magma's line), the magma button, the site
 ##    (the big volcano at night on stage 3), no number on the screen, what matters in view, the spot,
 ##    the opening lines (story.more), the hand and the piece (the needle pushed up).
+## 25a. 퍼지는 냄새와 잉크 (tests/diffusion_checks.gd, #156 2026-11-15): Curie Island's first lab, its data
+##    and its lines against docs/islands/curie-lines.md 1 (야옹이 the keeper, the bread cat before Puppy's
+##    clue), the model against the textbook values (water's viscosity, x = sqrt(4 D t), hot faster than
+##    cold, the smell in air before the ink in water), deterministic, the judging of the three stages (the
+##    wait and wrong-water lines), the dropper (a press is a drop), the tables per stage, the water button,
+##    no number on the screen, the ink and smell clouds where the spread allows, what matters in view, the spot, the
+##    opening and the piece (the bread box).
+## 25b. 녹으면 사라질까? (tests/dissolving_checks.gd, #157 2026-11-17): Curie Island's second lab and the
+##    shared fast-forward time (FastClock, TimeSign, SceneNight): its data and its lines against
+##    docs/islands/curie-lines.md 2 and curie-missions.md 2, the model against the textbook values (salt's
+##    solubility, the weight the same, seawater 3.5 %, the sun drying by day), the clock and the sign
+##    (물의 여행's sign drawn the same), the judging, the spoon stirred round, the bucket poured and the time
+##    run to the dry tray (night, moon stamps), the tables, no number, what matters in view, the spot,
+##    the opening and the piece.
+## 25c. 되돌릴 수 있을까? (tests/melt_cook_checks.gd, #158 2026-11-17): Curie Island's third lab, its data and its
+##    lines against docs/islands/curie-lines.md 3 (the fire warning line), the model against the textbook
+##    (cocoa butter melts at 34 and sets at 28: melting and setting go back and forth; the egg's cooking never
+##    goes back), the judging of the three stages (the let-go lines, the wrong item's line), the stove handle
+##    (a press is the fire on), the bread cat's pour at stage 2's reset, the tables per stage, the item button,
+##    no number on the screen, what matters in view, the spot, the opening and the piece (the shiny egg).
+## 25d. 빵 반죽 부풀리기 (tests/dough_checks.gd, #159 2026-11-17): Curie Island's fourth lab and the screen's
+##    condition lock (Experiment.conditions_locked while the fast-forward time flows): its data and lines
+##    against docs/islands/curie-lines.md 4 and curie-missions.md 4, the model against the textbook values
+##    (an hour to double by the oven, twelve in the fridge, none without yeast), the lock, the judging, the
+##    bowl dragged to the oven and the fridge (picked up where it stands, the time stopping and going on),
+##    the night, the goals and the finished round's look, no number, the dimmed buttons on the screen, what
+##    matters in view, the spot, the pictures, the opening and the piece.
+## 25e. the body-motion input (tests/motion_input_checks.gd, #160 2026-11-18): MotionFilter's low-pass tilt (still
+##    to 4 deg, full at 20, no more beyond, the rest pose, the hysteresis), its shake (the light threshold, two
+##    samples, the 0.5 s cool-down, the hard one), no sensor after a second of zeros, the same per sample rate;
+##    MotionInput's sources (touch over test over sensor) and its injected values; the hand guide's tilt and pump.
+## 25f. 깨끗한 물 만들기 (tests/clean_water_checks.gd, #160 2026-11-18): Curie Island's fifth lab, its lines against
+##    docs/islands/curie-lines.md 5 (the warnings, the first-use line), the model against the textbook (sand
+##    catches the soil, charcoal the colour and smell, only boiling clears the germs), the judging (a tilt and
+##    the touch stand-in judge the same), the bellows, the places, no number, what matters in view, the spot,
+##    the opening and the piece.
 ## 24l. the hutton cast (tests/hutton_cast_checks.gd, #114 2026-11-10): in every Hutton lab on the
 ##    tablet and the phone, Puppy's result bubble clear of Dugi's open box and portrait, Puppy at most
 ##    half under them.
 ## Times are engine fixed steps (60 Hz), independent of rendering FPS.
 extends SceneTree
+
+const Reading := preload("res://tests/dialogue_reading.gd")   # the pages read untouched (the read timer)
 
 const VECTORS_PATH := "res://tests/incline_vectors.json"
 ## Scripts that use the Quality/Bench autoloads are loaded at runtime: with `-s` the autoload names
@@ -393,16 +444,31 @@ func _run() -> void:
 	_expect(cloud_sync != null and cloud_sync.can_instantiate(), "cloud sync checks compile", "")
 	if cloud_sync != null and cloud_sync.can_instantiate():
 		await cloud_sync.new(self, _expect).run()
+	print("== 섬·장소 기록 지우기 (2026-11-16): an island from its tag, a lab from its sheet, behind the parental gate ==")
+	var island_reset: GDScript = load("res://tests/island_reset_checks.gd")
+	_expect(island_reset != null and island_reset.can_instantiate(), "island reset checks compile", "")
+	if island_reset != null and island_reset.can_instantiate():
+		await island_reset.new(self, _expect).run()
 	print("== the hutton island's map (#72: its layout, grounds and features, open after the first island, never while in the making) ==")
 	var hutton: GDScript = load("res://tests/hutton_map_checks.gd")
 	_expect(hutton != null and hutton.can_instantiate(), "hutton map checks compile", "")
 	if hutton != null and hutton.can_instantiate():
 		await hutton.new(self, _expect).run()
+	print("== the curie island's map (#152: its layout on land, an island in the making) ==")
+	var curie: GDScript = load("res://tests/curie_map_checks.gd")
+	_expect(curie != null and curie.can_instantiate(), "curie map checks compile", "")
+	if curie != null and curie.can_instantiate():
+		await curie.new(self, _expect).run()
 	print("== the hutton island's pieces (#101: golden sundial wedges, the dial emblem; the mechanics star unchanged) ==")
 	var sundial: GDScript = load("res://tests/sundial_piece_checks.gd")
 	_expect(sundial != null and sundial.can_instantiate(), "sundial piece checks compile", "")
 	if sundial != null and sundial.can_instantiate():
 		await sundial.new(self, _expect).run()
+	print("== the curie island's pieces (#154: rainbow lens wedges, the flame, the lens emblem) ==")
+	var lens: GDScript = load("res://tests/lens_piece_checks.gd")
+	_expect(lens != null and lens.can_instantiate(), "lens piece checks compile", "")
+	if lens != null and lens.can_instantiate():
+		await lens.new(self, _expect).run()
 	print("== game G3: the slingshot (pull = angle / speed, big readout, no path, formula stamp) ==")
 	var slingshot: GDScript = load("res://tests/slingshot_checks.gd")
 	_expect(slingshot != null and slingshot.can_instantiate(), "slingshot checks compile", "")
@@ -478,6 +544,36 @@ func _run() -> void:
 	_expect(volcano != null and volcano.can_instantiate(), "volcano checks compile", "")
 	if volcano != null and volcano.can_instantiate():
 		await volcano.new(self, _expect).run()
+	print("== 퍼지는 냄새와 잉크 (#156): Curie Island's first lab, its lines, model, judging, dropper, tables, view and piece ==")
+	var diffusion: GDScript = load("res://tests/diffusion_checks.gd")
+	_expect(diffusion != null and diffusion.can_instantiate(), "diffusion checks compile", "")
+	if diffusion != null and diffusion.can_instantiate():
+		await diffusion.new(self, _expect).run()
+	print("== 녹으면 사라질까? (#157): Curie Island's second lab, the fast-forward time, its lines, model, judging, stirring, pouring, tables and piece ==")
+	var dissolving: GDScript = load("res://tests/dissolving_checks.gd")
+	_expect(dissolving != null and dissolving.can_instantiate(), "dissolving checks compile", "")
+	if dissolving != null and dissolving.can_instantiate():
+		await dissolving.new(self, _expect).run()
+	print("== 되돌릴 수 있을까? (#158): Curie Island's third lab, its lines, model, judging, handle, pour, tables, view and piece ==")
+	var melt_cook: GDScript = load("res://tests/melt_cook_checks.gd")
+	_expect(melt_cook != null and melt_cook.can_instantiate(), "melt-cook checks compile", "")
+	if melt_cook != null and melt_cook.can_instantiate():
+		await melt_cook.new(self, _expect).run()
+	print("== 빵 반죽 부풀리기 (#159): Curie Island's fourth lab, the condition lock, its lines, model, judging, bowl, night, goals and piece ==")
+	var dough: GDScript = load("res://tests/dough_checks.gd")
+	_expect(dough != null and dough.can_instantiate(), "dough checks compile", "")
+	if dough != null and dough.can_instantiate():
+		await dough.new(self, _expect).run()
+	print("== the body-motion input (#160): the accelerometer filter, its tilt, shake, cool-down, no sensor and the injected values ==")
+	var motion_checks: GDScript = load("res://tests/motion_input_checks.gd")
+	_expect(motion_checks != null and motion_checks.can_instantiate(), "motion input checks compile", "")
+	if motion_checks != null and motion_checks.can_instantiate():
+		await motion_checks.new(self, _expect).run()
+	print("== 깨끗한 물 만들기 (#160): Curie Island's fifth lab, its lines, model, judging, tilt, bellows, view and piece ==")
+	var clean_water: GDScript = load("res://tests/clean_water_checks.gd")
+	_expect(clean_water != null and clean_water.can_instantiate(), "clean-water checks compile", "")
+	if clean_water != null and clean_water.can_instantiate():
+		await clean_water.new(self, _expect).run()
 	print("== the hutton cast (#114): Puppy and his bubble clear of Dugi's box in every lab ==")
 	var hutton_cast: GDScript = load("res://tests/hutton_cast_checks.gd")
 	_expect(hutton_cast != null and hutton_cast.can_instantiate(), "hutton cast checks compile", "")
@@ -488,11 +584,16 @@ func _run() -> void:
 	_expect(hand != null and hand.can_instantiate(), "hand guide checks compile", "")
 	if hand != null and hand.can_instantiate():
 		await hand.new(self, _expect).run()
-	print("== a young child's way through the talk (2026-10-31: tap anywhere, the pictures shown, slower words) ==")
+	print("== a young child's way through the talk (2026-10-31: the pictures shown, slower words; 2026-11-16: a tap shows the page whole, then turns it after the lock) ==")
 	var kid_flow: GDScript = load("res://tests/kid_flow_checks.gd")
 	_expect(kid_flow != null and kid_flow.can_instantiate(), "kid flow checks compile", "")
 	if kid_flow != null and kid_flow.can_instantiate():
 		await kid_flow.new(self, _expect).run()
+	print("== the talk plays by itself (2026-11-16: the read time turns the pages; a tap shows a page whole, then turns it after the lock; hold waits; 건너뛰기 still ends) ==")
+	var autoplay: GDScript = load("res://tests/dialogue_autoplay_checks.gd")
+	_expect(autoplay != null and autoplay.can_instantiate(), "dialogue autoplay checks compile", "")
+	if autoplay != null and autoplay.can_instantiate():
+		await autoplay.new(self, _expect).run()
 	print("== the mission round as a module (MissionRound: clue, question, bridge, stamps, reason, misses, auto conditions) ==")
 	var round_module: GDScript = load("res://tests/mission_round_checks.gd")
 	_expect(round_module != null and round_module.can_instantiate(), "mission round checks compile", "")
@@ -1049,7 +1150,8 @@ func _check_art_atlases() -> void:
 	var problems := []
 	for path in ["res://assets/props/parcel_box_parcel_box_atlas.png", "res://assets/props/yarn_ball_yarn_ball_atlas.png",
 			"res://assets/characters/bread_cat_bread_cat_atlas.png", "res://assets/characters/dugi_dugi_atlas.png",
-			"res://assets/characters/puppy_puppy_atlas.png", "res://assets/characters/fox_fox_atlas.png"]:
+			"res://assets/characters/puppy_puppy_atlas.png", "res://assets/characters/fox_fox_atlas.png",
+			"res://assets/characters/yaongi_yaongi_atlas.png"]:
 		var source := Image.load_from_file(ProjectSettings.globalize_path(path))
 		var imported := (load(path) as Texture2D).get_image()
 		imported.clear_mipmaps()
@@ -1249,6 +1351,11 @@ func _check_fonts() -> void:
 			var code := c.unicode_at(0)
 			if code > 126 and code != 0xFEFF and (not covers.call(regular, code) or not covers.call(bold, code)) and c not in missing:
 				missing += c
+	var hangul_missing := 0
+	for code in range(0xAC00, 0xD7A4):
+		if not regular.has_char(code) or not bold.has_char(code):
+			hangul_missing += 1
+	_expect(hangul_missing == 0, "UI fonts hold all 11,172 Hangul syllables", "missing: %d (run tools/subset_font.sh)" % hangul_missing if hangul_missing > 0 else "")
 	_expect(missing == "", "UI fonts cover every used character", "missing: %s (run tools/subset_font.sh)" % missing if missing != "" else "")
 
 
@@ -1818,11 +1925,10 @@ func _check_tip_after_question() -> void:
 		await process_frame
 	var hidden_while_asking: bool = screen._asking() and not screen._tip.visible
 	screen._predict_pick_choice(str(MissionRound.predict(definition).get("answer", "")))
-	for i in 60:   # Dugi's bridge opens, then is read (a tap)
+	for i in 60:   # Dugi's bridge opens, then is read (by time)
 		await process_frame
 		if screen.dialogue.active:
-			screen.dialogue.advance()
-			screen.dialogue.advance()
+			Reading.read_page(screen.dialogue)
 	for i in 10:
 		await process_frame
 	var back: bool = screen._tip.visible and screen._tip.text != ""

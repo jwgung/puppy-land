@@ -13,11 +13,13 @@
 ##                       never the child's progress
 ##   --demo-story=<part> screenshots of the story in the bench store only (never the child's progress):
 ##                       prologue | clue:<id> | found:<id> | flight:<id> | finale | finale:<island> | map[:<n>]
-##                       | voyage | islands
+##                       | voyage | voyage:<island> | islands
 ##                       (Story, _demo_story; finale:hutton: the sundial finale, #106)
 ##   --progress=complete  writes the child's progress as all done, once (2026-11-02 user: "apk 다 깬걸로
 ##                       해줘. 보기 어렵다"): every stamp, the story's prologue, clues and finale seen, every
 ##                       piece flown and flag up, so every spot opens on a day map. For looking at the app.
+##                       Every island that is playable (the mechanics and hutton islands), voyage seen too
+##                       (2026-11-16 user: both done so the curie island's way shows).
 ##                       Not in the Play build (Quality.DEV_KEYS, like --island and --ask=show).
 ##   --island=<id>      the map of island <id> for this run only (an island in the making, #72: its spots
 ##                       need not be experiments yet): nothing saved, no story, the bench store; not in
@@ -238,6 +240,7 @@ func show_experiment(definition: Dictionary, state := {}, launch_args := false) 
 	var screen := ExperimentScreen.new()
 	screen.setup(definition, state, launch_args)
 	screen.back_requested.connect(show_list)
+	screen.record_erased.connect(func() -> void: show_experiment(definition))   # its start again (nothing kept)
 	_swap(screen, "")  # the screen resets Bench with the experiment's bench id
 
 
@@ -301,6 +304,7 @@ func _slide_in(screen: Control) -> void:
 ##   finale        the map: the orbit spot just completed with the 10 others found: flag, flight, finale
 ##   map[:<n>]     the night map with the first n pieces of the order found (5 by default) and at the
 ##                 lookout, nothing but Puppy's riddle playing: fps measurements, screenshots
+##   voyage:<island> that island's voyage (the island before it all found and in use, #155)
 ##   voyage        the first island all found and its finale seen, the next island open (not in the
 ##                 Play build): the voyage plays (as 섬 고르기's first 출발!, #118), then the next
 ##                 island's map and prologue (#75)
@@ -308,12 +312,18 @@ func _slide_in(screen: Control) -> void:
 ## Every spot done (--progress=complete): full stamps, the story seen, the pieces at the lookout.
 static func complete_progress() -> void:
 	var store := {}
-	for spot in Story.spots():
-		store[spot] = MissionRound.missions(ExperimentRegistry.find(spot)).get("stages", []).size()
-		ProgressStore.set_mark(ProgressStore.CLUES, spot, true)
+	for id in Island.ids():
+		var island := Island.by_id(id)
+		if not island.playable():   # (an island in the making has no stamps to give)
+			continue
+		for spot in island.spots():
+			store[spot] = MissionRound.missions(ExperimentRegistry.find(spot)).get("stages", []).size()
+			ProgressStore.set_mark(ProgressStore.CLUES, spot, true)
+		for part in ["prologue", "finale"]:
+			ProgressStore.set_mark(ProgressStore.STORY, ProgressStore.island_key(id, part), true)
+		if id != ProgressStore.FIRST_ISLAND:
+			Story.mark_voyage_seen(id)
 	ProgressStore.save(store)
-	for part in ["prologue", "finale"]:
-		Story.mark_seen(part)
 
 
 func _demo_story(value: String) -> Dictionary:
@@ -336,6 +346,18 @@ func _demo_story(value: String) -> Dictionary:
 	var store := {}
 	var full := func(spot: String) -> int:
 		return MissionRound.missions(ExperimentRegistry.find(spot)).get("stages", []).size()
+	if kind == "voyage" and id != "" and Island.opens_after(id) != "":
+		# voyage:<island> (#155): that island's voyage, the island before it all found and in use.
+		var before := Island.opens_after(id)
+		Island.set_dev_open(not OS.has_feature("play"))
+		Island.set_current(before)
+		Story.mark_voyage_seen(before)
+		for spot in Island.by_id(before).spots():
+			store[spot] = full.call(spot)
+		ProgressStore.save(store)
+		Story.mark_seen("prologue")
+		Story.mark_seen("finale")
+		return {"voyage": id}
 	if kind in ["voyage", "islands"]:
 		Island.set_dev_open(not OS.has_feature("play"))   # the next island is still in the making (#72)
 		for spot in Story.spots():

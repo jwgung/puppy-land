@@ -187,6 +187,8 @@ static func validate(definition: Dictionary) -> PackedStringArray:
 ##   "kid": {"title": <the title bar>, "place": <the map's spot name>, "say": <Dugi's dialogue>, "say_face": <its face>,
 ##           "intro": <Dugi's introduction of the lab before his question>, "intro_face": <its face>,
 ##           "intro_more": [<more lines of it: {"text", "face"?, "picture"?}> (#74)],
+##           "first_use": <a line {"text", "face"?} Dugi says once, after the introduction on the spot's first
+##                         visit: how to use a body motion the spot is the first to ask for (#160)>,
 ##           "say_picture", "intro_picture": <their explanation pictures, ExplainPictures.KINDS (#73)>,
 ##           "tip": <the short gesture hint>, "card": <the one key observation shown as a card>,
 ##           "cards": {<observation id>: <its key card's caption>},
@@ -233,13 +235,16 @@ static func _validate_kid(kid: Variant, ids: Array) -> PackedStringArray:
 			pass   # ConditionPicks.validate (it needs the controls and the missions)
 		elif key == "intro_more":
 			problems.append_array(_validate_intro_more(kid.intro_more))
+		elif key == "first_use":
+			for problem in _validate_intro_more([kid.first_use]):
+				problems.append(problem.replace("kid.intro_more[0]", "kid.first_use"))
 		elif key == "bars":
 			var bars: Variant = kid.bars
 			if not (bars is Dictionary and bars.keys().all(func(id: Variant) -> bool: return id in ids)
 					and bars.values().all(func(v: Variant) -> bool: return (v is float or v is int) and v > 0.0)):
 				problems.append("kid.bars must name observations with a full-bar value > 0 each")
 		elif not KID_TEXTS.has(key):
-			problems.append("kid.%s unknown (title, place, say, intro, tip, card, cards, states, minus, bars, picks)" % key)
+			problems.append("kid.%s unknown (title, place, say, intro, first_use, tip, card, cards, states, minus, bars, picks)" % key)
 		elif not (kid[key] is String and kid[key] != ""):
 			problems.append("kid.%s must be a text" % key)
 	return problems
@@ -266,8 +271,9 @@ static func _validate_intro_more(lines: Variant) -> PackedStringArray:
 ## The story's words for this lab (`story`, optional, 2026-10-28 "별 조각 찾기"): {"clue": <Puppy's
 ## clue, told once on the first visit before Dugi's question>, "map_clue": <Puppy's riddle on the
 ## night map while this spot is the next to find>, "keeper": <the island keeper's line before the
-## clue on the first visit (#74, Story.KEEPER)>, "keeper_reply": <the keeper's answer after the clue
-## (#86)>, "more": [<more lines after the clue (#98): {"speaker", "text", "face"?}>], "clue_face"?,
+## clue on the first visit (#74, Story.keeper_of)>, "keeper_reply": <the keeper's answer after the clue
+## (#86)>, "before": [<lines between the keeper's and the clue (#156), as "more">], "more": [<more lines
+## after the clue (#98): {"speaker", "text", "face"?}>], "clue_face"?,
 ## "map_clue_face"?, "keeper_face"?, "keeper_reply_face"?: <Story.FACES>} (Story.clue, Story.map_clue,
 ## Story.keeper, Story.keeper_reply, Story.more, their portraits' faces).
 static func _validate_story(story: Variant) -> PackedStringArray:
@@ -278,33 +284,33 @@ static func _validate_story(story: Variant) -> PackedStringArray:
 		problems.append("story must be an object")
 		return problems
 	for key in story:
-		if key == "more":
-			problems.append_array(_validate_story_more(story.more))
+		if key in ["more", "before"]:
+			problems.append_array(_validate_story_more(story[key], key))
 		elif key in ["clue_face", "map_clue_face", "keeper_face", "keeper_reply_face"]:
 			if not story[key] in Story.FACES:
 				problems.append("story.%s must be one of Story.FACES" % key)
 		elif not key in ["clue", "map_clue", "keeper", "keeper_reply"]:
-			problems.append("story.%s unknown (clue, map_clue, keeper, keeper_reply, more and their _face)" % key)
+			problems.append("story.%s unknown (clue, map_clue, keeper, keeper_reply, before, more and their _face)" % key)
 		elif not (story[key] is String and story[key] != ""):
 			problems.append("story.%s must be a text" % key)
 	return problems
 
 
-## story.more (#98): more first-visit lines after the clue, each {"speaker": <Story.SPEAKERS>, "text",
-## "face"?: <Story.FACES>}.
-static func _validate_story_more(lines: Variant) -> PackedStringArray:
+## story.more (#98) and story.before (#156): first-visit lines after the clue / before it, each
+## {"speaker": <Story.SPEAKERS>, "text", "face"?: <Story.FACES>}.
+static func _validate_story_more(lines: Variant, key := "more") -> PackedStringArray:
 	var problems := PackedStringArray()
 	if not lines is Array:
-		problems.append("story.more must list lines")
+		problems.append("story.%s must list lines" % key)
 		return problems
 	for i in lines.size():
 		var line: Variant = lines[i]
 		if not line is Dictionary or not (line.get("text") is String and line.text != ""):
-			problems.append("story.more[%d] needs a text" % i)
+			problems.append("story.%s[%d] needs a text" % [key, i])
 		elif not Story.SPEAKERS.has(str(line.get("speaker", ""))):
-			problems.append("story.more[%d].speaker must be one of Story.SPEAKERS" % i)
+			problems.append("story.%s[%d].speaker must be one of Story.SPEAKERS" % [key, i])
 		elif line.has("face") and not line.face in Story.FACES:
-			problems.append("story.more[%d].face must be one of Story.FACES" % i)
+			problems.append("story.%s[%d].face must be one of Story.FACES" % [key, i])
 	return problems
 
 
@@ -457,7 +463,7 @@ static func _validate_cast(cast: Variant) -> PackedStringArray:
 		return problems
 	for who in cast:
 		var spec: Variant = cast[who]
-		if who not in ["dugi", "puppy", "fox"] or not spec is Dictionary:
+		if who not in ["dugi", "puppy", "fox", "yaongi"] or not spec is Dictionary:
 			problems.append("cast.%s unknown" % who)
 			continue
 		var at: Variant = spec.get("at")
@@ -492,7 +498,9 @@ static func _validate_key_observations(keys: Variant, observations: Array) -> Pa
 
 ## Optional `manipulation` (Task 2b): {"objects": [{"id", "surface", "snap" (m, optional),
 ## "height": false | {"max" (m, > 0, a multiple of step), "step" (m, optional)}} or a hold object
-## {"id", "hold": true} (2026-10-28: press and hold, no surface); optional "guide": "drag" | "tap" and
+## {"id", "hold": true} (2026-10-28: press and hold, no surface); optional "guide": "drag" | "tap" | "stir"
+## (#157: round the surface's middle) | "tilt" (#160: the tablet tipping, this object its touch stand-in) |
+## "pump" (#160: dragged down and up a few times) and
 ## "guide_to": "min" | "max" (the hand guide's gesture and drag end, Manipulator.guide); optional
 ## "marker": false (#74: no footprint marker while dragged: a knob that turns something, not a place)],
 ## "demo_action" (optional, an action id: what the --auto-drag demo does after putting an object down)}.
@@ -534,8 +542,8 @@ static func _validate_manipulation(manipulation: Variant, actions: Array = []) -
 			problems.append("manipulation %s.drag must be true or false" % object.id)
 		if not object.get("marker", true) is bool:
 			problems.append("manipulation %s.marker must be true or false" % object.id)
-		if not object.get("guide", "drag") in ["drag", "tap"]:
-			problems.append("manipulation %s.guide must be \"drag\" or \"tap\"" % object.id)
+		if not object.get("guide", "drag") in ["drag", "tap", "stir", "tilt", "pump"]:
+			problems.append("manipulation %s.guide must be \"drag\", \"tap\", \"stir\", \"tilt\" or \"pump\"" % object.id)
 		if not object.get("guide_to", "min") in ["min", "max"]:
 			problems.append("manipulation %s.guide_to must be \"min\" or \"max\"" % object.id)
 	var grab: Variant = manipulation.get("grab_radius", 1.0)   # (Manipulator.PICK_RADIUS when absent)

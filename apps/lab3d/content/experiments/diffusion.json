@@ -1,0 +1,143 @@
+{
+  "id": "diffusion",
+  "version": 1,
+  "icon": "◍",
+  "law": {},
+  "scene": "res://experiments/diffusion/diffusion.gd",
+  "bench_id": "DF",
+  "camera": {
+    "target": [0.0, 2.6, 0.3],
+    "distance": 8.5,
+    "distance_range": [1.5, 30.0],
+    "yaw_range_deg": [-100.0, 100.0],
+    "pitch_range_deg": [-89.0, -2.0],
+    "pan_radius": 6.0,
+    "default_mode": "front",
+    "views": {
+      "front": { "yaw_deg": 0.0, "pitch_deg": -12.0 },
+      "three_quarter": { "yaw_deg": 24.0, "pitch_deg": -20.0 },
+      "top": { "yaw_deg": 0.0, "pitch_deg": -89.0, "distance": 16.0 },
+      "side": { "yaw_deg": 90.0, "pitch_deg": -12.0, "distance": 14.0 },
+      "follow": { "yaw_deg": 0.0, "pitch_deg": -14.0, "distance": 9.0, "target": [0.0, 1.9, 0.3] }
+    }
+  },
+  "controls": [
+    {
+      "id": "water",
+      "type": "choice",
+      "default": "cold",
+      "options": [{ "id": "cold" }, { "id": "hot" }]
+    }
+  ],
+  "actions": [
+    { "id": "reset", "style": "primary" }
+  ],
+  "key_observations": ["cup", "smell", "water"],
+  "predict": {
+    "question_face": "thinking",
+    "choices": [
+      { "id": "cold", "picture": "ink_cold_first" },
+      { "id": "hot", "picture": "ink_hot_first" }
+    ],
+    "answer": "hot",
+    "stage": 1,
+    "bridge_face": "happy"
+  },
+  "missions": {
+    "judge_on": ["full", "faster", "smell"],
+    "stages": [
+      {
+        "observe": "",
+        "judge_on": ["full"],
+        "miss_on": ["spreading"],
+        "conditions": { "water": "cold" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["faster"],
+        "miss_on": ["spreading", "full"],
+        "conditions": { "water": "hot" },
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      },
+      {
+        "observe": "",
+        "judge_on": ["smell"],
+        "miss_on": ["spreading"],
+        "conditions": { "water": "hot" },
+        "card": "smell",
+        "say_face": "explain",
+        "win_face": "happy",
+        "miss_face": "thinking",
+        "miss_conditions_face": "thinking"
+      }
+    ]
+  },
+  "story": {
+    "keeper_face": "worried",
+    "before": [{ "speaker": "cat", "face": "thinking" }],
+    "clue_face": "thinking",
+    "map_clue_face": "explain"
+  },
+  "kid": {
+    "intro_face": "explain",
+    "intro_picture": "particles",
+    "intro_more": [
+      { "face": "explain" }
+    ],
+    "card": "cup",
+    "say_face": "explain",
+    "picks": {
+      "water": [
+        { "value": "cold", "picture": "water_cold" },
+        { "value": "hot", "picture": "water_hot" }
+      ]
+    }
+  },
+  "note": {
+    "numbers": [
+      { "ids": ["cup"] },
+      { "ids": ["smell"] },
+      { "ids": ["water"] }
+    ],
+    "graph": true
+  },
+  "cast": {
+    "dugi": {
+      "at": [-4.8, -0.2],
+      "explain_on": ["full", "faster", "smell"],
+      "delay_s": 0.6
+    },
+    "puppy": {
+      "at": [4.0, 1.1]
+    },
+    "yaongi": { "at": [5.5, 0.2] }
+  },
+  "observations": [
+    { "id": "cup" },
+    { "id": "smell" },
+    { "id": "water" }
+  ],
+  "manipulation": {
+    "grab_radius": 72.0,
+    "objects": [
+      { "id": "dropper", "hold": true, "guide": "tap" }
+    ]
+  },
+  "graph": {
+    "x": { "unit": "s", "max": 14.0 },
+    "y": { "unit": "%", "min_max": 100.0 },
+    "series": [
+      { "id": "cold", "color": "#4aa8f5", "style": "line" },
+      { "id": "hot", "color": "#ff7a1a", "style": "line" },
+      { "id": "smell", "color": "#e0a400", "style": "line" },
+      { "id": "now", "color": "#ff3b3b", "style": "points" }
+    ]
+  }
+}

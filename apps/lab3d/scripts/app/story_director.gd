@@ -3,10 +3,10 @@
 ## - the prologue (first launch, or 이야기 다시 보기 in the settings): 8 pages in the dialogue box, the
 ##   camera gliding from the far sea of 퍼피랜드 to 과학섬, night falling, the guiding star breaking into
 ##   11 pieces that land at the 11 spots, the dark sea and the lost boats' lanterns, a sweep over the
-##   island, then the bread cat on the square as the day comes back. A tap turns the page; 건너뛰기
+##   island, then the bread cat on the square as the day comes back. A tap is a tap on the box (DialogueBox.tap); 건너뛰기
 ##   skips it all. Afterwards the map is as it was (no piece on it, the day, the child's camera).
 ##   Another island's prologue (#75: the hutton island's lines after the voyage) is its words over its
-##   square by day, the camera easing between a few views of it; the map's night comes on the last page.
+##   square by day (after a voyage at night, Story.voyage_at_night, from the night of the beach), the camera easing between a few views of it; the map's night comes on the last page.
 ## - a found piece's flight (a round completed in a lab): after the spot's flag rises, a star piece
 ##   flies from the spot to the lookout (전망대) and the corner emblem (StarEmblem) fills a wedge.
 ## - the finale (the 11th piece at the lookout, once): the pieces gather into the whole star, Puppy and
@@ -342,6 +342,8 @@ func say_wrong() -> void:
 
 ## The next spot waits for tomorrow (#77): Puppy's calm "that's all for today" with the small 보호자
 ## button at his box's right end (the guardian's check, then the island's offer). Nothing urges buying.
+## The box holds (2026-11-16: it never closes by its read timer or a tap, so 보호자 stays to be pressed);
+## it goes with back (close_riddle), a tap on another spot or on Puppy (hush / another line), or a cinematic.
 func say_today() -> void:
 	if cinematic():
 		return
@@ -349,7 +351,7 @@ func say_today() -> void:
 	_riddle_open = false
 	if Story.today_line() == "":
 		return
-	_say(Story.today_line(), Story.today_face())
+	_say(Story.today_line(), Story.today_face(), true)
 	var guardian := GuardianModal.guardian_button()
 	guardian.name = "GuardianButton"
 	guardian.pressed.connect(guardian_requested.emit)
@@ -372,7 +374,7 @@ func hush() -> void:
 func tap_riddle() -> bool:
 	if riddle == null or not riddle.active:
 		return false
-	riddle.advance()
+	riddle.tap()
 	return true
 
 
@@ -409,12 +411,15 @@ func _step_spot_glow(delta: float) -> void:
 	spot_glow.step(delta)
 
 
-func _say(words: String, face := "") -> void:
+## Puppy's box on the map with `words`; `hold`: it waits on its last page (the today line) instead of
+## closing by its read timer or a tap.
+func _say(words: String, face := "", hold := false) -> void:
 	if riddle == null:
 		riddle = DialogueBox.new("")
 		riddle.name = "PuppyRiddle"
 		home.add_child(riddle)
 	riddle.set_speaker("puppy", face)
+	riddle.hold = hold
 	riddle.open(words)
 	_layout()
 
@@ -504,6 +509,8 @@ func play_prologue() -> void:
 		var beach := VoyageScreen.keeper_spot(home.map)
 		home.stroll_home(beach, STROLL_S)
 		_set_camera(_beach_shot(beach))
+		if Story.voyage_at_night(home.island.id):   # the voyage ended at night (#155): the beach too
+			_set_night(1.0)
 	_open_page(0)
 
 
@@ -1224,8 +1231,8 @@ func _next_flight() -> void:
 	if not _flight_queue.is_empty():
 		var id: String = _flight_queue.pop_front()
 		ProgressStore.set_mark(ProgressStore.PIECES, id, true)
-		if id == home.island.gnomon_spot():
-			# The gnomon (#106) never flies: it stands on the new land until the finale.
+		if id == home.island.held_spot():
+			# The gnomon (#106) or the lens's flame (#154) never flies: it waits for the finale.
 			placed_count += 1
 			emblem.set_filled(placed_count)
 			_night(map_night(), 1.2)
@@ -1249,7 +1256,7 @@ func _next_flight() -> void:
 		if _sundial():   # to its own sector of the dial (#114)
 			slot = home.dial.transform * SundialDial.slot_transform(home.dial.filled)
 			to = slot.origin
-		var node := PieceArt.make(home.island.piece, PIECE_SIZE)
+		var node := PieceArt.make(home.island.piece, PIECE_SIZE, home.island.slot_of(id))
 		home.world.add_child(node)
 		node.position = from
 		_flight = {"id": id, "node": node, "from": from, "to": to, "slot": slot, "spin": 0.0, "t": -FLIGHT_IN_S}
@@ -1520,7 +1527,7 @@ func _launch_event(event: InputEvent) -> void:
 
 func tap_page() -> void:
 	if dialogue != null and dialogue.active:
-		dialogue.advance()
+		dialogue.tap()
 
 
 func _layout() -> void:
@@ -1661,12 +1668,12 @@ func _break_star() -> void:
 	for spot in home._spots:
 		var to: Vector3 = spot.at + Vector3.UP * (float(spot.top) + 0.6)
 		var ctrl := Vector3(to.x * 1.3, from.y + 3.0, to.z * 1.3).lerp(from, 0.3)
-		_add_piece(from, ctrl, to, 1.7 + 0.08 * i, -0.06 * i)
+		_add_piece(from, ctrl, to, 1.7 + 0.08 * i, -0.06 * i, i)
 		i += 1
 
 
-func _add_piece(from: Vector3, ctrl: Vector3, to: Vector3, seconds: float, start: float) -> void:
-	var node := PieceArt.make(home.island.piece, PIECE_SIZE)
+func _add_piece(from: Vector3, ctrl: Vector3, to: Vector3, seconds: float, start: float, slot := 0) -> void:
+	var node := PieceArt.make(home.island.piece, PIECE_SIZE, slot)
 	node.position = from
 	node.visible = start >= 0.0
 	home.world.add_child(node)
@@ -1716,7 +1723,7 @@ func _gather_pieces() -> void:
 		var a := TAU * i / n
 		var from := at + Vector3(cos(a) * 2.6, sin(a * 2.0) * 0.4, sin(a) * 2.6)
 		var ctrl := at + Vector3(cos(a + 1.2) * 1.6, 0.6, sin(a + 1.2) * 1.6)
-		_add_piece(from, ctrl, at, 1.8, -0.04 * i)
+		_add_piece(from, ctrl, at, 1.8, -0.04 * i, i)
 		_pieces[-1]["fall"] = false
 	SoundBoard.play(&"piece_fly")
 	_beat(2.3, func() -> void:

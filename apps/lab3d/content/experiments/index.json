@@ -29,6 +29,13 @@
       "strata.json",
       "earthquake.json",
       "volcano.json"
+    ],
+    "curie": [
+      "diffusion.json",
+      "dissolving.json",
+      "melt-cook.json",
+      "dough.json",
+      "clean-water.json"
     ]
   }
 }

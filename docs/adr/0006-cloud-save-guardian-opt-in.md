@@ -28,6 +28,6 @@
 ## 결과
 
 - Godot 플러그인 godot-play-game-services v3.4.0(MIT, Play Games Services v2 21.0.0)의 AAR만 넣고 내보내기 플러그인을 고쳤다(Gradle 빌드이면서 게임 id가 있을 때만 들어감, 자동 등록 없음). Godot 4.5.1로 빌드된 AAR이라 4.7.2 기기에서 확인해야 한다.
-- Play Console에서 사람이 할 일: 게임즈 서비스 프로젝트, 앱 연결, OAuth 사용자 인증 정보(앱 서명 키와 업로드 키의 SHA-1), Saved Games 켜기, 테스터 추가, 내보내기 옵션 `godot_play_game_services/game_id`에 프로젝트 id. 그 전까지 Play 빌드에는 이 기능이 들어가지 않고 설정에는 "이 기기에서는 쓸 수 없어"가 보인다.
+- Play Console에서 사람이 할 일: 게임즈 서비스 프로젝트, 앱 연결, OAuth 사용자 인증 정보(앱 서명 키와 업로드 키의 SHA-1), Saved Games 켜기, 테스터 추가, 내보내기 옵션 `godot_play_game_services/game_id`에 프로젝트 id(2026-11-16에 넣었다: `export_presets.cfg` "Android Play"). 프로젝트 id가 비어 있거나 Gradle 빌드가 아닌 빌드에서는 이 기능이 들어가지 않고 설정에는 "이 기기에서는 쓸 수 없어"가 보인다. 2026-11-16부터 Play 빌드(AAB)에는 SDK가 들어가지만 보호자가 켜기 전에는 시작하지 않는다.
 - 개인정보처리방침(`site/privacy`)과 Play Console 데이터 보안 선언을 고친다: 켜면 Google이 Play 게임즈 프로필과 저장한 진행 기록을 다룬다(SDK가 분석·진단도 모은다, [데이터 수집](https://developer.android.com/games/pgs/data-collection)).
 - 기기 날짜를 바꿔 하루 제한을 넘는 위험(ADR 0005)은 그대로다.
