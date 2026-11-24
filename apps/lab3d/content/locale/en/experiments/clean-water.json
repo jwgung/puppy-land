@@ -6,7 +6,7 @@
     "Hold the tablet with both hands and tip it gently to the left: the kettle tips too and pours the muddy water.",
     "If tipping is hard, drag the yellow ball beside the kettle down: it pours the same way.",
     "Pick the filter with the button at the bottom left: empty, sand, or sand and charcoal.",
-    "At the end, pump the bellows handle up and down to make the fire bigger and boil the water."
+    "At the end, pump the bellows handle up and down. A bellows blows air to make a fire bigger. When the fire gets big, the water boils."
   ],
   "observe": "Sand lets the water through between its grains and holds the soil back. Charcoal is full of tiny holes that hold on to the colour and the smell. Tiny germs still go through the filter, so the water must be boiled.",
   "terms": [
@@ -79,7 +79,7 @@
         "miss_conditions": "Pick sand and charcoal!"
       },
       {
-        "text": "Clear water still has germs! Boil it in the pot!",
+        "text": "Clear water still has germs! Pump the bellows to boil it!",
         "say": "Germs can't live in boiling water. That's why boiled water is safe to drink.",
         "win": "Clean spring water! A piece!",
         "miss": "Until it bubbles!",
